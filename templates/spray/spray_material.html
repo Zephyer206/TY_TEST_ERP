@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>喷涂物料统计 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; min-height: 100vh; color: #111827; }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            background: white;
+            border-bottom: 2px solid #e5e7eb;
+            position: sticky; top: 52px; z-index: 15;
+        }
+        .tab {
+            flex: 1;
+            padding: 12px 8px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 600;
+            color: #6b7280;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+        }
+        .tab.active { color: #b45309; border-bottom-color: #b45309; }
+
+        .content { padding: 12px 16px; }
+
+        .section-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #6b7280;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        /* Material Summary Cards */
+        .material-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .mat-card {
+            background: white;
+            border-radius: 14px;
+            padding: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .mat-type-tag {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-weight: 600;
+            display: inline-block;
+            margin-bottom: 6px;
+        }
+        .mat-type-sand    { background: #fef3c7; color: #b45309; }
+        .mat-type-coating { background: #ede9fe; color: #7c3aed; }
+        .mat-name { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 6px; }
+        .mat-qty  { font-size: 22px; font-weight: 800; color: #b45309; }
+        .mat-unit { font-size: 12px; font-weight: 400; color: #6b7280; }
+        .mat-meta { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+
+        /* Part Summary Table */
+        .part-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .part-table th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 700; color: #6b7280; }
+        .part-table td { padding: 10px 12px; font-size: 13px; color: #374151; border-top: 1px solid #f3f4f6; }
+        .part-table tr:first-child td { border-top: none; }
+        .text-right { text-align: right; }
+
+        .recipe-badge {
+            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 600;
+        }
+        .recipe-ok   { background: #d1fae5; color: #065f46; }
+        .recipe-miss { background: #fef3c7; color: #92400e; }
+
+        .uncalc-tag {
+            font-size: 10px;
+            padding: 1px 6px;
+            border-radius: 20px;
+            background: rgba(245,158,11,0.15);
+            color: #d97706;
+            margin-left: 4px;
+        }
+
+        /* Sync warning */
+        .sync-alert {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            border-radius: 0 10px 10px 0;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #92400e;
+        }
+        .sync-alert-title { font-weight: 700; margin-bottom: 6px; }
+        .sync-item { display: flex; justify-content: space-between; padding: 4px 0; }
+        .btn-warning-sm {
+            padding: 4px 10px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .empty-state { text-align: center; padding: 40px; color: #9ca3af; }
+
+        .total-bar {
+            background: white;
+            border-radius: 12px;
+            padding: 14px 16px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .total-item { text-align: center; }
+        .total-num { font-size: 22px; font-weight: 800; color: #b45309; }
+        .total-lbl { font-size: 12px; color: #6b7280; margin-top: 3px; }
+
+        @media (min-width: 768px) {
+            .page-wrap { max-width: 700px; margin: 0 auto; }
+            .part-table { font-size: 14px; }
+        }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+
+<div class="page-wrap">
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('summary')">物料汇总</div>
+        <div class="tab" onclick="switchTab('parts')">零件明细</div>
+    </div>
+
+    <!-- Tab: Material Summary -->
+    <div id="tab-summary" class="content">
+        {% if uncalc_parts %}
+        <div class="sync-alert">
+            <div class="sync-alert-title">&#x26A0; 待同步消耗 ({{ uncalc_parts|length }} 个零件有未算记录)</div>
+            {% for p in uncalc_parts[:5] %}
+            <div class="sync-item">
+                <span>{{ p.part_number }} {{ p.internal_name }}</span>
+                <span>
+                    <span style="background:rgba(245,158,11,0.2);padding:1px 6px;border-radius:6px;font-size:11px;">{{ p.uncalc_count }}条待算</span>
+                    <button type="button" class="btn-warning-sm" onclick="syncPart({{ p.part_id }}, '{{ p.part_number }}')">同步</button>
+                </span>
+            </div>
+            {% endfor %}
+            {% if uncalc_parts|length > 5 %}
+            <div style="font-size:12px;margin-top:4px;color:#b45309;">...共 {{ uncalc_parts|length }} 个零件</div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <!-- Total summary -->
+        <div class="total-bar">
+            <div class="total-item">
+                <div class="total-num">{{ summary|length }}</div>
+                <div class="total-lbl">物料种类</div>
+            </div>
+            <div class="total-item">
+                <div class="total-num">{{ summary|sum(attribute='total_consumed')|round(2) if summary else 0 }}</div>
+                <div class="total-lbl">累计总消耗 (kg)</div>
+            </div>
+        </div>
+
+        <div class="section-title">物料消耗明细</div>
+
+        {% if not summary %}
+        <div class="empty-state">暂无物料消耗数据<br><span style="font-size:12px;">请先在配方管理中保存参数，并在报工后执行同步</span></div>
+        {% endif %}
+
+        {% for m in summary %}
+        <div class="mat-card" style="margin-bottom:10px;">
+            <div>
+                <span class="mat-type-tag mat-type-{{ m.material_type }}">{{ 'Sand' if m.material_type == 'sand' else 'Coating' }}</span>
+                <div class="mat-name">{{ m.material_name }}</div>
+                <div>
+                    <span class="mat-qty">{{ m.total_consumed|round(4) if m.total_consumed else 0 }}</span>
+                    <span class="mat-unit">kg</span>
+                </div>
+                <div class="mat-meta">
+                    {{ m.part_count }} 个零件 | {{ m.log_count }} 条报工记录
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Tab: Part Detail -->
+    <div id="tab-parts" class="content" style="display:none;">
+        <div class="section-title">零件喷涂消耗明细</div>
+        {% if not part_summary %}
+        <div class="empty-state">暂无数据</div>
+        {% endif %}
+
+        <table class="part-table">
+            <thead>
+                <tr>
+                    <th>零件</th>
+                    <th class="text-right">喷涂产出</th>
+                    <th class="text-right">喷砂消耗</th>
+                    <th class="text-right">涂料消耗</th>
+                </tr>
+            </thead>
+            <tbody>
+            {% for p in part_summary %}
+            <tr>
+                <td>
+                    <div style="font-weight:700;">{{ p.part_number }}</div>
+                    <div style="font-size:11px;color:#9ca3af;">{{ p.internal_name }}</div>
+                    <div>
+                        {% if p.has_recipe %}
+                        <span class="recipe-badge recipe-ok">已配置</span>
+                        {% else %}
+                        <span class="recipe-badge recipe-miss">未配置</span>
+                        {% endif %}
+                        {% if p.uncalc_count > 0 %}
+                        <span class="uncalc-tag">{{ p.uncalc_count }}条待算</span>
+                        {% endif %}
+                    </div>
+                </td>
+                <td class="text-right">
+                    <div style="font-weight:700;">{{ p.spray_total or 0 }}</div>
+                    <div style="font-size:11px;color:#9ca3af;">件</div>
+                </td>
+                <td class="text-right">
+                    <div style="font-weight:700;color:#b45309;">{{ p.sand_consumed|round(4) if p.sand_consumed else 0 }}</div>
+                    <div style="font-size:11px;color:#9ca3af;">kg</div>
+                </td>
+                <td class="text-right">
+                    <div style="font-weight:700;color:#7c3aed;">{{ p.coating_consumed|round(4) if p.coating_consumed else 0 }}</div>
+                    <div style="font-size:11px;color:#9ca3af;">kg</div>
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        if (tab === 'summary') {
+            document.getElementById('tab-summary').style.display = 'block';
+            document.getElementById('tab-parts').style.display = 'none';
+            document.querySelectorAll('.tab')[0].classList.add('active');
+        } else {
+            document.getElementById('tab-summary').style.display = 'none';
+            document.getElementById('tab-parts').style.display = 'block';
+            document.querySelectorAll('.tab')[1].classList.add('active');
+        }
+    }
+
+    function syncPart(partId, partNumber) {
+        if (!confirm('同步 ' + partNumber + ' 的历史消耗？')) return;
+        const form = new FormData();
+        form.append('part_id', partId);
+        fetch('/spray/recipe/sync', { method: 'POST', body: form })
+            .then(r => r.json())
+            .then(d => {
+                if (d.ok) alert(partNumber + ': ' + d.updated_count + ' 条记录已计算');
+                else alert('Error: ' + (d.detail || 'unknown'));
+                location.reload();
+            })
+            .catch(() => alert('Network error'));
+    }
+</script>
+</body>
+</html>

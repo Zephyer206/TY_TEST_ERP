@@ -1,0 +1,1259 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>零件报价管理 - 云冲压 ERP</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --blue: #1d4ed8; --blue-light: #dbeafe; --blue-dark: #1e40af;
+            --green: #059669; --green-light: #d1fae5;
+            --amber: #d97706; --amber-light: #fef3c7;
+            --red: #dc2626; --red-light: #fef2f2;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-400: #9ca3af; --gray-600: #4b5563;
+            --gray-800: #1f2937; --gray-900: #111827;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; color: var(--gray-900); }
+
+        .topbar { background: var(--blue-dark); color: white; padding: 0 16px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+        .topbar-title { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+        .topbar-right a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 20px; }
+
+        .content { padding: 16px 14px 80px; max-width: 860px; margin: 0 auto; }
+
+        .list-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+        .list-title { font-size: 17px; font-weight: 800; color: var(--gray-900); }
+        .list-count { font-size: 12px; color: var(--gray-400); background: var(--gray-100); padding: 2px 10px; border-radius: 12px; }
+
+        .list-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); cursor: pointer; transition: box-shadow 0.15s; display: flex; align-items: center; justify-content: space-between; }
+        .list-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); }
+        .list-card-left .part-num { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+        .list-card-left .part-meta { font-size: 12px; color: var(--gray-600); margin-top: 3px; display: flex; flex-wrap: wrap; gap: 6px; }
+        .list-card-left .part-tags { display: flex; gap: 5px; margin-top: 4px; flex-wrap: wrap; }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .tag-ref { background: var(--amber-light); color: var(--amber); }
+        .tag-ind { background: var(--blue-light); color: var(--blue-dark); }
+        .tag-draft { background: var(--gray-100); color: var(--gray-600); }
+        .list-card-right { text-align: right; flex-shrink: 0; margin-left: 14px; }
+        .price-big { font-size: 19px; font-weight: 900; color: var(--blue); }
+        .price-empty { font-size: 13px; color: var(--gray-400); }
+        .arrow-hint { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+        .fab { position: fixed; bottom: 24px; right: 24px; width: 56px; height: 56px; background: var(--blue); color: white; border-radius: 50%; border: none; font-size: 26px; box-shadow: 0 4px 16px rgba(29,78,216,0.45); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 50; }
+
+        /* 侧边抽屉 */
+        .drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 100; align-items: flex-end; justify-content: center; }
+        .drawer-overlay.open { display: flex; }
+        @media (min-width: 600px) { .drawer-overlay.open { align-items: center; justify-content: center; } }
+        .drawer-panel { background: white; width: 100%; max-width: 560px; max-height: 92vh; border-radius: 20px 20px 0 0; overflow: hidden; display: flex; flex-direction: column; animation: drawerSlideUp 0.28s ease-out; }
+        @media (min-width: 600px) { .drawer-panel { border-radius: 20px; max-height: 88vh; } }
+        @keyframes drawerSlideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        .drawer-head { padding: 16px 18px 12px; border-bottom: 1.5px solid var(--gray-100); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; background: white; }
+        .drawer-title { font-size: 15px; font-weight: 800; color: var(--gray-900); }
+        .drawer-close { background: none; border: none; font-size: 22px; color: var(--gray-400); cursor: pointer; padding: 2px 6px; border-radius: 6px; line-height: 1; }
+        .drawer-close:hover { background: var(--gray-100); color: var(--gray-800); }
+        .drawer-body { overflow-y: auto; flex: 1; padding: 16px 18px 24px; }
+
+        .drawer-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 0; gap: 14px; color: var(--gray-400); font-size: 14px; }
+        .spinner-lg { width: 40px; height: 40px; border: 4px solid var(--gray-200); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .card-title { font-size: 13px; font-weight: 800; color: var(--gray-900); margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1.5px solid var(--gray-100); display: flex; align-items: center; gap: 6px; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .info-cell { background: var(--gray-50); border-radius: 9px; padding: 10px 12px; }
+        .info-lbl { font-size: 10px; color: var(--gray-400); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 3px; }
+        .info-val { font-size: 15px; font-weight: 700; color: var(--gray-900); }
+
+        .twp-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin-top: 12px; }
+        .twp-card { background: var(--blue-light); border-radius: 9px; padding: 10px 8px; text-align: center; }
+        .twp-lbl { font-size: 10px; color: var(--blue-dark); font-weight: 600; margin-bottom: 4px; }
+        .twp-val { font-size: 20px; font-weight: 900; color: var(--blue-dark); }
+
+        .mode-badge { display: inline-flex; align-items: center; gap: 6px; padding: 5px 13px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 12px; margin-top: 4px; }
+        .mode-ref { background: var(--amber-light); color: var(--amber); border: 1.5px solid var(--amber); }
+        .mode-ind { background: var(--blue-light); color: var(--blue-dark); border: 1.5px solid #3b82f6; }
+
+        /* 模式选择器 */
+        .mode-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px; }
+        .mode-card { border-radius: 14px; padding: 18px 14px; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s; border: 2.5px solid transparent; text-align: center; position: relative; }
+        .mode-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.12); }
+        .mode-card.selected { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(29,78,216,0.2); }
+        .mode-card.mode-a { background: var(--amber-light); border-color: #fde68a; }
+        .mode-card.mode-a.selected { border-color: var(--amber); background: #fffbeb; }
+        .mode-card.mode-b { background: var(--blue-light); border-color: #bfdbfe; }
+        .mode-card.mode-b.selected { border-color: var(--blue); background: #eff6ff; }
+        .mode-card-icon { font-size: 28px; margin-bottom: 6px; }
+        .mode-card-name { font-size: 13px; font-weight: 800; margin-bottom: 4px; }
+        .mode-card-desc { font-size: 11px; color: var(--gray-600); line-height: 1.4; }
+        .mode-card-check { position: absolute; top: 8px; right: 8px; width: 18px; height: 18px; border-radius: 50%; background: var(--blue); color: white; font-size: 10px; display: none; align-items: center; justify-content: center; }
+        .mode-card.selected .mode-card-check { display: flex; }
+
+        /* 白盒核算 */
+        .calc-panel { background: #f8fafc; border: 1.5px solid var(--gray-200); border-radius: 14px; padding: 14px; margin-bottom: 12px; }
+        .calc-step { display: flex; justify-content: space-between; align-items: flex-start; padding: 9px 0; border-bottom: 1px solid var(--gray-100); font-size: 13px; }
+        .calc-step:last-child { border-bottom: none; }
+        .calc-lbl { color: var(--gray-600); line-height: 1.5; }
+        .calc-lbl-sm { font-size: 10px; color: var(--gray-400); }
+        .calc-val { font-weight: 700; color: var(--gray-900); text-align: right; flex-shrink: 0; margin-left: 12px; cursor: help; position: relative; }
+        .calc-val.override { color: var(--blue); }
+        .calc-tip { position: absolute; bottom: calc(100% + 8px); right: 0; background: #1e293b; color: #e2e8f0; padding: 10px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; line-height: 1.7; white-space: pre-wrap; z-index: 110; min-width: 240px; max-width: 310px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); display: none; }
+        .calc-val:hover .calc-tip { display: block; }
+
+        .total-box { background: linear-gradient(135deg, var(--blue-dark), var(--blue)); color: white; border-radius: 14px; padding: 16px; margin-top: 12px; text-align: center; }
+        .total-lbl { font-size: 12px; opacity: 0.85; margin-bottom: 4px; }
+        .total-val { font-size: 34px; font-weight: 900; line-height: 1; }
+        .total-val.override { color: #93c5fd; }
+        .total-tag { display: inline-block; background: rgba(255,255,255,0.2); padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: 700; margin-top: 6px; }
+        .change-badge { display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 12px; font-weight: 700; margin-top: 6px; }
+        .change-badge.up { background: var(--blue-light); color: var(--blue); }
+        .change-badge.down { background: var(--green-light); color: var(--green); }
+
+        .assoc-pricing { background: linear-gradient(135deg, #fffbeb, #fef9c3); border: 1.5px solid var(--amber); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+        .assoc-pricing-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .hist-ref { font-size: 12px; color: var(--gray-600); margin-bottom: 10px; background: white; border-radius: 8px; padding: 8px 12px; border: 1px solid var(--gray-200); }
+        .hist-ref strong { color: var(--blue-dark); font-size: 16px; }
+        .hist-ref em { color: var(--gray-400); font-style: normal; font-size: 11px; }
+
+        .override-legend { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--gray-600); margin-bottom: 8px; }
+        .override-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--blue); flex-shrink: 0; }
+        .override-section { background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 12px; padding: 12px; margin-top: 10px; }
+        .override-title { font-size: 12px; font-weight: 700; color: #0369a1; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+        .form-row.single { grid-template-columns: 1fr; }
+        .form-group { margin-bottom: 6px; }
+        .form-label { font-size: 11px; font-weight: 600; color: var(--gray-600); margin-bottom: 3px; display: block; }
+        .form-input { width: 100%; padding: 8px 10px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 13px; outline: none; background: white; transition: border-color 0.15s; }
+        .form-input:focus { border-color: var(--blue); }
+        .form-input.blue { border-color: var(--blue); color: var(--blue); font-weight: 700; }
+        .form-hint { font-size: 10px; color: var(--gray-400); margin-top: 2px; }
+        .form-hint.blue { color: var(--blue); }
+        .pct-hint { font-size: 12px; font-weight: 700; margin-left: 8px; }
+        .pct-hint.down { color: var(--green); }
+        .pct-hint.up { color: var(--red); }
+
+        .judgment-box { background: white; border: 2px solid; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .judgment-box.pending { border-color: var(--amber); background: #fffbeb; }
+        .judgment-box.approved { border-color: var(--green); background: #f0fdf4; }
+        .judgment-box.rejected { border-color: var(--red); background: var(--red-light); }
+        .judgment-title { font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+        .btn-row { display: flex; gap: 8px; flex-wrap: wrap; }
+        .btn { padding: 8px 16px; border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer; }
+        .btn-green { background: var(--green); color: white; }
+        .btn-red { background: var(--red); color: white; }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-800); }
+        .btn-purple { background: #7c3aed; color: white; }
+        .btn-primary { background: var(--blue); color: white; box-shadow: 0 4px 12px rgba(29,78,216,0.35); }
+        .btn-bar { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; padding-top: 12px; border-top: 1.5px solid var(--gray-100); }
+
+        .twp-setup { background: #fffbeb; border: 1.5px solid var(--amber); border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .twp-setup-title { font-size: 13px; font-weight: 700; color: var(--amber); margin-bottom: 10px; }
+        .twp-setup-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .twp-setup .form-label { color: var(--amber); }
+
+        .toast { display: none; position: fixed; top: 70px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 300; }
+        .toast.show { display: block; }
+        .toast.ok { background: var(--green); color: white; }
+        .toast.err { background: var(--red); color: white; }
+
+        .empty-state { text-align: center; padding: 48px 0; color: var(--gray-400); font-size: 13px; }
+        .empty-state small { display: block; font-size: 12px; margin-top: 4px; }
+
+        /* ── 状态徽章 ─────────────────────────────────────── */
+        .status-badge {
+            display: inline-block; padding: 2px 9px; border-radius: 10px;
+            font-size: 11px; font-weight: 700;
+        }
+        .draft-badge     { background: #f3f4f6; color: #6b7280; }
+        .pending-badge  { background: #fffbeb; color: #92400e; border: 1px solid #f59e0b; }
+        .approved-badge { background: #d1fae5; color: #065f46; border: 1px solid #10b981; }
+        .rejected-badge { background: #fee2e2; color: #991b1b; border: 1px solid #ef4444; }
+
+        /* ── 快速修改弹窗 ──────────────────────────────── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5); z-index: 200;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box-sm {
+            background: white; border-radius: 16px; padding: 24px;
+            width: 460px; max-width: 95vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+
+        @media (max-width: 480px) {
+            .form-row { grid-template-columns: 1fr; }
+            .info-grid { grid-template-columns: 1fr; }
+            .mode-selector { grid-template-columns: 1fr; }
+            .twp-row { grid-template-columns: repeat(3,1fr); }
+            .price-big { font-size: 16px; }
+            .total-val { font-size: 28px; }
+            .twp-setup-row { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    {% if status_filter %}
+    <span class="topbar-title">零件报价 — {{ status_filter }}</span>
+    {% else %}
+    <span class="topbar-title">零件报价管理</span>
+    {% endif %}
+    <div class="topbar-right"><a href="/sales">&#x2699;</a></div>
+</div>
+
+<div class="content">
+{% if status_filter %}
+<div style="background:#fffbeb; border:1.5px solid #f59e0b; border-radius:12px; padding:10px 14px; margin-bottom:14px; display:flex; align-items:center; justify-content:space-between; gap:10px;">
+    <div style="font-size:13px; font-weight:700; color:#92400e;">
+        &#x1F50D; 正在过滤：<span style="font-size:14px;">{{ status_filter }}</span>
+    </div>
+    <a href="/sales/parts" style="background:#f59e0b; color:white; font-weight:700; font-size:12px; padding:5px 12px; border-radius:8px; text-decoration:none; white-space:nowrap;">
+        ✕ 清除过滤
+    </a>
+</div>
+{% endif %}
+{% if parts %}
+<div class="list-header">
+    <span class="list-title">零件报价</span>
+    <span class="list-count">{{ parts|length }} 件</span>
+</div>
+{% for p in parts %}
+<div class="list-card" onclick="openDrawer({{ p.id }})">
+    <div class="list-card-left">
+        <div class="part-num">{{ p.part_number or '—' }}</div>
+        <div class="part-meta">
+            {% if p.material_name %}{{ p.material_name }}{% endif %}
+            {% if p.thickness %} · T={{ p.thickness }}mm{% endif %}
+            {% if p.width %} × W={{ p.width }}mm{% endif %}
+            {% if p.press_stroke %} × P={{ p.press_stroke }}{% endif %}
+        </div>
+        <div class="part-tags">
+            {% if p.pricing_mode == 'Associated' %}
+            <span class="tag tag-ref">关联参考</span>
+            {% elif p.pricing_mode == 'Independent' %}
+            <span class="tag tag-ind">独立核算</span>
+            {% else %}
+            <span class="tag tag-draft">未定模式</span>
+            {% endif %}
+            <span class="tag tag-draft">{{ p.approval_status or '—' }}</span>
+        </div>
+    </div>
+    <div class="list-card-right">
+        {% if p.current_price %}<div class="price-big">¥{{ "%.2f"|format(p.current_price|float) }}</div>
+        {% else %}<div class="price-empty">待报价</div>{% endif %}
+        <div class="arrow-hint">→ 点击报价</div>
+    </div>
+</div>
+{% else %}
+<div class="empty-state">暂无处在报价流程中的零件<br><small>点击底部 + 按钮创建新零件</small></div>
+{% endfor %}
+{% endif %}
+
+{% if not parts %}
+<div class="empty-state">暂无零件<br><small>点击右下角按钮创建零件</small></div>
+{% endif %}
+</div>
+
+<button class="fab" onclick="location.href='/sales/parts/new'" title="新建零件">+</button>
+
+<div class="drawer-overlay" id="drawerOverlay" onclick="handleOverlayClick(event)">
+    <div class="drawer-panel" id="drawerPanel" onclick="event.stopPropagation()">
+        <div class="drawer-head">
+            <span class="drawer-title" id="drawerTitle">零件报价</span>
+            <button class="drawer-close" onclick="closeDrawer()">&#x2715;</button>
+        </div>
+        <div class="drawer-body" id="drawerBody">
+            <div class="drawer-loading">
+                <div class="spinner-lg"></div>
+                <span>加载零件数据...</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 快速修改报价单弹窗 -->
+<div class="modal-overlay" id="editQuoteModal" onclick="if(event.target===this)wfCloseEdit()">
+    <div class="modal-box-sm" style="max-width:500px; width:95vw;" onclick="event.stopPropagation()">
+        <h3 style="font-size:15px;font-weight:800;color:#1e1b4b;margin-bottom:16px;display:flex;align-items:center;gap:8px;">
+            &#x270F;&#xFE0F; 快速修改报价单
+        </h3>
+        <!-- T/W/P -->
+        <div class="form-row" style="margin-bottom:8px;">
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">厚度 T (mm)</label>
+                <input type="number" id="eqThickness" class="form-input" step="0.001" min="0" placeholder="0.8">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">宽度 W (mm)</label>
+                <input type="number" id="eqWidth" class="form-input" step="0.01" min="0" placeholder="300">
+            </div>
+        </div>
+        <div class="form-row" style="margin-bottom:8px;">
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">冲程 P (mm)</label>
+                <input type="number" id="eqPressStroke" class="form-input" step="0.01" min="0" placeholder="120">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">穴数（1出N）</label>
+                <input type="number" id="eqCavityCount" class="form-input" min="1" value="1">
+            </div>
+        </div>
+        <!-- 附加费 -->
+        <div class="form-row" style="margin-bottom:8px;">
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">冲压费（元/件）</label>
+                <input type="number" id="eqStampingFee" class="form-input" step="0.01" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">表面处理费（元/件）</label>
+                <input type="number" id="eqSurfaceFee" class="form-input" step="0.01" min="0" placeholder="0">
+            </div>
+        </div>
+        <div class="form-row" style="margin-bottom:8px;">
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">处理费合计（元/件）</label>
+                <input type="number" id="eqTreatmentFee" class="form-input" step="0.01" min="0" placeholder="0">
+            </div>
+            <div class="form-group">
+                <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">利润率（%）</label>
+                <input type="number" id="eqProfitMargin" class="form-input" step="0.1" min="0" placeholder="5">
+            </div>
+        </div>
+        <!-- 材料成本覆盖（蓝字，优先级高） -->
+        <div class="override-section" style="margin-bottom:10px;">
+            <div class="override-title">&#x2139; 材料成本覆盖（选填，蓝色优先）</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label" style="font-size:11px;font-weight:600;color:#1d4ed8;">材料单价覆盖（元/kg）</label>
+                    <input type="number" id="eqUnitPrice" class="form-input" step="0.0001" min="0"
+                           placeholder="留空使用材料库基准价" style="border-color:#3b82f6;color:#1d4ed8;font-weight:600;">
+                    <div style="font-size:10px;color:#9ca3af;margin-top:2px;">手动指定材料采购单价</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" style="font-size:11px;font-weight:600;color:#1d4ed8;">材料净成本覆盖（元/件）</label>
+                    <input type="number" id="eqMatCost" class="form-input" step="0.0001" min="0"
+                           placeholder="留空使用自动核算" style="border-color:#3b82f6;color:#1d4ed8;font-weight:600;">
+                    <div style="font-size:10px;color:#9ca3af;margin-top:2px;">直接覆盖材料净成本</div>
+                </div>
+            </div>
+        </div>
+        <!-- 最终总价覆盖 -->
+        <div class="form-group" style="margin-bottom:8px;">
+            <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">&#x270F;&#xFE0F; 最终总价覆盖（元/件）</label>
+            <input type="number" id="eqFinalPrice" class="form-input" step="0.0001" min="0"
+                   placeholder="留空使用自动核算值" style="border-color:#3b82f6;color:#1d4ed8;font-weight:700;">
+            <div style="font-size:10px;color:#9ca3af;margin-top:2px;">蓝色 = 人工覆盖，优先级高于白盒自动核算</div>
+        </div>
+        <!-- 设备 -->
+        <div class="form-group" style="margin-bottom:14px;">
+            <label class="form-label" style="font-size:11px;font-weight:600;color:#374151;">使用设备（吨位/型号）</label>
+            <input type="text" id="eqMachineType" class="form-input" placeholder="如 45T、110T、振力等" maxlength="50">
+        </div>
+        <!-- 按钮 -->
+        <div class="btn-bar">
+            <button type="button" class="btn btn-secondary" onclick="wfCloseEdit()">取消</button>
+            <button type="button" class="btn btn-primary" id="eqSaveBtn" onclick="wfSaveEdit()">保存修改</button>
+        </div>
+    </div>
+</div>
+
+    <!-- 用户角色等级注入（供 JS 状态机判断） -->
+    <script>
+        window.__USER_ROLE__ = {{ user.role_level if user else 0 }};
+        window.__VIEW_AS__   = "{{ user.view_as|default('') }}";  // 当前激活视图
+    </script>
+
+<script src="/static/js/api_config.js?v=20250620"></script>
+<script>
+(function () {
+    "use strict";
+
+    // ── 全局状态（模块级变量，闭包内可访问）────────────────────
+    var _currentPartId = null;
+    var _currentQuoteId = null;   // 当前打开抽屉的零件对应的最新报价单 ID
+    var _currentQuoteStatus = "DRAFT";  // 当前报价单状态，供 buildWhiteboxPanel 使用
+    var _drawerData    = null;
+    var _origCalc      = null;
+
+    // ── Toast ────────────────────────────────────────────────
+    function toast(msg, kind) {
+        var t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "toast show " + (kind || "ok");
+        setTimeout(function () { t.className = "toast"; }, 3200);
+    }
+
+    // ── 抽屉控制 ─────────────────────────────────────────────
+    function openDrawer(partId) {
+        _currentPartId = partId;
+        _currentQuoteId = null;
+        var overlay = document.getElementById("drawerOverlay");
+        var body    = document.getElementById("drawerBody");
+        overlay.classList.add("open");
+        document.body.style.overflow = "hidden";
+        body.innerHTML = '<div class="drawer-loading"><div class="spinner-lg"></div><span>加载零件数据...</span></div>';
+        document.getElementById("drawerTitle").textContent = "零件报价";
+
+        apiGet("sales.part_detail", { id: partId })
+            .then(function (resp) {
+                if (!resp.code || resp.code !== 200) {
+                    body.innerHTML = '<div class="empty-state">加载失败：' + escHtml(resp.message || resp.error || "") + "</div>";
+                    return;
+                }
+                var innerData = resp.data || {};
+                _drawerData = innerData;
+                _origCalc   = (innerData.calc && typeof innerData.calc === "object") ? innerData.calc : null;
+
+                // 从 latest_quote 中提取 quote_id 和状态
+                var latestQuote = innerData.latest_quote || innerData.quote || {};
+                _currentQuoteId = latestQuote.id || null;
+                _currentQuoteStatus = latestQuote.approval_status || "DRAFT";
+
+                renderDrawerContent(_drawerData, latestQuote, innerData.ref_price);
+                // 同时设置给 buildWhiteboxPanel 用的状态变量
+                _currentQuoteStatus = latestQuote.approval_status || "DRAFT";
+            })
+            .catch(function (e) {
+                body.innerHTML = '<div class="empty-state">网络错误：' + escHtml(e.message || "") + "</div>";
+            });
+    }
+
+    function closeDrawer() {
+        var overlay = document.getElementById("drawerOverlay");
+        if (overlay) overlay.classList.remove("open");
+        document.body.style.overflow = "";
+        _currentPartId = null;
+        _drawerData    = null;
+        _origCalc      = null;
+    }
+
+    function handleOverlayClick(ev) {
+        if (ev.target === document.getElementById("drawerOverlay")) closeDrawer();
+    }
+
+    // ── 渲染抽屉内容 ─────────────────────────────────────────
+    // quoteArg: latest_quote 对象（包含 id, approval_status 等）
+    function renderDrawerContent(data, quoteArg, ref_price) {
+        var part = data.part;
+        var calc = data.calc;
+        var mat  = data.material;
+        var quote = quoteArg || {};
+        var body = document.getElementById("drawerBody");
+        document.getElementById("drawerTitle").textContent = part.part_number || "零件报价";
+        var mode = part.pricing_mode || null;
+        var status = quote.approval_status || "DRAFT";
+
+        // T/W/P 三联
+        var twpRow = "";
+        if (part.thickness && part.width && part.press_stroke) {
+            twpRow = '<div class="twp-row">' +
+                '<div class="twp-card"><div class="twp-lbl">厚度 T (mm)</div><div class="twp-val">' + escHtml(part.thickness) + "</div></div>" +
+                '<div class="twp-card"><div class="twp-lbl">宽度 W (mm)</div><div class="twp-val">' + escHtml(part.width) + "</div></div>" +
+                '<div class="twp-card"><div class="twp-lbl">冲程 P (mm)</div><div class="twp-val">' + escHtml(part.press_stroke) + "</div></div>" +
+                "</div>";
+        }
+
+        var modeLabel = "";
+        if (mode === "Associated") {
+            modeLabel = '<div class="mode-badge mode-ref">路径 A — 关联参考模式</div>';
+        } else if (mode === "Independent") {
+            modeLabel = '<div class="mode-badge mode-ind">路径 B — 独立白盒核算</div>';
+        } else {
+            modeLabel = '<div class="mode-badge" style="background:#f3f4f6;color:#6b7280;border:1.5px solid #d1d5db;">— 模式未指定</div>';
+        }
+
+        var baseCard = '<div class="card">' +
+            '<div class="card-title">零件基础信息</div>' +
+            '<div class="info-grid">' +
+            '<div class="info-cell"><div class="info-lbl">零件图号</div><div class="info-val">' + escHtml(part.part_number || "—") + "</div></div>" +
+            '<div class="info-cell"><div class="info-lbl">内部件号</div><div class="info-val">' + escHtml(part.internal_name || "—") + "</div></div>" +
+            '<div class="info-cell"><div class="info-lbl">材料牌号</div><div class="info-val">' + escHtml(part.material_name || "—") + "</div></div>" +
+            '<div class="info-cell"><div class="info-lbl">报价状态</div><div class="info-val">' + buildStatusBadge(status) + "</div></div>" +
+            "</div>" + modeLabel + twpRow + "</div>";
+
+        // ── 模式未指定 ─────────────────────────────────────────
+        if (!mode || (mode !== "Associated" && mode !== "Independent")) {
+            body.innerHTML = baseCard + buildModeSelector(part) + buildWorkflowCard(quote, status, part.id);
+            return;
+        }
+
+        // ── 路径 A ─────────────────────────────────────────────
+        if (mode === "Associated") {
+            var histHtml = ref_price != null
+                ? '<div class="hist-ref">参考件历史单价：<strong>¥' + ref_price + ' 元/件</strong><em>（来自关联老件定价记录）</em></div>'
+                : "";
+            var workflowHtml = buildWorkflowCard(quote, status, part.id);
+            body.innerHTML = baseCard +
+                '<div class="assoc-pricing">' +
+                '<div class="assoc-pricing-title">路径 A — 关联参考定价</div>' +
+                histHtml +
+                '<div class="form-group">' +
+                '<label class="form-label">最终总价（元/件）</label>' +
+                '<input type="number" class="form-input blue" id="dwFinalPrice" step="0.0001" ' +
+                'value="' + escAttr(part.final_price_override || "") + '" ' +
+                'placeholder="输入最终定价" oninput="onDwFinalInput(this)">' +
+                '<span class="pct-hint" id="dwFinalPct"></span>' +
+                '<div class="form-hint blue">此值将覆盖白盒核算结果</div>' +
+                "</div>" +
+                '<div class="btn-bar">' +
+                '<button class="btn btn-secondary" onclick="closeDrawer()">关闭</button>' +
+                '<button class="btn btn-primary" id="dwSaveBtn" onclick="dwSaveOverrides(' + part.id + ')">保存报价</button>' +
+                "</div></div>" +
+                buildSampleJudgment(part, quote) +
+                buildModeSwitchBtn(part) +
+                workflowHtml;
+            lockUIByStatus(status, "dwSaveBtn");
+            return;
+        }
+
+        // ── 路径 B ─────────────────────────────────────────────
+        var calcHtml = buildWhiteboxPanel(part, calc);
+        var twpSetupHtml = (!part.thickness || !part.width || !part.press_stroke)
+            ? buildTwpsetup(part) : "";
+        var workflowHtml = buildWorkflowCard(quote, status, part.id);
+        body.innerHTML = baseCard + twpSetupHtml + calcHtml + buildSampleJudgment(part, quote) + buildModeSwitchBtn(part) + workflowHtml;
+        lockUIByStatus(status, "dwSaveBtn");
+    }
+
+    // ── 状态徽章 ──────────────────────────────────────────────
+    function buildStatusBadge(status) {
+        var map = {
+            "DRAFT":        { cls: "draft-badge",     txt: "草稿" },
+            "PENDING_BOSS": { cls: "pending-badge",  txt: "待审核" },
+            "APPROVED":     { cls: "approved-badge",  txt: "已批准" },
+            "REJECTED":     { cls: "rejected-badge",  txt: "已驳回" },
+        };
+        var info = map[status] || { cls: "draft-badge", txt: status || "—" };
+        return '<span class="status-badge ' + info.cls + '">' + info.txt + "</span>";
+    }
+
+    // ── 状态机操作卡 ──────────────────────────────────────────
+    // 状态流转：DRAFT → PENDING_BOSS → APPROVED/REJECTED
+    function buildWorkflowCard(quote, status, partId) {
+        var role = window.__USER_ROLE__ || 0;
+        var isAdmin    = role >= 9;
+        var isSales    = role >= 4;
+        var isBossView = window.__VIEW_AS__ === 'admin';  // 激活视图必须是"老板视角"才算数
+        var canApprove = isAdmin && isBossView;           // 双重校验：权限 × 视图
+        var qid = quote && quote.id ? quote.id : _currentQuoteId;
+        var card = '<div class="card"><div class="card-title">&#x1F4AC; 审批工作流</div>';
+
+        if (status === "DRAFT") {
+            // 草稿：业务员可提交 / 删除 / 快速修改
+            card += '<div style="margin-bottom:10px;font-size:12px;color:#6b7280;">';
+            card += '草稿状态，可自由编辑。确认后提交至老板审核。</div>';
+            card += '<div class="btn-row">';
+            if (isSales) {
+                card += '<button class="btn btn-purple" id="wfEditBtn" onclick="wfOpenEdit(' + qid + ')">&#x270F; 快速修改</button>';
+                card += '<button class="btn btn-primary" id="wfSubmitBtn" data-quote-id="' + qid + '" onclick="wfSubmit(event)">&#x2714; 提交审核</button>';
+                card += '<button class="btn btn-red" id="wfDeleteBtn" data-quote-id="' + qid + '" onclick="wfDelete(event)">&#x2715; 删除</button>';
+            }
+            card += '</div>';
+        } else if (status === "PENDING_BOSS") {
+            // 待审核：业务员看到"审核中"；老板看到审核按钮
+            card += '<div style="margin-bottom:10px;padding:10px 12px;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;font-size:13px;color:#92400e;font-weight:600;">&#x231A; 此报价单正在等待老板审核，暂时无法修改。</div>';
+            if (isSales) {
+                card += '<div style="font-size:12px;color:#9ca3af;">提交人：' + escHtml(quote.submitted_by_name || "—") + ' &nbsp;|&nbsp; 提交时间：' + escHtml(quote.submitted_at ? quote.submitted_at.substring(0, 16) : "—") + '</div>';
+            }
+            if (canApprove) {
+                card += '<div class="btn-row" style="margin-top:10px;">';
+                card += '<button class="btn btn-green" id="wfApproveBtn" data-quote-id="' + qid + '" onclick="wfApprove(event)">&#x2714; 审核通过</button>';
+                card += '<button class="btn btn-red" id="wfRejectBtn" data-quote-id="' + qid + '" onclick="wfReject(event,' + partId + ')">&#x2715; 驳回</button>';
+                card += '</div>';
+                card += '<div class="form-group" style="margin-top:10px;">';
+                card += '<label class="form-label">驳回原因（选填）</label>';
+                card += '<input type="text" class="form-input" id="wfRejectReason" placeholder="选填，不填则默认" maxlength="200">';
+                card += '</div>';
+            }
+        } else if (status === "APPROVED") {
+            // 已批准：锁定一切操作，高亮显示最终单价
+            card += '<div style="margin-bottom:10px;padding:10px 12px;background:#f0fdf4;border:1.5px solid #10b981;border-radius:10px;font-size:13px;color:#065f46;font-weight:700;">&#x2714; 此报价单已批准执行，价格已锁定，不可再修改或删除。</div>';
+            card += '<div style="font-size:12px;color:#6b7280;">审批人：' + escHtml(quote.approved_by_name || "—") + ' &nbsp;|&nbsp; 审批时间：' + escHtml(quote.approved_at ? quote.approved_at.substring(0, 16) : "—") + '</div>';
+        } else if (status === "REJECTED") {
+            // 已驳回：业务员可重新编辑 / 删除
+            card += '<div style="margin-bottom:10px;padding:10px 12px;background:#fff1f2;border:1.5px solid #fca5a5;border-radius:10px;font-size:13px;color:#991b1b;font-weight:600;">&#x26A0; 此报价单已被驳回，请修改后重新提交。</div>';
+            card += '<div style="font-size:12px;color:#6b7280;margin-bottom:10px;">驳回原因：' + escHtml(quote.rejection_reason || "（未填写）") + '</div>';
+            if (isSales) {
+                card += '<div class="btn-row">';
+                card += '<button class="btn btn-primary" id="wfSubmitBtn" data-quote-id="' + qid + '" onclick="wfSubmit(event)">&#x2714; 重新提交</button>';
+                card += '<button class="btn btn-red" id="wfDeleteBtn" data-quote-id="' + qid + '" onclick="wfDelete(event)">&#x2715; 删除</button>';
+                card += '</div>';
+            }
+        } else {
+            card += '<div style="font-size:12px;color:#9ca3af;">状态：' + escHtml(status) + '</div>';
+        }
+
+        card += '</div>';
+        return card;
+    }
+
+    // ── 根据状态锁定 UI ───────────────────────────────────────
+    function lockUIByStatus(status, saveBtnId) {
+        if (status === "APPROVED" || status === "PENDING_BOSS") {
+            var btn = document.getElementById(saveBtnId);
+            if (btn) { btn.disabled = true; btn.textContent = "（已锁定）"; btn.style.opacity = "0.5"; }
+        }
+    }
+
+    // ── 报价工作流操作 ────────────────────────────────────────
+    function wfSubmit(e) {
+        // 使用 closest 抓 data-quote-id，兼容 onclick="wfSubmit(event)"
+        var btn = (e && e.target) ? e.target.closest('[data-quote-id]') : null;
+        var qid = btn ? btn.getAttribute('data-quote-id') : null;
+        if (!qid) { qid = _currentQuoteId; }
+        if (!qid) { toast("报价单 ID 未知，无法提交", "err"); return; }
+        if (!confirm("确认提交此报价单？\n\n提交后将进入【待审核】状态，业务员将无法再修改。")) return;
+        var subBtn = document.getElementById("wfSubmitBtn");
+        var orig = subBtn ? subBtn.textContent : "";
+        if (subBtn) { subBtn.disabled = true; subBtn.textContent = "提交中…"; }
+
+        sendApiRequest("sales.quote_submit", null, { pathParams: { id: qid } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("提交成功，等待老板审核");
+                    setTimeout(function () { closeDrawer(); location.reload(); }, 1200);
+                } else {
+                    throw new Error(d.message || "提交失败");
+                }
+            })
+            .catch(function (err) {
+                console.error("[wfSubmit]", err);
+                alert("提交失败：" + (err.message || "网络异常"));
+                toast("提交失败：" + (err.message || "网络异常"), "err");
+            })
+            .finally(function () {
+                if (subBtn) { subBtn.disabled = false; subBtn.textContent = orig; }
+            });
+    }
+
+    function wfDelete(e) {
+        // 使用 e.target.closest() 安全抓取 data-quote-id 属性，
+        // 绝对防止鼠标点在内嵌文字/图标上导致 e.target 抓偏的乌龙。
+        var btn = (e && e.target) ? e.target.closest('[data-quote-id]') : null;
+        var qid = btn ? btn.getAttribute('data-quote-id') : null;
+        if (!qid) { qid = _currentQuoteId; }
+        if (!qid) { toast("报价单 ID 未知，无法删除", "err"); return; }
+        if (!confirm("确认删除此报价单？\n\n此操作仅可删除【草稿】状态的报价单，且不可恢复。")) return;
+        var delBtn = document.getElementById("wfDeleteBtn");
+        var orig = delBtn ? delBtn.textContent : "";
+        if (delBtn) { delBtn.disabled = true; delBtn.textContent = "删除中…"; }
+
+        sendApiRequest("sales.quote_delete", null, { pathParams: { id: qid } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("报价单已删除");
+                    closeDrawer();
+                    location.reload();
+                } else {
+                    throw new Error(d.message || "删除失败");
+                }
+            })
+            .catch(function (err) {
+                console.error("[wfDelete]", err);
+                alert("删除失败：" + (err.message || "网络异常"));
+                toast("删除失败：" + (err.message || "网络异常"), "err");
+            })
+            .finally(function () {
+                if (delBtn) { delBtn.disabled = false; delBtn.textContent = orig; }
+            });
+    }
+
+    function wfApprove(e) {
+        var btn = (e && e.target) ? e.target.closest('[data-quote-id]') : null;
+        var qid = btn ? btn.getAttribute('data-quote-id') : null;
+        if (!qid) { qid = _currentQuoteId; }
+        if (!qid) { toast("报价单 ID 未知，无法审核", "err"); return; }
+        if (!confirm("确认审核通过此报价单？\n\n审核通过后价格将锁定，业务员无法再修改。")) return;
+        var apBtn = document.getElementById("wfApproveBtn");
+        var orig = apBtn ? apBtn.textContent : "";
+        if (apBtn) { apBtn.disabled = true; apBtn.textContent = "审核中…"; }
+
+        sendApiRequest("sales.quote_approve", null, { pathParams: { id: qid } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("审核通过！价格已锁定");
+                    setTimeout(function () { closeDrawer(); location.reload(); }, 1200);
+                } else {
+                    throw new Error(d.message || "审核失败");
+                }
+            })
+            .catch(function (err) {
+                console.error("[wfApprove]", err);
+                alert("审核失败：" + (err.message || "网络异常"));
+                toast("审核失败：" + (err.message || "网络异常"), "err");
+            })
+            .finally(function () {
+                if (apBtn) { apBtn.disabled = false; apBtn.textContent = orig; }
+            });
+    }
+
+    function wfReject(e, partId) {
+        var btn = (e && e.target) ? e.target.closest('[data-quote-id]') : null;
+        var qid = btn ? btn.getAttribute('data-quote-id') : null;
+        if (!qid) { qid = _currentQuoteId; }
+        if (!qid) { toast("报价单 ID 未知，无法驳回", "err"); return; }
+        var reasonEl = document.getElementById("wfRejectReason");
+        var reason = reasonEl ? (reasonEl.value || "").trim() : "";
+        if (!confirm("确认驳回此报价单？\n\n驳回后业务员可修改后重新提交。" + (reason ? "\n驳回原因：" + reason : ""))) return;
+        var rjBtn = document.getElementById("wfRejectBtn");
+        var orig = rjBtn ? rjBtn.textContent : "";
+        if (rjBtn) { rjBtn.disabled = true; rjBtn.textContent = "驳回中…"; }
+
+        sendApiRequest("sales.quote_reject", { reason: reason }, { pathParams: { id: qid } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("已驳回，业务员可重新提交");
+                    setTimeout(function () { closeDrawer(); location.reload(); }, 1200);
+                } else {
+                    throw new Error(d.message || "驳回失败");
+                }
+            })
+            .catch(function (err) {
+                console.error("[wfReject]", err);
+                alert("驳回失败：" + (err.message || "网络异常"));
+                toast("驳回失败：" + (err.message || "网络异常"), "err");
+            })
+            .finally(function () {
+                if (rjBtn) { rjBtn.disabled = false; rjBtn.textContent = orig; }
+            });
+    }
+
+    // ── 快速修改弹窗 ────────────────────────────────────────
+    // 缓存当前编辑的报价单数据
+    var _editQuoteData = null;
+
+    function wfOpenEdit(quoteId) {
+        if (!quoteId) { toast("报价单 ID 未知，无法修改", "err"); return; }
+        // 读取当前抽屉中的报价单数据（从 _drawerData.latest_quote）
+        _editQuoteData = (_drawerData && _drawerData.latest_quote) ? _drawerData.latest_quote
+            : (_drawerData && _drawerData.quote) ? _drawerData.quote : null;
+
+        if (!_editQuoteData) {
+            toast("无法获取报价单数据，请刷新后重试", "err");
+            return;
+        }
+
+        // 渲染弹窗
+        var q = _editQuoteData;
+        var editModal = document.getElementById("editQuoteModal");
+        if (!editModal) return;
+
+        // 填充表单初始值
+        var setVal = function(id, val) {
+            var el = document.getElementById(id);
+            if (el) el.value = (val !== null && val !== undefined) ? val : "";
+        };
+        setVal("eqThickness",     q.thickness);
+        setVal("eqWidth",        q.width);
+        setVal("eqPressStroke",  q.press_stroke);
+        setVal("eqCavityCount",  q.cavity_count);
+        setVal("eqStampingFee",  q.stamping_fee);
+        setVal("eqSurfaceFee",   q.surface_fee);
+        setVal("eqTreatmentFee", q.treatment_fee);
+        setVal("eqProfitMargin",q.profit_margin);
+        setVal("eqUnitPrice",    q.unit_price_override);
+        setVal("eqMatCost",     q.material_cost_override);
+        setVal("eqFinalPrice",  q.final_price_override);
+        setVal("eqMachineType",  q.machine_type || "");
+
+        // 显示弹窗
+        editModal.classList.add("open");
+    }
+
+    function wfCloseEdit() {
+        var editModal = document.getElementById("editQuoteModal");
+        if (editModal) editModal.classList.remove("open");
+        _editQuoteData = null;
+    }
+
+    function wfSaveEdit() {
+        if (!_editQuoteData || !_editQuoteData.id) {
+            toast("报价单数据异常，无法保存", "err");
+            return;
+        }
+        var qid = _editQuoteData.id;
+        var btn = document.getElementById("eqSaveBtn");
+        var orig = btn ? btn.textContent : "保存修改";
+        if (btn) { btn.disabled = true; btn.textContent = "保存中…"; }
+
+        var getNum = function(id) {
+            var v = parseFloat((document.getElementById(id) || {}).value);
+            return isNaN(v) ? null : v;
+        };
+        var getStr = function(id) {
+            var v = (document.getElementById(id) || {}).value;
+            return (v === "" || v === null) ? null : v;
+        };
+
+        var payload = {};
+        var t = getNum("eqThickness"), w = getNum("eqWidth"), p = getNum("eqPressStroke");
+        // 有 T/W/P 时才传（用于白盒重算）
+        if (t !== null) payload.thickness = t;
+        if (w !== null) payload.width = w;
+        if (p !== null) payload.press_stroke = p;
+        payload.cavity_count   = parseInt(getNum("eqCavityCount")) || 1;
+        payload.stamping_fee   = getNum("eqStampingFee");
+        payload.surface_fee    = getNum("eqSurfaceFee");
+        payload.treatment_fee  = getNum("eqTreatmentFee");
+        payload.profit_margin = getNum("eqProfitMargin");
+        payload.unit_price_override = getNum("eqUnitPrice");
+        payload.material_cost_override = getNum("eqMatCost");
+        payload.final_price_override = getNum("eqFinalPrice");
+        payload.machine_type  = getStr("eqMachineType");
+
+        // 标记哪些字段被覆盖了
+        var override_fields = [];
+        if (payload.unit_price_override !== null) override_fields.push("unit_price_override");
+        if (payload.material_cost_override !== null) override_fields.push("material_cost_override");
+        if (payload.final_price_override !== null) override_fields.push("final_price_override");
+        payload.override_fields = override_fields;
+
+        sendApiRequest("sales.quote_update", payload, { pathParams: { id: qid } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("修改已保存");
+                    wfCloseEdit();
+                    setTimeout(function () { openDrawer(_currentPartId); }, 800);
+                } else {
+                    throw new Error(d.message || "保存失败");
+                }
+            })
+            .catch(function (e) {
+                console.error("[wfSaveEdit]", e);
+                alert("保存失败：" + (e.message || "网络异常"));
+                toast("保存失败：" + (e.message || "网络异常"), "err");
+            })
+            .finally(function () {
+                if (btn) { btn.disabled = false; btn.textContent = orig; }
+            });
+    }
+
+    // ── 白盒核算面板 ─────────────────────────────────────────
+    // ── 模式选择器 ───────────────────────────────────────────
+    function buildModeSelector(part) {
+        return '<div class="card">' +
+            '<div class="card-title">选择报价模式</div>' +
+            '<p style="font-size:12px;color:#6b7280;margin-bottom:14px;">请为此零件选择报价方式，确认后可随时切换。</p>' +
+            '<div class="mode-selector">' +
+            '<div class="mode-card mode-a" id="modeA" onclick="selectModeCard(\'Associated\')">' +
+            '<div class="mode-card-check">&#x2713;</div>' +
+            '<div class="mode-card-icon">&#x1F504;</div>' +
+            '<div class="mode-card-name">关联参考</div>' +
+            '<div class="mode-card-desc">继承老件图号<br>参考历史单价报价</div>' +
+            "</div>" +
+            '<div class="mode-card mode-b" id="modeB" onclick="selectModeCard(\'Independent\')">' +
+            '<div class="mode-card-check">&#x2713;</div>' +
+            '<div class="mode-card-icon">&#x1F9EE;</div>' +
+            '<div class="mode-card-name">独立核算</div>' +
+            '<div class="mode-card-desc">白盒引擎 T×W×P<br>全新件独立定价</div>' +
+            "</div>" +
+            "</div>" +
+            '<div id="refPartHint" style="display:none;margin-top:12px;background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:12px;">' +
+            '<div style="font-size:12px;font-weight:700;color:#92400e;margin-bottom:8px;">关联件参考定价</div>' +
+            '<div class="form-group"><label class="form-label">输入关联件 ID（数字）</label>' +
+            '<input type="number" class="form-input" id="dwRefPartId" placeholder="例: 1" min="1"></div>' +
+            "</div>" +
+            '<div class="btn-bar">' +
+            '<button class="btn btn-secondary" onclick="closeDrawer()">取消</button>' +
+            '<button class="btn btn-primary" id="confirmModeBtn" onclick="confirmMode(' + part.id + ')" disabled>确认选择</button>' +
+            "</div></div>";
+    }
+
+    function selectModeCard(mode) {
+        var isA = mode === "Associated";
+        var elA = document.getElementById("modeA");
+        var elB = document.getElementById("modeB");
+        if (elA) elA.classList.toggle("selected", isA);
+        if (elB) elB.classList.toggle("selected", !isA);
+        var btn = document.getElementById("confirmModeBtn");
+        if (btn) btn.disabled = false;
+        var hint = document.getElementById("refPartHint");
+        if (hint) hint.style.display = isA ? "" : "none";
+    }
+
+    function confirmMode(partId) {
+        var isAssociated = document.getElementById("modeA") && document.getElementById("modeA").classList.contains("selected");
+        var mode = isAssociated ? "Associated" : "Independent";
+        var refId = null;
+        if (isAssociated) {
+            var refInput = document.getElementById("dwRefPartId");
+            refId = refInput && refInput.value ? parseInt(refInput.value, 10) : null;
+        }
+        sendApiRequest("sales.pricing_mode", {
+            pricing_mode: mode,
+            referenced_part_id: refId
+        }, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("模式已设置为：" + (mode === "Associated" ? "关联参考" : "独立核算"));
+                    setTimeout(function () { openDrawer(partId); }, 600);
+                } else {
+                    toast((d.message || d.error) || "设置失败", "err");
+                }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    // ── 白盒核算面板 ─────────────────────────────────────────
+    function buildWhiteboxPanel(part, calc) {
+        var isOk = calc && !calc.error;
+
+        var totalBox = "";
+        if (isOk) {
+            var isOverride = calc.override_flags && calc.override_flags.indexOf("final_price_override") !== -1;
+            totalBox = '<div class="total-box">' +
+                '<div class="total-lbl">最终总价（含税）</div>' +
+                '<div class="total-val' + (isOverride ? " override" : "") + '">' + (calc.final_price || 0) + ' 元/件</div>' +
+                '<div id="dwChangeBadge" class="change-badge" style="display:none;"></div>' +
+                (isOverride ? '<div class="total-tag">人工覆盖</div>' : "") +
+                "</div>";
+        } else {
+            totalBox = '<div style="padding:14px;text-align:center;color:#9ca3af;font-size:13px;background:#f9fafb;border-radius:10px;margin-bottom:12px;">' +
+                escHtml(calc && calc.error ? calc.error : "T/W/P 参数未设置，无法进行白盒核算。") +
+                "</div>";
+        }
+
+        var steps = "";
+        if (isOk) {
+            var gwTip = (calc.formula_display && calc.formula_display.gross_weight)
+                ? calc.formula_display.gross_weight.detail : (calc.used_formula || "");
+            var ncTip = (calc.formula_display && calc.formula_display.material_net_cost)
+                ? calc.formula_display.material_net_cost.detail : "";
+
+            steps += dwCalcStep("毛重（g）", "T × W × P × 密度 ÷ 1000",
+                (calc.gross_weight || 0) + " g",
+                false,
+                gwTip);
+
+            steps += dwCalcStep("净重（g）", "毛重 × (利用率 ÷ 100)",
+                (calc.net_weight || 0) + " g", false, "");
+
+            steps += dwCalcStep("废料重量（g）", "毛重 − 净重",
+                (calc.scrap_weight || 0) + " g", false, "");
+
+            var utilVal = calc.material_utilization != null ? calc.material_utilization : 0;
+            var utilTip = (calc.formula_display && calc.formula_display.material_utilization)
+                ? calc.formula_display.material_utilization.detail : "";
+            steps += dwCalcStep("材料利用率", "用户手动输入",
+                utilVal.toFixed(2) + "%", false, utilTip);
+
+            steps += dwCalcStep("材料单价", "来自材料参数中心",
+                (calc.unit_price || 0) + " 元/kg", false,
+                "材料：" + (part.material_name || "") + "\n密度：" + (calc.density || "") + " g/cm\u00B3\n单价：" + (calc.unit_price || "") + " 元/kg\n废料回收：" + (calc.scrap_price || "") + " 元/kg");
+
+            steps += dwCalcStep("废料回收价", "来自材料参数中心", (calc.scrap_price || 0) + " 元/kg", false, "");
+
+            steps += dwCalcStep("材料净成本", "(净重÷1000×单价) − (废料÷1000×回收价)",
+                (calc.material_net_cost || 0) + " 元",
+                calc.override_flags && calc.override_flags.indexOf("material_net_cost_override") !== -1,
+                ncTip);
+
+            if (part.stamping_fee > 0) {
+                steps += dwCalcStep("冲压费", "", (part.stamping_fee || 0) + " 元/件", false, "");
+            }
+            if (part.surface_fee > 0) {
+                steps += dwCalcStep("表面处理费", "", (part.surface_fee || 0) + " 元/件", false, "");
+            }
+        }
+
+        return '<div class="card">' +
+            '<div class="card-title">白盒报价核算明细</div>' +
+            '<div class="calc-panel">' +
+            '<div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">&#x2139; 鼠标悬停数值查看计算公式</div>' +
+            steps + totalBox +
+            "</div>" +
+            buildOverrideSection(part) +
+            '<div class="btn-bar">' +
+            '<button class="btn btn-secondary" onclick="closeDrawer()">关闭</button>' +
+            '<button class="btn btn-primary" onclick="dwSaveOverrides(' + part.id + ')">保存覆盖值</button>' +
+            "</div></div>";
+    }
+
+    function dwCalcStep(label, subLabel, val, isOverride, tip) {
+        var overrideCls = isOverride ? " override" : "";
+        var tipHtml = tip ? '<div class="calc-tip">' + escHtml(tip) + "</div>" : "";
+        return '<div class="calc-step">' +
+            '<div><div class="calc-lbl">' + escHtml(label) + "</div>" +
+            (subLabel ? '<div class="calc-lbl-sm">' + escHtml(subLabel) + "</div>" : "") +
+            "</div>" +
+            '<div class="calc-val' + overrideCls + '">' + escHtml(val) + tipHtml + "</div>" +
+            "</div>";
+    }
+
+    function buildOverrideSection(part) {
+        return '<div class="override-legend"><div class="override-dot"></div><span>蓝色数值 = 已手动覆盖</span></div>' +
+            '<div class="override-section">' +
+            '<div class="override-title">手动覆盖报价参数</div>' +
+            '<div class="form-row">' +
+            '<div class="form-group"><label class="form-label">毛重（g）</label>' +
+            '<input type="number" class="form-input" id="dwOvGw" step="0.001" ' +
+            'value="' + escAttr(part.gross_weight || "") + '" placeholder="自动值" ' +
+            'oninput="markBlue(this)"></div>' +
+            '<div class="form-group"><label class="form-label">材料净成本覆盖（元）</label>' +
+            '<input type="number" class="form-input" id="dwOvMat" step="0.0001" ' +
+            'value="' + escAttr(part.material_net_cost_override || "") + '" placeholder="留空用自动值" ' +
+            'oninput="markBlue(this)"></div>' +
+            "</div>" +
+            '<div class="form-row single">' +
+            '<div class="form-group">' +
+            '<label class="form-label">最终总价覆盖（元/件）</label>' +
+            '<div style="display:flex;align-items:center;gap:6px;">' +
+            '<input type="number" class="form-input" id="dwOvFinal" step="0.0001" ' +
+            'value="' + escAttr(part.final_price_override || "") + '" placeholder="留空用自动值" ' +
+            'oninput="markBlue(this); onDwFinalInput(this)">' +
+            '<span class="pct-hint" id="dwFinalPctB" style="display:none;"></span>' +
+            "</div>" +
+            '<div class="form-hint blue">蓝色 = 人工覆盖，右侧显示变动百分比</div>' +
+            "</div></div></div>";
+    }
+
+    // ── TWP 快速设置 ─────────────────────────────────────────
+    function buildTwpsetup(part) {
+        return '<div class="twp-setup">' +
+            '<div class="twp-setup-title">T/W/P 物理参数尚未设置</div>' +
+            '<div class="twp-setup-row">' +
+            '<div class="form-group"><label class="form-label">厚度 T (mm)</label>' +
+            '<input type="number" class="form-input" id="dwSetT" step="0.001" ' +
+            'value="' + escAttr(part.thickness || "") + '" placeholder="例: 2.0"></div>' +
+            '<div class="form-group"><label class="form-label">宽度 W (mm)</label>' +
+            '<input type="number" class="form-input" id="dwSetW" step="0.01" ' +
+            'value="' + escAttr(part.width || "") + '" placeholder="例: 50"></div>' +
+            '<div class="form-group"><label class="form-label">冲程 P (mm)</label>' +
+            '<input type="number" class="form-input" id="dwSetP" step="1" ' +
+            'value="' + escAttr(part.press_stroke || "") + '" placeholder="例: 100"></div>' +
+            "</div>" +
+            '<button class="btn btn-primary" style="width:100%;" onclick="dwSaveTwp(' + part.id + ')">保存 T/W/P 并重新计算</button>' +
+            "</div>";
+    }
+
+    function dwSaveTwp(partId) {
+        var t = parseFloat(document.getElementById("dwSetT").value);
+        var w = parseFloat(document.getElementById("dwSetW").value);
+        var p = parseFloat(document.getElementById("dwSetP").value);
+        if (!t || !w || !p) { toast("请填写完整的 T、W、P 值", "err"); return; }
+        sendApiRequest("sales.part_override", {
+            override_fields: [],
+            gross_weight: null,
+            material_net_cost_override: null,
+            final_price_override: null,
+            _twp: { thickness: t, width: w, press_stroke: p }
+        }, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) { openDrawer(partId); }
+                else { toast((d.message || d.error) || "保存失败", "err"); }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    // ── 样件判定 ─────────────────────────────────────────────
+    function buildSampleJudgment(part, quote) {
+        // 若报价单已非草稿，锁定样件判定
+        var status = part.sample_judgment_status || "pending";
+        var cls   = "pending";
+        var title = "待判定 — 样件结果尚未确认";
+        if (status === "approved") { cls = "approved"; title = "样件已通过"; }
+        if (status === "rejected")  { cls = "rejected";  title = "样件未通过（已解绑，将重新核算）"; }
+
+        var btns = "";
+        var quoteStatus = (quote && quote.approval_status) ? quote.approval_status : "DRAFT";
+        var isLocked = quoteStatus === "APPROVED" || quoteStatus === "PENDING_BOSS";
+
+        if (isLocked) {
+            btns = '<span style="font-size:12px;color:#9ca3af;">报价单' + buildStatusBadge(quoteStatus) + '，暂不可判定</span>';
+        } else if (status !== "approved") {
+            btns = '<button class="btn btn-green" onclick="dwSubmitJudge(\'approved\',' + part.id + ')">样件通过</button>' +
+                   '<button class="btn btn-red"   onclick="dwSubmitJudge(\'rejected\','  + part.id + ')">样件不通过</button>';
+        }
+        var unbindBtn = "";
+        if (part.pricing_mode === "Associated" && !isLocked) {
+            unbindBtn = '<button class="btn btn-purple" onclick="dwUnbind(' + part.id + ')">解绑 → 转入路径B</button>';
+        } else if (part.pricing_mode === "Associated") {
+            unbindBtn = '<span style="font-size:12px;color:#9ca3af;">报价单' + buildStatusBadge(quoteStatus) + '，暂不可解绑</span>';
+        }
+
+        return '<div class="card">' +
+            '<div class="card-title">样件判定</div>' +
+            '<div class="judgment-box ' + cls + '">' +
+            '<div class="judgment-title">' + title + '</div>' +
+            '<div class="btn-row">' + btns + unbindBtn + '</div>' +
+            "</div></div>";
+    }
+
+    function buildModeSwitchBtn(part) {
+        if (part.pricing_mode === "Associated") {
+            return '<div style="text-align:center;margin-top:8px;">' +
+                '<button class="btn btn-secondary" style="font-size:12px;" onclick="dwSwitchToIndependent(' + part.id + ')">切换为独立核算（路径B）&#x2192;</button>' +
+                "</div>";
+        }
+        if (part.pricing_mode === "Independent") {
+            return '<div style="text-align:center;margin-top:8px;">' +
+                '<button class="btn btn-secondary" style="font-size:12px;" onclick="dwSwitchToAssociated(' + part.id + ')">&#x2190; 切换为关联参考（路径A）</button>' +
+                "</div>";
+        }
+        return "";
+    }
+
+    // ── 调价百分比 ───────────────────────────────────────────
+    function onDwFinalInput(el) {
+        var pctEl = el.parentElement.querySelector(".pct-hint") || document.getElementById("dwFinalPct") || document.getElementById("dwFinalPctB");
+        if (!pctEl) return;
+        var val  = parseFloat(el.value);
+        var base = (_origCalc && _origCalc.base_auto_total) ? _origCalc.base_auto_total
+            : ((_origCalc && _origCalc.final_price) ? _origCalc.final_price : null);
+        if (!val || !base) {
+            pctEl.textContent = "";
+            pctEl.className   = "pct-hint";
+            return;
+        }
+        var pct = ((val - base) / base * 100).toFixed(1);
+        pctEl.textContent = (pct >= 0 ? "&#x2191; " : "&#x2193; ") + Math.abs(pct) + "%";
+        pctEl.className   = "pct-hint " + (pct >= 0 ? "up" : "down");
+        pctEl.style.display = "inline-block";
+    }
+
+    function markBlue(el) {
+        if (el.value) el.classList.add("blue");
+        else el.classList.remove("blue");
+    }
+
+    // ── 保存覆盖值 ───────────────────────────────────────────
+    function dwSaveOverrides(partId) {
+        var gwEl = document.getElementById("dwOvGw");
+        var mcEl = document.getElementById("dwOvMat");
+        var fpEl = document.getElementById("dwFinalPrice") || document.getElementById("dwOvFinal");
+
+        var gwVal = (gwEl && gwEl.value) ? parseFloat(gwEl.value) : null;
+        var mcVal = (mcEl && mcEl.value) ? parseFloat(mcEl.value) : null;
+        var fpVal = (fpEl && fpEl.value) ? parseFloat(fpEl.value) : null;
+
+        var fields = [];
+        if (gwVal !== null) fields.push("gross_weight");
+        if (mcVal !== null) fields.push("material_net_cost_override");
+        if (fpVal !== null) fields.push("final_price_override");
+
+        if (fields.length === 0) { toast("请至少填写一项覆盖值", "err"); return; }
+
+        sendApiRequest("sales.part_override", {
+            override_fields: fields,
+            gross_weight: gwVal,
+            material_net_cost_override: mcVal,
+            final_price_override: fpVal
+        }, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("保存成功");
+                    setTimeout(function () { openDrawer(partId); }, 700);
+                } else {
+                    toast((d.message || d.error) || "保存失败", "err");
+                }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    // ── 样件判定 ─────────────────────────────────────────────
+    function dwSubmitJudge(status, partId) {
+        if (!confirm("确认提交样件判定【" + (status === "approved" ? "通过" : "不通过") + "】？")) return;
+        sendApiRequest("sales.sample_judgment", { status: status }, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("判定已提交");
+                    setTimeout(function () { openDrawer(partId); }, 700);
+                } else {
+                    toast((d.message || d.error) || "提交失败", "err");
+                }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    // ── 解绑 ─────────────────────────────────────────────────
+    function dwUnbind(partId) {
+        if (!confirm("确认解绑？\n\n此操作将：\n① 清除关联老件号\n② 切换为路径B独立白盒核算\n③ 清除手动输入的最终总价")) return;
+        sendApiRequest("sales.part_unbind", {}, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) {
+                    toast("解绑成功，已转入路径B");
+                    setTimeout(function () { openDrawer(partId); }, 900);
+                } else {
+                    toast((d.message || d.error) || "解绑失败", "err");
+                }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    // ── 模式切换快捷 ─────────────────────────────────────────
+    function dwSwitchToIndependent(partId) {
+        sendApiRequest("sales.pricing_mode", { pricing_mode: "Independent", referenced_part_id: null }, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) { openDrawer(partId); }
+                else { toast((d.message || d.error) || "切换失败", "err"); }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    function dwSwitchToAssociated(partId) {
+        var refInput = document.getElementById("dwRefPartId");
+        var refId    = (refInput && refInput.value) ? parseInt(refInput.value, 10) : null;
+        sendApiRequest("sales.pricing_mode", { pricing_mode: "Associated", referenced_part_id: refId }, { pathParams: { id: partId } })
+            .then(function (d) {
+                if (d.code === 200) { openDrawer(partId); }
+                else { toast((d.message || d.error) || "切换失败，请先填写关联件 ID", "err"); }
+            })
+            .catch(function () { toast("网络错误", "err"); });
+    }
+
+    // ── 工具函数 ─────────────────────────────────────────────
+    function escHtml(str) {
+        if (str === null || str === undefined) return "";
+        return String(str).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+    function escAttr(str) {
+        if (str === null || str === undefined) return "";
+        return String(str).replace(/"/g, "&quot;");
+    }
+
+    // ── 关键：将所有被 onclick 调用的函数暴露到全局 ────────────
+    window.openDrawer         = openDrawer;
+    window.closeDrawer       = closeDrawer;
+    window.handleOverlayClick = handleOverlayClick;
+    window.renderDrawerContent = renderDrawerContent;
+    window.buildModeSelector  = buildModeSelector;
+    window.selectModeCard    = selectModeCard;
+    window.confirmMode       = confirmMode;
+    window.buildWhiteboxPanel = buildWhiteboxPanel;
+    window.dwCalcStep        = dwCalcStep;
+    window.buildOverrideSection = buildOverrideSection;
+    window.buildTwpsetup     = buildTwpsetup;
+    window.dwSaveTwp         = dwSaveTwp;
+    window.buildSampleJudgment = buildSampleJudgment;
+    window.buildModeSwitchBtn = buildModeSwitchBtn;
+    window.onDwFinalInput    = onDwFinalInput;
+    window.markBlue           = markBlue;
+    window.dwSaveOverrides   = dwSaveOverrides;
+    window.dwSubmitJudge     = dwSubmitJudge;
+    window.dwUnbind          = dwUnbind;
+    window.dwSwitchToIndependent = dwSwitchToIndependent;
+    window.dwSwitchToAssociated  = dwSwitchToAssociated;
+    window.toast             = toast;
+    // ── 报价工作流（新增）───────────────────────────────
+    window.buildStatusBadge = buildStatusBadge;
+    window.buildWorkflowCard = buildWorkflowCard;
+    window.lockUIByStatus  = lockUIByStatus;
+    window.wfSubmit        = wfSubmit;
+    window.wfDelete        = wfDelete;
+    window.wfApprove       = wfApprove;
+    window.wfReject        = wfReject;
+    // ── 快速修改 ────────────────────────────────────
+    window.wfOpenEdit     = wfOpenEdit;
+    window.wfCloseEdit    = wfCloseEdit;
+    window.wfSaveEdit     = wfSaveEdit;
+})();
+</script>
+</body>
+</html>

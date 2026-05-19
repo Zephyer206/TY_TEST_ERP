@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>文员补录工作台 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f8fafc; min-height: 100vh; }
+
+        /* ── 顶部导航 ── */
+        .page-wrap { max-width: 800px; margin: 0 auto; padding: 20px 16px 60px; }
+
+        /* ── 页头 ── */
+        .page-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 4px; }
+        .page-sub   { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+        /* ── 表单卡片 ── */
+        .form-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+            margin-bottom: 20px;
+        }
+        .card-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #374151;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f3f4f6;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* ── 警告 Banner ── */
+        .warn-banner {
+            background: #fff7ed;
+            border: 2px solid #fb923c;
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 14px;
+            display: none;
+        }
+        .warn-banner.show { display: block; }
+        .warn-banner-title {
+            font-size: 14px;
+            font-weight: 800;
+            color: #c2410c;
+            margin-bottom: 4px;
+        }
+        .warn-banner-body {
+            font-size: 13px;
+            color: #9a3412;
+            line-height: 1.5;
+        }
+        .warn-banner-body strong { font-weight: 800; }
+
+        /* ── 错误 Banner ── */
+        .err-banner {
+            background: #fef2f2;
+            border: 2px solid #fca5a5;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #dc2626;
+            margin-bottom: 12px;
+            display: none;
+        }
+        .err-banner.show { display: block; }
+
+        /* ── 零件选择区 ── */
+        .part-select-wrap { display: flex; gap: 10px; margin-bottom: 16px; }
+        .part-select {
+            flex: 1;
+            padding: 14px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #111827;
+            background: #f9fafb;
+            outline: none;
+            cursor: pointer;
+        }
+        .part-select:focus { border-color: #0891b2; background: white; }
+        .btn-reset {
+            padding: 12px 16px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 12px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #374151;
+            cursor: pointer;
+        }
+
+        /* ── 参考数提示条 ── */
+        .ref-bar {
+            background: #eff6ff;
+            border: 1.5px solid #bfdbfe;
+            border-radius: 10px;
+            padding: 10px 14px;
+            font-size: 13px;
+            color: #1e40af;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            min-height: 44px;
+        }
+        .ref-bar.hidden { display: none; }
+        .ref-num { font-size: 18px; font-weight: 900; color: #1d4ed8; }
+
+        /* ── 日期行 ── */
+        .form-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .form-label {
+            font-size: 14px;
+            font-weight: 700;
+            color: #374151;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        .form-input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            color: #111827;
+            background: #f9fafb;
+            outline: none;
+        }
+        .form-input:focus { border-color: #0891b2; background: white; }
+        .form-input.large { font-size: 20px; font-weight: 800; text-align: center; }
+
+        /* ── 数字三格 ── */
+        .qty-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .qty-cell {
+            background: #f9fafb;
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 14px 10px;
+            text-align: center;
+        }
+        .qty-cell.lbl {
+            background: #f0f9ff;
+            border-color: #bae6fd;
+        }
+        .qty-cell-title { font-size: 11px; font-weight: 700; color: #64748b; margin-bottom: 6px; }
+        .qty-cell-val   { font-size: 22px; font-weight: 900; color: #0f172a; }
+        .qty-cell-val input {
+            width: 100%;
+            border: none;
+            background: transparent;
+            font-size: 22px;
+            font-weight: 900;
+            color: #0f172a;
+            text-align: center;
+            outline: none;
+        }
+        .qty-cell-val input:focus { color: #0891b2; }
+        .qty-cell-val input::placeholder { color: #d1d5db; font-weight: 400; }
+
+        /* ── 不良品原因 ── */
+        .bad-reason-wrap { margin-bottom: 14px; }
+        .bad-select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #111827;
+            background: #f9fafb;
+            outline: none;
+        }
+        .bad-select:focus { border-color: #0891b2; background: white; }
+
+        /* ── 全额发货勾选 ── */
+        .ship-all-wrap {
+            background: #f0fdf4;
+            border: 2px solid #bbf7d0;
+            border-radius: 12px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+        .ship-all-wrap input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #16a34a; }
+        .ship-all-text { font-size: 14px; font-weight: 700; color: #15803d; }
+        .ship-all-sub  { font-size: 12px; color: #16a34a; opacity: 0.8; }
+
+        /* ── 发货数量行 ── */
+        .ship-qty-row { margin-bottom: 14px; }
+
+        /* ── 箱号车牌 ── */
+        .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+
+        /* ── 备注 ── */
+        .remark-input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #111827;
+            background: #f9fafb;
+            outline: none;
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+        .remark-input:focus { border-color: #0891b2; background: white; }
+
+        /* ── 提交按钮 ── */
+        .btn-submit {
+            width: 100%;
+            padding: 18px;
+            background: #0891b2;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            font-size: 18px;
+            font-weight: 800;
+            cursor: pointer;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 16px rgba(8,145,178,0.35);
+            transition: background 0.15s, transform 0.1s;
+        }
+        .btn-submit:hover  { background: #0e7490; }
+        .btn-submit:active { transform: scale(0.98); background: #155e75; }
+        .btn-submit:disabled { background: #94a3b8; cursor: not-allowed; box-shadow: none; }
+
+        /* ── 强制提交（仅 admin Lv.9）── */
+        .btn-force {
+            width: 100%;
+            padding: 14px;
+            background: #7c3aed;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
+            display: none;
+        }
+        .btn-force.show { display: block; }
+        .btn-force:hover { background: #6d28d9; }
+
+        /* ── 待检参考列表 ── */
+        .ref-list-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: #64748b;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .ref-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .ref-item:hover { background: #eff6ff; }
+        .ref-item-pn { font-size: 14px; font-weight: 700; color: #0f172a; }
+        .ref-item-name { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+        .ref-item-qty { font-size: 18px; font-weight: 900; color: #0891b2; }
+
+        /* ── 历史记录 ── */
+        .history-section { margin-top: 8px; }
+        .hist-title { font-size: 13px; font-weight: 700; color: #64748b; margin-bottom: 10px; text-transform: uppercase; }
+        .hist-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 10px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            font-size: 13px;
+        }
+        .hist-pn { font-weight: 700; color: #0f172a; min-width: 80px; }
+        .hist-detail { color: #374151; flex: 1; }
+        .hist-time { color: #9ca3af; font-size: 11px; }
+
+        /* ── 加载动画 ── */
+        .loading-dots::after {
+            content: '...';
+            animation: dots 1.2s infinite;
+        }
+        @keyframes dots {
+            0%,20% { content: '.'; }
+            40% { content: '..'; }
+            60%,100% { content: '...'; }
+        }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+
+<div class="page-wrap">
+
+    <div class="page-title">包装发货文员补录</div>
+    <div class="page-sub">线下手工单据 → PC 端录入，实时更新全局进度看板</div>
+
+    <!-- ── 主要录入表单 ── -->
+    <div class="form-card">
+        <div class="card-title">📝 录入信息</div>
+
+        <!-- 错误 Banner -->
+        <div id="errBanner" class="err-banner"></div>
+
+        <!-- 警告 Banner（对账异常） -->
+        <div id="warnBanner" class="warn-banner">
+            <div class="warn-banner-title">⚠️ 对账警告</div>
+            <div class="warn-banner-body" id="warnBody"></div>
+        </div>
+
+        <!-- 零件选择 -->
+        <div class="form-row" style="margin-bottom:12px;">
+            <label class="form-label">零件</label>
+            <select id="partSelect" class="part-select" onchange="onPartChange()">
+                <option value="">— 请选择零件 —</option>
+                {% for p in all_parts %}
+                <option value="{{ p.id }}"
+                        data-pn="{{ p.part_number }}"
+                        data-name="{{ p.internal_name }}">
+                    {{ p.part_number }} / {{ p.internal_name }}
+                </option>
+                {% endfor %}
+            </select>
+            <button class="btn-reset" onclick="resetForm()">重置</button>
+        </div>
+
+        <!-- 参考提示条（实时从 API 获取） -->
+        <div id="refBar" class="ref-bar hidden">
+            <span>🔍 参考：零件 <strong id="refPn"></strong> 作业日期 <strong id="refDate"></strong> 当日生产报工</span>
+            <span class="ref-num" id="refQty">—</span>
+            <span>件</span>
+        </div>
+
+        <!-- 日期（禁止选择未来日期） -->
+        <div class="form-row">
+            <label class="form-label">作业日期</label>
+            <input type="date" id="dateStr" class="form-input"
+                   max="" value="" onchange="onDateChange()">
+        </div>
+
+        <!-- 全检三格：合格 / 报废 / 合格品发货 -->
+        <div class="qty-grid">
+            <div class="qty-cell lbl">
+                <div class="qty-cell-title">合格数</div>
+            </div>
+            <div class="qty-cell lbl">
+                <div class="qty-cell-title">报废数</div>
+            </div>
+            <div class="qty-cell lbl">
+                <div class="qty-cell-title">合格品发货</div>
+            </div>
+            <div class="qty-cell-val">
+                <input type="number" id="qtyGood" placeholder="0" min="0" value=""
+                       oninput="onQtyGoodChange()">
+            </div>
+            <div class="qty-cell-val">
+                <input type="number" id="qtyBad" placeholder="0" min="0" value="0"
+                       oninput="onBadChange()">
+            </div>
+            <div class="qty-cell-val">
+                <input type="number" id="qtyShip" placeholder="0" min="0" value="0">
+            </div>
+        </div>
+
+        <!-- 不良原因（报废数>0时显示） -->
+        <div id="badReasonWrap" class="bad-reason-wrap" style="display:none;">
+            <select id="badReason" class="bad-select">
+                <option value="">— 选择不良原因 —</option>
+                <option>外观缺陷</option>
+                <option>尺寸超差</option>
+                <option>功能不良</option>
+                <option>包装破损</option>
+                <option>材料问题</option>
+                <option>其他</option>
+            </select>
+        </div>
+
+        <!-- 全额发货勾选 -->
+        <div class="ship-all-wrap" onclick="toggleShipAll()">
+            <input type="checkbox" id="shipAllCheck">
+            <div>
+                <div class="ship-all-text">☑️ 全额发货</div>
+                <div class="ship-all-sub">勾选后发货数自动等于合格数</div>
+            </div>
+        </div>
+
+        <!-- 箱号车牌 -->
+        <div class="two-col">
+            <div>
+                <div class="form-label" style="margin-bottom:4px;">箱号</div>
+                <input type="text" id="boxNo" class="form-input" placeholder="例：BOX-001" style="margin-bottom:0;">
+            </div>
+            <div>
+                <div class="form-label" style="margin-bottom:4px;">车牌号</div>
+                <input type="text" id="vehicleNo" class="form-input" placeholder="例：沪A12345" style="margin-bottom:0;">
+            </div>
+        </div>
+
+        <!-- 备注 -->
+        <textarea id="remark" class="remark-input" placeholder="备注（选填）" rows="2"></textarea>
+
+        <!-- 提交按钮 -->
+        <div style="margin-top:20px;">
+            <button class="btn-submit" id="btnSubmit" onclick="doSubmit(false)">✅ 提交录入</button>
+            <!-- 强制提交按钮（仅 admin Lv.9 显示） -->
+            <button class="btn-force" id="btnForce" onclick="doSubmit(true)">
+                ⚡ 强制提交（超出对账数量，管理员确认无误）
+            </button>
+        </div>
+    </div>
+
+    <!-- ── 待检参考列表 ── -->
+    {% if pending_parts %}
+    <div class="form-card">
+        <div class="card-title">🔍 已生产未全检参考（今日）</div>
+        <div class="ref-list-title">点击零件可自动填入</div>
+        {% for p in pending_parts %}
+        <div class="ref-item" onclick="selectPart('{{ p.id }}')">
+            <div>
+                <div class="ref-item-pn">{{ p.part_number }}</div>
+                <div class="ref-item-name">{{ p.internal_name }}</div>
+            </div>
+            <div>
+                <div class="ref-item-qty">{{ p.not_inspected }}</div>
+                <div style="font-size:10px; color:#9ca3af; text-align:right;">待检件</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+</div>
+
+<!-- 隐藏表单（用于提交） -->
+<form id="mainForm" action="/pkg/entry" method="post" style="display:none;">
+    <input name="part_id"      id="f-part_id">
+    <input name="date_str"     id="f-date_str">
+    <input name="qty_good"     id="f-qty_good">
+    <input name="qty_bad"      id="f-qty_bad">
+    <input name="bad_reason"   id="f-bad_reason">
+    <input name="qty_ship"     id="f-qty_ship">
+    <input name="box_no"       id="f-box_no">
+    <input name="vehicle_no"  id="f-vehicle_no">
+    <input name="remark"       id="f-remark">
+    <input name="force_submit" id="f-force_submit" value="0">
+</form>
+
+<script>
+// ── 全局状态 ──────────────────────────────────────────────────────────
+var userRoleLevel = {{ user.role_level }};
+var userDept = "{{ user.department }}";
+
+// 默认日期设为今天，并设置 max 属性禁止选未来
+(function initDate() {
+    var today = new Date().toISOString().slice(0, 10);
+    var dateInput = document.getElementById('dateStr');
+    dateInput.value = today;
+    dateInput.max = today;   // HTML5 date picker 禁止选未来
+})();
+
+// 参考数据（从 pending_parts 构建）
+var pendingData = {};
+{% for p in pending_parts %}
+pendingData['{{ p.id }}'] = { not_inspected: {{ p.not_inspected }}, pn: '{{ p.part_number }}' };
+{% endfor %}
+
+// ── 零件切换 ────────────────────────────────────────────────────────
+function onPartChange() {
+    var sel  = document.getElementById('partSelect');
+    var pid  = sel.value;
+    var refBar = document.getElementById('refBar');
+
+    if (pid && pendingData[pid]) {
+        document.getElementById('refPn').textContent = pendingData[pid].pn;
+        refBar.classList.remove('hidden');
+    } else {
+        refBar.classList.add('hidden');
+    }
+    fetchReconciliation();
+}
+
+function selectPart(partId) {
+    document.getElementById('partSelect').value = partId;
+    onPartChange();
+}
+
+// ── 日期变更 → 触发实时对账 API ─────────────────────────────────────
+function onDateChange() {
+    fetchReconciliation();
+}
+
+// ── 实时对账 API ────────────────────────────────────────────────────
+function fetchReconciliation() {
+    var pid = document.getElementById('partSelect').value;
+    var dateStr = document.getElementById('dateStr').value;
+
+    document.getElementById('refPn').textContent = '—';
+    document.getElementById('refQty').textContent = '—';
+    document.getElementById('refDate').textContent = dateStr || '—';
+    document.getElementById('refBar').classList.remove('hidden');
+
+    if (!pid || !dateStr) return;
+
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', '/api/pkg/reconciliation?part_id=' + encodeURIComponent(pid) + '&date_str=' + encodeURIComponent(dateStr), true);
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                var data = JSON.parse(xhr.responseText);
+                document.getElementById('refQty').textContent = data.production_total;
+            } catch(e) {
+                document.getElementById('refQty').textContent = '—';
+            }
+        }
+    };
+    xhr.onerror = function() {
+        document.getElementById('refQty').textContent = '—';
+    };
+    xhr.send();
+}
+
+// ── 合格数变更 → 触发对账警告 ─────────────────────────────────────
+function onQtyGoodChange() {
+    var pid = document.getElementById('partSelect').value;
+    var dateStr = document.getElementById('dateStr').value;
+    var qtyGood = parseInt(document.getElementById('qtyGood').value) || 0;
+    var prodTotal = parseInt(document.getElementById('refQty').textContent) || 0;
+
+    var warnBanner = document.getElementById('warnBanner');
+    var warnBody = document.getElementById('warnBody');
+    var btnForce = document.getElementById('btnForce');
+
+    if (qtyGood > 0 && prodTotal > 0 && qtyGood > prodTotal) {
+        warnBody.innerHTML = '录入合格数 <strong>' + qtyGood + '</strong> 件，超过当日生产报工总数 <strong>' + prodTotal + '</strong> 件，请核实手工单是否有误！<br>如确认无误，可点击下方「强制提交」。';
+        warnBanner.classList.add('show');
+        // admin Lv.9 可强制提交
+        if (userRoleLevel >= 9) {
+            btnForce.classList.add('show');
+        }
+    } else {
+        warnBanner.classList.remove('show');
+        btnForce.classList.remove('show');
+    }
+}
+
+function onBadChange() {
+    var bad = parseInt(document.getElementById('qtyBad').value) || 0;
+    document.getElementById('badReasonWrap').style.display = bad > 0 ? 'block' : 'none';
+}
+
+function toggleShipAll() {
+    var cb   = document.getElementById('shipAllCheck');
+    var good = parseInt(document.getElementById('qtyGood').value) || 0;
+    cb.checked = !cb.checked;
+    document.getElementById('qtyShip').value = cb.checked ? good : 0;
+}
+
+// 实时同步全额发货
+document.getElementById('qtyGood').addEventListener('input', function() {
+    if (document.getElementById('shipAllCheck').checked) {
+        document.getElementById('qtyShip').value = this.value;
+    }
+    onQtyGoodChange();
+});
+
+// ── 提交 ─────────────────────────────────────────────────────────────
+function doSubmit(force) {
+    var err = document.getElementById('errBanner');
+    err.classList.remove('show');
+
+    var pid       = document.getElementById('partSelect').value;
+    var dateStr   = document.getElementById('dateStr').value;
+    var qtyGood   = parseInt(document.getElementById('qtyGood').value) || 0;
+    var qtyBad    = parseInt(document.getElementById('qtyBad').value)  || 0;
+    var qtyShip   = parseInt(document.getElementById('qtyShip').value) || 0;
+    var badRsn    = document.getElementById('badReason').value;
+    var boxNo     = document.getElementById('boxNo').value;
+    var vehicleNo = document.getElementById('vehicleNo').value;
+    var remark    = document.getElementById('remark').value;
+
+    // 基本校验
+    if (!pid)    { err.textContent = '请先选择零件'; err.classList.add('show'); return; }
+    if (!dateStr){ err.textContent = '请填写作业日期'; err.classList.add('show'); return; }
+
+    // 前端日期防错（双重保险）
+    var selectedDate = new Date(dateStr);
+    var today2 = new Date();
+    today2.setHours(23, 59, 59, 999);
+    if (selectedDate > today2) {
+        err.textContent = '作业日期不能选择未来日期，请重新选择';
+        err.classList.add('show');
+        return;
+    }
+
+    if (qtyGood < 0 || qtyBad < 0 || qtyShip < 0) {
+        err.textContent = '数量不能为负数';
+        err.classList.add('show');
+        return;
+    }
+    if (qtyGood === 0 && qtyBad === 0) {
+        err.textContent = '合格数和报废数不能同时为 0';
+        err.classList.add('show');
+        return;
+    }
+    if (qtyBad > 0 && !badRsn) {
+        err.textContent = '有报废时必须选择不良原因';
+        err.classList.add('show');
+        return;
+    }
+
+    // 填充隐藏表单
+    document.getElementById('f-part_id').value      = pid;
+    document.getElementById('f-date_str').value     = dateStr;
+    document.getElementById('f-qty_good').value     = qtyGood;
+    document.getElementById('f-qty_bad').value       = qtyBad;
+    document.getElementById('f-bad_reason').value    = badRsn;
+    document.getElementById('f-qty_ship').value     = qtyShip;
+    document.getElementById('f-box_no').value       = boxNo;
+    document.getElementById('f-vehicle_no').value   = vehicleNo;
+    document.getElementById('f-remark').value       = remark;
+    document.getElementById('f-force_submit').value  = force ? '1' : '0';
+
+    document.getElementById('mainForm').submit();
+}
+
+function resetForm() {
+    document.getElementById('partSelect').value = '';
+    var today = new Date().toISOString().slice(0, 10);
+    document.getElementById('dateStr').value = today;
+    document.getElementById('qtyGood').value  = '';
+    document.getElementById('qtyBad').value   = '0';
+    document.getElementById('qtyShip').value  = '0';
+    document.getElementById('badReason').value = '';
+    document.getElementById('boxNo').value     = '';
+    document.getElementById('vehicleNo').value = '';
+    document.getElementById('remark').value     = '';
+    document.getElementById('shipAllCheck').checked = false;
+    document.getElementById('badReasonWrap').style.display = 'none';
+    document.getElementById('refBar').classList.add('hidden');
+    document.getElementById('errBanner').classList.remove('show');
+    document.getElementById('warnBanner').classList.remove('show');
+    document.getElementById('btnForce').classList.remove('show');
+}
+
+// Enter 快捷提交
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') {
+        doSubmit(false);
+    }
+});
+</script>
+</body>
+</html>

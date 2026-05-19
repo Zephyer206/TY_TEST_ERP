@@ -1,0 +1,64 @@
+{# _admin_nav.html - 统一顶部导航栏（带视图切换器）#}
+{# 全模板统一引用此文件，避免重复 topbar 代码 #}
+{# 仅 Level 9 超级管理员可见视图切换下拉菜单 #}
+{% if user.is_superadmin %}
+<style>
+.topbar-view-switcher {
+    position: relative;
+    display: inline-block;
+}
+.topbar-view-switcher select {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 6px;
+    padding: 2px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    outline: none;
+}
+.topbar-view-switcher select option {
+    background: #1e3a5f;
+    color: #fff;
+}
+</style>
+{% endif %}
+
+<header class="topbar">
+    <div class="topbar-brand">TY_Cloud_ERP</div>
+    <div class="topbar-info">
+        {# ── 视图切换器（仅 Level 9 可见）────────────────────── #}
+        {% if user.is_superadmin %}
+        <div class="topbar-view-switcher" title="视图切换：以其他部门身份查看 UI（不影响实际权限）">
+            <form id="viewSwitcher" action="/admin/switch-view" method="get" style="margin:0;">
+                <select name="dept" onchange="document.getElementById('viewSwitcher').submit();">
+                    <option value="">── 视图切换 ──</option>
+                    <option value="admin">&#x1F451; 老板视角</option>
+                    <option value="sales">📊 业务视角</option>
+                    <option value="prod">🏭 生产视角</option>
+                    <option value="tech">🔧 技术视角</option>
+                    <option value="qc">🔍 品质视角</option>
+                    <option value="pkg">📦 包装视角</option>
+                    <option value="whse">🏪 仓库视角</option>
+                    <option value="spraying">🎨 喷涂视角</option>
+                </select>
+            </form>
+        </div>
+        &nbsp;
+        {% endif %}
+
+        {# ── 用户信息显示 ─────────────────────────────────── #}
+        <span>{{ user.real_name }}</span>
+        <span class="role-chip chip-{{ user.department }}">{{ user.position }}</span>
+
+        {# ── 真实身份提示（当 view_as 生效时）────────────────── #}
+        {% if user.view_as and user.is_superadmin %}
+        <span style="background:#9333ea; color:#fff; font-size:10px; padding:1px 6px; border-radius:4px;"
+              title="您正在以 {{ user.department }} 身份浏览">
+            🔄 已切换
+        </span>
+        {% endif %}
+
+        <a href="/logout" style="color:rgba(255,255,255,0.8);text-decoration:none;">退出</a>
+    </div>
+</header>

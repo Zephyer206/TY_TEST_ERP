@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>发货扫码 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0fdf4; min-height: 100vh; padding-bottom: 100px; }
+        .topbar { background: #16a34a; color: white; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 20; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        .topbar-brand { font-weight: 700; font-size: 16px; letter-spacing: 1px; }
+        .topbar-info  { font-size: 12px; display: flex; align-items: center; gap: 8px; }
+        .topbar-link { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 13px; }
+        .page-body { padding: 16px; max-width: 480px; margin: 0 auto; }
+        .greet-card { border-radius: 16px; padding: 20px 24px; color: white; margin-bottom: 16px; background: linear-gradient(135deg, #16a34a, #14532d); box-shadow: 0 4px 16px rgba(22,163,74,0.3); }
+        .greet-title { font-size: 22px; font-weight: 800; margin-bottom: 4px; }
+        .greet-sub   { font-size: 13px; opacity: 0.85; }
+        .guard-banner { background: #fef3c7; border: 2px solid #fde68a; border-radius: 14px; padding: 12px 16px; margin-bottom: 16px; font-size: 13px; font-weight: 700; color: #92400e; text-align: center; }
+        .guard-sub { display: block; font-size: 11px; color: #b45309; font-weight: 400; margin-top: 2px; }
+        .mega-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; min-height: 120px; border-radius: 20px; border: none; cursor: pointer; text-decoration: none; color: white; font-weight: 800; box-shadow: 0 6px 24px rgba(0,0,0,0.2); padding: 24px; margin-bottom: 14px; transition: transform 0.15s; }
+        .mega-btn:active { transform: scale(0.97); }
+        .mega-icon { font-size: 48px; margin-bottom: 8px; }
+        .mega-title { font-size: 24px; }
+        .mega-sub   { font-size: 12px; opacity: 0.8; margin-top: 4px; font-weight: 400; }
+        .btn-ship { background: linear-gradient(135deg, #16a34a, #14532d); animation: pulse 3s ease-in-out infinite; }
+        @keyframes pulse { 0%,100% { box-shadow: 0 6px 24px rgba(0,0,0,0.2); } 50% { box-shadow: 0 8px 36px rgba(22,163,74,0.4); } }
+        .part-card { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #22c55e; }
+        .part-pn { font-size: 16px; font-weight: 800; color: #0f172a; }
+        .part-name { font-size: 12px; color: #64748b; margin-top: 2px; }
+        .stat-mini { display: flex; gap: 10px; margin-bottom: 12px; }
+        .stat-mini-item { flex: 1; background: #f0fdf4; border-radius: 10px; padding: 10px 8px; text-align: center; }
+        .stat-mini-num { font-size: 22px; font-weight: 800; color: #16a34a; }
+        .stat-mini-lbl { font-size: 10px; color: #64748b; margin-top: 2px; }
+        .ship-form { background: #f0fdf4; border-radius: 14px; padding: 16px; margin-top: 12px; display: none; border: 2px solid #bbf7d0; }
+        .ship-form.active { display: block; }
+        .form-row { display: flex; align-items: center; margin-bottom: 12px; gap: 8px; }
+        .form-label { font-size: 14px; font-weight: 700; color: #0f172a; min-width: 68px; }
+        .form-input { flex: 1; padding: 14px 12px; border: 2px solid #bbf7d0; border-radius: 12px; font-size: 20px; font-weight: 800; color: #0f172a; background: white; text-align: center; outline: none; }
+        .form-input:focus { border-color: #16a34a; }
+        .form-select { flex: 1; padding: 12px; border: 2px solid #bbf7d0; border-radius: 12px; font-size: 14px; background: white; outline: none; }
+        .big-btn { width: 100%; padding: 16px; border-radius: 14px; border: none; font-size: 16px; font-weight: 800; cursor: pointer; color: white; margin-top: 8px; }
+        .big-green { background: #16a34a; }
+        .big-green:hover { background: #15803d; }
+        .big-gray { background: #e2e8f0; color: #64748b; }
+        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-weight: 700; }
+        .badge-green { background: #dcfce7; color: #15803d; }
+        .empty-box { background: white; border-radius: 16px; padding: 48px 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-title { font-size: 16px; font-weight: 700; color: #374151; }
+        .empty-sub   { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+
+<div class="page-body">
+
+    <div class="greet-card">
+        <div class="greet-title">发货扫码 · {{ user.real_name }}</div>
+        <div class="greet-sub">全检包装后 → 扫码发货 → 扣减待发库存</div>
+    </div>
+
+    <div class="guard-banner">
+        🔒 Safety Guard：系统自动校验生产报工 + 品质巡检 + 已包装库存
+        <span class="guard-sub">仅"已包装"状态的产品才能扫码发货</span>
+    </div>
+
+    <!-- 可发货列表（只显示有可发货库存的零件） -->
+    {% set has_shippable = false %}
+    {% for item in pkg_inventory %}
+        {% if item.ready_to_ship > 0 %}{% set has_shippable = true %}{% endif %}
+    {% endfor %}
+
+    {% if has_shippable %}
+    {% for item in pkg_inventory %}
+    {% if item.ready_to_ship > 0 %}
+    <div class="part-card" id="card-{{ item.part_id }}">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+            <div>
+                <div class="part-pn">
+                    {% if item.customer_alias and item.customer_alias != item.internal_part_number %}
+                    {{ item.customer_alias }}（内部：{{ item.internal_part_number }}）
+                    {% else %}
+                    {{ item.internal_part_number }}
+                    {% endif %}
+                </div>
+                <div class="part-name">{{ item.internal_name }}</div>
+            </div>
+            <span class="badge badge-green">可发 {{ item.ready_to_ship }}</span>
+        </div>
+
+        <div class="stat-mini">
+            <div class="stat-mini-item">
+                <div class="stat-mini-num">{{ item.total_packaged }}</div>
+                <div class="stat-mini-lbl">已包装</div>
+            </div>
+            <div class="stat-mini-item">
+                <div class="stat-mini-num">{{ item.total_shipped }}</div>
+                <div class="stat-mini-lbl">已发货</div>
+            </div>
+            <div class="stat-mini-item">
+                <div class="stat-mini-num">{{ item.ready_to_ship }}</div>
+                <div class="stat-mini-lbl">可发货</div>
+            </div>
+        </div>
+
+        <button class="big-btn big-green" style="font-size:18px;"
+                onclick="openForm({{ item.part_id }})">
+            🚚 扫码发货
+        </button>
+
+        <form class="ship-form" id="form-{{ item.part_id }}"
+              action="/pkg/shipping" method="post"
+              onsubmit="return validateShip({{ item.part_id }}, {{ item.ready_to_ship }});">
+            <input type="hidden" name="part_id" value="{{ item.part_id }}">
+            <div style="font-size:12px; font-weight:700; color:#15803d; margin-bottom:12px;">
+                零件：
+                {% if item.customer_alias and item.customer_alias != item.internal_part_number %}
+                {{ item.customer_alias }}（本次最多 {{ item.ready_to_ship }} 件）
+                {% else %}
+                {{ item.internal_part_number }}（本次最多 {{ item.ready_to_ship }} 件）
+                {% endif %}
+            </div>
+            <div class="form-row">
+                <label class="form-label">发货数量</label>
+                <input type="number" name="qty" id="sqty-{{ item.part_id }}" class="form-input"
+                       placeholder="≤{{ item.ready_to_ship }}" min="1" max="{{ item.ready_to_ship }}" required>
+            </div>
+            <div class="form-row">
+                <label class="form-label">箱号</label>
+                <input type="text" name="box_no" class="form-input"
+                       style="font-size:15px; font-weight:600; text-align:left;" placeholder="例：BOX-001">
+            </div>
+            <div class="form-row">
+                <label class="form-label">车牌号</label>
+                <input type="text" name="vehicle_no" class="form-input"
+                       style="font-size:15px; font-weight:600; text-align:left;" placeholder="例：沪A12345">
+            </div>
+            <div class="form-row">
+                <label class="form-label">备注</label>
+                <input type="text" name="remark" class="form-input"
+                       style="font-size:15px; font-weight:400; text-align:left;" placeholder="选填">
+            </div>
+            <button type="submit" class="big-btn big-green">🚚 确认发货</button>
+            <button type="button" class="big-btn big-gray" onclick="closeForm({{ item.part_id }})">取消</button>
+        </form>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% else %}
+    <div class="empty-box">
+        <div class="empty-icon">🚚</div>
+        <div class="empty-title">暂无可发货产品</div>
+        <div class="empty-sub">需先完成全检包装</div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+function openForm(partId) {
+    document.querySelectorAll('.ship-form').forEach(function(f){ f.classList.remove('active'); });
+    var form = document.getElementById('form-' + partId);
+    if (form) { form.classList.add('active'); var inp = document.getElementById('sqty-' + partId); if (inp) { inp.value = ''; inp.focus(); } }
+    var el = document.getElementById('card-' + partId);
+    if (el) window.scrollTo({top: el.offsetTop - 80, behavior: 'smooth'});
+}
+function closeForm(partId) {
+    var form = document.getElementById('form-' + partId);
+    if (form) form.classList.remove('active');
+}
+function validateShip(partId, maxQty) {
+    var qty = parseInt(document.getElementById('sqty-' + partId).value) || 0;
+    if (qty <= 0) { alert('请输入发货数量'); return false; }
+    if (qty > maxQty) { alert('发货数量不能超过可发货上限 ' + maxQty + ' 件'); return false; }
+    return true;
+}
+</script>
+</body>
+</html>

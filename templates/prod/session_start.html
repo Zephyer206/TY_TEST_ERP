@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>开启会话 - TY_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f9ff; min-height: 100vh; }
+        {% include "common/_admin_nav.html" %}
+        .page-body { max-width: 560px; margin: 0 auto; padding: 20px 16px 80px; }
+        .greet-card { background: linear-gradient(135deg, #0369a1, #0c4a6e); color: white; border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(3,105,161,0.25); }
+        .greet-title { font-size: 22px; font-weight: 800; }
+        .greet-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #3b82f6; }
+        .card-title { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 14px; }
+        .form-field { margin-bottom: 16px; }
+        .form-label { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; color: #0f172a; background: white; outline: none; transition: border-color 0.15s; }
+        .form-input:focus { border-color: #3b82f6; }
+        .toggle-row { display: flex; gap: 10px; margin-bottom: 16px; }
+        .toggle-btn { flex: 1; padding: 14px; border-radius: 12px; border: 2px solid #e2e8f0; font-size: 15px; font-weight: 700; cursor: pointer; text-align: center; background: white; transition: all 0.15s; color: #374151; }
+        .toggle-btn.active { background: #eff6ff; border-color: #3b82f6; color: #1d4ed8; }
+        .submit-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 17px; font-weight: 800; cursor: pointer; color: white; background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 6px 24px rgba(59,130,246,0.35); transition: transform 0.15s; }
+        .submit-btn:active { transform: scale(0.97); }
+        .success-overlay { display: none; position: fixed; inset: 0; background: rgba(34,197,94,0.92); z-index: 200; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .success-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+        .success-icon { font-size: 80px; margin-bottom: 16px; }
+        .success-text { font-size: 28px; font-weight: 900; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .msg-error { background: #fef2f2; border: 2px solid #fca5a5; border-radius: 10px; padding: 10px 14px; color: #dc2626; font-size: 14px; margin-top: 10px; display: none; }
+        .session-type-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .badge-cont { background: #dbeafe; color: #1e40af; }
+        .badge-simple { background: #fef3c7; color: #92400e; }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+<div class="page-body">
+    <div class="greet-card">
+        <div class="greet-title">开启生产会话</div>
+        <div class="greet-sub">{{ user.dept }} | {{ user.username }}</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">会话参数</div>
+        <div class="form-field">
+            <label class="form-label">机台 ID *</label>
+            <input class="form-input" type="number" id="machine_id" placeholder="输入机台 ID" min="1">
+        </div>
+        <div class="form-field">
+            <label class="form-label">原料批次二维码（扫码，可选）</label>
+            <input class="form-input" type="text" id="material_qr" placeholder="扫码或手动输入原料批次码">
+        </div>
+        <div class="form-field">
+            <label class="form-label">操作工 ID</label>
+            <input class="form-input" type="number" id="operator_id" placeholder="留空则使用当前账号 ID" min="1">
+        </div>
+        <div class="form-field">
+            <label class="form-label">会话模式</label>
+            <div class="toggle-row">
+                <button class="toggle-btn active" id="btn_cont" onclick="setMode(false)">连续冲压</button>
+                <button class="toggle-btn" id="btn_simple" onclick="setMode(true)">简易模</button>
+            </div>
+            <div id="mode_hint" style="font-size:12px;color:#64748b;margin-top:-8px;"></div>
+        </div>
+        <button class="submit-btn" onclick="submitStart()">开启会话</button>
+        <div class="msg-error" id="error_msg"></div>
+    </div>
+
+    <div class="card" id="result_card" style="display:none;">
+        <div class="card-title">会话信息</div>
+        <div id="result_info" style="font-size:14px;line-height:2;"></div>
+    </div>
+</div>
+
+<div class="success-overlay" id="success_overlay" onclick="hideSuccess()">
+    <div class="success-icon">&#10003;</div>
+    <div class="success-text">会话已开启</div>
+</div>
+
+<script src="/static/js/api_config.js"></script>
+<script>
+var isSimple = false;
+function setMode(val) {
+    isSimple = val;
+    document.getElementById('btn_cont').classList.toggle('active', !val);
+    document.getElementById('btn_simple').classList.toggle('active', val);
+    document.getElementById('mode_hint').textContent = val
+        ? '简易模（Simple）：无固定工人，仅组长代管，适合快换/调试'
+        : '连续冲压（Continuous）：正常生产模式，绑定工人';
+}
+setMode(false);
+
+async function submitStart() {
+    var machineId = parseInt(document.getElementById('machine_id').value);
+    var materialQr = document.getElementById('material_qr').value.trim();
+    var operatorId = parseInt(document.getElementById('operator_id').value) || 0;
+    if (!machineId) { showError('请输入机台 ID'); return; }
+    document.getElementById('error_msg').style.display = 'none';
+    try {
+        var res = await apiPost('prod.session_start', {
+            machine_id: machineId,
+            material_qr_uid: materialQr || null,
+            operator_id: operatorId || null,
+            is_simple_die: isSimple
+        });
+        if (res.code === 0) {
+            document.getElementById('success_overlay').classList.add('show');
+            showResult(res.data);
+        } else {
+            showError(res.message || '开启会话失败');
+        }
+    } catch(e) { showError('网络错误: ' + e.message); }
+}
+function showError(msg) {
+    var el = document.getElementById('error_msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+function hideSuccess() { document.getElementById('success_overlay').classList.remove('show'); }
+function showResult(data) {
+    var card = document.getElementById('result_card');
+    var info = document.getElementById('result_info');
+    var badge = data.session_type === 'Simple'
+        ? '<span class="session-type-badge badge-simple">简易模</span>'
+        : '<span class="session-type-badge badge-cont">连续冲压</span>';
+    card.style.display = 'block';
+    info.innerHTML =
+        '<div>会话 ID：<strong>#' + data.session_id + '</strong></div>' +
+        '<div>机台 ID：<strong>#' + data.machine_id + '</strong></div>' +
+        '<div>会话模式：' + badge + '</div>' +
+        '<div>状态：<strong>' + data.status + '</strong></div>' +
+        '<div>开始时间：' + (data.start_time ? new Date(data.start_time).toLocaleString('zh-CN') : '-') + '</div>';
+}
+</script>
+</body>
+</html>

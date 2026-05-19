@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>扫机台码 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: #0a0f0a;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            overflow: hidden;
+        }
+        /* 背景装饰圆环 */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 320px;
+            height: 320px;
+            border-radius: 50%;
+            border: 1px solid rgba(34, 197, 94, 0.12);
+            pointer-events: none;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 420px;
+            height: 420px;
+            border-radius: 50%;
+            border: 1px solid rgba(34, 197, 94, 0.06);
+            pointer-events: none;
+        }
+        /* 扫描框 */
+        .scan-frame {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 32px;
+        }
+        .scan-frame::before,
+        .scan-frame::after,
+        .scan-corner-tr,
+        .scan-corner-bl {
+            content: '';
+            position: absolute;
+            width: 28px;
+            height: 28px;
+            border-color: #22c55e;
+            border-style: solid;
+        }
+        .scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+        .scan-frame::after  { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+        .scan-corner-tr    { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+        .scan-corner-bl    { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+        .scan-laser {
+            position: absolute;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22c55e 30%, #22c55e 70%, transparent);
+            box-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+            animation: laser 2.4s ease-in-out infinite;
+        }
+        @keyframes laser {
+            0%   { top: 8px; opacity: 1; }
+            48%  { top: calc(100% - 10px); opacity: 1; }
+            50%  { top: 8px; opacity: 0; }
+            98%  { top: calc(100% - 10px); opacity: 0; }
+            100% { top: 8px; opacity: 1; }
+        }
+        /* 主标题 */
+        .title {
+            color: #22c55e;
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+        /* 扫码大按钮 */
+        .scan-btn {
+            width: 240px;
+            height: 240px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #16a34a, #15803d 60%, #14532d);
+            border: none;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            box-shadow:
+                0 0 0 8px rgba(34, 197, 94, 0.15),
+                0 0 0 16px rgba(34, 197, 94, 0.08),
+                0 16px 40px rgba(0,0,0,0.5);
+            transition: box-shadow 0.2s, transform 0.1s;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 28px;
+        }
+        .scan-btn:active {
+            transform: scale(0.96);
+            box-shadow:
+                0 0 0 6px rgba(34, 197, 94, 0.2),
+                0 8px 24px rgba(0,0,0,0.4);
+        }
+        .scan-btn .icon { font-size: 64px; line-height: 1; }
+        .scan-btn .label { color: white; font-size: 16px; font-weight: 800; letter-spacing: 2px; }
+        .scan-btn .sub   { color: rgba(255,255,255,0.6); font-size: 11px; letter-spacing: 1px; }
+        /* 提示文字 */
+        .hint {
+            color: rgba(255,255,255,0.35);
+            font-size: 12px;
+            margin-bottom: 24px;
+            letter-spacing: 0.5px;
+        }
+        /* 输入框入口 */
+        .input-entry {
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 14px;
+            padding: 14px 18px;
+            width: 280px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: text;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .input-entry:focus-within {
+            border-color: #22c55e;
+            background: rgba(34, 197, 94, 0.06);
+        }
+        .input-entry input {
+            flex: 1;
+            background: none;
+            border: none;
+            outline: none;
+            color: white;
+            font-size: 15px;
+        }
+        .input-entry input::placeholder { color: rgba(255,255,255,0.3); }
+        .input-entry .arrow {
+            color: #22c55e;
+            font-size: 18px;
+            font-weight: 700;
+            transition: transform 0.15s;
+        }
+        .input-entry:active .arrow { transform: translateX(3px); }
+        .input-entry form { display: contents; }
+        /* 底部 */
+        .bottom-link {
+            position: fixed;
+            bottom: 20px;
+            color: rgba(255,255,255,0.25);
+            font-size: 12px;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+
+<div class="scan-frame">
+    <div class="scan-laser"></div>
+    <div class="scan-corner-tr"></div>
+    <div class="scan-corner-bl"></div>
+</div>
+
+<div class="title">机台终端</div>
+
+<!-- 扫码大按钮：触发浏览器扫描或跳转机器列表 -->
+<button class="scan-btn" onclick="openScan()">
+    <span class="icon">📷</span>
+    <span class="label">扫码</span>
+    <span class="sub">SCAN QR CODE</span>
+</button>
+
+<div class="hint">对准机台上的二维码</div>
+
+<!-- 手动输入入口 -->
+<div class="input-entry" onclick="document.getElementById('keyInput').focus()">
+    <form action="/operator" method="get" id="keyForm" style="display:contents;">
+        <input type="text" id="keyInput" name="machine_key" placeholder="或输入机台编号（如 M-01）" autocomplete="off">
+    </form>
+    <span class="arrow" onclick="document.getElementById('keyForm').submit()">→</span>
+</div>
+
+<a href="/" class="bottom-link">← 返回工作台</a>
+
+<script>
+function openScan() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        launchScanCamera();
+    } else {
+        document.getElementById('keyInput').focus();
+    }
+}
+
+function launchScanCamera() {
+    document.body.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;background:#000;">
+            <video id="preview" autoplay style="width:100vw;height:100vh;object-fit:cover;"></video>
+            <div style="position:fixed;bottom:40px;left:0;right:0;display:flex;justify-content:center;gap:16px;">
+                <button onclick="location.reload()" style="padding:14px 32px;border-radius:12px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);color:white;font-size:15px;font-weight:600;cursor:pointer;">取消</button>
+            </div>
+            <div style="position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;height:220px;border:2px solid #22c55e;border-radius:12px;box-shadow:0 0 0 9999px rgba(0,0,0,0.5);pointer-events:none;"></div>
+        </div>
+    `;
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } })
+        .then(stream => {
+            document.getElementById('preview').srcObject = stream;
+            scanLoop();
+        })
+        .catch(() => {
+            alert('无法调用摄像头，请检查权限设置');
+            location.reload();
+        });
+}
+
+let lastScanned = '';
+function scanLoop() {
+    const video = document.getElementById('preview');
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    if (typeof jQuery !== 'undefined' || window.zxing) {
+        // ZXing.js available — integrate if present
+    }
+    // Fallback: show manual entry overlay
+    setTimeout(() => {
+        if (lastScanned) return;
+        const overlay = document.createElement('div');
+        overlay.style.cssText = 'position:fixed;bottom:120px;left:0;right:0;display:flex;justify-content:center;z-index:100;';
+        overlay.innerHTML = `<div style="background:rgba(0,0,0,0.75);border:1px solid rgba(34,197,94,0.4);border-radius:12px;padding:12px 24px;display:flex;align-items:center;gap:12px;">
+            <input type="text" id="manualKey" placeholder="输入机台编号" style="background:none;border:none;outline:none;color:white;font-size:16px;width:160px;" autocomplete="off">
+            <button onclick="var k=document.getElementById('manualKey').value.trim();if(k){window.location.href='/operator?machine_key='+encodeURIComponent(k);}" style="background:#22c55e;color:white;border:none;border-radius:8px;padding:8px 16px;font-size:14px;font-weight:700;cursor:pointer;">进入</button>
+        </div>`;
+        document.body.appendChild(overlay);
+        document.getElementById('manualKey').focus();
+    }, 2000);
+
+    if (!lastScanned) requestAnimationFrame(scanLoop);
+}
+</script>
+</body>
+</html>

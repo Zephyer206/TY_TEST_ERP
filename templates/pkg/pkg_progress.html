@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>全局进度看板 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+        /* ── 顶部导航 ── */
+        /* ── 日期选择器 ── */
+        .date-bar {
+            background: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            border-bottom: 1px solid #e5e7eb;
+            position: sticky;
+            top: 52px;
+            z-index: 15;
+        }
+        .date-label { font-size: 14px; font-weight: 700; color: #374151; white-space: nowrap; }
+        .date-input {
+            flex: 1;
+            padding: 10px 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 700;
+            color: #111827;
+            background: #f9fafb;
+            outline: none;
+        }
+        .date-input:focus { border-color: #0891b2; background: white; }
+        .btn-go {
+            padding: 10px 18px;
+            background: #0891b2;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-go:active { background: #0e7490; }
+        .btn-today {
+            padding: 10px 16px;
+            background: #f3f4f6;
+            color: #374151;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        /* ── 汇总看板 ── */
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .sum-cell {
+            background: white;
+            padding: 14px 12px;
+            text-align: center;
+        }
+        .sum-num { font-size: 26px; font-weight: 900; color: #111827; line-height: 1; }
+        .sum-num.blue  { color: #0891b2; }
+        .sum-num.green { color: #16a34a; }
+        .sum-num.orange{ color: #d97706; }
+        .sum-num.red   { color: #dc2626; }
+        .sum-lbl { font-size: 11px; color: #6b7280; margin-top: 4px; font-weight: 500; }
+        .sum-divider { font-size: 20px; color: #e5e7eb; font-weight: 300; }
+
+        /* ── PC 表格 ── */
+        .page-wrap { max-width: 900px; margin: 0 auto; padding: 0 0 40px; }
+        .table-wrap { overflow-x: auto; padding: 0 16px; }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            min-width: 600px;
+        }
+        .data-table thead th {
+            background: #f8fafc;
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #6b7280;
+            border-bottom: 2px solid #e5e7eb;
+            white-space: nowrap;
+        }
+        .data-table thead th:first-child { text-align: left; padding-left: 14px; }
+        .data-table thead th:last-child  { text-align: right; padding-right: 14px; }
+
+        .data-table tbody tr {
+            border-bottom: 1px solid #f3f4f6;
+            transition: background 0.15s;
+        }
+        .data-table tbody tr:last-child { border-bottom: none; }
+
+        /* 状态行颜色 */
+        .data-table tbody tr.row-missed { background: #fffbeb; }
+        .data-table tbody tr.row-missed:hover { background: #fef3c7; }
+        .data-table tbody tr.row-pending { background: #f0fdf4; }
+        .data-table tbody tr.row-pending:hover { background: #dcfce7; }
+        .data-table tbody tr.row-ok:hover { background: #f9fafb; }
+
+        .data-table tbody td {
+            padding: 12px 10px;
+            text-align: center;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        .data-table tbody td:first-child { text-align: left; padding-left: 14px; }
+        .data-table tbody td:last-child  { text-align: right;  padding-right: 14px; }
+
+        .pn    { font-weight: 800; font-size: 14px; color: #111827; }
+        .pname { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+        .qty   { font-size: 18px; font-weight: 800; color: #111827; }
+        .qty.missed  { color: #d97706; }
+        .qty.ok      { color: #16a34a; }
+        .qty.pending { color: #0891b2; }
+        .qty.zero    { color: #d1d5db; }
+
+        /* 告警徽章 */
+        .alert-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 11px;
+            font-weight: 700;
+            gap: 4px;
+        }
+        .badge-missed  { background: #fef3c7; color: #d97706; }
+        .badge-pending { background: #dcfce7; color: #15803d; }
+        .badge-ok      { background: #f0fdf4; color: #0891b2; }
+
+        /* 漏检提示箭头 */
+        .missed-arrow {
+            display: inline-block;
+            font-size: 16px;
+            margin-left: 4px;
+        }
+
+        /* Mobile 紧凑行 */
+        .mobile-list { padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+        .m-card {
+            background: white;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            border-left: 5px solid #d1d5db;
+        }
+        .m-card.missed  { border-left-color: #f59e0b; background: #fffbeb; }
+        .m-card.pending { border-left-color: #22c55e; background: #f0fdf4; }
+        .m-card.ok      { border-left-color: #0891b2; }
+
+        .m-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .m-pn  { font-size: 15px; font-weight: 800; color: #111827; }
+        .m-name { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .m-qty-row { display: flex; gap: 10px; margin-bottom: 8px; }
+        .m-qty-cell { flex: 1; background: #f9fafb; border-radius: 8px; padding: 8px 6px; text-align: center; }
+        .m-qty-n { font-size: 20px; font-weight: 800; color: #111827; }
+        .m-qty-n.missed  { color: #d97706; }
+        .m-qty-n.ok      { color: #16a34a; }
+        .m-qty-n.pending { color: #0891b2; }
+        .m-qty-n.zero    { color: #d1d5db; }
+        .m-qty-l { font-size: 10px; color: #6b7280; margin-top: 2px; }
+        .m-footer { display: flex; justify-content: flex-end; }
+
+        /* 响应式 */
+        @media (min-width: 768px) {
+            .mobile-view { display: none; }
+        }
+        @media (max-width: 767px) {
+            .desktop-view { display: none; }
+        }
+
+        .empty-box { background: white; border-radius: 12px; margin: 16px; padding: 48px 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-title { font-size: 16px; font-weight: 700; color: #374151; }
+        .empty-sub   { font-size: 13px; color: #9ca3af; margin-top: 4px; }
+
+        .section-lbl {
+            padding: 12px 16px 6px;
+            font-size: 12px;
+            font-weight: 700;
+            color: #6b7280;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+
+<!-- 日期切换条 -->
+<div class="date-bar">
+    <span class="date-label">📅 日期</span>
+    <input type="date" id="datePicker" class="date-input" value="{{ target_date }}">
+    <button class="btn-go" onclick="loadByDate()">查询</button>
+    <button class="btn-today" onclick="goToday()">今天</button>
+</div>
+
+<!-- 汇总看板 -->
+<div class="summary-bar">
+    <div class="sum-cell">
+        <div class="sum-num blue">{{ daily_summary.prod_total }}</div>
+        <div class="sum-lbl">今日生产</div>
+    </div>
+    <div class="sum-cell">
+        <div class="sum-num green">{{ daily_summary.pkg_total }}</div>
+        <div class="sum-lbl">已全检</div>
+    </div>
+    <div class="sum-cell">
+        <div class="sum-num {% if daily_summary.ship_total > 0 %}green{% else %}orange{% endif %}">
+            {{ daily_summary.ship_total }}
+        </div>
+        <div class="sum-lbl">已发货</div>
+    </div>
+    <div class="sum-cell">
+        <div class="sum-num {% if daily_summary.pass_rate %}green{% else %}orange{% endif %}">
+            {% if daily_summary.pass_rate %}{{ daily_summary.pass_rate }}%{% else %}—{% endif %}
+        </div>
+        <div class="sum-lbl">全检合格率</div>
+    </div>
+    <div class="sum-cell">
+        <div class="sum-num {% if daily_summary.pkg_failed > 0 %}red{% else %}orange{% endif %}">
+            {{ daily_summary.pkg_failed }}
+        </div>
+        <div class="sum-lbl">报废数</div>
+    </div>
+    <div class="sum-cell">
+        <div class="sum-num {% if daily_summary.missed_count > 0 %}red{% else %}orange{% endif %}">
+            {{ daily_summary.missed_count }}
+        </div>
+        <div class="sum-lbl">漏检零件</div>
+    </div>
+</div>
+
+<div class="page-wrap">
+
+    <div class="page-title">全局进度看板</div>
+    <div class="page-sub">数据按「实际业务日期 (actual_date)」聚合，可追溯历史任一天的闭环进度</div>
+
+{% if progress_rows %}
+    <!-- ── PC 表格视图 ── -->
+    <div class="desktop-view" style="padding-top:16px;">
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>零件号</th>
+                        <th>零件名称</th>
+                        <th>当日生产</th>
+                        <th>已全检</th>
+                        <th>已发货</th>
+                        <th>待发库存</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for row in progress_rows %}
+                    <tr class="row-{{ row.alert_status }}">
+                        <td>
+                            <div class="pn">{{ row.part_number }}</div>
+                            <div class="pname">{{ row.internal_name }}</div>
+                        </td>
+                        <td class="qty {% if row.prod_total == 0 %}zero{% elif row.pkg_total < row.prod_total %}missed{% else %}ok{% endif %}">
+                            {{ row.prod_total }}
+                        </td>
+                        <td class="qty {% if row.pkg_total == 0 %}zero{% elif row.pkg_total < row.prod_total %}missed{% else %}ok{% endif %}">
+                            {{ row.pkg_total }}
+                            {% if row.pkg_total < row.prod_total %}
+                            <span class="missed-arrow" title="已全检 < 今日生产">⚠️</span>
+                            {% endif %}
+                        </td>
+                        <td class="qty {% if row.ship_total == 0 %}zero{% else %}ok{% endif %}">
+                            {{ row.ship_total }}
+                        </td>
+                        <td class="qty {% if row.pending_ship > 0 %}pending{% else %}zero{% endif %}">
+                            {{ row.pending_ship }}
+                        </td>
+                        <td>
+                            {% if row.alert_status == 'missed' %}
+                            <span class="alert-badge badge-missed">⚠️ 漏检</span>
+                            {% elif row.alert_status == 'pending' %}
+                            <span class="alert-badge badge-pending">📦 待发 {{ row.pending_ship }}</span>
+                            {% else %}
+                            <span class="alert-badge badge-ok">✅ 完成</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ── Mobile 卡片视图 ── -->
+    <div class="mobile-view" style="padding-top:12px;">
+        {% for row in progress_rows %}
+        <div class="m-card {{ row.alert_status }}">
+            <div class="m-header">
+                <div>
+                    <div class="m-pn">{{ row.part_number }}</div>
+                    <div class="m-name">{{ row.internal_name }}</div>
+                </div>
+                {% if row.alert_status == 'missed' %}
+                <span class="alert-badge badge-missed">⚠️ 漏检</span>
+                {% elif row.alert_status == 'pending' %}
+                <span class="alert-badge badge-pending">📦 待发 {{ row.pending_ship }}</span>
+                {% else %}
+                <span class="alert-badge badge-ok">✅ 完成</span>
+                {% endif %}
+            </div>
+            <div class="m-qty-row">
+                <div class="m-qty-cell">
+                    <div class="m-qty-n {% if row.prod_total == 0 %}zero{% elif row.pkg_total < row.prod_total %}missed{% else %}ok{% endif %}">
+                        {{ row.prod_total }}
+                    </div>
+                    <div class="m-qty-l">当日生产</div>
+                </div>
+                <div class="m-qty-cell">
+                    <div class="m-qty-n {% if row.pkg_total == 0 %}zero{% elif row.pkg_total < row.prod_total %}missed{% else %}ok{% endif %}">
+                        {{ row.pkg_total }}
+                    </div>
+                    <div class="m-qty-l">已全检</div>
+                </div>
+                <div class="m-qty-cell">
+                    <div class="m-qty-n {% if row.ship_total == 0 %}zero{% else %}ok{% endif %}">
+                        {{ row.ship_total }}
+                    </div>
+                    <div class="m-qty-l">已发货</div>
+                </div>
+                <div class="m-qty-cell">
+                    <div class="m-qty-n {% if row.pending_ship > 0 %}pending{% else %}zero{% endif %}">
+                        {{ row.pending_ship }}
+                    </div>
+                    <div class="m-qty-l">待发库存</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+{% else %}
+    <div class="empty-box">
+        <div class="empty-icon">📭</div>
+        <div class="empty-title">暂无数据</div>
+        <div class="empty-sub">该日期无生产或全检记录</div>
+    </div>
+{% endif %}
+
+</div>
+
+<script>
+var currentDate = '{{ target_date }}';
+
+function loadByDate() {
+    var d = document.getElementById('datePicker').value;
+    window.location.href = '/pkg/progress?date=' + d;
+}
+
+function goToday() {
+    var today = new Date().toISOString().slice(0, 10);
+    window.location.href = '/pkg/progress?date=' + today;
+}
+
+// 回车触发查询
+document.getElementById('datePicker').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') loadByDate();
+});
+</script>
+</body>
+</html>

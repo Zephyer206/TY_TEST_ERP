@@ -1,0 +1,1202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>生产管理端 - TY_Tset_ERP</title>
+    <style>
+        /* ── 重置 & 字体 ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f0f4f8;
+            color: #1f2937;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── 顶部导航栏 ── */
+        .live-badge.pulsing::before {
+            content: ''; display: inline-block;
+            width: 6px; height: 6px; border-radius: 50%;
+            background: #22c55e; animation: blink 1.4s ease-in-out infinite;
+        }
+        50%{opacity:0.3} }
+        .topbar a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; }
+        /* ── 统计摘要条 ── */
+        .summary-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+            padding: 10px 12px;
+            background: white;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .summary-item { text-align: center; }
+        .summary-item .val {
+            font-size: 20px; font-weight: 800;
+            color: #14532d; line-height: 1;
+        }
+        .summary-item .lbl { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+        .summary-item .val.up { color: #16a34a; }
+        .summary-item .val.warn { color: #d97706; }
+        .summary-item .val.danger { color: #dc2626; }
+
+        /* ── 布局：主内容 + 侧边栏 ── */
+        .layout { display: flex; min-height: calc(100vh - 60px); }
+
+        /* ── 侧边任务池 ── */
+        .sidebar {
+            width: 280px;
+            min-width: 280px;
+            background: white;
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            transition: width 0.3s;
+            overflow: hidden;
+        }
+        .sidebar.collapsed { width: 0; min-width: 0; border-right: none; }
+        .sidebar-header {
+            padding: 10px 14px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #f9fafb;
+        }
+        .sidebar-title { font-size: 13px; font-weight: 700; color: #374151; }
+        .sidebar-count { font-size: 11px; background: #dcfce7; color: #14532d; padding: 1px 7px; border-radius: 9999px; font-weight: 700; }
+        .pool-scroll { flex: 1; overflow-y: auto; padding: 8px; }
+        .pool-empty { text-align: center; padding: 24px 12px; color: #9ca3af; font-size: 12px; }
+
+        .order-card {
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            cursor: grab;
+            transition: box-shadow 0.15s, transform 0.15s, border-color 0.15s;
+            user-select: none;
+            position: relative;
+        }
+        .order-card:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.1); transform: translateY(-1px); border-color: #22c55e; }
+        .order-card:active { cursor: grabbing; transform: scale(0.98); }
+        .order-card.dragging { opacity: 0.5; border: 2px dashed #22c55e; }
+        .order-card.critical { border-left: 3px solid #dc2626; }
+        .order-card.urgent { border-left: 3px solid #d97706; }
+        .order-card.normal { border-left: 3px solid #22c55e; }
+
+        .order-pn { font-size: 13px; font-weight: 700; color: #1f2937; margin-bottom: 3px; }
+        .order-meta { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+        .order-urgency {
+            display: inline-block; font-size: 10px; font-weight: 700;
+            padding: 1px 6px; border-radius: 9999px;
+        }
+        .urgency-critical { background: #fee2e2; color: #dc2626; }
+        .urgency-urgent { background: #fef3c7; color: #d97706; }
+        .urgency-normal { background: #f0fdf4; color: #14532d; }
+
+        .order-actions { display: flex; gap: 4px; margin-top: 6px; }
+        .quick-assign-btn {
+            flex: 1; padding: 4px 6px; border: none; border-radius: 6px;
+            font-size: 11px; font-weight: 600; cursor: pointer;
+            background: #14532d; color: white; transition: background 0.15s;
+        }
+        .quick-assign-btn:hover { background: #166534; }
+        .quick-assign-btn:disabled { background: #9ca3af; cursor: not-allowed; }
+
+        .assign-modal-row { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+        .assign-modal-row select {
+            flex: 1; padding: 4px 8px; border: 1px solid #d1d5db;
+            border-radius: 6px; font-size: 12px;
+        }
+
+        /* ── 主内容区 ── */
+        .main { flex: 1; padding: 12px; overflow-y: auto; }
+
+        /* ── 看板分区标题 ── */
+        .section-title {
+            font-size: 13px; font-weight: 700; color: #374151;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .section-title::after {
+            content: ''; flex: 1; height: 1px; background: #e5e7eb;
+        }
+
+        /* ── 机台网格 ── */
+        .machine-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        /* ── 机台磁贴 ── */
+        .machine-tile {
+            background: white;
+            border-radius: 12px;
+            padding: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border-top: 4px solid #d1d5db;
+            cursor: pointer;
+            transition: box-shadow 0.2s, transform 0.15s;
+            position: relative;
+        }
+        .machine-tile:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); transform: translateY(-2px); }
+        .machine-tile.running   { border-top-color: #16a34a; }
+        .machine-tile.idle      { border-top-color: #ea580c; }
+        .machine-tile.fault     { border-top-color: #dc2626; }
+        .machine-tile.pending_check { border-top-color: #d97706; }
+        .machine-tile.repairing   { border-top-color: #2563eb; }
+        .machine-tile.offline  { border-top-color: #6b7280; }
+        .machine-tile.maintenance { border-top-color: #2563eb; }
+
+        /* 状态角标 */
+        .tile-status {
+            position: absolute; top: 10px; right: 12px;
+            font-size: 10px; font-weight: 700;
+            padding: 2px 8px; border-radius: 9999px;
+            display: flex; align-items: center; gap: 4px;
+        }
+        .tile-running   { background: #dcfce7; color: #14532d; }
+        .tile-idle      { background: #fff7ed; color: #ea580c; }
+        .tile-fault     { background: #fee2e2; color: #dc2626; animation: pulseFault 1.5s ease-in-out infinite; }
+        .tile-pending_check { background: #fee2e2; color: #dc2626; animation: pulseFault 1.5s ease-in-out infinite; }
+        .tile-repairing   { background: #dbeafe; color: #1d4ed8; animation: breathe 2s ease-in-out infinite; }
+        .tile-offline  { background: #f3f4f6; color: #6b7280; }
+        .tile-maintenance { background: #dbeafe; color: #2563eb; }
+
+        /* 状态图标（角标内小圆点） */
+        .status-dot {
+            display: inline-block; width: 7px; height: 7px;
+            border-radius: 50%; flex-shrink: 0;
+        }
+        .tile-pending_check .status-dot { background: #dc2626; animation: pulseFault 1s ease-in-out infinite; }
+        .tile-repairing .status-dot   { background: #3b82f6; animation: breathe 1.8s ease-in-out infinite; }
+        .tile-offline .status-dot     { background: #9ca3af; }
+
+        @keyframes pulseFault {
+            0%,100%{opacity:1} 50%{opacity:0.4}
+        }
+        @keyframes breathe {
+            0%,100%{opacity:0.5;transform:scale(0.85)}
+            50%{opacity:1;transform:scale(1.15)}
+        }
+
+        .tile-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .tile-num { font-size: 18px; font-weight: 800; color: #1f2937; }
+        .tile-tonnage { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .tile-operator { font-size: 11px; color: #6b7280; margin-bottom: 8px; }
+        .tile-part { font-size: 13px; font-weight: 600; color: #1f2937; margin-bottom: 4px; }
+
+        /* 进度条 */
+        .progress-wrap { margin-top: 6px; }
+        .progress-labels { display: flex; justify-content: space-between; font-size: 10px; color: #6b7280; margin-bottom: 3px; }
+        .progress-bar { height: 8px; background: #e5e7eb; border-radius: 9999px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 9999px; transition: width 0.5s ease; }
+
+        /* fault / pending_check 特殊显示 */
+        .fault-msg { font-size: 11px; font-weight: 700; color: #dc2626; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+        .pending-msg { font-size: 11px; font-weight: 700; color: #b45309; margin-top: 6px; display: flex; align-items: center; gap: 4px; }
+
+        /* 维修计时器 */
+        .repair-timer {
+            margin-top: 8px; background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700;
+            color: #d97706; display: flex; align-items: center; gap: 6px;
+        }
+        .repair-timer.over-15 {
+            background: #fee2e2; border-color: #fca5a5;
+            color: #dc2626; font-weight: 800;
+        }
+        .timer-icon { font-size: 14px; }
+        .timer-val { font-variant-numeric: tabular-nums; }
+
+        /* 机台操作菜单弹窗 */
+        .tile-menu {
+            display: none; position: absolute; bottom: 100%; right: 0;
+            background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            z-index: 50; min-width: 160px; overflow: hidden;
+        }
+        .tile-menu.open { display: block; }
+        .tile-menu-item {
+            padding: 10px 14px; font-size: 13px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: background 0.15s; color: #374151;
+            border: none; background: none; width: 100%; text-align: left;
+        }
+        .tile-menu-item:hover { background: #f3f4f6; }
+        .tile-menu-item.danger { color: #dc2626; }
+        .tile-menu-item.danger:hover { background: #fff5f5; }
+        .tile-menu-divider { height: 1px; background: #e5e7eb; }
+
+        /* 分配弹窗 */
+        .assign-popup {
+            display: none; position: absolute; bottom: 110%; right: 0;
+            background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            z-index: 60; min-width: 200px; padding: 12px;
+        }
+        .assign-popup.open { display: block; }
+        .assign-popup-label { font-size: 11px; color: #6b7280; margin-bottom: 4px; }
+        .assign-popup select {
+            width: 100%; padding: 6px 8px; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 12px; margin-bottom: 6px;
+        }
+        .assign-popup-actions { display: flex; gap: 6px; }
+        .btn-sm { padding: 4px 10px; border-radius: 6px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; }
+        .btn-confirm { background: #14532d; color: white; }
+        .btn-cancel { background: #f3f4f6; color: #374151; }
+
+        /* ── 生产汇总看板 ── */
+        .summary-kpi {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .kpi-card {
+            background: white; border-radius: 12px; padding: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .kpi-card .kpi-val { font-size: 28px; font-weight: 800; color: #14532d; }
+        .kpi-card .kpi-lbl { font-size: 11px; color: #9ca3af; margin-top: 4px; }
+        .kpi-card .kpi-delta { font-size: 11px; margin-top: 4px; font-weight: 600; }
+        .kpi-delta.up { color: #16a34a; }
+        .kpi-delta.down { color: #dc2626; }
+        .kpi-delta.neutral { color: #9ca3af; }
+
+        /* 吨位开工率 */
+        .tonnage-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+        .tonnage-card {
+            background: white; border-radius: 12px; padding: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .tonnage-header { font-size: 14px; font-weight: 700; color: #1f2937; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between; }
+        .tonnage-rate { font-size: 20px; font-weight: 800; color: #14532d; }
+        .tonnage-bar { height: 8px; background: #e5e7eb; border-radius: 9999px; overflow: hidden; margin-bottom: 6px; }
+        .tonnage-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #16a34a); border-radius: 9999px; transition: width 0.5s; }
+        .tonnage-meta { font-size: 11px; color: #6b7280; }
+
+        /* ── 全局弹窗遮罩 ── */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 200; display: none;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: white; border-radius: 16px; padding: 24px;
+            width: 90%; max-width: 420px; position: relative;
+        }
+        .modal-header { font-size: 16px; font-weight: 700; color: #1f2937; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; }
+        .modal-close { background: none; border: none; font-size: 20px; cursor: pointer; color: #9ca3af; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 8px 12px; border: 1px solid #d1d5db;
+            border-radius: 8px; font-size: 13px; font-family: inherit;
+        }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px; }
+        .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn-primary { background: #14532d; color: white; }
+        .btn-outline { background: white; color: #374151; border: 1px solid #d1d5db; }
+        .btn-danger { background: #dc2626; color: white; }
+
+        /* ── 空状态 ── */
+        .empty-state { text-align: center; padding: 32px 16px; color: #9ca3af; }
+        .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+
+        /* ── 拖拽悬停效果 ── */
+        .machine-tile.drag-over {
+            box-shadow: 0 0 0 3px #22c55e !important;
+            background: #f0fdf4 !important;
+        }
+
+        /* ── 刷新遮罩脉冲 ── */
+        .refreshing-overlay {
+            position: fixed; top: 50px; right: 16px; z-index: 300;
+            background: #14532d; color: white; padding: 6px 14px;
+            border-radius: 9999px; font-size: 12px; font-weight: 700;
+            display: none; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .refreshing-overlay.show { display: block; animation: fadeInOut 2s forwards; }
+        @keyframes fadeInOut { 0%{opacity:0;transform:translateY(-10px)} 20%{opacity:1;transform:translateY(0)} 80%{opacity:1} 100%{opacity:0} }
+
+        /* ── 侧边栏折叠按钮 ── */
+        .sidebar-toggle {
+            position: fixed; left: 12px; bottom: 16px; z-index: 150;
+            background: #14532d; color: white; border: none; border-radius: 50%;
+            width: 44px; height: 44px; font-size: 18px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center;
+        }
+        .sidebar.collapsed ~ .main .sidebar-toggle { left: 12px; }
+
+        /* ── 维修日志滑出面板 ── */
+        .repair-log-panel {
+            position: fixed;
+            top: 0; right: 0;
+            width: 320px; height: 100vh;
+            background: white;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.12);
+            z-index: 300;
+            display: flex; flex-direction: column;
+            transform: translateX(100%);
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+        .repair-log-panel.open {
+            transform: translateX(0);
+        }
+        .repair-log-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex; align-items: center; justify-content: space-between;
+            background: #14532d; color: white;
+            flex-shrink: 0;
+        }
+        .repair-log-header h3 { font-size: 14px; font-weight: 700; }
+        .repair-log-machine { font-size: 12px; color: rgba(255,255,255,0.75); margin-top: 2px; }
+        .repair-log-close {
+            background: none; border: none; color: rgba(255,255,255,0.8);
+            font-size: 22px; cursor: pointer; line-height: 1; padding: 0 4px;
+        }
+        .repair-log-close:hover { color: white; }
+        .repair-log-body { flex: 1; overflow-y: auto; padding: 12px; }
+        .repair-log-section { margin-bottom: 16px; }
+        .repair-log-section-title {
+            font-size: 11px; font-weight: 700; color: #9ca3af;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            margin-bottom: 8px; padding-bottom: 4px;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        .repair-event {
+            display: flex; gap: 10px; margin-bottom: 12px; align-items: flex-start;
+        }
+        .repair-event-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            flex-shrink: 0; margin-top: 3px;
+        }
+        .repair-event-dot.red    { background: #dc2626; }
+        .repair-event-dot.blue   { background: #3b82f6; }
+        .repair-event-dot.green  { background: #16a34a; }
+        .repair-event-dot.gray   { background: #9ca3af; }
+        .repair-event-line {
+            flex: 1;
+        }
+        .repair-event-time { font-size: 11px; color: #9ca3af; margin-bottom: 2px; }
+        .repair-event-title { font-size: 13px; font-weight: 600; color: #1f2937; }
+        .repair-event-desc { font-size: 12px; color: #6b7280; margin-top: 2px; }
+        .repair-event-operator { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .repair-log-actions {
+            padding: 12px 16px;
+            border-top: 1px solid #e5e7eb;
+            display: flex; gap: 8px;
+            background: #f9fafb; flex-shrink: 0;
+        }
+        .repair-log-panel-backdrop {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+            z-index: 299; display: none;
+        }
+        .repair-log-panel-backdrop.open { display: block; }
+
+        /* ── 响应式 ── */
+        @media (max-width: 768px) {
+            .sidebar { position: fixed; left: 0; top: 60px; height: calc(100vh - 60px); z-index: 100; width: 0; min-width: 0; }
+            .sidebar.open { width: 280px; }
+            .sidebar.collapsed { width: 0; }
+            .main { padding: 10px 8px; }
+            .machine-grid { grid-template-columns: 1fr 1fr; }
+            .summary-kpi { grid-template-columns: 1fr 1fr; }
+            .tonnage-grid { grid-template-columns: 1fr; }
+            .summary-bar { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (max-width: 480px) {
+            .machine-grid { grid-template-columns: 1fr; }
+            .summary-kpi { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+
+<!-- ── 顶部导航 ── -->
+<!-- ── 顶部统计摘要条 ── -->
+<div class="summary-bar">
+    <div class="summary-item">
+        <div class="val">{{ machines|length }}</div>
+        <div class="lbl">机台总数</div>
+    </div>
+    <div class="summary-item">
+        <div class="val up">{{ running_count }}</div>
+        <div class="lbl">运行中</div>
+    </div>
+    <div class="summary-item">
+        <div class="val warn">{{ fault_count }}</div>
+        <div class="lbl">待修理</div>
+    </div>
+    <div class="summary-item">
+        <div class="val">{{ today_good }}</div>
+        <div class="lbl">今日良品</div>
+    </div>
+</div>
+
+<!-- ── 布局 ── -->
+<div class="layout">
+
+    <!-- 侧边栏：待产任务池 -->
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div>
+                <div class="sidebar-title">📋 待产任务池</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+                <span class="sidebar-count" id="poolCount">{{ unassigned_plans|length }}</span>
+                <select id="poolFilter" style="font-size:11px;padding:2px 4px;border:1px solid #d1d5db;border-radius:6px;">
+                    <option value="">全部</option>
+                    <option value="critical">🔴 紧急</option>
+                    <option value="urgent">🟠 急</option>
+                    <option value="normal">🟢 普通</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="pool-scroll" id="poolScroll">
+            {% if unassigned_plans %}
+                {% for plan in unassigned_plans %}
+                <div class="order-card {{ plan.urgency }}"
+                     draggable="true"
+                     data-plan-id="{{ plan.id }}"
+                     data-part-number="{{ plan.part_number }}"
+                     data-urgency="{{ plan.urgency }}"
+                     ondragstart="onDragStart(event)"
+                     ondragend="onDragEnd(event)">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                        <div>
+                            <div class="order-pn">{{ plan.part_number }}</div>
+                            <div class="order-meta">
+                                {% if plan.internal_name %}{{ plan.internal_name }} · {% endif %}
+                                目标 {{ plan.total_qty }}
+                            </div>
+                        </div>
+                        <span class="order-urgency urgency-{{ plan.urgency }}">
+                            {{ {'critical':'🔥 紧急','urgent':'⚡ 急','normal':'● 普通'}[plan.urgency] }}
+                        </span>
+                    </div>
+                    {% if plan.due_date %}
+                    <div class="order-meta" style="margin-top:4px;">
+                        📅 交期：{{ plan.due_date.strftime('%m-%d') if plan.due_date else '—' }}
+                    </div>
+                    {% endif %}
+                    <div class="order-actions">
+                        <button class="quick-assign-btn"
+                                onclick="event.stopPropagation(); showAssignPopup(this, {{ plan.id }}, '{{ plan.part_number }}')">
+                            → 一键分配
+                        </button>
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="pool-empty">
+                    <div class="icon">📋</div>
+                    <div style="margin-top:6px;">暂无待产任务</div>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- 任务池收起提示 -->
+        <div style="padding:8px 12px;border-top:1px solid #e5e7eb;font-size:11px;color:#9ca3af;text-align:center;background:#f9fafb;">
+            ← 向右拖拽卡片分配至机台
+        </div>
+    </div>
+
+    <!-- 主内容 -->
+    <div class="main">
+
+        <!-- 一键分配至机台弹窗（全局） -->
+        <div id="globalAssignModal" class="modal-overlay" onclick="if(event.target===this)closeGlobalAssign()">
+            <div class="modal">
+                <div class="modal-header">
+                    分配任务
+                    <button class="modal-close" onclick="closeGlobalAssign()">×</button>
+                </div>
+                <div id="globalAssignContent"></div>
+            </div>
+        </div>
+
+        <!-- 异常干预弹窗 -->
+        <div id="interveneModal" class="modal-overlay" onclick="if(event.target===this)closeIntervene()">
+            <div class="modal">
+                <div class="modal-header">
+                    异常干预 — <span id="interveneMachineNum"></span>
+                    <button class="modal-close" onclick="closeIntervene()">×</button>
+                </div>
+                <form method="post" action="/prod/manager/intervene" id="interveneForm">
+                    <input type="hidden" name="machine_id" id="interveneMachineId">
+                    <div class="form-group">
+                        <label>故障描述</label>
+                        <input type="text" name="fault_reason" id="interveneFaultReason" placeholder="描述当前异常情况…" required>
+                    </div>
+                    <div class="form-group">
+                        <label>干预方式</label>
+                        <select name="action" id="interveneAction">
+                            <option value="request_offline">申请停机修理</option>
+                            <option value="fault">记录故障并停机</option>
+                            <option value="reset">重置为运行（排除故障）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <textarea name="remark" placeholder="可选备注…" id="interveneRemark"></textarea>
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeIntervene()">取消</button>
+                        <button type="submit" class="btn btn-primary">确认干预</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 强制完工弹窗 -->
+        <div id="forceCompleteModal" class="modal-overlay" onclick="if(event.target===this)closeForceComplete()">
+            <div class="modal">
+                <div class="modal-header">
+                    强制完工 — <span id="forceCompleteMachineNum"></span>
+                    <button class="modal-close" onclick="closeForceComplete()">×</button>
+                </div>
+                <form method="post" action="/prod/manager/force-complete" id="forceCompleteForm">
+                    <input type="hidden" name="machine_id" id="forceCompleteMachineId">
+                    <input type="hidden" name="plan_id" id="forceCompletePlanId">
+                    <div class="form-group">
+                        <label>零件</label>
+                        <div id="forceCompletePart" style="padding:8px 12px;background:#f3f4f6;border-radius:8px;font-size:13px;font-weight:600;color:#374151;"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>备注（可选）</label>
+                        <textarea name="remark" placeholder="说明强制完工原因…"></textarea>
+                    </div>
+                    <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400e;margin-bottom:12px;">
+                        ⚠️ 强制完工将直接关闭该生产计划，并清空机台当前任务。
+                    </div>
+                    <div class="modal-actions">
+                        <button type="button" class="btn btn-outline" onclick="closeForceComplete()">取消</button>
+                        <button type="submit" class="btn btn-danger">确认强制完工</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 维修计时器数据（服务端渲染，JS 负责走秒） -->
+        <script>
+            var REPAIR_START_TIMES = {{ repair_timers | tojson }};
+            function formatElapsed(startTime) {
+                if (!startTime) return '—';
+                var now = new Date();
+                var start = new Date(startTime);
+                var diffMs = now - start;
+                if (diffMs < 0) return '0分钟';
+                var mins = Math.floor(diffMs / 60000);
+                if (mins < 60) return mins + '分钟';
+                var hrs = Math.floor(mins / 60);
+                var rem = mins % 60;
+                return hrs + '小时' + rem + '分钟';
+            }
+            function getElapsedMinutes(startTime) {
+                if (!startTime) return 0;
+                var now = new Date();
+                var start = new Date(startTime);
+                return Math.floor((now - start) / 60000);
+            }
+            function updateTimers() {
+                document.querySelectorAll('.repair-timer[data-start]').forEach(function(el) {
+                    var startTime = el.getAttribute('data-start');
+                    var mins = getElapsedMinutes(startTime);
+                    // 超过15分钟 → 红色加粗
+                    if (mins > 15) {
+                        el.className = 'repair-timer over-15';
+                    } else {
+                        el.className = 'repair-timer';
+                    }
+                    var icon = mins > 15 ? '⏰' : '🕒';
+                    el.innerHTML = '<span class="timer-icon">' + icon + '</span>'
+                        + '<span class="timer-val">' + formatElapsed(startTime) + '</span>';
+                });
+            }
+            setInterval(updateTimers, 10000);
+            updateTimers();
+        </script>
+
+        <!-- ── 生产汇总看板 ── -->
+        <div class="section-title">📊 今日生产汇总</div>
+        <div class="summary-kpi">
+            <div class="kpi-card">
+                <div class="kpi-val">{{ today_summary.team_good | default(0) }}</div>
+                <div class="kpi-lbl">今日良品</div>
+                <div class="kpi-delta {{ 'up' if today_summary.yoy_pct and today_summary.yoy_pct > 0 else 'down' if today_summary.yoy_pct and today_summary.yoy_pct < 0 else 'neutral' }}">
+                    {% if today_summary.yoy_pct is not none %}
+                        {% if today_summary.yoy_pct > 0 %}+{% endif %}{{ today_summary.yoy_pct }}%
+                        vs 昨日 {{ today_summary.yesterday | default(0) }}
+                    {% else %}
+                        暂无昨日数据
+                    {% endif %}
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color:#d97706;">{{ today_summary.pending_count | default(0) }}</div>
+                <div class="kpi-lbl">待审核报工</div>
+                <div class="kpi-delta neutral">
+                    <a href="/audit" style="color:#d97706;text-decoration:none;">去审核 →</a>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color:#dc2626;">{{ today_summary.team_scrap | default(0) }}</div>
+                <div class="kpi-lbl">今日报废</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-val" style="color:#2563eb;">{{ today_summary.active_workers | default(0) }}</div>
+                <div class="kpi-lbl">在线操作工</div>
+            </div>
+        </div>
+
+        <!-- ── 吨位开工率 ── -->
+        {% if tonnage_groups %}
+        <div class="section-title">⚙️ 吨位开工率</div>
+        <div class="tonnage-grid">
+            {% for tonnage, data in tonnage_groups.items() %}
+            <div class="tonnage-card">
+                <div class="tonnage-header">
+                    <span>{{ tonnage }}</span>
+                    <span class="tonnage-rate">
+                        {% if data.total > 0 %}{{ (data.running / data.total * 100) | int }}{% else %}0{% endif %}%
+                    </span>
+                </div>
+                <div class="tonnage-bar">
+                    <div class="tonnage-fill" style="width:{% if data.total > 0 %}{{ (data.running / data.total * 100) | int }}{% else %}0{% endif %}%;"></div>
+                </div>
+                <div class="tonnage-meta">
+                    运行 {{ data.running }} / {{ data.total }}
+                    {% if data.offline > 0 %} · <span style="color:#dc2626;">离线 {{ data.offline }}</span>{% endif %}
+                    {% if data.requesting > 0 %} · <span style="color:#d97706;">待修 {{ data.requesting }}</span>{% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ── 车间实时网格 ── -->
+        <div class="section-title">🏭 车间机台
+            <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:6px;">（点击机台查看操作菜单）</span>
+        </div>
+
+        {% if machines %}
+        <div class="machine-grid" id="machineGrid">
+            {% for m in machines %}
+            <div class="machine-tile {{ m.status }}"
+                 id="tile-{{ m.id }}"
+                 data-machine-id="{{ m.id }}"
+                 data-machine-num="{{ m.machine_number }}"
+                 data-plan-id="{{ m.active_plan_id | default('') }}"
+                 data-part-number="{{ m.active_part_number | default('') }}"
+                 data-part-name="{{ m.active_part_name | default('') }}"
+                 data-progress="{{ (m.active_plan_progress_qty | default(0) / m.active_plan_total_qty * 100 | round(0)) if m.active_plan_total_qty else 0 }}"
+                 data-fault-reason="{{ m.fault_reason | e | default('') }}"
+                 data-fault-start="{{ (m.fault_reported_at.isoformat() if m.fault_reported_at else (m.tech_arrival_time.isoformat() if m.tech_arrival_time else '')) }}"
+                 ondragover="onDragOver(event)"
+                 ondragleave="onDragLeave(event)"
+                 ondrop="onDrop(event, {{ m.id }})"
+                 onclick="toggleTileMenu({{ m.id }})">
+
+                <!-- 状态角标（动态图标 + 文字） -->
+                <span class="tile-status tile-{{ m.status }}">
+                    <span class="status-dot"></span>
+                    {{ {
+                        'running': '运行中',
+                        'idle': '空闲',
+                        'fault': '故障',
+                        'pending_check': '待诊',
+                        'repairing': '维修中',
+                        'offline': '停机',
+                        'maintenance': '维护'
+                    }[m.status] }}
+                </span>
+
+                <!-- 机台编号 + 吨位 -->
+                <div class="tile-header">
+                    <div>
+                        <div class="tile-num">{{ m.machine_number }}</div>
+                        {% if m.press_tonnage %}<div class="tile-tonnage">{{ m.press_tonnage }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- 操作员 -->
+                {% if m.current_operator_name %}
+                <div class="tile-operator">👤 {{ m.current_operator_name }}</div>
+                {% endif %}
+
+                <!-- 当前零件 + 进度（running 状态） -->
+                {% if m.status == 'running' and m.active_part_number %}
+                <div class="tile-part">
+                    📦 {{ m.active_part_number }}
+                    {% if m.active_part_name %}<span style="font-weight:400;color:#6b7280;font-size:11px;"> · {{ m.active_part_name }}</span>{% endif %}
+                </div>
+                {% if m.active_plan_total_qty %}
+                <div class="progress-wrap">
+                    <div class="progress-labels">
+                        <span>已报 {{ m.active_plan_progress_qty | default(0) }}</span>
+                        <span>目标 {{ m.active_plan_total_qty }}</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{% if m.active_plan_total_qty > 0 %}{{ ((m.active_plan_progress_qty | default(0) / m.active_plan_total_qty) * 100) | round(0) }}{% else %}0{% endif %}%;"></div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% elif m.status == 'running' and not m.active_part_number %}
+                <div style="font-size:12px;color:#6b7280;padding:6px 0;">⚠️ 未分配任务</div>
+                {% endif %}
+
+                <!-- idle 状态提示 -->
+                {% if m.status == 'idle' %}
+                <div style="font-size:12px;color:#9ca3af;padding:4px 0;">待机中，请分配任务</div>
+                {% endif %}
+
+                <!-- fault 状态 -->
+                {% if m.status == 'fault' and m.fault_reason %}
+                <div class="fault-msg">⚠️ {{ m.fault_reason }}</div>
+                {% endif %}
+
+                <!-- pending_check 状态 -->
+                {% if m.status == 'pending_check' %}
+                <div class="pending-msg">🔧 申请修理中</div>
+                {% endif %}
+
+                <!-- 诊断中 / 修理中 -->
+                {% if m.status == 'repairing' %}
+                <div style="font-size:12px;color:#7c3aed;padding:4px 0;">
+                    🔧 修理中 {{ m.fault_reason or '' }}
+                </div>
+                {% endif %}
+
+                <!-- offline 状态 -->
+                {% if m.status == 'offline' %}
+                <div style="font-size:12px;color:#6b7280;padding:4px 0;">🔌 开发人员修理中</div>
+                {% endif %}
+
+                <!-- 维修计时器（超过15分钟红色加粗） -->
+                {% if m.status in ['fault', 'pending_check', 'repairing'] and (m.fault_reported_at or m.tech_arrival_time) %}
+                {% set timer_start = m.fault_reported_at or m.tech_arrival_time %}
+                {% set elapsed_min = ((now - timer_start).total_seconds() / 60) | int %}
+                <div class="repair-timer{% if elapsed_min > 15 %} over-15{% endif %}"
+                     data-start="{{ timer_start.isoformat() }}">
+                    🕒 <span class="timer-val">已耽误 …</span>
+                </div>
+                {% endif %}
+
+                <!-- 当前模具 -->
+                {% if m.current_mold_number %}
+                <div style="font-size:11px;color:#9ca3af;margin-top:6px;">🛠 模具: {{ m.current_mold_number }}</div>
+                {% endif %}
+
+                <!-- 操作菜单（点击后显示） -->
+                <div class="tile-menu" id="menu-{{ m.id }}" onclick="event.stopPropagation()">
+                    <button class="tile-menu-item" onclick="showAssignToMachine({{ m.id }}, '{{ m.machine_number }}')">
+                        📋 下发任务
+                    </button>
+                    {% if m.status not in ['offline', 'maintenance'] %}
+                    <button class="tile-menu-item" onclick="openIntervene({{ m.id }}, '{{ m.machine_number }}', '{{ m.fault_reason | e | default('') }}')">
+                        ⚠️ 异常干预
+                    </button>
+                    {% endif %}
+                    {% if m.status in ['fault', 'pending_check', 'repairing', 'offline'] %}
+                    <button class="tile-menu-item" style="color:#7c3aed;" onclick="openRepairLog({{ m.id }}, '{{ m.machine_number | e }}')">
+                        🔧 维修日志
+                    </button>
+                    {% endif %}
+                    {% if m.active_plan_id %}
+                    <div class="tile-menu-divider"></div>
+                    <button class="tile-menu-item danger" onclick="openForceComplete({{ m.id }}, {{ m.active_plan_id }}, '{{ m.machine_number }}', '{{ m.active_part_number | default('') }}')">
+                        🏁 强制完工
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <div class="icon">🏭</div>
+            <div>暂无机台数据</div>
+        </div>
+        {% endif %}
+
+    </div><!-- /main -->
+</div><!-- /layout -->
+
+<!-- ── 侧边栏折叠按钮 ── -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">📋</button>
+
+<!-- ── 维修日志滑出面板 ── -->
+<div class="repair-log-panel" id="repairLogPanel">
+    <div class="repair-log-header">
+        <div>
+            <h3>🔧 维修日志</h3>
+            <div class="repair-log-machine" id="repairLogMachineNum">—</div>
+        </div>
+        <button class="repair-log-close" onclick="closeRepairLog()">×</button>
+    </div>
+    <div class="repair-log-body" id="repairLogBody">
+        <!-- JS 动态填充 -->
+    </div>
+    <div class="repair-log-actions">
+        <button class="btn btn-outline" style="flex:1;font-size:12px;" onclick="closeRepairLog()">关闭</button>
+        <button class="btn btn-primary" style="flex:1;font-size:12px;" onclick="openInterveneFromLog()">⚠️ 异常干预</button>
+    </div>
+</div>
+<div class="repair-log-panel-backdrop" id="repairLogBackdrop" onclick="closeRepairLog()"></div>
+
+<!-- ── 刷新提示 ── -->
+<div class="refreshing-overlay" id="refreshToast">⟳ 数据已更新</div>
+
+<script>
+// ─────────────────────────────────────────────
+//  侧边栏折叠
+// ─────────────────────────────────────────────
+function toggleSidebar() {
+    var sidebar = document.getElementById('sidebar');
+    sidebar.classList.toggle('collapsed');
+    sidebar.classList.toggle('open');
+}
+
+// ─────────────────────────────────────────────
+//  任务池过滤
+// ─────────────────────────────────────────────
+document.getElementById('poolFilter').addEventListener('change', function() {
+    var filter = this.value;
+    var cards = document.querySelectorAll('.order-card');
+    cards.forEach(function(card) {
+        if (!filter || card.getAttribute('data-urgency') === filter) {
+            card.style.display = '';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+});
+
+// ─────────────────────────────────────────────
+//  全局一键分配弹窗
+// ─────────────────────────────────────────────
+function showAssignPopup(btn, planId, partNumber) {
+    var machines = {{ machines | tojson }};
+    var html = '<div class="form-group">';
+    html += '<label>零件：' + escapeHtml(partNumber) + '</label></div>';
+    html += '<div class="form-group"><label>选择目标机台</label>';
+    html += '<select name="machine_id" required>';
+    html += '<option value="">-- 请选择机台 --</option>';
+    machines.forEach(function(m) {
+        html += '<option value="' + m.id + '">' + m.machine_number
+            + (m.press_tonnage ? ' (' + m.press_tonnage + ')' : '')
+            + ' - ' + m.status + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="modal-actions">';
+    html += '<button type="button" class="btn btn-outline" onclick="closeGlobalAssign()">取消</button>';
+    html += '<button type="button" class="btn btn-primary" onclick="submitGlobalAssign(' + planId + ')">确认分配</button>';
+    html += '</div>';
+    document.getElementById('globalAssignContent').innerHTML = html;
+    document.getElementById('globalAssignModal').classList.add('open');
+}
+function closeGlobalAssign() {
+    document.getElementById('globalAssignModal').classList.remove('open');
+}
+function submitGlobalAssign(planId) {
+    var sel = document.querySelector('#globalAssignContent select');
+    var machineId = sel.value;
+    if (!machineId) { alert('请选择机台'); return; }
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/prod/manager/assign';
+    var pidInput = document.createElement('input'); pidInput.type = 'hidden'; pidInput.name = 'plan_id'; pidInput.value = planId;
+    var midInput = document.createElement('input'); midInput.type = 'hidden'; midInput.name = 'machine_id'; midInput.value = machineId;
+    form.appendChild(pidInput); form.appendChild(midInput);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// ─────────────────────────────────────────────
+//  下发任务 → 分配弹窗（点击机台操作菜单）
+// ─────────────────────────────────────────────
+function showAssignToMachine(machineId, machineNum) {
+    closeAllMenus();
+    var plans = {{ unassigned_plans | tojson }};
+    var activePlans = {{ active_plans | tojson }};
+    var allPlans = plans.concat(activePlans.filter(function(p) {
+        return p.machine_id == machineId || !p.machine_id;
+    }));
+    var html = '<form method="POST" action="/prod/manager/assign">';
+    html += '<input type="hidden" name="machine_id" value="' + machineId + '">';
+    html += '<div class="form-group"><label>机台：' + escapeHtml(machineNum) + '</label></div>';
+    html += '<div class="form-group"><label>选择生产计划</label>';
+    html += '<select name="plan_id" required>';
+    html += '<option value="">-- 请选择计划 --</option>';
+    allPlans.forEach(function(p) {
+        var urgencyMap = {'critical': '🔴', 'urgent': '🟠', 'normal': '🟢'};
+        var urg = urgencyMap[p.urgency] || '●';
+        html += '<option value="' + p.id + '">' + urg + ' '
+            + (p.part_number || '')
+            + ' / 目标:' + (p.total_qty || 0)
+            + ' | ' + (p.status || 'pending')
+            + '</option>';
+    });
+    html += '</select></div>';
+    html += '<div class="modal-actions">';
+    html += '<button type="button" class="btn btn-outline" onclick="closeAllMenus()">取消</button>';
+    html += '<button type="submit" class="btn btn-primary">确认下发</button>';
+    html += '</div></form>';
+    document.getElementById('globalAssignContent').innerHTML = html;
+    document.getElementById('globalAssignModal').classList.add('open');
+}
+
+// ─────────────────────────────────────────────
+//  异常干预弹窗
+// ─────────────────────────────────────────────
+function openIntervene(machineId, machineNum, faultReason) {
+    closeAllMenus();
+    closeRepairLog();
+    document.getElementById('interveneMachineId').value = machineId;
+    document.getElementById('interveneMachineNum').textContent = machineNum;
+    document.getElementById('interveneFaultReason').value = faultReason || '';
+    document.getElementById('interveneModal').classList.add('open');
+}
+function closeIntervene() {
+    document.getElementById('interveneModal').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+//  强制完工弹窗
+// ─────────────────────────────────────────────
+function openForceComplete(machineId, planId, machineNum, partNumber) {
+    closeAllMenus();
+    document.getElementById('forceCompleteMachineId').value = machineId;
+    document.getElementById('forceCompletePlanId').value = planId;
+    document.getElementById('forceCompleteMachineNum').textContent = machineNum;
+    document.getElementById('forceCompletePart').textContent = partNumber || '—';
+    document.getElementById('forceCompleteModal').classList.add('open');
+}
+function closeForceComplete() {
+    document.getElementById('forceCompleteModal').classList.remove('open');
+}
+
+// ─────────────────────────────────────────────
+//  维修日志滑出面板
+// ─────────────────────────────────────────────
+var REPAIR_LOG_MACHINE_ID = null;
+var REPAIR_LOG_MACHINE_NUM = null;
+
+function openRepairLog(machineId, machineNum) {
+    closeAllMenus();
+    REPAIR_LOG_MACHINE_ID = machineId;
+    REPAIR_LOG_MACHINE_NUM = machineNum;
+
+    document.getElementById('repairLogMachineNum').textContent = machineNum;
+    document.getElementById('repairLogBody').innerHTML =
+        '<div style="text-align:center;padding:32px 0;color:#9ca3af;font-size:13px;">加载中…</div>';
+
+    document.getElementById('repairLogPanel').classList.add('open');
+    document.getElementById('repairLogBackdrop').classList.add('open');
+
+    // AJAX 获取维修日志数据
+    fetch('/prod/manager/repair-log/' + machineId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            renderRepairLog(data);
+        })
+        .catch(function() {
+            document.getElementById('repairLogBody').innerHTML =
+                '<div style="text-align:center;padding:32px 0;color:#dc2626;font-size:13px;">加载失败</div>';
+        });
+}
+
+function closeRepairLog() {
+    document.getElementById('repairLogPanel').classList.remove('open');
+    document.getElementById('repairLogBackdrop').classList.remove('open');
+    REPAIR_LOG_MACHINE_ID = null;
+}
+
+function renderRepairLog(data) {
+    var body = document.getElementById('repairLogBody');
+    if (!data.events || data.events.length === 0) {
+        body.innerHTML =
+            '<div style="text-align:center;padding:32px 0;color:#9ca3af;font-size:13px;">' +
+            '暂无维修记录</div>';
+        return;
+    }
+
+    // Current status summary
+    var html = '';
+
+    // ── 当前状态卡片 ──
+    html += '<div class="repair-log-section">';
+    html += '<div class="repair-log-section-title">当前状态</div>';
+    var statusLabel = {
+        'fault': '<span style="color:#dc2626;font-weight:700;">故障停机</span>',
+        'pending_check': '<span style="color:#dc2626;font-weight:700;">待诊断</span>',
+        'repairing': '<span style="color:#1d4ed8;font-weight:700;">维修中</span>',
+        'offline': '<span style="color:#6b7280;font-weight:700;">离线</span>',
+    };
+    html += '<div style="padding:10px 12px;background:#f9fafb;border-radius:8px;font-size:13px;">' +
+        '状态: ' + (statusLabel[data.status] || data.status) + '<br>' +
+        (data.fault_reason ? '故障: <strong>' + escapeHtml(data.fault_reason) + '</strong><br>' : '') +
+        (data.current_operator_name ? '操作员: ' + escapeHtml(data.current_operator_name) + '<br>' : '') +
+        (data.current_mold_number ? '模具: ' + escapeHtml(data.current_mold_number) : '') +
+        '</div>';
+    html += '</div>';
+
+    // ── 维修时间线 ──
+    html += '<div class="repair-log-section">';
+    html += '<div class="repair-log-section-title">维修时间线</div>';
+
+    data.events.forEach(function(ev) {
+        var dotClass = ev.dot_color || 'gray';
+        html += '<div class="repair-event">';
+        html += '<div class="repair-event-dot ' + dotClass + '"></div>';
+        html += '<div class="repair-event-line">';
+        html += '<div class="repair-event-time">' + escapeHtml(ev.time) + '</div>';
+        html += '<div class="repair-event-title">' + escapeHtml(ev.title) + '</div>';
+        if (ev.desc) {
+            html += '<div class="repair-event-desc">' + escapeHtml(ev.desc) + '</div>';
+        }
+        if (ev.operator) {
+            html += '<div class="repair-event-operator">👤 ' + escapeHtml(ev.operator) + '</div>';
+        }
+        html += '</div></div>';
+    });
+
+    html += '</div>';
+    body.innerHTML = html;
+}
+
+function openInterveneFromLog() {
+    if (!REPAIR_LOG_MACHINE_ID) return;
+    closeRepairLog();
+    // Small delay so panel closes first
+    setTimeout(function() {
+        openIntervene(REPAIR_LOG_MACHINE_ID, REPAIR_LOG_MACHINE_NUM || '', '');
+    }, 100);
+}
+
+// ─────────────────────────────────────────────
+//  机台操作菜单（点击磁贴）
+// ─────────────────────────────────────────────
+function toggleTileMenu(machineId) {
+    var menu = document.getElementById('menu-' + machineId);
+    // close others first
+    document.querySelectorAll('.tile-menu.open').forEach(function(m) {
+        if (m !== menu) m.classList.remove('open');
+    });
+    document.querySelectorAll('.assign-popup.open').forEach(function(p) {
+        p.classList.remove('open');
+    });
+    if (menu) menu.classList.toggle('open');
+}
+function closeAllMenus() {
+    document.querySelectorAll('.tile-menu.open, .assign-popup.open').forEach(function(el) {
+        el.classList.remove('open');
+    });
+    closeGlobalAssign();
+    closeIntervene();
+    closeForceComplete();
+}
+
+// ─────────────────────────────────────────────
+//  拖拽分配（任务池 → 机台）
+// ─────────────────────────────────────────────
+var DRAGGED_PLAN_ID = null;
+function onDragStart(event) {
+    DRAGGED_PLAN_ID = event.currentTarget.getAttribute('data-plan-id');
+    event.currentTarget.classList.add('dragging');
+    event.dataTransfer.effectAllowed = 'move';
+}
+function onDragEnd(event) {
+    event.currentTarget.classList.remove('dragging');
+    document.querySelectorAll('.machine-tile.drag-over').forEach(function(t) {
+        t.classList.remove('drag-over');
+    });
+}
+function onDragOver(event) {
+    event.preventDefault();
+    event.currentTarget.classList.add('drag-over');
+    event.dataTransfer.dropEffect = 'move';
+}
+function onDragLeave(event) {
+    event.currentTarget.classList.remove('drag-over');
+}
+function onDrop(event, machineId) {
+    event.preventDefault();
+    event.currentTarget.classList.remove('drag-over');
+    if (!DRAGGED_PLAN_ID) return;
+    var planId = DRAGGED_PLAN_ID;
+    DRAGGED_PLAN_ID = null;
+    // auto submit
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = '/prod/manager/assign';
+    var pidInput = document.createElement('input'); pidInput.type = 'hidden'; pidInput.name = 'plan_id'; pidInput.value = planId;
+    var midInput = document.createElement('input'); midInput.type = 'hidden'; midInput.name = 'machine_id'; midInput.value = machineId;
+    form.appendChild(pidInput); form.appendChild(midInput);
+    document.body.appendChild(form);
+    form.submit();
+}
+
+// ─────────────────────────────────────────────
+//  点击其他地方关闭菜单
+// ─────────────────────────────────────────────
+document.addEventListener('click', function(e) {
+    if (!e.target.closest('.machine-tile') && !e.target.closest('.tile-menu') && !e.target.closest('.assign-popup')) {
+        closeAllMenus();
+    }
+});
+
+// ─────────────────────────────────────────────
+//  自动刷新（5秒）
+// ─────────────────────────────────────────────
+var REFRESH_INTERVAL = 5000;
+setInterval(function() {
+    var toast = document.getElementById('refreshToast');
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 2200);
+    // Reload current page to get fresh data
+    // Use fetch + partial update to avoid full page reload
+    fetch('/prod/manager/json')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            // Update summary bar
+            if (data.running_count !== undefined) {
+                var statVals = document.querySelectorAll('.summary-item .val');
+                if (statVals[0]) statVals[0].textContent = data.machines ? data.machines.length : 0;
+                if (statVals[1]) statVals[1].textContent = data.running_count;
+                if (statVals[2]) statVals[2].textContent = data.fault_count;
+                if (statVals[3]) statVals[3].textContent = data.today_good;
+            }
+        })
+        .catch(function() {});
+    // Full reload after toast
+    setTimeout(function() { location.reload(); }, 800);
+}, REFRESH_INTERVAL);
+
+// ─────────────────────────────────────────────
+//  工具函数
+// ─────────────────────────────────────────────
+function escapeHtml(str) {
+    if (!str) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+</script>
+
+</body>
+</html>

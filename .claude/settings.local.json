@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(where python *)",
+      "Bash(where python3 *)",
+      "Bash(py --version)",
+      "Bash(py *)",
+      "Bash(taskkill /F /IM python.exe)",
+      "Bash(taskkill /F /IM py.exe)",
+      "Bash(netstat -ano)",
+      "Bash(findstr :8000)",
+      "Bash(taskkill /PID 7152 /F)",
+      "Bash(cmd *)",
+      "Bash(node --check \"C:/Users/Administrator/AppData/Local/Temp/check_js.js\")",
+      "Bash(where py *)",
+      "Bash(taskkill /PID 4620 /F)",
+      "Bash(git add *)"
+    ]
+  }
+}

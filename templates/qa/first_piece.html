@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>首件放行 - TY_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f9ff; min-height: 100vh; }
+        {% include "common/_admin_nav.html" %}
+        .page-body { max-width: 560px; margin: 0 auto; padding: 20px 16px 80px; }
+        .greet-card { background: linear-gradient(135deg, #0369a1, #0c4a6e); color: white; border-radius: 16px; padding: 20px 24px; margin-bottom: 16px; box-shadow: 0 4px 16px rgba(3,105,161,0.25); }
+        .greet-title { font-size: 22px; font-weight: 800; }
+        .greet-sub { font-size: 13px; opacity: 0.7; margin-top: 4px; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 5px solid #3b82f6; }
+        .card-title { font-size: 16px; font-weight: 800; color: #0f172a; margin-bottom: 14px; }
+        .form-field { margin-bottom: 16px; }
+        .form-label { font-size: 13px; font-weight: 700; color: #374151; margin-bottom: 6px; }
+        .form-input { width: 100%; padding: 12px 14px; border: 2px solid #e2e8f0; border-radius: 12px; font-size: 15px; color: #0f172a; background: white; outline: none; transition: border-color 0.15s; }
+        .form-input:focus { border-color: #3b82f6; }
+        .submit-btn { width: 100%; padding: 18px; border-radius: 16px; border: none; font-size: 17px; font-weight: 800; cursor: pointer; color: white; background: linear-gradient(135deg, #3b82f6, #2563eb); box-shadow: 0 6px 24px rgba(59,130,246,0.35); transition: transform 0.15s; }
+        .submit-btn:active { transform: scale(0.97); }
+        .success-overlay { display: none; position: fixed; inset: 0; background: rgba(34,197,94,0.92); z-index: 200; flex-direction: column; align-items: center; justify-content: center; color: white; }
+        .success-overlay.show { display: flex; animation: fadeIn 0.2s ease; }
+        .success-icon { font-size: 80px; margin-bottom: 16px; }
+        .success-text { font-size: 28px; font-weight: 900; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        .info-row { display: flex; justify-content: space-between; font-size: 14px; color: #475569; margin-bottom: 8px; }
+        .info-row span:first-child { font-weight: 600; color: #64748b; }
+        .audit-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .audit-table th { text-align: left; padding: 8px 10px; background: #f1f5f9; color: #475569; border-bottom: 2px solid #e2e8f0; }
+        .audit-table td { padding: 8px 10px; border-bottom: 1px solid #f1f5f9; }
+        .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+        .badge-em { background: #fee2e2; color: #dc2626; }
+        .badge-fp { background: #dcfce7; color: #15803d; }
+        .msg-error { background: #fef2f2; border: 2px solid #fca5a5; border-radius: 10px; padding: 10px 14px; color: #dc2626; font-size: 14px; margin-top: 10px; display: none; }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+<div class="page-body">
+    <div class="greet-card">
+        <div class="greet-title">首件放行</div>
+        <div class="greet-sub">{{ user.dept }} | {{ user.username }}</div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">工单首件放行</div>
+        <div class="form-field">
+            <label class="form-label">工单 ID</label>
+            <input class="form-input" type="number" id="wo_id" placeholder="输入工单 ID" min="1">
+        </div>
+        <div class="form-field">
+            <label class="form-label">操作说明</label>
+            <div style="font-size:13px;color:#64748b;line-height:1.6;">
+                输入工单 ID，提交后该工单将解除首件卡控，允许报工。<br>
+                此操作会记录到 QA 审计日志（黑匣子）。
+            </div>
+        </div>
+        <button class="submit-btn" onclick="submitRelease()">提交放行</button>
+        <div class="msg-error" id="error_msg"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">QA 审计日志（最近 20 条）</div>
+        <div id="audit_loader">加载中...</div>
+    </div>
+</div>
+
+<div class="success-overlay" id="success_overlay" onclick="hideSuccess()">
+    <div class="success-icon">&#10003;</div>
+    <div class="success-text">放行成功</div>
+</div>
+
+<script src="/static/js/api_config.js"></script>
+<script>
+async function submitRelease() {
+    var woId = parseInt(document.getElementById('wo_id').value);
+    if (!woId) { showError('请输入工单 ID'); return; }
+    document.getElementById('error_msg').style.display = 'none';
+    try {
+        var res = await apiPost('qa.fp_release', { work_order_id: woId });
+        if (res.code === 0) {
+            document.getElementById('success_overlay').classList.add('show');
+            document.getElementById('wo_id').value = '';
+            loadAuditLogs();
+        } else {
+            showError(res.message || '放行失败');
+        }
+    } catch(e) { showError('网络错误: ' + e.message); }
+}
+function showError(msg) {
+    var el = document.getElementById('error_msg');
+    el.textContent = msg;
+    el.style.display = 'block';
+}
+function hideSuccess() { document.getElementById('success_overlay').classList.remove('show'); }
+
+async function loadAuditLogs() {
+    var el = document.getElementById('audit_loader');
+    try {
+        var res = await apiGet('qa.audit_logs');
+        if (res.code === 0 && Array.isArray(res.data) && res.data.length > 0) {
+            var html = '<table class="audit-table"><tr><th>时间</th><th>工单</th><th>类型</th><th>原因</th></tr>';
+            res.data.slice(0, 20).forEach(function(log) {
+                var badge = log.action_type === 'EMERGENCY_RELEASE'
+                    ? '<span class="badge badge-em">特赦</span>'
+                    : '<span class="badge badge-fp">首件</span>';
+                html += '<tr><td>' + new Date(log.created_at).toLocaleString('zh-CN') + '</td>'
+                    + '<td>#' + log.work_order_id + '</td>'
+                    + '<td>' + badge + '</td>'
+                    + '<td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;">' + (log.reason || '') + '</td></tr>';
+            });
+            html += '</table>';
+            el.innerHTML = html;
+        } else {
+            el.innerHTML = '<div style="color:#9ca3af;font-size:14px;">暂无记录</div>';
+        }
+    } catch(e) { el.innerHTML = '<div style="color:#ef4444;">加载失败: ' + e.message + '</div>'; }
+}
+loadAuditLogs();
+</script>
+</body>
+</html>

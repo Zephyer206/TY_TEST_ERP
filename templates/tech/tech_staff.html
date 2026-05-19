@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>模修员工端 - TY_Tset_ERP</title>
+    <style>
+        /* ── 重置 & 字体 ── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: #f0f4f8;
+            color: #1f2937;
+            min-height: 100vh;
+        }
+
+        /* ── 顶部导航 ── */
+        .topbar a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 14px; }
+        /* ── 布局容器 ── */
+        .container { max-width: 640px; margin: 0 auto; padding: 14px 14px 80px; }
+
+        /* ── 区块标题 ── */
+        .section-title {
+            font-size: 13px; font-weight: 700; color: #374151;
+            margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+        }
+        .section-title::after {
+            content: ''; flex: 1; height: 1px; background: #e5e7eb;
+        }
+
+        /* ── 扫码主按钮 ── */
+        .scan-hero {
+            background: linear-gradient(135deg, #1e3a5f 0%, #2563eb 100%);
+            border-radius: 16px;
+            padding: 24px 20px;
+            text-align: center;
+            margin-bottom: 16px;
+            box-shadow: 0 4px 16px rgba(30,58,95,0.3);
+            cursor: pointer;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .scan-hero:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(30,58,95,0.4); }
+        .scan-hero:active { transform: scale(0.98); }
+        .scan-hero .icon { font-size: 40px; margin-bottom: 8px; }
+        .scan-hero .title { font-size: 18px; font-weight: 800; color: white; margin-bottom: 4px; }
+        .scan-hero .sub { font-size: 12px; color: rgba(255,255,255,0.75); }
+        .scan-hero form { margin: 0; }
+        .scan-hero input {
+            width: 100%; padding: 10px 14px; border: none; border-radius: 10px;
+            font-size: 15px; text-align: center; margin-top: 10px;
+            background: rgba(255,255,255,0.15); color: white;
+            backdrop-filter: blur(4px);
+        }
+        .scan-hero input::placeholder { color: rgba(255,255,255,0.6); }
+        .scan-hero button {
+            width: 100%; margin-top: 8px; padding: 10px;
+            background: white; color: #1e3a5f; border: none;
+            border-radius: 10px; font-size: 14px; font-weight: 700;
+            cursor: pointer;
+        }
+
+        /* ── 待维修机台卡片 ── */
+        .machine-list { display: flex; flex-direction: column; gap: 10px; }
+        .machine-card {
+            background: white; border-radius: 14px; padding: 16px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+            border-left: 5px solid #dc2626;
+            position: relative;
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from{opacity:0;transform:translateY(-8px)} to{opacity:1;transform:translateY(0)} }
+        .machine-card .urgent-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #fee2e2; color: #dc2626;
+            font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px;
+            margin-bottom: 8px;
+        }
+        .machine-card .machine-num { font-size: 22px; font-weight: 900; color: #1f2937; }
+        .machine-card .machine-tonnage { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .machine-card .fault-reason {
+            margin-top: 8px; padding: 8px 10px;
+            background: #fff5f5; border-radius: 8px;
+            font-size: 13px; color: #dc2626; font-weight: 600;
+        }
+        .machine-card .fault-time { font-size: 11px; color: #9ca3af; margin-top: 6px; }
+        .machine-card .fault-time span { color: #6b7280; font-weight: 600; }
+        .machine-card .card-actions { margin-top: 12px; }
+        .machine-card .btn-repair {
+            width: 100%; padding: 14px; border: none; border-radius: 12px;
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+            color: white; font-size: 16px; font-weight: 800;
+            cursor: pointer; display: flex; align-items: center;
+            justify-content: center; gap: 8px;
+            box-shadow: 0 4px 12px rgba(37,99,235,0.3);
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+        .machine-card .btn-repair:active { transform: scale(0.97); box-shadow: none; }
+
+        /* ── 等待提示 ── */
+        .empty-state { text-align: center; padding: 40px 16px; color: #9ca3af; }
+        .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-state .msg { font-size: 15px; font-weight: 600; color: #6b7280; }
+        .empty-state .sub { font-size: 12px; margin-top: 6px; }
+
+        /* ── 底部返回导航 ── */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: white; border-top: 1px solid #e5e7eb;
+            display: flex; z-index: 90;
+        }
+        .nav-item {
+            flex: 1; text-align: center; padding: 10px 4px;
+            font-size: 11px; font-weight: 600; color: #6b7280;
+            text-decoration: none; cursor: pointer;
+            transition: color 0.15s;
+        }
+        .nav-item.active { color: #1e3a5f; }
+        .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+
+        /* ── 响应式 ── */
+        @media (min-width: 640px) {
+            .container { max-width: 640px; }
+        }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+
+<div class="container">
+
+    <!-- ── 扫码入口 ── -->
+    <div class="scan-hero" onclick="document.getElementById('scanInput').focus()">
+        <div class="icon">📱</div>
+        <div class="title">扫码维修</div>
+        <div class="sub">扫描机台二维码，快速接单维修</div>
+        <form method="post" action="/tech/staff/scan" onsubmit="return validateScan(this)">
+            <input type="text" id="scanInput" name="machine_key" placeholder="或手动输入机台编号…" autocomplete="off">
+            <button type="submit">接 单</button>
+        </form>
+    </div>
+
+    <!-- ── 维修决策界面（repairing 状态） ── -->
+    {% if repairing_machine %}
+    <div class="section-title">🔧 当前维修中</div>
+
+    <div class="repair-panel" style="
+        background: linear-gradient(135deg, #1e3a5f 0%, #1e40af 100%);
+        border-radius: 16px; padding: 20px;
+        margin-bottom: 16px; color: white; box-shadow: 0 4px 16px rgba(30,58,95,0.35);
+    ">
+        <!-- 机台信息 -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;">
+            <div>
+                <div style="font-size:28px;font-weight:900;">{{ repairing_machine.machine_number }}</div>
+                {% if repairing_machine.press_tonnage %}
+                <div style="font-size:12px;opacity:0.7;margin-top:2px;">{{ repairing_machine.press_tonnage }}</div>
+                {% endif %}
+            </div>
+            <div style="
+                background:rgba(255,255,255,0.15);border-radius:9999px;
+                padding:4px 12px;font-size:12px;font-weight:700;
+                display:flex;align-items:center;gap:6px;
+            ">
+                <span style="width:8px;height:8px;border-radius:50%;background:#60a5fa;animation:breathe 1.8s ease-in-out infinite;display:inline-block;"></span>
+                维修中
+            </div>
+        </div>
+
+        <!-- 故障描述 -->
+        {% if repairing_machine.fault_reason %}
+        <div style="background:rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;margin-bottom:12px;font-size:13px;">
+            ⚠️ {{ repairing_machine.fault_reason }}
+        </div>
+        {% endif %}
+
+        <!-- 关联信息 -->
+        <div style="font-size:12px;opacity:0.75;margin-bottom:12px;">
+            {% if repairing_machine.current_mold_number %}
+            🛠 模具: {{ repairing_machine.current_mold_number }}{% if repairing_machine.current_mold_name %} ({{ repairing_machine.current_mold_name }}){% endif %}<br>
+            {% endif %}
+            {% if repairing_machine.active_part_number %}
+            📦 零件: {{ repairing_machine.active_part_number }}{% if repairing_machine.active_part_name %} {{ repairing_machine.active_part_name }}{% endif %}<br>
+            {% endif %}
+            {% if repairing_machine.current_operator_name %}
+            👤 操作员: {{ repairing_machine.current_operator_name }}
+            {% endif %}
+        </div>
+
+        <!-- 已维修计时器 -->
+        <div style="
+            background:rgba(255,255,255,0.12);border-radius:12px;
+            padding:14px 16px;margin-bottom:14px;text-align:center;
+        ">
+            <div style="font-size:11px;opacity:0.7;margin-bottom:4px;">已维修时长</div>
+            <div id="repairTimer" style="font-size:36px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;">
+                ——
+            </div>
+            <div style="font-size:11px;opacity:0.6;margin-top:4px;">
+                接单时间: {{ repairing_machine.tech_arrival_time.strftime('%H:%M') if repairing_machine.tech_arrival_time else '—' }}
+            </div>
+        </div>
+
+        <!-- 两大操作按钮 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <!-- 在线修复完成 -->
+            <form method="post" action="/machines/{{ repairing_machine.id }}/tech-complete"
+                  onsubmit="return confirm('确认机台【{{ repairing_machine.machine_number }}】故障已排除，恢复运行？')">
+                <button type="submit" class="action-btn" style="
+                    width:100%;padding:16px 8px;border:none;border-radius:12px;
+                    background:#22c55e;color:white;font-size:15px;font-weight:800;
+                    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+                    box-shadow:0 4px 12px rgba(34,197,94,0.4);
+                ">
+                    <span style="font-size:28px;">✅</span>
+                    在线修复完成
+                </button>
+            </form>
+
+            <!-- 确认拆模下线 -->
+            <button type="button" onclick="confirmOffline({{ repairing_machine.id }}, '{{ repairing_machine.machine_number }}')"
+                class="action-btn" style="
+                    width:100%;padding:16px 8px;border:none;border-radius:12px;
+                    background:#dc2626;color:white;font-size:15px;font-weight:800;
+                    cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:6px;
+                    box-shadow:0 4px 12px rgba(220,38,38,0.4);
+                ">
+                <span style="font-size:28px;">🔧</span>
+                确认拆模下线
+            </button>
+        </div>
+
+        <!-- 放弃维修返回 -->
+        <div style="text-align:center;margin-top:12px;">
+            <a href="/tech/staff" style="color:rgba(255,255,255,0.5);font-size:12px;text-decoration:none;">
+                ← 放弃，返回待维修列表
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── 待维修机台列表 ── -->
+    <div class="section-title">
+        📋 待维修清单
+        <span style="font-size:11px;font-weight:400;color:#9ca3af;margin-left:6px;">{{ pending_machines|length }} 台</span>
+    </div>
+
+    {% if pending_machines %}
+    <div class="machine-list">
+        {% for m in pending_machines %}
+        <div class="machine-card">
+            <div class="urgent-badge">🔴 待维修</div>
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div>
+                    <div class="machine-num">{{ m.machine_number }}</div>
+                    {% if m.press_tonnage %}<div class="machine-tonnage">{{ m.press_tonnage }}</div>{% endif %}
+                </div>
+                {% if m.current_mold_number %}
+                <div style="text-align:right;font-size:11px;color:#9ca3af;">
+                    🛠 {{ m.current_mold_number }}
+                </div>
+                {% endif %}
+            </div>
+
+            {% if m.fault_reason %}
+            <div class="fault-reason">⚠️ {{ m.fault_reason }}</div>
+            {% endif %}
+
+            {% if m.fault_reported_at %}
+            <div class="fault-time">
+                报修时间：<span>{{ m.fault_reported_at.strftime('%m-%d %H:%M') }}</span>
+                {% set elapsed = ((now - m.fault_reported_at).total_seconds() / 60) | int %}
+                {% if elapsed > 0 %}
+                <span style="color:#dc2626;font-weight:700;">（已等候 {{ elapsed }} 分钟）</span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="card-actions">
+                <form method="post" action="/machines/{{ m.id }}/tech-intervene"
+                      onsubmit="return confirm('确认接单维修【{{ m.machine_number }}】？')">
+                    <button type="submit" class="btn-repair">
+                        🔧 接单维修
+                    </button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <div class="icon">✅</div>
+        <div class="msg">暂无待维修机台</div>
+        <div class="sub">所有机台运行正常</div>
+    </div>
+    {% endif %}
+
+</div><!-- /container -->
+
+<!-- ── Toast ── -->
+<div id="toast" style="
+    position:fixed;top:70px;left:50%;transform:translateX(-50%);
+    background:#1f2937;color:white;padding:10px 22px;border-radius:10px;
+    font-size:13px;font-weight:600;z-index:600;opacity:0;transition:opacity 0.2s;
+    pointer-events:none;white-space:nowrap;
+"></div>
+
+<!-- ── 底部导航 ── -->
+<div class="bottom-nav">
+    <a href="/" class="nav-item">
+        <span class="nav-icon">🏠</span>首页
+    </a>
+    <a href="/tech/staff" class="nav-item active">
+        <span class="nav-icon">🔧</span>维修台
+    </a>
+    <a href="/tech/analytics" class="nav-item">
+        <span class="nav-icon">📊</span>时效分析
+    </a>
+</div>
+
+<script>
+    // ── Toast 提示 ──
+    function showToast(msg, type) {
+        var el = document.getElementById('toast');
+        if (!el) { alert(msg); return; }
+        el.textContent = msg;
+        el.className = 'toast ' + (type || '');
+        el.classList.add('show');
+        setTimeout(function() { el.classList.remove('show'); }, 2500);
+    }
+
+    // ── 确认拆模下线 ──
+    function confirmOffline(machineId, machineNumber) {
+        if (!confirm('确认【' + machineNumber + '】需拆模下线？\n机台将进入停机状态。')) return;
+        var btn = event.currentTarget;
+        btn.disabled = true;
+        btn.textContent = '处理中…';
+        fetch('/tech/pool/confirm-offline', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: 'machine_id=' + machineId
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.success) {
+                showToast('已加入待修池', 'success');
+                setTimeout(function() { location.reload(); }, 1500);
+            } else {
+                showToast(data.message || '操作失败', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<span style="font-size:28px;">🔧</span>确认拆模下线';
+            }
+        })
+        .catch(function() {
+            showToast('网络异常', 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<span style="font-size:28px;">🔧</span>确认拆模下线';
+        });
+    }
+
+    // ── 扫码输入验证 ──
+    function validateScan(form) {
+        var val = form.machine_key.value.trim();
+        if (!val) { alert('请输入机台编号'); return false; }
+        return true;
+    }
+
+    // ── 维修计时器（蓝色主题，每 10 秒刷新） ──
+    {% if repairing_machine and repairing_machine.tech_arrival_time %}
+    var START_TIME = new Date('{{ repairing_machine.tech_arrival_time.isoformat() }}');
+    function pad(n) { return n < 10 ? '0' + n : n; }
+    function updateRepairTimer() {
+        var now = new Date();
+        var diffMs = now - START_TIME;
+        if (diffMs < 0) return;
+        var totalSec = Math.floor(diffMs / 1000);
+        var h = Math.floor(totalSec / 3600);
+        var m = Math.floor((totalSec % 3600) / 60);
+        var s = totalSec % 60;
+        var el = document.getElementById('repairTimer');
+        if (el) {
+            if (h > 0) {
+                el.textContent = pad(h) + ':' + pad(m) + ':' + pad(s);
+            } else {
+                el.textContent = pad(m) + ':' + pad(s);
+            }
+        }
+    }
+    setInterval(updateRepairTimer, 10000);
+    updateRepairTimer();
+    {% endif %}
+
+    // ── 呼吸灯动画（维修中状态点） ──
+    var style = document.createElement('style');
+    style.textContent = '@keyframes breathe {0%,100%{opacity:0.6;transform:scale(0.85)}50%{opacity:1;transform:scale(1.2)}}';
+    document.head.appendChild(style);
+</script>
+
+</body>
+</html>

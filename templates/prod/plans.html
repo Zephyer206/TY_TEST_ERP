@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>生产计划排产 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; padding: 12px; }
+        .topbar a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 22px; }
+        .nav-links { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+        .nav-links a { padding: 6px 14px; background: white; border-radius: 20px; font-size: 12px; color: #166534; text-decoration: none; border: 1px solid #166534; }
+        .nav-links a.active { background: #166534; color: white; }
+        .btn { padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 13px; font-weight: 600; }
+        .btn-primary { background: #166534; color: white; }
+        .btn-danger { background: #dc2626; color: white; }
+        .btn-outline { background: white; color: #166534; border: 1px solid #166534; }
+        .btn-orange { background: #ea580c; color: white; }
+        .urgency-critical { background: #dc2626; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .urgency-urgent  { background: #f97316; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .urgency-normal  { background: #d1fae5; color: #166534; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+        .force-badge { background: #7c3aed; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 700; }
+        .plan-card {
+            background: white; border-radius: 12px; padding: 14px;
+            margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+            border-left: 4px solid #d1d5db;
+        }
+        .plan-card.critical { border-left-color: #dc2626; }
+        .plan-card.urgent   { border-left-color: #f97316; }
+        .plan-card.normal   { border-left-color: #16a34a; }
+        .plan-card.completed { border-left-color: #6b7280; opacity: 0.7; }
+        .plan-card.has-fault { background: #fff5f5; border-left-color: #dc2626; }
+        .plan-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .plan-pn { font-size: 15px; font-weight: 800; color: #1f2937; }
+        .plan-body { font-size: 12px; color: #6b7280; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+        .plan-body strong { color: #374151; }
+        .plan-actions { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+        .filter-bar { background: white; border-radius: 10px; padding: 12px; margin-bottom: 14px; display: flex; gap: 8px; flex-wrap: wrap; align-items: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .filter-bar select, .filter-bar input { padding: 6px 10px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 12px; }
+        .section-title { font-size: 14px; font-weight: 700; color: #374151; margin: 16px 0 8px; }
+        .empty-box { text-align: center; padding: 40px; color: #9ca3af; }
+        .machine-colors { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .machine-chip { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; background: #e0e7ff; color: #3730a3; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 50; }
+        .modal { background: white; border-radius: 16px; padding: 24px; width: 90%; max-width: 440px; }
+        .modal h3 { font-size: 16px; margin-bottom: 16px; color: #1f2937; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 12px; color: #6b7280; margin-bottom: 4px; }
+        .form-group input, .form-group select { width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 13px; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+        .sales-force { background: #fef3c7; border: 2px solid #f59e0b; border-radius: 12px; padding: 12px; margin-bottom: 14px; }
+        .sales-force h4 { color: #d97706; font-size: 13px; margin-bottom: 4px; }
+        .sales-force p { font-size: 12px; color: #92400e; }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+<div class="nav-links">
+    <a href="/machines">🏭 机台管理</a>
+    <a href="/plans" class="active">📋 生产计划</a>
+    <a href="/operator">📱 机台终端</a>
+</div>
+
+<!-- 业务强制干预说明（业务 Level 5+ 可见） -->
+{% if user.department == 'sales' and user.role_level >= 5 %}
+<div class="sales-force">
+    <h4>🔒 强制干预模式</h4>
+    <p>您所在的业务部门账号可通过下方"强制排序"按钮，突破生产顺序限制，将紧急件强制插入最优先位置（显示紫色标识）。</p>
+</div>
+{% endif %}
+
+<!-- 过滤栏 -->
+<div class="filter-bar">
+    <form method="get" action="/plans" style="display:contents;">
+        <select name="status">
+            <option value="">全部状态</option>
+            <option value="planned"      {% if filters.status=='planned' %}selected{% endif %}>待排产</option>
+            <option value="in_progress" {% if filters.status=='in_progress' %}selected{% endif %}>进行中</option>
+            <option value="completed"    {% if filters.status=='completed' %}selected{% endif %}>已完成</option>
+            <option value="cancelled"   {% if filters.status=='cancelled' %}selected{% endif %}>已取消</option>
+            <option value="closed"      {% if filters.status=='closed' %}selected{% endif %}>已结案</option>
+        </select>
+        <select name="urgency">
+            <option value="">全部紧急度</option>
+            <option value="critical" {% if filters.urgency=='critical' %}selected{% endif %}>🔥 紧急</option>
+            <option value="urgent"  {% if filters.urgency=='urgent' %}selected{% endif %}>⚠ 加急</option>
+            <option value="normal"  {% if filters.urgency=='normal' %}selected{% endif %}>普通</option>
+        </select>
+        <select name="machine_id">
+            <option value="">全部机台</option>
+            {% for m in machines %}
+            <option value="{{ m.id }}" {% if filters.machine_id|string==m.id|string %}selected{% endif %}>{{ m.machine_number }}</option>
+            {% endfor %}
+        </select>
+        <input name="keyword" placeholder="零件编号/名称" value="{{ filters.keyword or '' }}" style="width:140px;">
+        <button class="btn btn-primary" style="padding:6px 14px;font-size:12px;">筛选</button>
+        <a href="/plans" class="btn btn-outline" style="padding:6px 14px;font-size:12px;">重置</a>
+    </form>
+</div>
+
+{% if user.role_level >= 5 %}
+<div style="margin-bottom: 14px;">
+    <button class="btn btn-primary" onclick="openAddModal()">+ 新建生产计划</button>
+</div>
+{% endif %}
+
+<!-- 统计 -->
+<div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(100px,1fr)); gap:8px; margin-bottom:16px;">
+    <div style="background:white;border-radius:10px;padding:12px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,0.07);">
+        <div style="font-size:22px;font-weight:700;color:#166534;">{{ plans|length }}</div>
+        <div style="font-size:11px;color:#888;">计划总数</div>
+    </div>
+    <div style="background:#fef3c7;border-radius:10px;padding:12px;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:#d97706;">{{ plans|selectattr('urgency','in',['critical','urgent'])|list|length }}</div>
+        <div style="font-size:11px;color:#92400e;">紧急计划</div>
+    </div>
+    <div style="background:#f0fdf4;border-radius:10px;padding:12px;text-align:center;">
+        <div style="font-size:22px;font-weight:700;color:#166534;">{{ plans|selectattr('force_order','equalto',True)|list|length }}</div>
+        <div style="font-size:11px;color:#166534;">强制插队</div>
+    </div>
+</div>
+
+<!-- 计划列表 -->
+{% if plans %}
+    {% for plan in plans %}
+    <div class="plan-card {{ plan.urgency }} {% if plan.status in ('completed','cancelled','closed') %}completed{% endif %}{% if plan.has_fault %} has-fault{% endif %}">
+        <div class="plan-header">
+            <div>
+                <span class="plan-pn">{{ plan.part_number }}</span>
+                <span class="urgency-{{ plan.urgency }}">{{ {'critical':'🔥 紧急','urgent':'⚠ 加急','normal':'普通'}[plan.urgency] }}</span>
+                {% if plan.force_order %}<span class="force-badge">业务强制</span>{% endif %}
+                {% if plan.has_fault %}<span class="urgency-critical" style="background:#dc2626;">&#9888; 机台故障</span>{% endif %}
+            </div>
+            <div style="font-size:12px; color:#6b7280;">
+                {{ {'planned':'待排产','in_progress':'进行中','completed':'已完成','cancelled':'已取消','closed':'已结案'}[plan.status] }}
+            </div>
+        </div>
+        <div class="plan-body">
+            <div>零件: <strong>{{ plan.part_name }}</strong></div>
+            <div>总量: <strong>{{ plan.total_qty }}</strong></div>
+            {% if plan.progress_qty %}
+                {% set pct = (plan.progress_qty / plan.total_qty * 100)|round(1) if plan.total_qty else 0 %}
+                {% if pct > 100 %}
+                    <div style="color:#7c3aed;">累计: <strong>{{ plan.progress_qty }}</strong>
+                        <span style="font-size:11px;background:#ede9fe;color:#6d28d9;padding:1px 6px;border-radius:4px;">超产 +{{ (pct - 100)|round(1) }}%</span>
+                    </div>
+                {% else %}
+                    <div style="color:#1565c0;">累计: <strong>{{ plan.progress_qty }}</strong></div>
+                {% endif %}
+            {% endif %}
+            {% if plan.delivered_qty %}<div>已交: <strong>{{ plan.delivered_qty }}</strong></div>{% endif %}
+            {% if plan.due_date %}<div>交期: <strong>{{ plan.due_date }}</strong></div>{% endif %}
+            {% if plan.assigned_by_name %}<div>排产人: <strong>{{ plan.assigned_by_name }}</strong></div>{% endif %}
+            {% if plan.remark %}<div>备注: <strong>{{ plan.remark }}</strong></div>{% endif %}
+        </div>
+
+        <!-- 已关联机台标签（故障机台红色） -->
+        {% if plan.assigned_machines %}
+        <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
+            {% for m in plan.assigned_machines.split(',') %}
+            {% set m_s = m.strip() %}
+            {% set is_fault = False %}
+            {% if plan.has_fault and plan.fault_machines %}
+                {% for fm in plan.fault_machines.split(';') %}
+                    {% if fm and fm.startswith(m_s) %}
+                        <span style="padding:2px 8px;background:#fee2e2;color:#dc2626;border-radius:4px;font-size:11px;font-weight:700;">&#9888; {{ m_s }}</span>
+                        {% set is_fault = True %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+            {% if not is_fault %}
+            <span style="padding:2px 8px;background:#dbeafe;color:#1d4ed8;border-radius:4px;font-size:11px;font-weight:700;">{{ m_s }}</span>
+            {% endif %}
+            {% endfor %}
+        </div>
+        {% elif plan.machine_number %}
+        <div style="margin-top:6px;">
+            <span style="padding:2px 8px;background:#dbeafe;color:#1d4ed8;border-radius:4px;font-size:11px;font-weight:700;">{{ plan.machine_number }}</span>
+        </div>
+        {% endif %}
+
+        {# 故障原因明细 #}
+        {% if plan.has_fault and plan.fault_machines %}
+        <div style="margin-top:4px;font-size:11px;color:#dc2626;">
+            {% for fm in plan.fault_machines.split(';') %}
+                {% if fm %}{{ fm }}; {% endif %}
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if user.role_level >= 5 %}
+        <div class="plan-actions">
+            <!-- 多机台分配（仅活跃计划可操作） -->
+            {% if plan.status not in ('completed','cancelled','closed') %}
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;" onclick="openMultiAssignModal({{ plan.id }}, '{{ plan.part_number }}', '{{ plan.assigned_machines or '' }}')">+ 关联机台</button>
+            {% endif %}
+            <!-- 排序（普通） -->
+            {% if user.department != 'sales' and plan.status not in ('completed','cancelled','closed') %}
+            <form method="post" action="/plans/{{ plan.id }}/reorder" style="display:inline;">
+                <input type="hidden" name="new_order" value="{{ loop.index }}">
+                <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;">&#8593; 提前</button>
+            </form>
+            {% endif %}
+            <!-- 业务强制干预（sales Lv.5+） -->
+            {% if user.department == 'sales' and user.role_level >= 5 and plan.status not in ('completed','cancelled','closed') %}
+            <form method="post" action="/plans/{{ plan.id }}/reorder" style="display:inline;">
+                <input type="hidden" name="new_order" value="1">
+                <input type="hidden" name="force" value="1">
+                <button class="btn btn-orange" style="font-size:11px;padding:4px 10px;">&#128293; 强制优先</button>
+            </form>
+            {% endif %}
+            <!-- 结案按钮（仅未结案/未取消的计划显示） -->
+            {% if plan.status not in ('completed','cancelled','closed') %}
+            <button class="btn btn-outline" style="font-size:11px;padding:4px 10px;color:#7c3aed;border-color:#7c3aed;"
+                    onclick="openCloseModal({{ plan.id }}, '{{ plan.part_number }}', {{ plan.total_qty or 0 }}, {{ plan.progress_qty or 0 }})">
+                &#10004; 结案
+            </button>
+            {% endif %}
+            <!-- 查看结案报告（仅已结案） -->
+            {% if plan.status == 'closed' %}
+            <a href="/plans/{{ plan.id }}/close-report" class="btn btn-outline" style="font-size:11px;padding:4px 10px;background:#ede9fe;color:#6d28d9;border-color:#7c3aed;text-decoration:none;">
+                &#128203; 结案报告
+            </a>
+            {% endif %}
+            <!-- 取消（仅进行中/待排产） -->
+            {% if plan.status not in ('completed','cancelled','closed') %}
+            <form method="post" action="/plans/{{ plan.id }}/cancel" style="display:inline;" onsubmit="return confirm('确认取消该计划？')">
+                <button class="btn btn-danger" style="font-size:11px;padding:4px 10px;">取消</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+{% else %}
+<div class="empty-box">
+    <div class="empty-icon">📋</div>
+    <div class="empty-title">暂无生产计划</div>
+    <div style="margin-top:8px;font-size:12px;">主管可点击"新建生产计划"创建</div>
+</div>
+{% endif %}
+
+<!-- 新建计划弹窗 -->
+<div id="addModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAddModal()">
+    <div class="modal">
+        <h3>新建生产计划</h3>
+        <form method="post" action="/plans/add">
+            <div class="form-group">
+                <label>零件 *</label>
+                <select name="part_id" required>
+                    <option value="">-- 选择零件 --</option>
+                    {% for p in parts %}
+                    <option value="{{ p.id }}">{{ p.part_number }} / {{ p.part_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>总量 *</label>
+                <input name="total_qty" type="number" min="1" required placeholder="例：10000">
+            </div>
+            <div class="form-group">
+                <label>交期</label>
+                <input name="due_date" type="date">
+            </div>
+            <div class="form-group">
+                <label>紧急度</label>
+                <select name="urgency">
+                    <option value="normal">普通</option>
+                    <option value="urgent">&#9888; 加急</option>
+                    <option value="critical">&#128293; 紧急</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>备注</label>
+                <input name="remark" placeholder="可选备注">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeAddModal()">取消</button>
+                <button type="submit" class="btn btn-primary">创建计划</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- 多机台分配弹窗（plan_machines 关联表） -->
+<div id="assignModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeAssignModal()">
+    <div class="modal">
+        <h3>关联机台 → <span id="assignPlanPn" style="color:#1565c0;"></span></h3>
+        <div id="currentMachines" style="margin-bottom:10px;font-size:12px;color:#6b7280;"></div>
+        <form method="post" id="assignForm">
+            <div class="form-group">
+                <label>添加机台</label>
+                <select name="machine_id" required>
+                    <option value="">-- 选择机台 --</option>
+                    {% for m in machines %}
+                    <option value="{{ m.id }}">{{ m.machine_number }} / {{ m.machine_name or '未命名' }} / {{ m.status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div style="font-size:11px;color:#9ca3af;margin-bottom:12px;">
+                同一计划可关联多个机台，每台机独立记录报工
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeAssignModal()">取消</button>
+                <button type="submit" class="btn btn-primary">确认关联</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAddModal() { document.getElementById('addModal').style.display='flex'; }
+function closeAddModal() { document.getElementById('addModal').style.display='none'; }
+function openMultiAssignModal(id, pn, currentMachines) {
+    document.getElementById('assignPlanPn').textContent = pn;
+    var info = document.getElementById('currentMachines');
+    if (currentMachines && currentMachines.length > 0) {
+        var chips = currentMachines.split(',').map(function(m) {
+            return '<span style="padding:2px 8px;background:#dbeafe;color:#1d4ed8;border-radius:4px;font-size:11px;font-weight:700;margin-right:4px;">' + m.trim() + '</span>';
+        }).join('');
+        info.innerHTML = '已关联: ' + chips;
+    } else {
+        info.innerHTML = '暂未关联任何机台';
+    }
+    document.getElementById('assignForm').action = '/plans/' + id + '/assign';
+    document.getElementById('assignModal').style.display='flex';
+}
+function closeAssignModal() { document.getElementById('assignModal').style.display='none'; }
+function openCloseModal(id, pn, target, current) {
+    var over = Math.max(current - target, 0);
+    document.getElementById('closePn').textContent = pn;
+    document.getElementById('closeTarget').textContent = target;
+    document.getElementById('closeActual').textContent = current;
+    document.getElementById('closeForm').action = '/plans/' + id + '/close';
+    var overEl = document.getElementById('closeOver');
+    if (over > 0) {
+        var pct = ((over / target) * 100).toFixed(1);
+        overEl.innerHTML = '<span style="background:#ede9fe;color:#6d28d9;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:700;">+' + over + ' 件（+' + pct + '%）</span>';
+    } else {
+        overEl.innerHTML = '<span style="color:#9ca3af;font-size:13px;">无超产</span>';
+    }
+    document.getElementById('closeModal').style.display = 'flex';
+}
+function closeCloseModal() { document.getElementById('closeModal').style.display = 'none'; }
+</script>
+
+<!-- 结案确认弹窗 -->
+<div id="closeModal" class="modal-overlay" style="display:none;" onclick="if(event.target===this)closeCloseModal()">
+    <div class="modal" style="max-width:420px;">
+        <h3 style="margin-bottom:14px;">&#10004; 确认结案</h3>
+        <form method="post" id="closeForm">
+            <div style="background:#f9fafb;border-radius:10px;padding:14px;margin-bottom:14px;">
+                <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">零件编号</div>
+                <div style="font-size:16px;font-weight:800;color:#1f2937;" id="closePn"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+                <div style="text-align:center;background:#eff6ff;padding:10px;border-radius:8px;">
+                    <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">目标总量</div>
+                    <div style="font-size:18px;font-weight:800;color:#1d4ed8;" id="closeTarget">0</div>
+                </div>
+                <div style="text-align:center;background:#f0fdf4;padding:10px;border-radius:8px;">
+                    <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">累计产出</div>
+                    <div style="font-size:18px;font-weight:800;color:#16a34a;" id="closeActual">0</div>
+                </div>
+                <div style="text-align:center;background:#ede9fe;padding:10px;border-radius:8px;">
+                    <div style="font-size:10px;color:#9ca3af;margin-bottom:2px;">超产数量</div>
+                    <div id="closeOver" style="font-size:18px;font-weight:800;color:#7c3aed;">—</div>
+                </div>
+            </div>
+            <div style="font-size:12px;color:#9ca3af;margin-bottom:14px;padding:8px;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;">
+                &#9432; 结案后该计划将解除所有机台关联，业务部可参考超产数据平衡库存
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-outline" onclick="closeCloseModal()">取消</button>
+                <button type="submit" class="btn btn-primary" style="background:#7c3aed;">确认结案</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+</body>
+</html>

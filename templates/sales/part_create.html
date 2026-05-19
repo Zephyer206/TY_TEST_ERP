@@ -1,0 +1,1660 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>创建新项目 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; }
+
+        /* ── 顶部导航 ── */
+        .topbar-right .chip {
+            padding: 3px 10px; border-radius: 20px;
+            background: rgba(255,255,255,0.2);
+            font-size: 11px; font-weight: 600;
+        }
+        .topbar-right a {
+            color: rgba(255,255,255,0.85); text-decoration: none;
+            font-size: 20px;
+        }
+
+        /* ── 内容区 ── */
+        .content { padding: 16px 14px 80px; max-width: 760px; margin: 0 auto; }
+
+        /* ── 步骤指示器 ── */
+        .steps { display: flex; gap: 6px; margin-bottom: 16px; }
+        .step { flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 600; background: white; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+        .step.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+        .step.done { background: #f3f4f6; color: #059669; border-color: #059669; }
+
+        /* ── 卡片 ── */
+        .card {
+            background: white; border-radius: 14px; padding: 16px;
+            margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .card-title {
+            font-size: 14px; font-weight: 800; color: #111827;
+            margin-bottom: 14px; padding-bottom: 10px;
+            border-bottom: 1.5px solid #f3f4f6;
+        }
+
+        /* ── 表单 ── */
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .form-row.single { grid-template-columns: 1fr; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; display: block; }
+        .form-label .required { color: #dc2626; margin-left: 2px; }
+        .form-input, .form-select {
+            width: 100%; padding: 9px 12px;
+            border: 1.5px solid #e5e7eb; border-radius: 9px;
+            font-size: 14px; outline: none; background: #fff;
+        }
+        .form-input:focus, .form-select:focus { border-color: #7c3aed; }
+        .form-input.manual-override { color: #1d4ed8; font-weight: 700; }
+        .form-hint { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+        .form-hint.blue { color: #1d4ed8; }
+
+        /* ── 材料行：下拉 + 新建按钮 ── */
+        .material-row { display: flex; gap: 8px; align-items: stretch; }
+        .material-row .form-select { flex: 1; }
+        .btn-new-material {
+            padding: 9px 14px; border: 1.5px solid #7c3aed;
+            border-radius: 9px; background: #faf5ff; color: #7c3aed;
+            font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: background 0.15s;
+        }
+        .btn-new-material:hover { background: #ede9fe; }
+        .btn-edit-material {
+            padding: 9px 14px; border: 1.5px solid #9ca3af;
+            border-radius: 9px; background: #f9fafb; color: #6b7280;
+            font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap;
+            transition: background 0.15s, color 0.15s, border-color 0.15s;
+        }
+        .btn-edit-material:hover:not(:disabled) { background: #f3f4f6; color: #374151; border-color: #6b7280; }
+        .btn-edit-material:disabled {
+            opacity: 0.4; cursor: not-allowed;
+        }
+
+        /* ── 零件名称行：输入框 + 管理按钮 ── */
+        .part-name-row { display: flex; gap: 8px; align-items: center; }
+        .part-name-row .form-input { flex: 1; }
+        .btn-manage-dict {
+            padding: 9px 14px; border: 1.5px solid #d1d5db;
+            border-radius: 9px; background: #f9fafb; color: #6b7280;
+            font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+            transition: background 0.15s;
+        }
+        .btn-manage-dict:hover { background: #f3f4f6; color: #374151; }
+
+        /* ── 字典管理 Modal ── */
+        .dict-item-list { list-style: none; max-height: 260px; overflow-y: auto; }
+        .dict-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px;
+        }
+        .dict-item:last-child { border-bottom: none; }
+        .dict-item-name { color: #374151; }
+        .btn-del-item {
+            padding: 3px 10px; border: 1px solid #fca5a5; border-radius: 6px;
+            background: #fff; color: #dc2626; font-size: 12px; cursor: pointer;
+        }
+        .btn-del-item:hover { background: #fef2f2; }
+        .dict-add-row { display: flex; gap: 8px; margin-top: 12px; }
+        .dict-add-row .form-input { flex: 1; }
+        .dict-empty { text-align: center; color: #9ca3af; font-size: 13px; padding: 20px; }
+
+        /* ── 表面处理行 ── */
+        .treatment-row { display: flex; gap: 8px; align-items: center; }
+        .treatment-row .form-select { flex: 1; min-width: 0; }
+        .treatment-fee-input { width: 130px; }
+
+        /* ── 处理管理弹窗 ── */
+        .treat-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px;
+        }
+        .treat-item:last-child { border-bottom: none; }
+        .treat-item-info { display: flex; flex-direction: column; gap: 2px; }
+        .treat-item-name { color: #374151; font-weight: 600; }
+        .treat-item-meta { font-size: 11px; color: #9ca3af; }
+        .treat-mode-badge {
+            display: inline-block; padding: 1px 6px; border-radius: 4px;
+            font-size: 11px; font-weight: 700;
+        }
+        .badge-net-weight { background: #dbeafe; color: #1e40af; }
+        .badge-manual { background: #fef3c7; color: #92400e; }
+        .treat-empty { text-align: center; color: #9ca3af; font-size: 13px; padding: 20px; }
+        .treat-add-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+        .treat-add-form .form-row { display: flex; gap: 8px; }
+        .treat-add-form .form-row .form-group { flex: 1; }
+        .treat-add-row { display: flex; gap: 8px; align-items: flex-end; }
+        .treat-add-row .form-input { flex: 1; }
+        .treat-form-group { display: flex; flex-direction: column; gap: 4px; }
+        .treat-form-group label { font-size: 11px; color: #6b7280; font-weight: 600; }
+
+        /* ── 材料新建弹窗 ── */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(0,0,0,0.45); z-index: 300;
+            align-items: center; justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal-box-sm {
+            background: white; border-radius: 16px; padding: 24px;
+            width: 380px; max-width: 95vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        }
+        .modal-box-sm h3 {
+            font-size: 15px; font-weight: 800; color: #1e1b4b;
+            margin-bottom: 18px; display: flex; align-items: center; gap: 8px;
+        }
+        .modal-box-sm .form-group { margin-bottom: 10px; }
+        .modal-box-sm .btn-row {
+            display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px;
+        }
+
+        /* ── 双轨选择卡 ── */
+        .path-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .path-card {
+            border: 2px solid #e5e7eb; border-radius: 12px; padding: 14px;
+            cursor: pointer; transition: all 0.2s; position: relative;
+        }
+        .path-card:hover { border-color: #7c3aed; box-shadow: 0 4px 12px rgba(124,58,237,0.15); }
+        .path-card.selected { border-color: #7c3aed; background: #faf5ff; }
+        .path-radio { position: absolute; opacity: 0; width: 0; height: 0; }
+        .path-label {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 700; color: #374151; cursor: pointer;
+        }
+        .path-dot {
+            width: 18px; height: 18px; border-radius: 50%;
+            border: 2px solid #d1d5db; flex-shrink: 0;
+            transition: all 0.2s;
+        }
+        .path-card.selected .path-dot { border-color: #7c3aed; background: #7c3aed; }
+        .path-icon { font-size: 22px; margin-bottom: 6px; }
+        .path-name { font-size: 14px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+        .path-desc { font-size: 11px; color: #6b7280; line-height: 1.4; }
+        .path-tag {
+            display: inline-block; padding: 2px 8px; border-radius: 6px;
+            font-size: 10px; font-weight: 700; margin-top: 6px;
+        }
+        .tag-a { background: #fef3c7; color: #92400e; }
+        .tag-b { background: #dbeafe; color: #1e40af; }
+
+        /* ── 历史单价参考 ── */
+        .ref-price-box {
+            background: linear-gradient(135deg, #fffbeb, #fef3c7);
+            border: 1.5px solid #f59e0b; border-radius: 12px;
+            padding: 14px; margin-bottom: 12px;
+        }
+        .ref-price-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .ref-price-title { font-size: 12px; font-weight: 700; color: #92400e; }
+        .ref-price-badge { font-size: 11px; background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        .ref-price-value { font-size: 28px; font-weight: 900; color: #d97706; line-height: 1; margin: 4px 0; }
+        .ref-price-unit { font-size: 12px; color: #b45309; }
+
+        /* ── 白盒核算结果 ── */
+        .calc-panel {
+            background: #f8fafc; border: 1.5px solid #e2e8f0;
+            border-radius: 14px; padding: 16px; margin-bottom: 14px;
+        }
+        .calc-title {
+            font-size: 13px; font-weight: 800; color: #1e40af;
+            margin-bottom: 12px; display: flex; align-items: center; gap: 6px;
+        }
+        .calc-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px;
+        }
+        .calc-row:last-child { border-bottom: none; }
+        .calc-key { color: #475569; }
+        .calc-val {
+            font-weight: 700; color: #111827; cursor: help;
+            position: relative;
+        }
+        .calc-val.override { color: #1d4ed8; }
+        .calc-formula {
+            position: absolute; bottom: calc(100% + 8px); right: 0;
+            background: #1e293b; color: #e2e8f0;
+            padding: 10px 14px; border-radius: 10px;
+            font-size: 12px; font-weight: 600; line-height: 1.6;
+            white-space: pre-wrap; z-index: 100;
+            min-width: 240px; max-width: 340px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .calc-val:hover .calc-formula { display: block; }
+        .calc-total {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            color: white; border-radius: 10px; padding: 12px;
+            margin-top: 10px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .calc-total-label { font-size: 13px; opacity: 0.9; }
+        .calc-total-val { font-size: 26px; font-weight: 900; }
+        .calc-total-val.override { color: #93c5fd; }
+        .calc-override-hint { font-size: 11px; color: #93c5fd; margin-top: 3px; text-align: right; }
+
+        /* ── 变动百分比 ── */
+        .change-badge { font-size: 11px; padding: 1px 6px; border-radius: 6px; font-weight: 700; }
+        .change-up { background: #dbeafe; color: #1d4ed8; }
+        .change-down { background: #d1fae5; color: #059669; }
+
+        /* ── 蓝色覆盖说明 ── */
+        .override-legend {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 11px; color: #6b7280; margin-bottom: 10px;
+        }
+        .override-dot { width: 10px; height: 10px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
+
+        /* ── 隐藏区块 ── */
+        .section-hidden { display: none; }
+
+        /* ── 按钮 ── */
+        .btn-bar { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+        .btn { padding: 11px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .btn-primary { background: #7c3aed; color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.35); }
+        .btn-primary:hover { background: #6d28d9; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .btn-secondary:hover { background: #e5e7eb; }
+
+        /* ── Toast ── */
+        .toast { display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; }
+        .toast.show { display: block; }
+        .toast.ok { background: #10b981; color: white; }
+        .toast.err { background: #ef4444; color: white; }
+        .toast.info { background: #3b82f6; color: white; }
+
+        /* ── 分隔线 ── */
+        .divider { border: none; border-top: 1px solid #f3f4f6; margin: 14px 0; }
+
+        /* ── 响应式 ── */
+        @media (max-width: 480px) {
+            .form-row { grid-template-columns: 1fr; }
+            .path-selector { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+{% include "common/_admin_nav.html" %}
+
+<div class="content">
+
+    <!-- 步骤指示器 -->
+    <div class="steps">
+        <div class="step active" id="step1">① 基础信息</div>
+        <div class="step" id="step2">② 报价模式</div>
+        <div class="step" id="step3">③ 提交创建</div>
+    </div>
+
+    <form id="mainForm" method="post" action="/sales/parts/new">
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- 第一步：基础信息                        -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="card" id="section1">
+            <div class="card-title">&#x1F4CF; 基础信息</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">零件图号 <span class="required">*</span></label>
+                    <input type="text" name="part_number" class="form-input" placeholder="如：DL-2026-001" required>
+                    <div class="form-hint">系统唯一标识，关联生产全流程</div>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">零件名称 <span class="required">*</span></label>
+                    <div class="part-name-row">
+                        <input type="text" name="internal_name" id="inpPartName"
+                               class="form-input" list="partNameList"
+                               placeholder="输入或选择…" autocomplete="off" required>
+                        <button type="button" class="btn-manage-dict" id="btnManagePartName"
+                                onclick="openDictModal()">⚙; 管理</button>
+                    </div>
+                    <datalist id="partNameList">
+                        {% for item in part_name_list %}
+                        <option value="{{ item.dict_value }}">
+                        {% endfor %}
+                    </datalist>
+                    <div class="form-hint">可下拉选择行业常用分类，也支持手动输入新名称</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">材料牌号 <span class="required">*</span></label>
+                <div class="material-row">
+                    <select name="material_name" id="selMaterial" class="form-select" required onchange="onMaterialChange()">
+                        <option value="">— 选择材料 —</option>
+                        {% for m in materials %}
+                        <option value="{{ m.material_name }}"
+                                data-density="{{ m.default_density }}"
+                                data-price="{{ m.default_price }}"
+                                data-scrap="{{ m.scrap_price or '' }}">
+                            {{ m.material_name }} — 密度 {{ m.default_density }} / 单价 {{ m.default_price }} 元/kg
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn-new-material" id="btnNewMaterial" onclick="openMaterialModal('create')">+ 新建材料</button>
+                    <button type="button" class="btn-edit-material" id="btnEditMaterial" onclick="openMaterialModal('edit')" disabled>&#x270F; 编辑材料</button>
+                </div>
+                <div class="form-hint">必选，将关联材料参数中心的密度与单价</div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- 第二步：双轨选择                        -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="card" id="section2">
+            <div class="card-title">&#x2694;&#xFE0F; 报价模式 — 选择分流路径</div>
+
+            <div class="path-selector">
+                <!-- 路径 A：关联参考 -->
+                <label class="path-card" id="cardA" onclick="selectPath('A')">
+                    <input type="radio" name="pricing_mode_radio" value="reference" class="path-radio" id="radioA">
+                    <div class="path-label">
+                        <div class="path-dot"></div>
+                        <span>路径 A</span>
+                    </div>
+                    <div class="path-icon">&#x1F504;</div>
+                    <div class="path-name">关联已有件</div>
+                    <div class="path-desc">继承老件的 T/W/P 参数，参考历史单价手动定价</div>
+                    <span class="path-tag tag-a">样件判定模式</span>
+                </label>
+
+                <!-- 路径 B：独立新件 -->
+                <label class="path-card" id="cardB" onclick="selectPath('B')">
+                    <input type="radio" name="pricing_mode_radio" value="independent" class="path-radio" id="radioB">
+                    <div class="path-label">
+                        <div class="path-dot"></div>
+                        <span>路径 B</span>
+                    </div>
+                    <div class="path-icon">&#x1F9EE;</div>
+                    <div class="path-name">独立新件</div>
+                    <div class="path-desc">输入 T/W/P 参数，白盒自动核算材料净成本</div>
+                    <span class="path-tag tag-b">白盒自动核算</span>
+                </label>
+            </div>
+
+            <!-- 路径 A 扩展区 -->
+            <div id="pathAFields" class="section-hidden">
+                <div class="form-group">
+                    <label class="form-label">关联已有件号</label>
+                    <select name="referenced_part_id" id="selRefPart" class="form-select" onchange="onRefPartChange()">
+                        <option value="">— 选择参考件号 —</option>
+                        {% for p in ref_parts %}
+                        <option value="{{ p.id }}"
+                                data-t="{{ p.thickness or '' }}"
+                                data-w="{{ p.width or '' }}"
+                                data-p="{{ p.press_stroke or '' }}"
+                                data-cav="{{ p.cavity_count or 1 }}"
+                                data-mat="{{ p.material_name or '' }}"
+                                data-price="{{ p.current_price or '' }}"
+                            {{ p.part_number }} / {{ p.internal_name }} ({{ p.material_name or '—' }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-hint">选择后将自动继承该件的 T/W/P 参数</div>
+                </div>
+
+                <!-- 历史单价参考 -->
+                <div class="ref-price-box" id="refPriceBox" style="display:none;">
+                    <div class="ref-price-header">
+                        <span class="ref-price-title">&#x231A; 已有件历史单价参考</span>
+                        <span class="ref-price-badge">路径 A 参考价</span>
+                    </div>
+                    <div class="ref-price-value" id="refPriceVal">—</div>
+                    <div class="ref-price-unit">元/件（含税）</div>
+                    <div id="refPartInfo" style="font-size:11px;color:#92400e;margin-top:4px;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">新件最终总价 <span class="required">*</span></label>
+                    <input type="number" name="final_price_override" id="inpRefPrice" class="form-input" step="0.0001" min="0" placeholder="请参考历史单价输入">
+                    <div class="form-hint blue">路径 A 需业务员手动输入最终报价</div>
+                </div>
+            </div>
+
+            <!-- 路径 B 扩展区 -->
+            <div id="pathBFields" class="section-hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">厚度 T (mm) <span class="required">*</span></label>
+                        <input type="number" name="thickness" id="inpT" class="form-input" step="0.001" min="0" placeholder="0.8" oninput="triggerCalc()">
+                        <div class="form-hint">材料厚度</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">宽度 W (mm) <span class="required">*</span></label>
+                        <input type="number" name="width" id="inpW" class="form-input" step="0.01" min="0" placeholder="300" oninput="triggerCalc()">
+                        <div class="form-hint">材料宽度</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">冲压行程 P (mm) <span class="required">*</span></label>
+                        <input type="number" name="press_stroke" id="inpP" class="form-input" step="0.01" min="0" placeholder="120" oninput="triggerCalc()">
+                        <div class="form-hint">冲压深度/行程</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">穴数（1出N）</label>
+                        <input type="number" name="cavity_count" id="inpCav" class="form-input" value="1" min="1" placeholder="1" oninput="triggerCalc()">
+                        <div class="form-hint">一出几穴，默认 1</div>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">材料利用率 (%)</label>
+                        <input type="number" id="inpUtil" class="form-input" step="0.1" value="100" min="0" max="100" placeholder="100" oninput="triggerCalc()">
+                        <div class="form-hint">用户手动输入，用于算净重和废料重</div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">使用设备（吨位/型号）</label>
+                        <input type="text" id="inpMachineType" class="form-input" placeholder="如 45T、110T、振力等" maxlength="50">
+                    </div>
+                </div>
+
+                <hr class="divider">
+                <div class="card-title" style="font-size:13px;">&#x2699;&#xFE0F; 附加费用参数</div>
+                <!-- 第一行：冲压 + 全检 + 包装 -->
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">冲压费（元/件）</label>
+                        <input type="number" name="stamping_fee" id="inpStampFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">全检费（元/件）</label>
+                        <input type="number" id="inpInspFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">包装运费（元/件）</label>
+                        <input type="number" id="inpPkgFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                    </div>
+                </div>
+                <!-- 表面处理：多重动态工序 -->
+                <div class="form-group">
+                    <label class="form-label">表面处理工序</label>
+                    <div id="treatment-list-container"></div>
+                    <button type="button" class="btn btn-primary" id="btnAddTreat" onclick="addTreatmentRow()" style="margin-top:8px; font-size:13px;">
+                        + 添加表面处理工序
+                    </button>
+                    <div style="margin-top:6px;">
+                        <button type="button" class="btn-manage-dict" onclick="openTreatModal()">⚙ 管理处理方式</button>
+                    </div>
+                    <div class="form-hint" id="treatHint">可添加多道处理工序（如热处理→电镀→喷涂），费用自动汇总</div>
+                </div>
+                <!-- 第三行：利润率 -->
+                <div class="form-group">
+                    <label class="form-label">利润率（填百分比，如 5 = 加价 5%）</label>
+                    <input type="number" name="profit_margin" id="inpProfit" class="form-input" step="0.1" value="5" min="0" max="100" oninput="triggerCalc()">
+                    <div class="form-hint">留空或填 0 = 不加价</div>
+                </div>
+
+                <!-- 白盒核算结果 -->
+                <div class="override-legend">
+                    <div class="override-dot"></div>
+                    <span>蓝色数值 = 人工手动覆盖</span>
+                </div>
+
+                <div class="calc-panel" id="calcPanel">
+                    <div class="calc-title">&#x1F4CA; 白盒核算明细</div>
+                    <div class="calc-row">
+                        <span class="calc-key">毛重（g）</span>
+                        <span class="calc-val" id="dispGrossWeight">— <span class="calc-formula" id="tipGrossWeight"></span></span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">净重（g）</span>
+                        <span class="calc-val" id="dispNetWeight">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">废料重量（g）</span>
+                        <span class="calc-val" id="dispScrapWeight">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">材料利用率</span>
+                        <span class="calc-val" id="dispUtilRate">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">材料单价（元/kg）</span>
+                        <span class="calc-val override" id="dispUnitPrice">— <span class="calc-formula" id="tipUnitPrice"></span></span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">材料净成本（元）</span>
+                        <span class="calc-val" id="dispMatCost">— <span class="calc-formula" id="tipMatCost"></span></span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">废料回收价（元/kg）</span>
+                        <span class="calc-val" id="dispScrap">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">冲压费（元/件）</span>
+                        <span class="calc-val" id="dispStampFee">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">全检费（元/件）</span>
+                        <span class="calc-val" id="dispInspFee">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">包装运费（元/件）</span>
+                        <span class="calc-val" id="dispPkgFee">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">表面处理费（元/件）</span>
+                        <span class="calc-val" id="dispSurfaceFee">—</span>
+                    </div>
+                    <div class="calc-row">
+                        <span class="calc-key">表面处理费合计（元）</span>
+                        <span class="calc-val" id="dispTreatFee">—</span>
+                    </div>
+                    <div class="calc-total">
+                        <div>
+                            <div class="calc-total-label">&#x1F4B0; 最终总价</div>
+                            <div class="calc-override-hint" id="overrideHint"></div>
+                        </div>
+                        <div class="calc-total-val" id="dispTotal">— 元/件</div>
+                    </div>
+                </div>
+
+                <!-- 手动覆盖输入（路径 B） -->
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="form-label">&#x270F;&#xFE0F; 手动覆盖最终总价（元/件）</label>
+                        <input type="number" name="final_price_override_b" id="inpTotalOverride" class="form-input manual-override" step="0.0001" min="0" placeholder="留空则使用自动核算值" oninput="applyOverride()">
+                        <div class="form-hint blue">手动输入后，总价显示为蓝色，可较自动值低 ↑ 或高 ↓</div>
+                    </div>
+                </div>
+                <div id="changeDisplay" style="text-align:right;font-size:12px;display:none;">
+                    较自动值 <span id="changePct" class="change-badge">—</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════════════════════════════════ -->
+        <!-- 第三步：客户别名（可选）                   -->
+        <!-- ══════════════════════════════════════════ -->
+        <div class="card" id="section3">
+            <div class="card-title">&#x1F3D7; 客户件号别名（可选）</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">客户 ID</label>
+                    <input type="number" name="customer_id" id="inpCustomerId" class="form-input" placeholder="客户ID（待扩展）">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">客户件号别名</label>
+                    <input type="text" name="alias_part_number" class="form-input" placeholder="如：Z101-2102">
+                    <div class="form-hint">发货时将显示客户件号（非内部名）</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 隐藏字段 -->
+        <input type="hidden" name="pricing_mode" id="hPricingMode" value="">
+        <input type="hidden" name="referenced_part_id" id="hRefPartId" value="">
+        <input type="hidden" name="action" value="create">
+        <!-- V12 新增：冲压参数（由 onSubmit 同步，路径 B 有效） -->
+        <!-- press_stroke / width / cavity_count 是可见字段，已通过原有 name= 提交 -->
+        <!-- 以下隐藏字段用于传递未绑定的额外参数 -->
+        <input type="hidden" name="press_tonnage" id="hPressTonnage" value="">
+        <input type="hidden" name="material_utilization" id="hMaterialUtil" value="">
+        <input type="hidden" name="machine_type" id="hMachineType" value="">
+
+        <div class="btn-bar">
+            <button type="button" class="btn btn-secondary" onclick="history.back()">取消</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmit" onclick="return onSubmit()">&#x2714; 创建项目</button>
+        </div>
+    </form>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- 材料弹窗（新建 / 编辑 共用） -->
+<div class="modal-overlay" id="modalNewMaterial">
+    <div class="modal-box-sm">
+        <h3 id="mModalTitle">&#x2699;&#xFE0F; 新建材料</h3>
+        <div class="form-group">
+            <label class="form-label">材料名称 <span id="mNameRequired">*</span></label>
+            <input type="text" id="mMatName" class="form-input" placeholder="如：SPCC、SECC、SK5" required>
+            <input type="hidden" id="mMatNameOriginal">
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label class="form-label">密度 (g/cm³) *</label>
+                <input type="number" id="mDensity" class="form-input" step="0.0001" min="0" placeholder="7.85" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label">单价 (元/kg) *</label>
+                <input type="number" id="mPrice" class="form-input" step="0.0001" min="0" placeholder="4.50" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">废料回收价 (元/kg)</label>
+            <input type="number" id="mScrap" class="form-input" step="0.0001" min="0" placeholder="选填，如 2.00">
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn btn-secondary" onclick="closeMaterialModal()">取消</button>
+            <button type="button" class="btn btn-primary" id="btnMatSubmit" onclick="submitMaterialForm()">确认创建</button>
+        </div>
+    </div>
+</div>
+
+<!-- 零件名称字典管理弹窗 -->
+<div class="modal-overlay" id="modalDict">
+    <div class="modal-box-sm">
+        <h3>&#x2699;&#xFE0F; 管理预设零件名称</h3>
+        <ul class="dict-item-list" id="dictItemList"></ul>
+        <div class="dict-empty" id="dictEmpty" style="display:none;">暂无预设，请添加</div>
+        <div class="dict-add-row">
+            <input type="text" id="inpDictNew" class="form-input" placeholder="输入新名称后回车" onkeydown="if(event.key==='Enter'){event.preventDefault();submitDictAdd();}">
+            <button type="button" class="btn btn-primary" onclick="submitDictAdd()">添加</button>
+        </div>
+        <div class="btn-row" style="margin-top:10px;">
+            <button type="button" class="btn btn-secondary" onclick="closeDictModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- 表面处理方式管理弹窗 -->
+<div class="modal-overlay" id="modalTreat">
+    <div class="modal-box-sm" style="width:460px;">
+        <h3>&#x2699;&#xFE0F; 管理表面处理方式</h3>
+        <ul id="treatItemList" style="list-style:none; max-height:240px; overflow-y:auto;"></ul>
+        <div id="treatEmpty" style="display:none; text-align:center; color:#9ca3af; font-size:13px; padding:20px;">暂无处理方式，请添加</div>
+
+        <!-- 添加/编辑表单 -->
+        <div class="treat-add-form" id="treatFormArea">
+            <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:4px;">
+                <span id="treatFormTitle">新增处理方式</span>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1.5;">
+                    <label class="form-label">处理名称 *</label>
+                    <input type="text" id="treatName" class="form-input" placeholder="如：热处理、电镀锌">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">计价方式 *</label>
+                    <select id="treatCalcMode" class="form-select">
+                        <option value="manual">手动输入</option>
+                        <option value="net_weight">按净重计价</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label" id="treatRateLabel">费率（手动时填 0）</label>
+                    <input type="number" id="treatRate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label">费率单位</label>
+                    <select id="treatUnit" class="form-select">
+                        <option value="元/件">元/件</option>
+                        <option value="元/kg">元/kg</option>
+                    </select>
+                </div>
+            </div>
+            <div class="treat-add-row">
+                <button type="button" class="btn btn-secondary" id="btnTreatCancel" onclick="resetTreatForm()" style="flex:0;">取消</button>
+                <button type="button" class="btn btn-primary" id="btnTreatSubmit" onclick="submitTreatItem()">确认添加</button>
+            </div>
+        </div>
+
+        <div class="btn-row" style="margin-top:12px;">
+            <button type="button" class="btn btn-secondary" onclick="closeTreatModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api_config.js"></script>
+<script>
+// ── 全局状态 ──────────────────────────────────────────────────────────
+var selectedPath = null;   // 'A' | 'B'
+var autoTotal = null;       // 自动核算结果（用于变动百分比计算）
+var pendingOverrideTotal = null;  // 用户输入的覆盖总价
+
+// ── Toast ─────────────────────────────────────────────────────────────
+function showToast(msg, kind) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (kind || 'ok');
+    setTimeout(function() { t.classList.remove('show'); }, 3000);
+}
+
+// ── 路径选择 ─────────────────────────────────────────────────────────
+function selectPath(path) {
+    selectedPath = path;
+    document.getElementById('cardA').classList.toggle('selected', path === 'A');
+    document.getElementById('cardB').classList.toggle('selected', path === 'B');
+    document.getElementById('radioA').checked = (path === 'A');
+    document.getElementById('radioB').checked = (path === 'B');
+    document.getElementById('hPricingMode').value = (path === 'A') ? 'reference' : 'independent';
+
+    document.getElementById('pathAFields').classList.toggle('section-hidden', path !== 'A');
+    document.getElementById('pathBFields').classList.toggle('section-hidden', path !== 'B');
+
+    // 步骤指示
+    document.getElementById('step2').classList.add('active');
+
+    if (path === 'A') {
+        document.getElementById('inpT').removeAttribute('required');
+    } else {
+        document.getElementById('inpT').setAttribute('required', '1');
+    }
+}
+
+// ── 参考件变化 → 自动填充 T/W/P ────────────────────────────────────
+function onRefPartChange() {
+    var sel = document.getElementById('selRefPart');
+    var opt = sel.options[sel.selectedIndex];
+    var refId = sel.value;
+
+    document.getElementById('hRefPartId').value = refId;
+
+    if (!refId) {
+        document.getElementById('refPriceBox').style.display = 'none';
+        document.getElementById('inpRefPrice').value = '';
+        return;
+    }
+
+    var t = opt.getAttribute('data-t');
+    var w = opt.getAttribute('data-w');
+    var p = opt.getAttribute('data-p');
+    var cav = opt.getAttribute('data-cav') || '1';
+    var mat = opt.getAttribute('data-mat') || '';
+    var refPrice = opt.getAttribute('data-price');
+
+    // 联动路径 B 字段（方便后续解绑后自动有值）
+    document.getElementById('inpT').value = t || '';
+    document.getElementById('inpW').value = w || '';
+    document.getElementById('inpP').value = p || '';
+    document.getElementById('inpCav').value = cav || '1';
+
+    // 引用历史单价
+    if (refPrice) {
+        document.getElementById('refPriceBox').style.display = 'block';
+        document.getElementById('refPriceVal').textContent = parseFloat(refPrice).toFixed(4);
+        document.getElementById('refPartInfo').textContent =
+            '件号：' + opt.text.substring(0, 30) + ' | 材料：' + mat;
+    } else {
+        document.getElementById('refPriceBox').style.display = 'block';
+        document.getElementById('refPriceVal').textContent = '—';
+        document.getElementById('refPartInfo').textContent = '该件暂无历史单价';
+    }
+}
+
+// ── 白盒实时核算 ─────────────────────────────────────────────────────
+var calcTimer = null;
+function triggerCalc() {
+    clearTimeout(calcTimer);
+    calcTimer = setTimeout(doCalc, 350);
+}
+
+function doCalc() {
+    var T, W, P, matSel, matName, matOpt, matDensity, cav, util;
+    var stampFee, inspFee, pkgFee, profit;
+    var grossWeightG, netWeightG, scrapWeightG, totalTreatFee, body;
+
+    try {
+        T = parseFloat(document.getElementById('inpT').value) || 0;
+        W = parseFloat(document.getElementById('inpW').value) || 0;
+        P = parseFloat(document.getElementById('inpP').value) || 0;
+        matSel = document.getElementById('selMaterial');
+        matName = matSel ? matSel.value : '';
+        matOpt = matSel ? matSel.options[matSel.selectedIndex] : null;
+        matDensity = parseFloat(matOpt && matOpt.getAttribute('data-density')) || 7.85;
+        cav = parseInt(document.getElementById('inpCav').value) || 1;
+        util = parseFloat(document.getElementById('inpUtil').value) || 100;
+        stampFee = parseFloat(document.getElementById('inpStampFee').value) || 0;
+        inspFee  = parseFloat(document.getElementById('inpInspFee').value)  || 0;
+        pkgFee   = parseFloat(document.getElementById('inpPkgFee').value)   || 0;
+        profit   = parseFloat(document.getElementById('inpProfit').value)   || 0;
+        machineType = (document.getElementById('inpMachineType').value || '').trim();
+    } catch (e) {
+        console.error('[doCalc] DOM 读取失败:', e);
+        showToast('核算初始化失败：' + e.message, 'err');
+        return;
+    }
+
+    if (!matName || !T || !W || !P) {
+        return;  // 参数不全，静默等待用户继续输入
+    }
+
+    try {
+        grossWeightG  = (T * W * P * matDensity) / 1000.0;
+        netWeightG    = grossWeightG * (util / 100.0);
+        scrapWeightG  = grossWeightG - netWeightG;
+        window._lastGrossWeight = grossWeightG;
+        totalTreatFee = getTreatFeeForCalc();
+
+        body = {
+            thickness: T, width: W, press_stroke: P,
+            material_name: matName, cavity_count: cav,
+            scrap_rate: 1.0 - (util / 100.0),
+            gross_weight_g: grossWeightG,
+            net_weight_g: netWeightG,
+            scrap_weight_g: scrapWeightG,
+            material_utilization: util,
+            stamping_fee: stampFee,
+            inspection_fee: inspFee,
+            packaging_fee: pkgFee,
+            surface_fee: 0,
+            treatment_fee: totalTreatFee,
+            profit_margin: profit,
+            machine_type: machineType || null,
+        };
+
+        var overrideTotal = document.getElementById('inpTotalOverride').value;
+        if (overrideTotal) body.override_final_price = parseFloat(overrideTotal);
+    } catch (e) {
+        console.error('[doCalc] Payload 构建失败:', e);
+        showToast('核算参数构建失败：' + e.message, 'err');
+        return;
+    }
+
+    sendApiRequest('sales.calc_pricing', body, {})
+    .then(function(d) {
+        var payload = (d && d.data !== undefined) ? d.data : d;
+        if (!payload) { showToast('核算返回数据为空', 'err'); return; }
+        if (payload.error) { showToast(payload.error, 'err'); return; }
+        autoTotal = payload.final_price;
+        renderCalcResult(payload);
+    })
+    .catch(function(err) {
+        console.error('[doCalc] 请求失败:', err);
+        showToast('核算请求失败：' + (err.message || String(err)), 'err');
+    });
+}
+
+function renderCalcResult(d) {
+    var isOverride = d.override_flags && d.override_flags.length > 0;
+    var matName = (document.getElementById('selMaterial') || {}).value || '';
+
+    // gross_weight / net_weight / scrap_weight 单位均为 g
+    var gw = d.gross_weight || 0;
+    var nw = d.net_weight || 0;
+    var sw = d.scrap_weight || 0;
+    window._lastGrossWeight = gw;
+
+    var gwFormula = (d.formula_display && d.formula_display.gross_weight)
+        ? d.formula_display.gross_weight.formula : '';
+    document.getElementById('dispGrossWeight').innerHTML =
+        fmt(gw, 2) + ' g <span class="calc-formula">' + escHtml(gwFormula) + '</span>';
+
+    // 净重展示
+    var dispNetWeightEl = document.getElementById('dispNetWeight');
+    if (dispNetWeightEl) {
+        dispNetWeightEl.textContent = fmt(nw, 2) + ' g';
+    }
+
+    // 废料重展示（由材料利用率换算）
+    var dispScrapWeightEl = document.getElementById('dispScrapWeight');
+    if (dispScrapWeightEl) {
+        dispScrapWeightEl.textContent = fmt(sw, 2) + ' g';
+    }
+
+    var unitClass = d.override_flags && d.override_flags.includes('material_unit_price_override') ? ' override' : '';
+    document.getElementById('dispUnitPrice').className = 'calc-val' + unitClass;
+    document.getElementById('dispUnitPrice').innerHTML =
+        fmt(d.unit_price, 2) + ' 元/kg <span class="calc-formula">' +
+        '材料：' + escHtml(d.material_name || matName) + '\n' +
+        '密度：' + d.density + ' g/cm\u00B3\n' +
+        '单价：' + d.unit_price + ' 元/kg\n' +
+        '废料回收：' + d.scrap_price + ' 元/kg</span>';
+
+    var costClass = d.override_flags && d.override_flags.includes('material_net_cost_override') ? ' override' : '';
+    document.getElementById('dispMatCost').className = 'calc-val' + costClass;
+    var matCostFormula = (d.formula_display && d.formula_display.material_net_cost)
+        ? d.formula_display.material_net_cost.formula : '';
+    document.getElementById('dispMatCost').innerHTML =
+        fmt(d.material_net_cost, 2) + ' 元 <span class="calc-formula">' + escHtml(matCostFormula) + '</span>';
+
+    document.getElementById('dispScrap').textContent = fmt(d.scrap_price, 2) + ' 元/kg';
+
+    var utilVal = d.material_utilization != null ? d.material_utilization : 0;
+    var utilRateEl = document.getElementById('dispUtilRate');
+    if (utilRateEl) {
+        var utilDetail = (d.formula_display && d.formula_display.material_utilization)
+            ? d.formula_display.material_utilization.detail : "";
+        utilRateEl.innerHTML =
+            utilVal.toFixed(2) + '% <span class="calc-formula">' + escHtml(utilDetail) + '</span>';
+    }
+
+    // 附加费用：优先用后端回显值（与前端一致），null/NaN → 0（不显示破折号）
+    var _sf = (d.stamping_fee !== undefined && d.stamping_fee !== null && !isNaN(d.stamping_fee)) ? d.stamping_fee : 0;
+    var _if = (d.inspection_fee !== undefined && d.inspection_fee !== null && !isNaN(d.inspection_fee)) ? d.inspection_fee : 0;
+    var _pf = (d.packaging_fee !== undefined && d.packaging_fee !== null && !isNaN(d.packaging_fee)) ? d.packaging_fee : 0;
+    var _surf = (d.surface_fee !== undefined && d.surface_fee !== null && !isNaN(d.surface_fee)) ? d.surface_fee : 0;
+    document.getElementById('dispStampFee').textContent = _sf.toFixed(2) + ' 元/件';
+    document.getElementById('dispInspFee').textContent = _if.toFixed(2) + ' 元/件';
+    document.getElementById('dispPkgFee').textContent  = _pf.toFixed(2) + ' 元/件';
+    document.getElementById('dispSurfaceFee').textContent = (_surf !== 0) ? _surf.toFixed(2) + ' 元/件' : '0.00 元/件';
+
+    // 处理费展示（来自后端返回的 treatment_fee）
+    var treatFeeEl = document.getElementById('dispTreatFee');
+    var _tf = (d.treatment_fee !== undefined && d.treatment_fee !== null) ? d.treatment_fee : 0;
+    if (treatFeeEl) {
+        treatFeeEl.textContent = (_tf !== 0) ? _tf.toFixed(2) + ' 元' : '—';
+    }
+
+    // 最终总价（final_price=null 时显示 —）
+    var _fp = (d.final_price !== undefined && d.final_price !== null && !isNaN(d.final_price)) ? d.final_price : null;
+    var totalClass = d.override_flags && d.override_flags.includes('final_price_override') ? ' override' : '';
+    document.getElementById('dispTotal').className = 'calc-total-val' + totalClass;
+    document.getElementById('dispTotal').textContent = _fp !== null ? _fp.toFixed(2) + ' 元/件' : '— 元/件';
+
+    // 覆盖提示 & 变动百分比
+    var hintEl = document.getElementById('overrideHint');
+    var changeEl = document.getElementById('changePct');
+    if (d.override_flags && d.override_flags.includes('final_price_override')) {
+        hintEl.textContent = '（人工覆盖）';
+        // 变动百分比（相对自动核算值）
+        // 公式：最终总价 = 净材料成本 − 废料回收 + 冲压费 + 全检费 + 包装费 + 表面处理费 + 处理费合计
+        // base_auto = 材料净成本 + 冲压 + 全检 + 包装 + 表面 + 处理费，再乘 (1+利润率)
+        if (_fp !== null) {
+            _surf = (d.surface_fee !== undefined && d.surface_fee !== null) ? d.surface_fee : 0;
+            var baseAuto = (d.material_net_cost || 0) + _sf + _if + _pf + _surf + _tf;
+            if ((d.profit_margin || 0) > 0) baseAuto *= (1 + d.profit_margin / 100);
+            var manualVal = d.final_price_override || _fp;
+            if (baseAuto > 0) {
+                var pct = ((manualVal - baseAuto) / baseAuto * 100).toFixed(1);
+                var sign = pct >= 0 ? '↑' : '↓';
+                changeEl.textContent = sign + ' ' + Math.abs(pct) + '% 较自动值';
+                changeEl.className = 'change-badge ' + (pct >= 0 ? 'change-up' : 'change-down');
+                document.getElementById('changeDisplay').style.display = 'block';
+            } else {
+                document.getElementById('changeDisplay').style.display = 'none';
+            }
+        }
+    } else {
+        hintEl.textContent = '';
+        document.getElementById('changeDisplay').style.display = 'none';
+    }
+}
+
+function applyOverride() {
+    var val = document.getElementById('inpTotalOverride').value;
+    pendingOverrideTotal = val ? parseFloat(val) : null;
+    doCalc();
+}
+
+// ── 提交前检查（V12 AJAX 版：双表事务 + 零静默失败）──────────────
+function onSubmit() {
+    var btn = document.getElementById('btnSubmit');
+    var originalText = btn.textContent;
+
+    // ════════════════════════════════════════════════════════════
+    // 第一阶段：表单校验 — 校验失败立即 alert + Toast，不锁按钮
+    // ════════════════════════════════════════════════════════════
+    try {
+        var path = selectedPath;
+        if (!path) {
+            alert('缺少必填项：请先选择报价模式（路径 A 或路径 B）');
+            showToast('请先选择报价模式（路径 A 或路径 B）', 'err');
+            return false;
+        }
+
+        var partNumber = document.querySelector('[name=part_number]').value.trim();
+        if (!partNumber) {
+            alert('缺少必填项：零件图号不能为空');
+            showToast('零件图号不能为空', 'err');
+            return false;
+        }
+        var internalName = document.querySelector('[name=internal_name]').value.trim();
+        if (!internalName) {
+            alert('缺少必填项：内部件号名称不能为空');
+            showToast('内部件号名称不能为空', 'err');
+            return false;
+        }
+        var matSelect = document.getElementById('selMaterial');
+        var matName = matSelect ? matSelect.value : '';
+        if (!matName) {
+            alert('缺少必填项：请选择材料牌号');
+            showToast('请选择材料牌号', 'err');
+            return false;
+        }
+
+        if (path === 'A') {
+            var refId = document.getElementById('selRefPart') ? document.getElementById('selRefPart').value : '';
+            if (!refId) {
+                alert('缺少必填项：路径 A 需选择关联已有件号');
+                showToast('路径 A 需选择关联已有件号', 'err');
+                return false;
+            }
+            var finalPriceA = document.getElementById('inpRefPrice') ? document.getElementById('inpRefPrice').value : '';
+            if (!finalPriceA) {
+                alert('缺少必填项：路径 A 需输入最终总价');
+                showToast('路径 A 需输入最终总价', 'err');
+                return false;
+            }
+        } else {
+            var T = parseFloat(document.getElementById('inpT').value) || 0;
+            var W = parseFloat(document.getElementById('inpW').value) || 0;
+            var P = parseFloat(document.getElementById('inpP').value) || 0;
+            if (!T || !W || !P) {
+                alert('缺少必填项：路径 B 需填写 T（厚度）/ W（宽度）/ P（步距）参数');
+                showToast('路径 B 需填写 T / W / P 参数', 'err');
+                return false;
+            }
+        }
+    } catch (e) {
+        console.error('[onSubmit] 校验异常:', e);
+        alert('表单校验异常：' + e.message);
+        return false;
+    }
+
+    // ════════════════════════════════════════════════════════════
+    // 第二阶段：构建 Payload + 发起 AJAX
+    // ════════════════════════════════════════════════════════════
+    btn.disabled = true;
+    btn.textContent = '创建中…';
+
+    var payload = {
+        part_number:    partNumber,
+        internal_name:  internalName,
+        material_name:  matName,
+        pricing_mode:   path === 'A' ? 'reference' : 'independent',
+        referenced_part_id: path === 'A' ? parseInt(refId) || null : null,
+        thickness:      path === 'B' ? T : null,
+        width:          path === 'B' ? W : null,
+        press_stroke:   path === 'B' ? P : null,
+        cavity_count:   parseInt(document.getElementById('inpCav').value) || 1,
+        material_utilization: parseFloat(document.getElementById('inpUtil').value) || 100.0,
+        machine_type:   document.getElementById('inpMachineType') ? document.getElementById('inpMachineType').value || null : null,
+        press_tonnage:  parseInt(document.getElementById('hPressTonnage').value) || 0,
+        stamping_fee:   parseFloat(document.getElementById('inpStampFee').value) || null,
+        surface_fee:    null,
+        profit_margin:  parseFloat(document.getElementById('inpProfit').value) || null,
+        final_price_override: path === 'A'
+            ? (parseFloat(document.getElementById('inpRefPrice').value) || null)
+            : (parseFloat(document.getElementById('inpTotalOverride').value) || null),
+        customer_id:    parseInt(document.getElementById('inpCustomerId').value) || null,
+        alias_part_number: document.querySelector('[name=alias_part_number]') ? document.querySelector('[name=alias_part_number]').value.trim() || '' : '',
+    };
+
+    // 收集表面处理费总计（动态工序行）
+    try {
+        var treatRows = document.querySelectorAll('.treat-row');
+        var treatTotal = 0;
+        treatRows.forEach(function(row) {
+            var costEl = row.querySelector('.treat-fee-input');
+            if (costEl && costEl.value) {
+                treatTotal += parseFloat(costEl.value) || 0;
+            }
+        });
+        if (treatTotal > 0) payload.surface_fee = treatTotal;
+    } catch (ignore) {}
+
+    try {
+        sendApiRequest('sales.part_create', payload)
+            .then(function(res) {
+                if (res.code === 0 && res.data && res.data.part_id) {
+                    showToast('创建成功，正在跳转…', 'ok');
+                    setTimeout(function() {
+                        window.location.href = res.data.redirect;
+                    }, 600);
+                } else {
+                    throw new Error(res.message || '服务器返回异常');
+                }
+            })
+            .catch(function(err) {
+                console.error('[onSubmit] 提交失败:', err);
+                alert('创建失败：' + (err.message || '网络异常，请检查后重试'));
+                showToast('创建失败：' + (err.message || '网络异常'), 'err');
+            })
+            .finally(function() {
+                btn.disabled = false;
+                btn.textContent = originalText;
+            });
+    } catch (e) {
+        console.error('[onSubmit] AJAX 发起异常:', e);
+        alert('系统错误：' + e.message);
+        showToast('系统错误', 'err');
+        btn.disabled = false;
+        btn.textContent = originalText;
+    }
+
+    return false;  // 始终阻止原生 form POST，由 AJAX 处理
+}
+
+// ── 材料快捷新建 / 编辑 Modal ──────────────────────────────────────
+var _materialMode = 'create';   // 'create' | 'edit'
+var _currentEditName = '';       // 当前编辑的材料名（用于 PUT 路径替换）
+
+// 材料下拉变化时，同步编辑按钮状态
+function onMaterialChange() {
+    var sel = document.getElementById('selMaterial');
+    var hasValue = !!sel.value;
+    document.getElementById('btnEditMaterial').disabled = !hasValue;
+    if (selectedPath === 'B') triggerCalc();
+}
+
+function openMaterialModal(mode) {
+    _materialMode = mode || 'create';
+    document.getElementById('mMatName').value = '';
+    document.getElementById('mMatNameOriginal').value = '';
+    document.getElementById('mDensity').value = '';
+    document.getElementById('mPrice').value   = '';
+    document.getElementById('mScrap').value   = '';
+
+    if (_materialMode === 'edit') {
+        var sel = document.getElementById('selMaterial');
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) {
+            showToast('请先选择一个材料', 'err');
+            return;
+        }
+        _currentEditName = opt.value;
+        document.getElementById('mMatNameOriginal').value = _currentEditName;
+        document.getElementById('mMatName').value = opt.value;
+        document.getElementById('mDensity').value = opt.getAttribute('data-density') || '';
+        document.getElementById('mPrice').value   = opt.getAttribute('data-price')   || '';
+        document.getElementById('mScrap').value   = opt.getAttribute('data-scrap') || '';
+        document.getElementById('mModalTitle').innerHTML = '&#x270F;&#xFE0F; 编辑材料';
+        document.getElementById('btnMatSubmit').textContent = '确认保存';
+    } else {
+        _currentEditName = '';
+        document.getElementById('mModalTitle').innerHTML = '&#x2699;&#xFE0F; 新建材料';
+        document.getElementById('btnMatSubmit').textContent = '确认创建';
+    }
+    document.getElementById('modalNewMaterial').classList.add('open');
+}
+
+function closeMaterialModal() {
+    document.getElementById('modalNewMaterial').classList.remove('open');
+}
+
+// 点击 overlay 关闭
+document.getElementById('modalNewMaterial').addEventListener('click', function(e) {
+    if (e.target === this) closeMaterialModal();
+});
+
+function submitMaterialForm() {
+    var name    = document.getElementById('mMatName').value.trim();
+    var density = parseFloat(document.getElementById('mDensity').value);
+    var price   = parseFloat(document.getElementById('mPrice').value);
+    var scrap   = parseFloat(document.getElementById('mScrap').value) || null;
+
+    if (!name)  { showToast('请填写材料名称', 'err'); return; }
+    if (!density || density <= 0) { showToast('请填写正确的密度值', 'err'); return; }
+    if (!price || price <= 0)     { showToast('请填写正确的单价', 'err'); return; }
+
+    var payload = {
+        material_name:   name,
+        default_density: density,
+        default_price:   price,
+        scrap_price:     scrap,
+    };
+
+    if (_materialMode === 'edit') {
+        // PUT /api/materials/{material_name_original}
+        var origName = document.getElementById('mMatNameOriginal').value;
+        apiPut('sales.materials_update', payload, { name: encodeURIComponent(origName) })
+            .then(function(r) {
+                if (r.code && r.code !== 200) { showToast(r.message || '保存失败', 'err'); return; }
+                showToast('材料「' + name + '」已更新', 'ok');
+                closeMaterialModal();
+                refreshMaterialSelect(name, density, price, scrap);
+            })
+            .catch(function() { showToast('网络错误，请重试', 'err'); });
+    } else {
+        // POST /api/materials
+        apiPost('sales.materials_quick_add', payload)
+            .then(function(r) {
+                if (r.code && r.code !== 200) { showToast(r.message || '创建失败', 'err'); return; }
+                showToast('材料「' + name + '」创建成功', 'ok');
+                closeMaterialModal();
+                refreshMaterialSelect(name, density, price, scrap);
+            })
+            .catch(function() { showToast('网络错误，请重试', 'err'); });
+    }
+}
+
+function refreshMaterialSelect(newName, density, price, scrap) {
+    apiGet('sales.materials_list')
+    .then(function(r) {
+        if (!r.data || !Array.isArray(r.data)) return;
+        var sel = document.getElementById('selMaterial');
+        sel.innerHTML = '<option value="">— 选择材料 —</option>';
+        r.data.forEach(function(m) {
+            var opt = document.createElement('option');
+            opt.value = m.material_name;
+            opt.textContent = m.material_name + ' — 密度 ' + m.default_density + ' / 单价 ' + m.default_price + ' 元/kg';
+            opt.setAttribute('data-density', m.default_density || '');
+            opt.setAttribute('data-price',   m.default_price   || '');
+            opt.setAttribute('data-scrap',   m.scrap_price    || '');
+            sel.appendChild(opt);
+        });
+        sel.value = newName;
+        onMaterialChange();
+    })
+    .catch(function() { showToast('材料列表刷新失败，请手动刷新页面', 'err'); });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  零件名称数据字典管理
+// ═══════════════════════════════════════════════════════════════════════
+var _currentDictItems = [];   // 缓存当前字典列表
+
+function openDictModal() {
+    loadDictItems();
+    document.getElementById('modalDict').classList.add('open');
+    document.getElementById('inpDictNew').value = '';
+    document.getElementById('inpDictNew').focus();
+}
+function closeDictModal() {
+    document.getElementById('modalDict').classList.remove('open');
+}
+// 点击 overlay 关闭
+document.getElementById('modalDict').addEventListener('click', function(e) {
+    if (e.target === this) closeDictModal();
+});
+
+function loadDictItems() {
+    apiGet('sales.dict_items', { type: 'part_name' })
+    .then(function(r) {
+        _currentDictItems = (r.data || []).slice();
+        renderDictList();
+    })
+    .catch(function() { showToast('加载字典失败', 'err'); });
+}
+
+function renderDictList() {
+    var list = document.getElementById('dictItemList');
+    var empty = document.getElementById('dictEmpty');
+    list.innerHTML = '';
+    if (_currentDictItems.length === 0) {
+        empty.style.display = 'block';
+        return;
+    }
+    empty.style.display = 'none';
+    _currentDictItems.forEach(function(item) {
+        var li = document.createElement('li');
+        li.className = 'dict-item';
+        li.innerHTML =
+            '<span class="dict-item-name">' + escHtml(item.dict_value) + '</span>' +
+            '<button type="button" class="btn-del-item" onclick="deleteDictItem(' + item.id + ')">删除</button>';
+        list.appendChild(li);
+    });
+}
+
+function submitDictAdd() {
+    var val = document.getElementById('inpDictNew').value.trim();
+    if (!val) { showToast('请输入名称', 'err'); return; }
+    apiPost('sales.dict_add', { dict_type: 'part_name', dict_value: val })
+    .then(function(r) {
+        if (r.code && r.code !== 200) { showToast(r.message || '添加失败', 'err'); return; }
+        showToast('已添加「' + val + '」', 'ok');
+        document.getElementById('inpDictNew').value = '';
+        loadDictItems();
+        refreshDatalist();
+    })
+    .catch(function() { showToast('网络错误', 'err'); });
+}
+
+function deleteDictItem(id) {
+    if (!confirm('确定要删除该预设名称吗？')) return;
+    apiDelete('sales.dict_delete', { type: 'part_name', id: String(id) })
+    .then(function(r) {
+        if (r.code && r.code !== 200) { showToast(r.message || '删除失败', 'err'); return; }
+        showToast('已删除', 'ok');
+        loadDictItems();
+        refreshDatalist();
+    })
+    .catch(function() { showToast('网络错误', 'err'); });
+}
+
+function refreshDatalist() {
+    // 用最新字典项重刷 <datalist id="partNameList">
+    apiGet('sales.dict_items', { type: 'part_name' })
+    .then(function(r) {
+        var dl = document.getElementById('partNameList');
+        dl.innerHTML = '';
+        (r.data || []).forEach(function(item) {
+            var opt = document.createElement('option');
+            opt.value = item.dict_value;
+            dl.appendChild(opt);
+        });
+    })
+    .catch(function() {});
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  表面处理字典管理（treatment_dicts）
+// ═══════════════════════════════════════════════════════════════════════
+
+// ── 全局缓存（window 级别，强制全局唯一）──────────────────────
+window.treatmentDictCache = null;   // null = 未加载 / 已失效
+
+// ── 渲染函数（有缓存直接渲染，无缓存需先调用 loadTreatments）─────
+function fetchAndRenderTreatments() {
+    var data = window.treatmentDictCache;
+    console.log('获取到的处理字典:', data);
+
+    // 1. 渲染管理弹窗列表
+    var list = document.getElementById('treatItemList');
+    var empty = document.getElementById('treatEmpty');
+    if (list) list.innerHTML = '';
+    if (!data || data.length === 0) {
+        if (empty) empty.style.display = 'block';
+    } else {
+        if (empty) empty.style.display = 'none';
+        data.forEach(function(t) {
+            var badge = t.calc_mode === 'net_weight'
+                ? '<span class="treat-mode-badge badge-net-weight">按净重 ×' + t.rate + ' ' + (t.unit || '元/件') + '</span>'
+                : '<span class="treat-mode-badge badge-manual">手动输入</span>';
+            var li = document.createElement('li');
+            li.className = 'treat-item';
+            li.innerHTML =
+                '<div class="treat-item-info">' +
+                    '<span class="treat-item-name">' + escHtml(t.name) + '</span>' +
+                    '<span class="treat-item-meta">' + badge + '</span>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;">' +
+                    '<button type="button" class="btn-del-item" onclick="editTreatItem(' + t.id + ')">编辑</button>' +
+                    '<button type="button" class="btn-del-item" onclick="deleteTreatItem(' + t.id + ')">删除</button>' +
+                '</div>';
+            if (list) list.appendChild(li);
+        });
+    }
+
+    // 2. 渲染主界面所有行内下拉框
+    document.querySelectorAll('.treat-sel').forEach(function(sel) {
+        var saved = sel.value;
+        sel.innerHTML = '<option value="">— 不需要处理 —</option>';
+        (data || []).forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t.name;
+            opt.setAttribute('data-mode', t.calc_mode || 'manual');
+            opt.setAttribute('data-rate', t.rate || '0');
+            opt.setAttribute('data-unit', t.unit || '元/件');
+            opt.textContent = t.name + '（' + (t.calc_mode === 'net_weight'
+                ? '按净重×' + t.rate + (t.unit || '元/件')
+                : '手动输入）');
+            sel.appendChild(opt);
+        });
+        sel.value = saved;   // 恢复用户当前选择
+    });
+}
+
+// ── 加载入口：有缓存走缓存，无缓存才发请求 ───────────────────
+function loadTreatments() {
+    if (window.treatmentDictCache !== null) {
+        console.log('处理字典：命中缓存，' + window.treatmentDictCache.length + ' 条');
+        fetchAndRenderTreatments();
+        return;
+    }
+    console.log('处理字典：缓存为空，发起 GET /api/dict/treatments');
+    sendApiRequest('sales.treatments_list', null, {})
+    .then(function(r) {
+        console.log('GET /api/dict/treatments 响应:', r);
+        window.treatmentDictCache = r.data || [];
+        fetchAndRenderTreatments();
+    })
+    .catch(function(err) {
+        console.error('加载处理字典失败:', err);
+        showToast('加载处理方式列表失败', 'err');
+    });
+}
+
+// ── 渲染单个行内下拉框（供 addTreatmentRow 复用）────────────────
+function renderTreatSelect(sel) {
+    sel.innerHTML = '<option value="">— 不需要处理 —</option>';
+    (window.treatmentDictCache || []).forEach(function(t) {
+        var opt = document.createElement('option');
+        opt.value = t.name;
+        opt.setAttribute('data-mode', t.calc_mode || 'manual');
+        opt.setAttribute('data-rate', t.rate || '0');
+        opt.setAttribute('data-unit', t.unit || '元/件');
+        opt.textContent = t.name + '（' + (t.calc_mode === 'net_weight'
+            ? '按净重×' + t.rate + (t.unit || '元/件')
+            : '手动输入）');
+        sel.appendChild(opt);
+    });
+}
+
+// ── 管理弹窗 ─────────────────────────────────────────────────────
+function openTreatModal() {
+    // 每次打开强制走网络获取最新数据
+    window.treatmentDictCache = null;
+    loadTreatments();
+    document.getElementById('modalTreat').classList.add('open');
+}
+
+function closeTreatModal() {
+    document.getElementById('modalTreat').classList.remove('open');
+}
+
+// ── 动态行：添加 / 移除工序行 ───────────────────────────────────
+var _treatRowCounter = 0;
+
+function addTreatmentRow() {
+    var container = document.getElementById('treatment-list-container');
+    if (!container) return;
+    _treatRowCounter++;
+    var rowId = 'treat-row-' + _treatRowCounter;
+    var row = document.createElement('div');
+    row.className = 'treat-row';
+    row.id = rowId;
+    row.innerHTML =
+        '<div class="treat-row-inner">' +
+            '<select class="treat-sel form-select" onchange="onTreatSelectChange(\'' + rowId + '\')">' +
+                '<option value="">— 不需要处理 —</option>' +
+            '</select>' +
+            '<input type="number" class="treat-fee-input form-input" step="0.01" min="0" value="0" placeholder="处理费（元/件）" oninput="onTreatFeeInput(\'' + rowId + '\')">' +
+            '<button type="button" class="btn-del-item" onclick="removeTreatmentRow(this)">&#x274C;</button>' +
+        '</div>' +
+        '<div class="treat-row-hint" id="' + rowId + '-hint"></div>';
+    container.appendChild(row);
+
+    // 从缓存渲染下拉框（缓存未就绪则等待）
+    var sel = row.querySelector('.treat-sel');
+    if (window.treatmentDictCache !== null) {
+        renderTreatSelect(sel);
+    } else {
+        loadTreatments();
+    }
+    updateTreatHint();
+}
+
+function removeTreatmentRow(btn) {
+    var row = btn ? btn.closest('.treat-row') : null;
+    if (row) row.remove();
+    updateTreatHint();
+    if (window.selectedPath === 'B') window.triggerCalc && window.triggerCalc();
+}
+
+// ── 下拉框变化：切换费用输入框状态 ─────────────────────────────
+var _lastGrossWeight = 0;
+
+function onTreatSelectChange(rowId, opts) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+    var sel = row.querySelector('.treat-sel');
+    var inp = row.querySelector('.treat-fee-input');
+    var hint = document.getElementById(rowId + '-hint');
+    var opt = sel.selectedOptions[0];
+    var mode = opt ? opt.getAttribute('data-mode') : 'manual';
+    var rate = opt ? parseFloat(opt.getAttribute('data-rate') || '0') : 0;
+    var unit = opt ? opt.getAttribute('data-unit') || '元/件' : '元/件';
+
+    if (!sel.value) {
+        inp.readOnly = false;
+        inp.placeholder = '处理费（元/件）';
+        inp.value = '0';
+        hint.textContent = '';
+    } else if (mode === 'net_weight') {
+        inp.readOnly = true;
+        inp.placeholder = '按净重自动计算';
+        var fee = _lastGrossWeight * rate;
+        inp.value = fee.toFixed(4);
+        hint.innerHTML = '<b style="color:#1e40af">按净重</b>：毛重 ' + _lastGrossWeight.toFixed(3) + ' g × ' + rate + ' ' + unit;
+    } else {
+        inp.readOnly = false;
+        inp.placeholder = '手动输入处理费（元/件）';
+        inp.value = inp.value || '0';
+        hint.innerHTML = '<b style="color:#92400e">手动输入</b>';
+    }
+
+    updateTreatHint();
+    if (!opts || !opts.skipCalc) {
+        if (window.selectedPath === 'B') window.triggerCalc && window.triggerCalc();
+    }
+}
+
+function onTreatFeeInput(rowId) {
+    updateTreatHint();
+    if (window.selectedPath === 'B') window.triggerCalc && window.triggerCalc();
+}
+
+// ── 汇总所有工序处理费（供 doCalc 调用）──────────────────────────
+function getTreatFeeForCalc() {
+    var total = 0;
+    var rows = document.querySelectorAll('.treat-row');
+    rows.forEach(function(row) {
+        var sel = row.querySelector('.treat-sel');
+        if (!sel.value) return;
+        var inp = row.querySelector('.treat-fee-input');
+        var mode = sel.selectedOptions[0] ? sel.selectedOptions[0].getAttribute('data-mode') : 'manual';
+        if (mode === 'net_weight') {
+            var rate = sel.selectedOptions[0] ? parseFloat(sel.selectedOptions[0].getAttribute('data-rate') || '0') : 0;
+            total += _lastGrossWeight * rate;
+        } else {
+            total += parseFloat(inp.value) || 0;
+        }
+    });
+    return total;
+}
+
+// ── 全局 hint 与工序计数同步 ───────────────────────────────────
+function updateTreatHint() {
+    var hintEl = document.getElementById('treatHint');
+    if (!hintEl) return;
+    var rows = document.querySelectorAll('.treat-row');
+    var names = [];
+    var total = 0;
+    rows.forEach(function(row) {
+        var sel = row.querySelector('.treat-sel');
+        if (!sel.value) return;
+        names.push(sel.value);
+        var inp = row.querySelector('.treat-fee-input');
+        var mode = sel.selectedOptions[0] ? sel.selectedOptions[0].getAttribute('data-mode') : 'manual';
+        if (mode === 'net_weight') {
+            var rate = sel.selectedOptions[0] ? parseFloat(sel.selectedOptions[0].getAttribute('data-rate') || '0') : 0;
+            total += _lastGrossWeight * rate;
+        } else {
+            total += parseFloat(inp.value) || 0;
+        }
+    });
+    hintEl.textContent = names.length === 0
+        ? '可添加多道处理工序（如热处理→电镀→喷涂），费用自动汇总'
+        : '已选：' + names.join(' → ') + '，合计约 ' + total.toFixed(4) + ' 元';
+}
+
+// ── 表单重置 ─────────────────────────────────────────────────────
+function resetTreatForm() {
+    window._editingTreatId = null;
+    document.getElementById('treatFormTitle').textContent = '新增处理方式';
+    document.getElementById('treatName').value = '';
+    document.getElementById('treatCalcMode').value = 'manual';
+    document.getElementById('treatRate').value = '';
+    document.getElementById('treatUnit').value = '元/件';
+    document.getElementById('btnTreatSubmit').textContent = '确认添加';
+    var cancelBtn = document.getElementById('btnTreatCancel');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+}
+
+window._editingTreatId = null;
+
+// ── 编辑处理方式 ─────────────────────────────────────────────────
+function editTreatItem(id) {
+    var t = (window.treatmentDictCache || []).find(function(x) { return x.id === id; });
+    if (!t) { showToast('未找到该处理方式', 'err'); return; }
+    window._editingTreatId = id;
+    document.getElementById('treatFormTitle').textContent = '编辑处理方式';
+    document.getElementById('treatName').value = t.name;
+    document.getElementById('treatCalcMode').value = t.calc_mode || 'manual';
+    var rateVal = (t.rate !== undefined && t.rate !== null) ? String(t.rate) : '';
+    document.getElementById('treatRate').value = rateVal;
+    document.getElementById('treatUnit').value = t.unit || '元/件';
+    document.getElementById('btnTreatSubmit').textContent = '确认保存';
+    var cancelBtn = document.getElementById('btnTreatCancel');
+    if (cancelBtn) { cancelBtn.style.display = ''; cancelBtn.onclick = resetTreatForm; }
+    document.getElementById('treatFormArea').scrollIntoView({ behavior: 'smooth' });
+}
+
+// ── 确认添加 / 确认保存 ─────────────────────────────────────────
+function submitTreatItem() {
+    var nameEl  = document.getElementById('treatName');
+    var modeEl  = document.getElementById('treatCalcMode');
+    var rateEl  = document.getElementById('treatRate');
+    var unitEl  = document.getElementById('treatUnit');
+    if (!nameEl || !modeEl || !rateEl || !unitEl) {
+        showToast('表单元素未找到', 'err');
+        return;
+    }
+
+    var name = (nameEl.value || '').trim();
+    var mode = modeEl.value || 'manual';
+    var rate = parseFloat(rateEl.value) || 0;
+    var unit = unitEl.value || '元/件';
+
+    if (!name) {
+        showToast('请填写处理名称', 'err');
+        return;
+    }
+
+    var payload = { name: name, calc_mode: mode, rate: rate, unit: unit };
+    console.log('提交处理方式 payload:', payload);
+
+    sendApiRequest('sales.treatments_upsert', payload, {})
+    .then(function(r) {
+        console.log('POST /api/dict/treatments 响应:', r);
+        if (r.code && r.code !== 200) {
+            showToast((r.message || '保存失败'), 'err');
+            return;
+        }
+        showToast(window._editingTreatId
+            ? '已更新「' + name + '」'
+            : '已添加「' + name + '」', 'ok');
+
+        // 成功后：1. 使缓存失效  2. 重新加载刷新页面和弹窗  3. 清空输入框
+        window.treatmentDictCache = null;
+        resetTreatForm();
+        loadTreatments();
+    })
+    .catch(function(err) {
+        console.error('POST 失败:', err);
+        showToast('网络错误', 'err');
+    });
+}
+
+// ── 删除处理方式 ─────────────────────────────────────────────────
+function deleteTreatItem(id) {
+    if (!confirm('确定要删除该处理方式吗？')) return;
+    sendApiRequest('sales.treatments_delete', null, { pathParams: { id: String(id) } })
+    .then(function(r) {
+        console.log('DELETE 响应:', r);
+        if (r.code && r.code !== 200) {
+            showToast((r.message || '删除失败'), 'err');
+            return;
+        }
+        showToast('已删除', 'ok');
+        window.treatmentDictCache = null;
+        loadTreatments();
+    })
+    .catch(function(err) {
+        console.error('DELETE 失败:', err);
+        showToast('网络错误', 'err');
+    });
+}
+
+// ── 工具函数 ─────────────────────────────────────────────────────────
+function fmt(v, dec) {
+    if (v === null || v === undefined || v === '') return '—';
+    return parseFloat(v).toFixed(dec);
+}
+function escHtml(s) {
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── 页面加载完成：预热处理方式缓存 ───────────────────────────────
+loadTreatments();
+</script>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <title>结案报告 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f3f4f6; min-height: 100vh; }
+        .topbar {
+            background: linear-gradient(135deg, #7c3aed, #6d28d9);
+            color: white; padding: 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .topbar-title { font-size: 18px; font-weight: 800; }
+        .topbar a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 20px; }
+        .container { max-width: 700px; margin: 0 auto; padding: 16px; }
+
+        /* 卡片 */
+        .card { background: white; border-radius: 14px; padding: 20px; margin-bottom: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+
+        /* 标题区 */
+        .plan-title { font-size: 20px; font-weight: 800; color: #1f2937; margin-bottom: 4px; }
+        .plan-sub { font-size: 13px; color: #6b7280; margin-bottom: 16px; }
+        .badge-closed { background: #ede9fe; color: #6d28d9; padding: 3px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; }
+
+        /* 超产大字 */
+        .over-block { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .over-card { text-align: center; padding: 16px; border-radius: 12px; }
+        .over-card.target { background: #eff6ff; }
+        .over-card.actual { background: #f0fdf4; }
+        .over-card.over { background: #ede9fe; }
+        .over-card .val { font-size: 28px; font-weight: 800; }
+        .over-card .lbl { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+        .over-card.target .val { color: #1d4ed8; }
+        .over-card.actual .val { color: #16a34a; }
+        .over-card.over .val { color: #7c3aed; }
+
+        .over-banner { background: #f5f3ff; border: 2px solid #7c3aed; border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; display: flex; align-items: center; gap: 14px; }
+        .over-banner .icon { font-size: 28px; }
+        .over-banner .text { flex: 1; }
+        .over-banner .text .title { font-size: 16px; font-weight: 800; color: #6d28d9; }
+        .over-banner .text .sub { font-size: 13px; color: #7c3aed; margin-top: 2px; }
+        .over-banner .num { font-size: 28px; font-weight: 800; color: #7c3aed; }
+        .no-over { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 12px; padding: 14px 20px; margin-bottom: 20px; text-align: center; font-size: 13px; color: #9ca3af; }
+
+        /* 明细 */
+        .section-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .stat-box { background: #f9fafb; border-radius: 8px; padding: 12px; text-align: center; }
+        .stat-box .val { font-size: 20px; font-weight: 800; color: #1f2937; }
+        .stat-box .lbl { font-size: 10px; color: #9ca3af; margin-top: 2px; }
+
+        /* 机台明细表 */
+        .machine-table { width: 100%; border-collapse: collapse; }
+        .machine-table th { background: #f3f4f6; padding: 8px 12px; text-align: left; font-size: 11px; color: #6b7280; }
+        .machine-table td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; color: #374151; }
+        .machine-table tr:last-child td { border-bottom: none; }
+
+        /* 底部按钮 */
+        .footer-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 12px; border-radius: 10px; border: none; font-size: 14px; font-weight: 700; cursor: pointer; text-align: center; text-decoration: none; display: inline-block; }
+        .btn-purple { background: #7c3aed; color: white; }
+        .btn-gray { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+
+<div class="container">
+    <!-- 计划基本信息 -->
+    <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="plan-title">{{ plan.part_number }} · {{ plan.part_name }}</div>
+            <span class="badge-closed">已结案</span>
+        </div>
+        <div class="plan-sub">
+            {% if plan.urgency == 'critical' %}🔥 紧急
+            {% elif plan.urgency == 'urgent' %}⚠ 加急
+            {% else %}普通{% endif %}
+            &nbsp;·&nbsp;
+            {% if plan.due_date %}交期：{{ plan.due_date }}{% endif %}
+        </div>
+
+        <!-- 三大指标 -->
+        <div class="over-block">
+            <div class="over-card target">
+                <div class="val">{{ stats.target_qty }}</div>
+                <div class="lbl">目标总量</div>
+            </div>
+            <div class="over-card actual">
+                <div class="val">{{ stats.actual_output }}</div>
+                <div class="lbl">实际产出</div>
+            </div>
+            <div class="over-card over">
+                <div class="val">{{ stats.overproduction_qty }}</div>
+                <div class="lbl">超产数量</div>
+            </div>
+        </div>
+
+        <!-- 超产横幅（超产时显示） -->
+        {% if stats.overproduction_qty > 0 %}
+        <div class="over-banner">
+            <div class="icon">&#9889;</div>
+            <div class="text">
+                <div class="title">超产报告</div>
+                <div class="sub">实际产出 {{ stats.actual_output }} 件，目标 {{ stats.target_qty }} 件，超产 {{ stats.overproduction_qty }} 件（+{{ stats.overproduction_pct }}%）</div>
+            </div>
+            <div class="num">+{{ stats.overproduction_pct }}%</div>
+        </div>
+        {% else %}
+        <div class="no-over">&#10004; 实际产出 {{ stats.actual_output }} 件，无超产</div>
+        {% endif %}
+
+        <!-- 其他统计 -->
+        <div class="stat-grid">
+            <div class="stat-box">
+                <div class="val" style="color:#dc2626;">{{ stats.total_scrap }}</div>
+                <div class="lbl">总报废</div>
+            </div>
+            <div class="stat-box">
+                <div class="val">{{ stats.approved_count }}</div>
+                <div class="lbl">已审核报工</div>
+            </div>
+            <div class="stat-box">
+                <div class="val">{{ stats.pending_count }}</div>
+                <div class="lbl">待审核</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 机台明细 -->
+    {% if machine_detail %}
+    <div class="card">
+        <div class="section-title">&#9881; 机台明细</div>
+        <table class="machine-table">
+            <thead>
+                <tr>
+                    <th>机台编号</th>
+                    <th>产出数量</th>
+                    <th>报工次数</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for m in machine_detail %}
+                <tr>
+                    <td><strong>{{ m.machine_number }}</strong></td>
+                    <td>{{ m.machine_output or 0 }}</td>
+                    <td>{{ m.report_count or 0 }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- 底部操作 -->
+    <div class="footer-actions">
+        <a href="/plans" class="btn btn-gray">&#8592; 返回计划列表</a>
+        <a href="/progress" class="btn btn-purple">&#128202; 进度看板</a>
+    </div>
+</div>
+
+</body>
+</html>

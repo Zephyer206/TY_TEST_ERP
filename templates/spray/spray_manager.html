@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>喷涂管理 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f4f8; min-height: 100vh; }
+
+        .topbar-right a {
+            background: rgba(255,255,255,0.15);
+            padding: 4px 10px;
+            border-radius: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .topbar-right a.active {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .content { padding: 12px 16px; }
+
+        .section-title {
+            font-size: 13px; font-weight: 700;
+            color: #6b7280; margin-bottom: 10px;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+
+        /* ── 预警横幅：待完善工艺 ── */
+        .warn-banner {
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+            border-radius: 12px;
+            padding: 14px 16px;
+            margin-bottom: 14px;
+            color: white;
+        }
+        .warn-banner-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+        .warn-banner-title { font-size: 14px; font-weight: 700; }
+        .warn-banner-badge { background: rgba(255,255,255,0.25); padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .warn-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.15);
+            font-size: 13px;
+        }
+        .warn-item:last-child { border-bottom: none; }
+        .warn-item-name { font-weight: 600; }
+        .warn-item-meta { font-size: 11px; opacity: 0.8; margin-top: 1px; }
+        .warn-item-btn {
+            padding: 4px 12px; background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 20px; color: white;
+            font-size: 12px; font-weight: 600; cursor: pointer;
+            text-decoration: none;
+        }
+        .warn-item-btn:hover { background: rgba(255,255,255,0.35); }
+
+        /* ── 标签页 ── */
+        .tabs {
+            display: flex; background: white;
+            border-bottom: 2px solid #e5e7eb;
+            margin-bottom: 14px;
+            border-radius: 12px 12px 0 0;
+        }
+        .tab {
+            flex: 1; padding: 12px 8px;
+            text-align: center; font-size: 14px; font-weight: 600;
+            color: #6b7280; cursor: pointer;
+            border-bottom: 3px solid transparent; transition: all 0.2s;
+        }
+        .tab.active { color: #0f766e; border-bottom-color: #0f766e; }
+
+        /* ── 日期选择栏 ── */
+        .date-bar {
+            background: white; padding: 12px 16px;
+            display: flex; gap: 10px; margin-bottom: 14px;
+            border-radius: 0 0 12px 12px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .date-input {
+            flex: 1; padding: 10px 12px;
+            border: 2px solid #e5e7eb; border-radius: 10px;
+            font-size: 15px; font-weight: 700; outline: none;
+        }
+        .date-input:focus { border-color: #0f766e; }
+        .btn-go {
+            padding: 10px 18px; background: #0f766e; color: white;
+            border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 700; cursor: pointer;
+        }
+
+        /* ── 报工记录表 ── */
+        .log-table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .log-table th { background: #f8fafc; padding: 10px 12px; text-align: left; font-size: 12px; font-weight: 700; color: #6b7280; }
+        .log-table td { padding: 10px 12px; font-size: 13px; color: #374151; border-top: 1px solid #f3f4f6; }
+        .uncalc-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+            background: rgba(251,191,36,0.15); color: #d97706;
+        }
+        .calc-badge {
+            display: inline-block; padding: 2px 8px; border-radius: 20px;
+            font-size: 11px; font-weight: 600;
+            background: rgba(52,211,153,0.15); color: #059669;
+        }
+
+        /* ── 录入表单 ── */
+        .entry-form {
+            background: white; border-radius: 14px;
+            padding: 16px; margin-bottom: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .form-group { margin-bottom: 12px; }
+        .form-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 5px; display: block; }
+        .form-select, .form-input {
+            width: 100%; padding: 10px 12px;
+            border: 1.5px solid #e5e7eb; border-radius: 10px;
+            font-size: 14px; outline: none;
+        }
+        .form-select:focus, .form-input:focus { border-color: #0f766e; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .submit-btn {
+            width: 100%; padding: 14px;
+            background: linear-gradient(135deg, #0f766e, #0d9488);
+            color: white; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(15,118,110,0.35);
+        }
+
+        /* ── 物料平衡表 ── */
+        .balance-card {
+            background: white; border-radius: 14px;
+            padding: 16px; margin-bottom: 14px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .balance-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px 0; border-bottom: 1px solid #f3f4f6;
+        }
+        .balance-row:last-child { border-bottom: none; }
+        .balance-mat-name { font-size: 14px; font-weight: 700; color: #111827; }
+        .balance-mat-type { font-size: 11px; color: #6b7280; margin-top: 1px; }
+        .balance-nums { text-align: right; }
+        .balance-qty { font-size: 18px; font-weight: 800; color: #0f766e; }
+        .balance-unit { font-size: 12px; color: #6b7280; }
+        .balance-meta { font-size: 11px; color: #9ca3af; margin-top: 1px; }
+
+        /* ── 日期范围筛选 ── */
+        .date-range-bar {
+            background: white; border-radius: 12px; padding: 14px;
+            margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+        }
+        .date-range-bar .form-row { display: flex; gap: 10px; align-items: center; }
+        .date-range-bar input[type="date"] {
+            flex: 1; padding: 8px 10px;
+            border: 1.5px solid #e5e7eb; border-radius: 8px; font-size: 13px; outline: none;
+        }
+        .date-range-bar .range-sep { color: #9ca3af; font-size: 13px; }
+        .btn-query {
+            padding: 8px 16px; background: #0f766e; color: white;
+            border: none; border-radius: 8px; font-size: 13px; font-weight: 700; cursor: pointer;
+        }
+
+        /* ── Toast ── */
+        .toast {
+            display: none; position: fixed; top: 80px; left: 50%;
+            transform: translateX(-50%);
+            background: #10b981; color: white;
+            padding: 10px 24px; border-radius: 30px;
+            font-size: 14px; font-weight: 600; z-index: 200;
+        }
+        .toast.show { display: block; }
+        .toast.error { background: #ef4444; }
+        .toast.warn { background: #f59e0b; }
+
+        .empty-state { text-align: center; padding: 40px; color: #9ca3af; }
+        .empty-state-icon { font-size: 40px; margin-bottom: 10px; }
+
+        @media (min-width: 768px) {
+            .page-wrap { max-width: 720px; margin: 0 auto; }
+        }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+
+<div class="page-wrap">
+
+    <!-- 顶部导航 -->
+    <!-- 待完善工艺预警 -->
+    {% if pending_recipes %}
+    <div class="warn-banner">
+        <div class="warn-banner-header">
+            <span class="warn-banner-title">&#x26A0; 待完善工艺配方</span>
+            <span class="warn-banner-badge">{{ pending_recipes|length }} 个零件</span>
+        </div>
+        {% for p in pending_recipes %}
+        <div class="warn-item">
+            <div>
+                <div class="warn-item-name">{{ p.part_number }} {{ p.internal_name }}</div>
+                <div class="warn-item-meta">
+                    {{ p.unrecipe_batches }} 条报工未算 · 最新 {{ p.latest_date }}
+                </div>
+            </div>
+            <a href="/spray/recipe" class="warn-item-btn">配置配方 &#8250;</a>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- 标签页 -->
+    <div class="tabs">
+        <div class="tab active" onclick="switchTab('log')">报工补录</div>
+        <div class="tab" onclick="switchTab('balance')">物料平衡表</div>
+    </div>
+
+    <!-- Tab: 报工补录 -->
+    <div id="tab-log">
+        <!-- 日期选择 -->
+        <div class="date-bar">
+            <input type="date" class="date-input" id="dateInput" value="{{ target_date or '' }}">
+            <button class="btn-go" onclick="loadDate()">查询</button>
+        </div>
+
+        <div class="content">
+            <!-- 录入表单 -->
+            <div class="section-title">新增补录</div>
+            <div class="entry-form">
+                <div class="form-group">
+                    <label class="form-label">零件</label>
+                    <select class="form-select" id="selPart">
+                        <option value="">-- 选择零件 --</option>
+                        {% for p in parts %}
+                        <option value="{{ p.id }}">{{ p.part_number }} {{ p.internal_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="form-label">总产量（件）</label>
+                        <input type="number" class="form-input" id="inpQty" placeholder="0" min="1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">实际生产日期</label>
+                        <input type="date" class="form-input" id="inpDate" value="{{ target_date or '' }}">
+                    </div>
+                </div>
+                <button class="submit-btn" onclick="submitEntry()">提交补录</button>
+            </div>
+
+            <!-- 当日报工记录 -->
+            <div class="section-title">{{ target_date or '今日' }} 补录记录</div>
+            {% if logs %}
+            <table class="log-table">
+                <thead>
+                    <tr>
+                        <th>零件号</th>
+                        <th>产量</th>
+                        <th>录入人</th>
+                        <th>状态</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td>
+                        <div style="font-weight:700;">{{ log.part_number }}</div>
+                        <div style="font-size:11px;color:#9ca3af;">{{ log.internal_name }}</div>
+                    </td>
+                    <td style="font-size:16px;font-weight:700;">{{ log.quantity }}</td>
+                    <td>
+                        {% if log.operator_name %}
+                        <div>{{ log.operator_name }} (员工)</div>
+                        {% elif log.manager_name %}
+                        <div>{{ log.manager_name }} (主管)</div>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if log.is_calculated %}
+                        <span class="calc-badge">已算</span>
+                        {% else %}
+                        <span class="uncalc-badge">待算</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="empty-state">
+                <div class="empty-state-icon">&#x1F4CB;</div>
+                <div>当日暂无补录记录</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Tab: 物料平衡表 -->
+    <div id="tab-balance" style="display:none;">
+        <!-- 日期范围选择 -->
+        <div class="date-range-bar">
+            <div class="form-row">
+                <input type="date" id="balStart" value="">
+                <span class="range-sep">至</span>
+                <input type="date" id="balEnd" value="">
+                <button class="btn-query" onclick="loadBalance()">查询</button>
+            </div>
+        </div>
+
+        <!-- 平衡表内容 -->
+        <div class="content">
+            <div id="balance-loading" style="text-align:center;padding:40px;color:#9ca3af;">
+                选择日期范围后点击"查询"
+            </div>
+            <div id="balance-empty" class="empty-state" style="display:none;">
+                <div class="empty-state-icon">&#x1F4CA;</div>
+                <div>该时段内无物料消耗记录</div>
+            </div>
+            <div id="balance-rows" style="display:none;"></div>
+        </div>
+    </div>
+
+</div><!-- /.page-wrap -->
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+    // ── Tab 切换 ────────────────────────────────────────────────────
+    function switchTab(tab) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('tab-log').style.display = tab === 'log' ? 'block' : 'none';
+        document.getElementById('tab-balance').style.display = tab === 'balance' ? 'block' : 'none';
+        document.querySelectorAll('.tab')[tab === 'log' ? 0 : 1].classList.add('active');
+        // 设置快捷入口高亮
+        document.getElementById('tab-recipe-link').classList.toggle('active', tab === 'recipe');
+        document.getElementById('tab-material-link').classList.toggle('active', tab === 'material');
+        if (tab === 'balance' && !document.getElementById('balStart').value) {
+            // 设置默认日期范围：最近30天
+            var end = new Date();
+            var start = new Date();
+            start.setDate(start.getDate() - 30);
+            document.getElementById('balStart').value = start.toISOString().split('T')[0];
+            document.getElementById('balEnd').value = end.toISOString().split('T')[0];
+            loadBalance();
+        }
+    }
+
+    // ── Toast ──────────────────────────────────────────────────────
+    function showToast(msg, kind) {
+        var t = document.getElementById('toast');
+        t.textContent = msg;
+        t.className = 'toast show' + (kind ? ' ' + kind : '');
+        setTimeout(function() { t.classList.remove('show'); }, 3000);
+    }
+
+    // ── 报工补录 ───────────────────────────────────────────────────
+    function loadDate() {
+        var d = document.getElementById('dateInput').value;
+        window.location.href = '/spray/manager?date=' + d;
+    }
+
+    function submitEntry() {
+        var partId = document.getElementById('selPart').value;
+        var qty = parseInt(document.getElementById('inpQty').value);
+        var actualDate = document.getElementById('inpDate').value;
+
+        if (!partId) { showToast('请选择零件', 'error'); return; }
+        if (!qty || qty <= 0) { showToast('请输入有效产量', 'error'); return; }
+        if (!actualDate) { showToast('请选择日期', 'error'); return; }
+
+        var form = new FormData();
+        form.append('part_id', partId);
+        form.append('quantity', qty);
+        form.append('actual_date', actualDate);
+
+        fetch('/spray/manager/submit', { method: 'POST', body: form })
+            .then(function(r) { return r.json(); })
+            .then(function(d) {
+                if (d.ok) {
+                    showToast('补录成功');
+                    setTimeout(function() { location.reload(); }, 1000);
+                } else {
+                    showToast(d.detail || '提交失败', 'error');
+                }
+            })
+            .catch(function() { showToast('网络错误', 'error'); });
+    }
+
+    // ── 物料平衡表 ─────────────────────────────────────────────────
+    function loadBalance() {
+        var start = document.getElementById('balStart').value;
+        var end = document.getElementById('balEnd').value;
+
+        var url = '/api/spray/balance';
+        var params = [];
+        if (start) params.push('start_date=' + start);
+        if (end) params.push('end_date=' + end);
+        if (params.length) url += '?' + params.join('&');
+
+        document.getElementById('balance-loading').style.display = 'block';
+        document.getElementById('balance-empty').style.display = 'none';
+        document.getElementById('balance-rows').style.display = 'none';
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(rows) {
+                document.getElementById('balance-loading').style.display = 'none';
+                renderBalance(rows);
+            })
+            .catch(function() {
+                document.getElementById('balance-loading').style.display = 'none';
+                showToast('加载失败', 'error');
+            });
+    }
+
+    function renderBalance(rows) {
+        var container = document.getElementById('balance-rows');
+        if (!rows || rows.length === 0) {
+            document.getElementById('balance-empty').style.display = 'block';
+            container.style.display = 'none';
+            return;
+        }
+
+        document.getElementById('balance-empty').style.display = 'none';
+        container.style.display = 'block';
+
+        var html = '';
+        rows.forEach(function(r) {
+            var typeLabel = r.material_type === 'sand' ? '&#x1F9F1; 喷砂' : '&#x1F33F; 涂料';
+            var typeColor = r.material_type === 'sand' ? '#b45309' : '#166534';
+            html += '<div class="balance-card">';
+            html += '<div class="balance-row">';
+            html += '<div><div class="balance-mat-name">' + escHtml(r.material_name || '-') + '</div>';
+            html += '<div class="balance-mat-type" style="color:' + typeColor + ';">' + typeLabel + ' · ' + (r.part_count || 0) + ' 个零件</div>';
+            html += '</div>';
+            html += '<div class="balance-nums">';
+            html += '<div class="balance-qty">' + parseFloat(r.total_consumed || 0).toFixed(3) + '</div>';
+            html += '<div class="balance-unit">kg 理论消耗</div>';
+            html += '<div class="balance-meta">' + (r.log_count || 0) + ' 条报工记录</div>';
+            html += '</div></div>';
+            if (r.part_numbers) {
+                var parts = r.part_numbers.split(',').slice(0, 8).join(', ');
+                var more = r.part_numbers.split(',').length > 8 ? '...' : '';
+                html += '<div style="font-size:11px;color:#9ca3af;padding:4px 0 0;">涉及零件：' + escHtml(parts) + more + '</div>';
+            }
+            html += '</div>';
+        });
+
+        // 总计行
+        var grandTotalSand = 0, grandTotalCoat = 0;
+        rows.forEach(function(r) {
+            if (r.material_type === 'sand') grandTotalSand += parseFloat(r.total_consumed || 0);
+            else grandTotalCoat += parseFloat(r.total_consumed || 0);
+        });
+        html += '<div style="background:#f0fdf4;border-radius:12px;padding:14px;margin-top:4px;">';
+        html += '<div style="font-size:13px;font-weight:700;color:#166534;margin-bottom:8px;">&#x1F4CA; 期间总消耗</div>';
+        html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+        html += '<div style="text-align:center;background:white;border-radius:10px;padding:12px;"><div style="font-size:22px;font-weight:800;color:#92400e;">' + grandTotalSand.toFixed(3) + '</div><div style="font-size:12px;color:#9ca3af;">kg 喷砂合计</div></div>';
+        html += '<div style="text-align:center;background:white;border-radius:10px;padding:12px;"><div style="font-size:22px;font-weight:800;color:#166534;">' + grandTotalCoat.toFixed(3) + '</div><div style="font-size:12px;color:#9ca3af;">kg 涂料合计</div></div>';
+        html += '</div></div>';
+
+        container.innerHTML = html;
+    }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── 默认日期 ───────────────────────────────────────────────────
+    if (!document.getElementById('dateInput').value) {
+        var today = new Date().toISOString().split('T')[0];
+        document.getElementById('dateInput').value = today;
+        document.getElementById('inpDate').value = today;
+    }
+    document.getElementById('inpQty').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') submitEntry();
+    });
+
+    // 从 URL 读取 tab 参数
+    (function() {
+        var params = new URLSearchParams(window.location.search);
+        if (params.get('tab') === 'balance') switchTab('balance');
+    })();
+</script>
+</body>
+</html>
