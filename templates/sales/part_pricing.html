@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
-    <title>零件报价管理 - 云冲压 ERP</title>
+    <title>报价单管理 - 云冲压 ERP</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
         :root {
@@ -201,7 +201,7 @@
     {% if status_filter %}
     <span class="topbar-title">零件报价 — {{ status_filter }}</span>
     {% else %}
-    <span class="topbar-title">零件报价管理</span>
+    <span class="topbar-title">报价单管理</span>
     {% endif %}
     <div class="topbar-right"><a href="/sales">&#x2699;</a></div>
 </div>
@@ -223,7 +223,7 @@
     <span class="list-count">{{ parts|length }} 件</span>
 </div>
 {% for p in parts %}
-<div class="list-card" onclick="openDrawer({{ p.id }})">
+<div class="list-card" onclick="openDrawerOrEdit({{ p.id }}, '{{ p.approval_status }}')">
     <div class="list-card-left">
         <div class="part-num">{{ p.part_number or '—' }}</div>
         <div class="part-meta">
@@ -391,6 +391,42 @@
     }
 
     // ── 抽屉控制 ─────────────────────────────────────────────
+    function openDrawerOrEdit(partId, status) {
+        if (status === 'APPROVED') {
+            openDrawer(partId);
+        } else {
+            goEditPart(partId);
+        }
+    }
+
+    function goEditPart(partId) {
+        var overlay = document.getElementById("drawerOverlay");
+        if (overlay) overlay.classList.remove("open");
+        document.body.style.overflow = "";
+
+        apiGet("sales.part_detail", { id: partId })
+            .then(function (resp) {
+                if (!resp.code || resp.code !== 200) {
+                    alert("加载零件数据失败：" + (resp.message || "未知错误"));
+                    return;
+                }
+                var innerData = resp.data || {};
+                var quote = innerData.quote || {};
+                var qid = quote.id;
+
+                if (!qid) {
+                    alert("该零件尚未创建报价单，请在零件详情中新建。");
+                    return;
+                }
+                location.href = "/sales/quotes/" + qid + "/edit";
+            })
+            .catch(function (e) {
+                alert("网络错误：" + e.message);
+            });
+    }
+    window.goEditPart = goEditPart;
+    window.openDrawerOrEdit = openDrawerOrEdit;
+
     function openDrawer(partId) {
         _currentPartId = partId;
         _currentQuoteId = null;

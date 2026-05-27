@@ -16,11 +16,13 @@
         'sales.sample_judgment':      { url: '/api/part/{id}/sample-judgment',  method: 'POST' },
         'sales.part_unbind':          { url: '/api/part/{id}/unbind',            method: 'POST' },
         'sales.pricing_mode':         { url: '/api/part/{id}/pricing-mode',      method: 'POST' },
+        'sales.die_link':             { url: '/parts/die-link/json',          method: 'GET'  },
         'sales.materials_list':       { url: '/api/materials',                       method: 'GET'  },
         'sales.materials_quick_add':  { url: '/api/materials',                       method: 'POST' },
         'sales.materials_update':    { url: '/api/materials/{name}',                method: 'PUT'  },
         'sales.materials_prices_save':{ url: '/api/materials/prices',           method: 'POST' },
         'sales.materials_prices_del': { url: '/api/materials/prices/{name}',   method: 'DELETE'},
+        'sales.material_delete':       { url: '/api/materials/prices/{name}',   method: 'DELETE'},
         'sales.materials_draft_parts':{ url: '/api/materials/prices/{name}/parts', method: 'GET' },
         'sales.materials_sync_draft': { url: '/api/materials/prices/sync-draft', method: 'POST' },
         'sales.dict_items':           { url: '/api/dict/{type}',               method: 'GET'  },
@@ -45,12 +47,27 @@
         'sales.quote_submit':   { url: '/api/quotes/{id}/submit',             method: 'POST'  },
         'sales.quote_approve':  { url: '/api/quotes/{id}/approve',            method: 'POST'  },
         'sales.quote_reject':   { url: '/api/quotes/{id}/reject',             method: 'POST'  },
+        'sales.quote_create':   { url: '/api/part/{id}/quote',                method: 'POST'  },
+
+        // ── 零件管理 ──
+        'sales.part_delete':    { url: '/api/parts/{id}',                     method: 'DELETE'  },
+        'sales.customers_list': { url: '/api/customers',                      method: 'GET'  },
+        'sales.drawing_upload': { url: '/api/parts/drawing-upload',           method: 'POST' },
+        'sales.customer_create': { url: '/api/customers',                     method: 'POST' },
+        'sales.customer_update': { url: '/api/customers/{id}',                method: 'PUT'  },
+        'sales.customer_delete': { url: '/api/customers/{id}',                method: 'DELETE'},
 
         // ── 技术部 ──
         'tech.pool_json':             { url: '/tech/pool/json',                  method: 'GET'  },
         'tech.pool_start':            { url: '/tech/pool/start',                 method: 'POST' },
         'tech.pool_complete':         { url: '/tech/pool/complete',              method: 'POST' },
         'tech.scan_process':          { url: '/tech/scan/process',               method: 'POST' },
+
+        // ── 技术参数填写（业务提交图纸后，开发填写 T/W/P、模具费、穴数、吨位）──
+        'tech.pending_quotes':        { url: '/api/tech/pending-quotes',        method: 'GET'  },
+        'tech.quote_detail':         { url: '/api/tech/quote/{id}',           method: 'GET'  },
+        'tech.update_params':        { url: '/api/tech/quote/{id}/params',     method: 'PUT'  },
+        'tech.sdr_upload':           { url: '/api/tech/quote/{id}/sdr-upload', method: 'POST' },
 
         // ── 喷涂 ──
         'spray.submit':               { url: '/spray/scan/submit',               method: 'POST' },
@@ -77,7 +94,7 @@
         'qc.submit':                  { url: '/qc/submit',                       method: 'POST' },
         'qc.inspect':                { url: '/qc/inspect',                      method: 'POST' },
 
-        // ── 模具 ──
+        // ── 模具（dies） ──
         'mold.cavity_confirm':        { url: '/cavity_review/confirm',           method: 'POST' },
         'mold.cavity_reset':          { url: '/cavity_review/reset',             method: 'POST' },
         'mold.add':                   { url: '/molds/add',                       method: 'POST' },
@@ -87,6 +104,9 @@
         'mold.link_remove':           { url: '/tooling/{moldId}/unlink',         method: 'POST' },
         'mold.link_update_seq':       { url: '/tooling/{moldId}/link/{partId}/seq', method: 'POST' },
         'mold.tooling_detail':        { url: '/tooling/{moldId}',               method: 'GET'  },
+        'die.add':                    { url: '/molds/add',                       method: 'POST' },
+        'die.update':                 { url: '/molds/{id}/update',               method: 'POST' },
+        'die.delete':                 { url: '/molds/{id}/delete',               method: 'POST' },
 
         // ── 生产 ──
         'prod.operator_scan':         { url: '/prod/operator/scan',              method: 'POST' },
@@ -108,6 +128,8 @@
         'tech.maint_report':        { url: '/tech/maintenance/report',          method: 'POST' },
         'tech.maint_complete':      { url: '/tech/maintenance/complete',        method: 'POST' },
         'tech.maint_open':          { url: '/tech/maintenance/open/{equipId}', method: 'GET'  },
+        'tech.quote_tech_approve':  { url: '/tech/quote/{id}/tech-approve',    method: 'POST' },
+        'tech.quote_tech_reject':   { url: '/tech/quote/{id}/tech-reject',     method: 'POST' },
 
         // ── 包装发货 ──
         'pkg.scan':                   { url: '/pkg/scan',                        method: 'POST' },
@@ -142,6 +164,12 @@
         'qa.fp_release':              { url: '/qa/first-piece/release',        method: 'POST' },
         'qa.emergency_release':       { url: '/qa/emergency-release',          method: 'POST' },
         'qa.audit_logs':              { url: '/qa/audit-logs/json',            method: 'GET'  },
+
+        // ── 老板报价审批 ──
+        'boss.quotes_list':    { url: '/api/boss/quotes',                    method: 'GET'    },
+        'boss.quote_edit':     { url: '/api/boss/quotes/{id}',              method: 'PUT'    },
+        'boss.quote_approve':  { url: '/api/boss/quotes/{id}/approve',     method: 'POST'   },
+        'boss.quote_reject':   { url: '/api/boss/quotes/{id}/reject',       method: 'POST'   },
 
         // ── 生产会话 ──
         'prod.session_start':         { url: '/prod/sessions/start',           method: 'POST' },
@@ -195,6 +223,7 @@
 
         var fetchOpts = {
             method: cfg.method,
+            credentials: 'same-origin',
             headers: Object.assign(
                 { 'Content-Type': 'application/json' },
                 opts.headers || {}

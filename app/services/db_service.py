@@ -49,40 +49,40 @@ def get_all_parts(user_role_level):
 # 模具管理
 # ============================================================================
 
-def add_mold(mold_number, mold_name="", cavity_count=1, press_tonnage="", remark=""):
+def add_die(mold_number, mold_name="", cavity_count=1, press_tonnage="", remark=""):
     """新建模具主档，mold_number 唯一，重复则跳过"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT 1 FROM molds WHERE mold_number = %s;", (mold_number,))
+            cur.execute("SELECT 1 FROM dies WHERE mold_number = %s;", (mold_number,))
             if cur.fetchone():
                 return  # 已存在，跳过
             cur.execute("""
-                INSERT INTO molds (mold_number, mold_name, cavity_count, press_tonnage, remark)
+                INSERT INTO dies (mold_number, mold_name, cavity_count, press_tonnage, remark)
                 VALUES (%s, %s, %s, %s, %s)
             """, (mold_number, mold_name, cavity_count, press_tonnage, remark))
             conn.commit()
 
-def get_all_molds():
+def get_all_dies():
     """返回所有模具，带已关联零件数量"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
                 SELECT m.*,
                        COUNT(mp.id) AS linked_part_count
-                FROM molds m
-                LEFT JOIN mold_parts mp ON m.id = mp.mold_id
+                FROM dies m
+                LEFT JOIN die_parts mp ON m.id = mp.die_id
                 GROUP BY m.id
                 ORDER BY m.id DESC;
             """)
             return cur.fetchall()
 
-def get_mold_by_id(mold_id):
+def get_die_by_id(mold_id):
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute("SELECT * FROM molds WHERE id = %s;", (mold_id,))
+            cur.execute("SELECT * FROM dies WHERE id = %s;", (mold_id,))
             return cur.fetchone()
 
-def update_mold(mold_id, mold_name=None, cavity_count=None,
+def update_die(mold_id, mold_name=None, cavity_count=None,
                 press_tonnage=None, status=None, remark=None):
     """按字段更新模具，不传参数则跳过该字段"""
     fields = []
@@ -100,17 +100,17 @@ def update_mold(mold_id, mold_name=None, cavity_count=None,
     if not fields:
         return
     vals.append(mold_id)
-    sql = "UPDATE molds SET " + ", ".join(fields) + " WHERE id = %s"
+    sql = "UPDATE dies SET " + ", ".join(fields) + " WHERE id = %s"
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute(sql, vals)
             conn.commit()
 
-def delete_mold(mold_id):
-    """删除模具（级联删除 mold_parts 关联）"""
+def delete_die(mold_id):
+    """删除模具（级联删除 die_parts 关联）"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
-            cur.execute("DELETE FROM molds WHERE id = %s;", (mold_id,))
+            cur.execute("DELETE FROM dies WHERE id = %s;", (mold_id,))
             conn.commit()
 
 
@@ -118,56 +118,56 @@ def delete_mold(mold_id):
 # 模具-零件关联管理（多对多）
 # ============================================================================
 
-def link_mold_part(mold_id, part_id, product_number="", seq_order=0):
+def link_die_part(die_id, part_id, product_number="", seq_order=0):
     """建立模具与零件的关联，重复关联则忽略"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                SELECT 1 FROM mold_parts
-                WHERE mold_id = %s AND part_id = %s;
-            """, (mold_id, part_id))
+                SELECT 1 FROM die_parts
+                WHERE die_id = %s AND part_id = %s;
+            """, (die_id, part_id))
             if cur.fetchone():
                 return  # 已存在
             cur.execute("""
-                INSERT INTO mold_parts (mold_id, part_id, product_number, seq_order)
+                INSERT INTO die_parts (die_id, part_id, product_number, seq_order)
                 VALUES (%s, %s, %s, %s)
-            """, (mold_id, part_id, product_number, seq_order))
+            """, (die_id, part_id, product_number, seq_order))
             conn.commit()
 
-def unlink_mold_part(mold_id, part_id):
+def unlink_die_part(die_id, part_id):
     """解除模具与零件的关联"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
             cur.execute("""
-                DELETE FROM mold_parts
-                WHERE mold_id = %s AND part_id = %s;
-            """, (mold_id, part_id))
+                DELETE FROM die_parts
+                WHERE die_id = %s AND part_id = %s;
+            """, (die_id, part_id))
             conn.commit()
 
-def get_molds_by_part(part_id):
+def get_dies_by_part(part_id):
     """查某零件关联了哪些模具（返回模具主档信息 + 关联元数据）"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
                 SELECT m.*, mp.product_number, mp.seq_order
-                FROM molds m
-                JOIN mold_parts mp ON m.id = mp.mold_id
+                FROM dies m
+                JOIN die_parts mp ON m.id = mp.die_id
                 WHERE mp.part_id = %s
                 ORDER BY mp.seq_order;
             """, (part_id,))
             return cur.fetchall()
 
-def get_parts_by_mold(mold_id):
+def get_parts_by_die(die_id):
     """查某模具关联了哪些零件（返回零件主档信息 + 关联元数据）"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
                 SELECT p.*, mp.product_number, mp.seq_order
                 FROM parts p
-                JOIN mold_parts mp ON p.id = mp.part_id
-                WHERE mp.mold_id = %s
+                JOIN die_parts mp ON p.id = mp.part_id
+                WHERE mp.die_id = %s
                 ORDER BY mp.seq_order;
-            """, (mold_id,))
+            """, (die_id,))
             return cur.fetchall()
 
 
@@ -181,10 +181,10 @@ def calc_effective_price(part_id, base_price):
     若零件无关联模具或穴数为 0/空，默认按 1 计算（单穴模具）。
     多副模具时取最大 cavity_count（最保守估算）。
     """
-    molds = get_molds_by_part(part_id)
-    if not molds:
+    dies = get_dies_by_part(part_id)
+    if not dies:
         return base_price  # 无模具信息，按原单价计
-    max_cavity = max((m.get('cavity_count') or 1) for m in molds)
+    max_cavity = max((m.get('cavity_count') or 1) for m in dies)
     if max_cavity <= 0:
         max_cavity = 1
     return round(base_price / max_cavity, 4)
@@ -234,7 +234,7 @@ def get_all_machines():
                     pp.total_qty    AS active_plan_total_qty,
                     pp.progress_qty AS active_plan_progress_qty
                 FROM machines m
-                LEFT JOIN molds  mo  ON m.current_mold_id    = mo.id
+                LEFT JOIN dies  mo  ON m.current_mold_id    = mo.id
                 LEFT JOIN parts  pt  ON m.current_part_id    = pt.id
                 LEFT JOIN users  u   ON m.current_operator_id = u.id
                 LEFT JOIN production_plans pp ON m.active_plan_id = pp.id
@@ -258,7 +258,7 @@ def get_machine_by_id(machine_id):
                     pp.total_qty    AS active_plan_total_qty,
                     pp.progress_qty AS active_plan_progress_qty
                 FROM machines m
-                LEFT JOIN molds mo ON m.current_mold_id  = mo.id
+                LEFT JOIN dies mo ON m.current_mold_id  = mo.id
                 LEFT JOIN parts pt ON m.current_part_id  = pt.id
                 LEFT JOIN users u  ON m.current_operator_id = u.id
                 LEFT JOIN production_plans pp ON m.active_plan_id = pp.id
@@ -1206,7 +1206,7 @@ def get_machine_plans(machine_id):
                 JOIN production_plans pp ON pm.plan_id = pp.id
                 JOIN parts pt ON pp.part_id = pt.id
                 LEFT JOIN machines m ON pm.machine_id = m.id
-                LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                LEFT JOIN dies mo ON m.current_mold_id = mo.id
                 LEFT JOIN LATERAL (
                     SELECT SUM(qty_good)::INTEGER AS tot_good
                     FROM production_logs pl
@@ -2383,15 +2383,16 @@ def get_team_production_summary():
 def get_manager_dashboard_data():
     """
     返回生产管理端仪表盘所需全部数据：
-    - 机台列表（含维修计时器起点时间）
-    - 待产任务池（未分配或部分分配的活跃计划）
-    - 今日汇总（良品/报废/待审/在线工人）
-    - 昨日对比
-    - 吨位开工率分组
+      - 机台列表（含维修计时器起点时间）
+      - 待产任务池（未分配或部分分配的活跃计划）
+      - 今日汇总（良品/报废/待审/在线工人）
+      - 吨位开工率分组（纯SQL GROUP BY）
+      - 预警指标（损耗率/修模停机/尾数积压/逾期交付）
     """
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # 机台列表（含维修计时器起点）
+
+            # ── 1. 机台列表 ──────────────────────────────────────────────
             cur.execute("""
                 SELECT
                     m.id, m.machine_number, m.machine_name, m.press_tonnage,
@@ -2401,17 +2402,17 @@ def get_manager_dashboard_data():
                     m.fault_reported_at,
                     m.tech_arrival_time,
                     m.diagnosing_start_time,
-                    mo.mold_number AS current_mold_number,
-                    pt.part_number AS current_part_number,
+                    mo.mold_number  AS current_mold_number,
+                    pt.part_number  AS current_part_number,
                     pt.internal_name AS current_part_name,
-                    u.real_name    AS current_operator_name,
-                    pp.part_id     AS active_part_id,
+                    u.real_name     AS current_operator_name,
+                    pp.part_id      AS active_part_id,
                     pt2.part_number AS active_part_number,
-                    pt2.internal_name  AS active_part_name,
-                    pp.total_qty    AS active_plan_total_qty,
+                    pt2.internal_name AS active_part_name,
+                    pp.total_qty   AS active_plan_total_qty,
                     pp.progress_qty AS active_plan_progress_qty
                 FROM machines m
-                LEFT JOIN molds  mo  ON m.current_mold_id    = mo.id
+                LEFT JOIN dies  mo  ON m.current_mold_id    = mo.id
                 LEFT JOIN parts  pt  ON m.current_part_id    = pt.id
                 LEFT JOIN users  u   ON m.current_operator_id = u.id
                 LEFT JOIN production_plans pp ON m.active_plan_id = pp.id
@@ -2420,23 +2421,158 @@ def get_manager_dashboard_data():
             """)
             machines = cur.fetchall()
 
-            # 维修计时器数据：故障机台的首个计时起点
-            # fault_reported_at > tech_arrival_time 时用 fault_reported_at；否则用 tech_arrival_time
+            # ── 2. 维修计时器 ───────────────────────────────────────────
             repair_timers = {}
             for m in machines:
-                if m['status'] in ('fault', 'pending_check', 'repairing'):
-                    ts = None
-                    if m['fault_reported_at']:
-                        ts = m['fault_reported_at']
-                    elif m['tech_arrival_time']:
-                        ts = m['tech_arrival_time']
-                    repair_timers[str(m['id'])] = ts.isoformat() if ts else None
+                s = str(m.get('status') or '')
+                if s in ('fault', 'pending_check', 'repairing'):
+                    ts = m.get('fault_reported_at') or m.get('tech_arrival_time')
+                    if ts is None:
+                        repair_timers[str(m.get('id'))] = None
+                    elif hasattr(ts, 'isoformat'):
+                        repair_timers[str(m.get('id'))] = ts.isoformat()
+                    else:
+                        repair_timers[str(m.get('id'))] = str(ts)
 
-            # 统计 running / fault / pending_check 数量
-            running_count = sum(1 for m in machines if m['status'] == 'running')
-            fault_count   = sum(1 for m in machines if m['status'] in ('fault', 'pending_check'))
+            # ── 3. 今日生产汇总（纯SQL聚合）────────────────────────────────
+            cur.execute("""
+                SELECT
+                    COALESCE(SUM(qty_good), 0)::INTEGER    AS team_good,
+                    COALESCE(SUM(qty_bad),  0)::INTEGER    AS team_scrap,
+                    COUNT(DISTINCT worker_id)::INTEGER        AS active_workers
+                FROM production_logs
+                WHERE DATE(report_time) = CURRENT_DATE
+                  AND status = 'approved';
+            """)
+            row_today = cur.fetchone()
+            team_good       = row_today.get('team_good', 0)
+            team_scrap      = row_today.get('team_scrap', 0)
+            active_workers  = row_today.get('active_workers', 0)
 
-            # 待产任务池：所有未分配给任何运行中机台的活跃计划
+            # 待审核数
+            cur.execute("""
+                SELECT COUNT(*)::INTEGER AS pending_count
+                FROM production_logs
+                WHERE status = 'pending'
+                  AND DATE(report_time) = CURRENT_DATE;
+            """)
+            pending_count = cur.fetchone().get('pending_count', 0)
+
+            # 昨日良品（用于环比）
+            cur.execute("""
+                SELECT COALESCE(SUM(qty_good), 0)::INTEGER AS yesterday_good
+                FROM production_logs
+                WHERE DATE(report_time) = CURRENT_DATE - INTERVAL '1 day'
+                  AND status = 'approved';
+            """)
+            yesterday_good = cur.fetchone().get('yesterday_good', 0)
+
+            yoy_pct = None
+            if yesterday_good > 0:
+                yoy_pct = round((team_good - yesterday_good) / yesterday_good * 100, 1)
+
+            today_summary = {
+                'team_good':      team_good,
+                'yesterday':      yesterday_good,
+                'yoy_pct':        yoy_pct,
+                'pending_count':  pending_count,
+                'team_scrap':     team_scrap,
+                'active_workers': active_workers,
+            }
+
+            # ── 4. 吨位开工率（纯SQL GROUP BY，禁止Python循环）──────────────
+            cur.execute("""
+                SELECT
+                    COALESCE(m.press_tonnage, '未知') AS tonnage,
+                    COUNT(*)                                    AS total,
+                    COUNT(*) FILTER (WHERE m.status = 'running')  AS running,
+                    COUNT(*) FILTER (WHERE m.status = 'idle')     AS idle,
+                    COUNT(*) FILTER (WHERE m.status = 'repairing') AS repairing,
+                    COUNT(*) FILTER (WHERE m.status = 'fault')    AS fault,
+                    COUNT(*) FILTER (WHERE m.status = 'offline')  AS offline,
+                    COUNT(*) FILTER (WHERE m.status IN ('fault','repairing')) AS fault_repair
+                FROM machines m
+                GROUP BY m.press_tonnage
+                ORDER BY
+                    CASE WHEN m.press_tonnage ~ '^[0-9]+$' THEN 1 ELSE 2 END,
+                    COALESCE(m.press_tonnage, 'z') ASC;
+            """)
+            tonnage_rows = cur.fetchall()
+            # 用字典构建，按吨位 key 索引
+            tonnage_groups = {}
+            for row in tonnage_rows:
+                key = str(row.get('tonnage') or '未知')
+                tonnage_groups[key] = {
+                    'total':     row.get('total', 0),
+                    'running':   row.get('running', 0),
+                    'idle':      row.get('idle', 0),
+                    'repairing': row.get('repairing', 0),
+                    'fault':     row.get('fault', 0),
+                    'offline':   row.get('offline', 0),
+                    'fault_repair': row.get('fault_repair', 0),
+                }
+
+            # ── 5. 预警指标（纯SQL）────────────────────────────────────────
+
+            # 5a. 废料损耗率（本月，已审核数据）
+            cur.execute("""
+                SELECT
+                    COALESCE(SUM(qty_bad),  0)::INTEGER  AS total_bad,
+                    COALESCE(SUM(qty_good), 0)::INTEGER  AS total_good,
+                    CASE WHEN (SUM(qty_good) + SUM(qty_bad)) > 0
+                         THEN ROUND(
+                             SUM(qty_bad)::NUMERIC
+                             / NULLIF(SUM(qty_good) + SUM(qty_bad), 0)
+                             * 100, 2)
+                         ELSE 0.0
+                    END AS scrap_rate
+                FROM production_logs
+                WHERE status = 'approved'
+                  AND DATE_TRUNC('month', actual_date) = DATE_TRUNC('month', CURRENT_DATE);
+            """)
+            row_scrap = cur.fetchone()
+            total_bad    = row_scrap.get('total_bad', 0)
+            total_good   = row_scrap.get('total_good', 0)
+            scrap_rate   = float(row_scrap.get('scrap_rate') or 0.0)
+            alert_scrap  = scrap_rate > 3.5  # 阈值 3.5%
+
+            # 5b. 修模停机数量（repairing 状态）
+            cur.execute("""
+                SELECT COUNT(*)::INTEGER AS repairing_count
+                FROM machines
+                WHERE status = 'repairing';
+            """)
+            repairing_count = cur.fetchone().get('repairing_count', 0)
+
+            # 5c. 尾数库存积压（JOIN quotes 取最新 APPROVED 单价，乘以件数计算积压金额）
+            cur.execute("""
+                WITH latest_quote AS (
+                    SELECT DISTINCT ON (q.part_id)
+                        q.part_id,
+                        q.final_price
+                    FROM quotes q
+                    WHERE q.approval_status = 'APPROVED'
+                    ORDER BY q.part_id, q.updated_at DESC NULLS LAST
+                )
+                SELECT
+                    COUNT(DISTINCT ri.id)::INTEGER                          AS remnant_items,
+                    COALESCE(SUM(ri.quantity), 0)::INTEGER                 AS remnant_total_qty,
+                    COALESCE(
+                        SUM(ri.quantity::NUMERIC * COALESCE(lq.final_price, 0)),
+                        0
+                    )::NUMERIC(18,2)                                       AS remnant_value
+                FROM remnant_inventory ri
+                LEFT JOIN latest_quote lq ON ri.part_id = lq.part_id;
+            """)
+            row_remnant = cur.fetchone()
+            remnant_items     = row_remnant.get('remnant_items', 0)
+            remnant_total    = row_remnant.get('remnant_total_qty', 0)
+            remnant_value    = float(row_remnant.get('remnant_value') or 0)
+
+            # 5d. 逾期交付预警（复用已有函数）
+            overdue_data = get_overdue_summary()
+
+            # ── 6. 待产任务池 ─────────────────────────────────────────────
             cur.execute("""
                 SELECT
                     pp.id, pp.part_id, pp.total_qty, pp.progress_qty,
@@ -2455,7 +2591,6 @@ def get_manager_dashboard_data():
             """)
             unassigned_plans = cur.fetchall()
 
-            # 已有活跃机台关联的计划（当前正在运行的计划，用于"切换任务"）
             cur.execute("""
                 SELECT
                     pp.id, pp.part_id, pp.total_qty, pp.progress_qty,
@@ -2470,87 +2605,48 @@ def get_manager_dashboard_data():
             """)
             active_plans = cur.fetchall()
 
-            # 今日班组良品总数
-            cur.execute("""
-                SELECT COALESCE(SUM(qty_good), 0) AS team_good
-                FROM production_logs
-                WHERE DATE(report_time) = CURRENT_DATE AND status = 'approved';
-            """)
-            team_good = int(cur.fetchone()['team_good'])
+            # ── 汇总返回 ───────────────────────────────────────────────────
+            running_count = sum(1 for m in machines if str(m.get('status') or '') == 'running')
+            fault_count   = sum(1 for m in machines if str(m.get('status') or '') in ('fault', 'pending_check'))
 
-            # 昨日良品
-            cur.execute("""
-                SELECT COALESCE(SUM(qty_good), 0) AS yesterday_good
-                FROM production_logs
-                WHERE DATE(report_time) = CURRENT_DATE - INTERVAL '1 day' AND status = 'approved';
-            """)
-            yesterday_good = int(cur.fetchone()['yesterday_good'])
+            import datetime as _dt
+            import decimal as _dec
 
-            # 待审核数
-            cur.execute("""
-                SELECT COUNT(*) AS pending_count
-                FROM production_logs
-                WHERE status = 'pending' AND DATE(report_time) = CURRENT_DATE;
-            """)
-            pending_count = int(cur.fetchone()['pending_count'])
-
-            # 今日报废
-            cur.execute("""
-                SELECT COALESCE(SUM(qty_bad), 0) AS team_scrap
-                FROM production_logs
-                WHERE DATE(report_time) = CURRENT_DATE;
-            """)
-            team_scrap = int(cur.fetchone()['team_scrap'])
-
-            # 今日在线操作工数
-            cur.execute("""
-                SELECT COUNT(DISTINCT worker_id) AS active_workers
-                FROM production_logs
-                WHERE DATE(report_time) = CURRENT_DATE;
-            """)
-            active_workers = int(cur.fetchone()['active_workers'])
-
-            # 今日良品
-            yoy_pct = None
-            if yesterday_good > 0:
-                yoy_pct = round((team_good - yesterday_good) / yesterday_good * 100, 1)
-
-            today_summary = {
-                'team_good': team_good,
-                'yesterday': yesterday_good,
-                'yoy_pct': yoy_pct,
-                'pending_count': pending_count,
-                'team_scrap': team_scrap,
-                'active_workers': active_workers,
-            }
-
-            # 吨位开工率（复用 get_tonnage_dashboard 逻辑）
-            tonnage_groups = {}
-            for m in machines:
-                t = str(m.get('press_tonnage') or '未知')
-                if t not in tonnage_groups:
-                    tonnage_groups[t] = {'total': 0, 'running': 0, 'offline': 0, 'requesting': 0, 'idle': 0}
-                tonnage_groups[t]['total'] += 1
-                s = str(m.get('status') or '').lower()
-                if s == 'running':
-                    tonnage_groups[t]['running'] += 1
-                elif s in ('offline', 'pending_check', 'repairing'):
-                    tonnage_groups[t]['requesting'] += 1
-                elif s == 'idle':
-                    tonnage_groups[t]['idle'] += 1
-                else:
-                    tonnage_groups[t]['offline'] += 1
+            def _rows_to_json(rows):
+                result = []
+                for row in rows:
+                    d = dict(row)
+                    for k, v in d.items():
+                        if isinstance(v, (_dt.datetime, _dt.date, _dt.time)):
+                            d[k] = v.isoformat()
+                        elif isinstance(v, _dec.Decimal):
+                            d[k] = float(v)
+                    result.append(d)
+                return result
 
             return {
-                'machines': machines,
-                'repair_timers': repair_timers,
-                'running_count': running_count,
-                'fault_count': fault_count,
-                'today_good': team_good,
-                'unassigned_plans': unassigned_plans,
-                'active_plans': active_plans,
-                'today_summary': today_summary,
-                'tonnage_groups': tonnage_groups,
+                'machines':          [dict(m) for m in machines],
+                'repair_timers':      repair_timers,
+                'running_count':      running_count,
+                'fault_count':        fault_count,
+                'today_good':         team_good,
+                'unassigned_plans':   [dict(p) for p in unassigned_plans],
+                'active_plans':       [dict(p) for p in active_plans],
+                'today_summary':      today_summary,
+                'tonnage_groups':     tonnage_groups,
+                # 新增预警指标
+                'kpi': {
+                    'scrap_rate':       scrap_rate,
+                    'scrap_rate_str':   f'{scrap_rate:.2f}%',
+                    'alert_scrap':      alert_scrap,
+                    'total_bad':        total_bad,
+                    'total_good':       total_good,
+                    'repairing_count':  repairing_count,
+                    'remnant_items':    remnant_items,
+                    'remnant_total':    remnant_total,
+                    'remnant_value':    remnant_value,
+                },
+                'overdue_data':       overdue_data,
             }
 
 
@@ -2629,7 +2725,7 @@ def get_machine_repair_log(machine_id):
                     pt.internal_name AS current_part_name
                 FROM machines m
                 LEFT JOIN users u ON m.current_operator_id = u.id
-                LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                LEFT JOIN dies mo ON m.current_mold_id = mo.id
                 LEFT JOIN parts pt ON m.current_part_id = pt.id
                 WHERE m.id = %s;
             """, (machine_id,))
@@ -5002,34 +5098,65 @@ def get_pkg_daily_summary(target_date=None):
 
 def get_tonnage_dashboard():
     """
-    按吨位分组返回机台状态统计 + 各组机台明细。
-    返回结构：{tonnage: {total, running, offline, requesting, idle, machines: [...]}}
+    纯 SQL 按吨位分桶聚合，返回结构：
+    {tonnage: {total, running, repairing, offline, idle, utilization_pct, machines: [...]}}
+    所有聚合均在 SQL 层完成，禁止 Python 循环。
     """
-    machines = get_all_machines()
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    COALESCE(m.press_tonnage::TEXT, '未知') AS tonnage,
+                    COUNT(*)                                                          AS total,
+                    COUNT(*) FILTER (WHERE m.status = 'running')                     AS running,
+                    COUNT(*) FILTER (WHERE m.status = 'repairing')                   AS repairing,
+                    COUNT(*) FILTER (WHERE m.status = 'offline')                     AS offline,
+                    COUNT(*) FILTER (WHERE m.status = 'fault')                       AS fault,
+                    COUNT(*) FILTER (WHERE m.status = 'pending_check')                AS pending_check,
+                    COUNT(*) FILTER (WHERE m.status = 'idle')                       AS idle,
+                    ROUND(
+                        COUNT(*) FILTER (WHERE m.status = 'running')::NUMERIC
+                        / NULLIF(COUNT(*), 0) * 100, 1
+                    ) AS utilization_pct,
+                    COALESCE(JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'id',          m.id,
+                            'number',       m.machine_number,
+                            'name',         m.machine_name,
+                            'status',       m.status,
+                            'part_number',  COALESCE(pt.part_number, pt2.part_number, ''),
+                            'part_name',    COALESCE(pt.internal_name, pt2.internal_name, ''),
+                            'operator',     COALESCE(u.real_name, '')
+                        ) ORDER BY m.machine_number
+                    ) FILTER (WHERE m.id IS NOT NULL), '[]') AS machines
+                FROM machines m
+                LEFT JOIN parts pt  ON m.current_part_id   = pt.id
+                LEFT JOIN users u  ON m.current_operator_id = u.id
+                LEFT JOIN production_plans pp ON m.active_plan_id = pp.id
+                LEFT JOIN parts pt2 ON pp.part_id = pt2.id
+                GROUP BY m.press_tonnage
+                ORDER BY
+                    CASE WHEN m.press_tonnage ~ '^[0-9]+$' THEN 1 ELSE 2 END,
+                    COALESCE(m.press_tonnage, 'z') ASC;
+            """)
+            rows = cur.fetchall()
+
     groups = {}
-    for m in machines:
-        t = str(m.get('press_tonnage') or '未知')
-        if t not in groups:
-            groups[t] = {'total': 0, 'running': 0, 'offline': 0, 'requesting': 0, 'idle': 0, 'machines': []}
-        groups[t]['total'] += 1
-        status = str(m.get('status') or '').lower()
-        if status == 'running':
-            groups[t]['running'] += 1
-        elif status == 'offline':
-            groups[t]['offline'] += 1
-        elif status == 'requesting':
-            groups[t]['requesting'] += 1
-        else:
-            groups[t]['idle'] += 1
-        groups[t]['machines'].append({
-            'id':          m['id'],
-            'number':      m.get('machine_number'),
-            'name':        m.get('machine_name'),
-            'status':      m.get('status'),
-            'part_number': m.get('current_part_number') or m.get('active_part_number') or '',
-            'part_name':   m.get('current_part_name')   or m.get('active_part_name')   or '',
-            'operator':     m.get('current_operator_name') or '',
-        })
+    for row in rows:
+        t = str(row.get('tonnage') or '未知')
+        total = int(row.get('total') or 0)
+        run   = int(row.get('running') or 0)
+        groups[t] = {
+            'total':            total,
+            'running':          run,
+            'repairing':        int(row.get('repairing') or 0),
+            'offline':          int(row.get('offline') or 0),
+            'fault':            int(row.get('fault') or 0),
+            'pending_check':    int(row.get('pending_check') or 0),
+            'idle':             int(row.get('idle') or 0),
+            'utilization_pct':  float(row.get('utilization_pct') or 0.0),
+            'machines':         row.get('machines') or [],
+        }
     return groups
 
 
@@ -5147,6 +5274,57 @@ def get_overdue_summary():
             return result
 
 
+def get_boss_kpi():
+    """
+    本月预估产值 + 废料损耗率（总耗料重量 - 良品净重）。
+    全部由原生 SQL 聚合，禁止 Python 循环累加。
+
+    预估产值 = SUM(qty_good * 最新 APPROVED 报价单 final_price)
+    废料损耗率 = (总耗料重量 - 良品净重) / 总耗料重量 * 100
+      总耗料重量 = SUM(pl.qty_good * q.gross_weight)  -- gross_weight 已存入 quotes
+      良品净重   = SUM(pl.qty_good * q.gross_weight * (1 - q.scrap_rate))
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # 本月预估产值 + 废料损耗率：一次 CTE 完成
+            cur.execute("""
+                WITH latest_quote AS (
+                    SELECT DISTINCT ON (q.part_id)
+                        q.part_id,
+                        q.final_price,
+                        COALESCE(q.gross_weight, 0)                              AS gross_weight,
+                        COALESCE(q.scrap_rate, 0.10)                             AS scrap_rate
+                    FROM quotes q
+                    WHERE q.approval_status = 'APPROVED'
+                    ORDER BY q.part_id, q.updated_at DESC NULLS LAST
+                )
+                SELECT
+                    COALESCE(SUM(pl.qty_good * lq.final_price),                   0)::NUMERIC(18,2) AS estimated_output,
+                    COALESCE(SUM(pl.qty_good * lq.gross_weight),                  0)               AS total_gross_kg,
+                    COALESCE(SUM(pl.qty_good * lq.gross_weight * (1 - lq.scrap_rate)), 0)          AS total_net_kg
+                FROM production_logs pl
+                JOIN latest_quote lq ON pl.part_id = lq.part_id
+                WHERE pl.status = 'approved'
+                  AND DATE_TRUNC('month', pl.report_time) = DATE_TRUNC('month', CURRENT_DATE);
+            """)
+            row = cur.fetchone()
+            estimated_output = float(row['estimated_output'] or 0)
+            total_gross      = float(row['total_gross_kg']   or 0)
+            total_net        = float(row['total_net_kg']     or 0)
+            scrap_kg         = round(total_gross - total_net, 2)
+            scrap_rate_pct   = round((total_gross - total_net) / total_gross * 100, 2) if total_gross > 0 else 0.0
+
+            return {
+                'estimated_output': round(estimated_output, 2),
+                'total_gross_kg':   round(total_gross, 2),
+                'total_net_kg':     round(total_net, 2),
+                'scrap_kg':         scrap_kg,
+                'scrap_rate_pct':   scrap_rate_pct,
+                # 高亮阈值：报废率 > 12% 视为异常
+                'scrap_alert':      scrap_rate_pct > 12.0,
+            }
+
+
 # ==============================================================================
 # 技术部管理端（主管/课长）- 数据服务
 # ==============================================================================
@@ -5159,7 +5337,7 @@ def get_tech_manager_permission(user_id):
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
-                SELECT id, username, real_name, role_level, department, dept, position, is_tech
+                SELECT id, username, real_name, role_level, dept, position, is_tech
                 FROM users
                 WHERE id = %s
             """, (user_id,))
@@ -5180,14 +5358,13 @@ def get_tech_manager_permission(user_id):
 
 def get_realtime_radar_data():
     """
-    实时维修雷达数据：获取所有当前异常机台的卡片信息。
-    包括：机台编号、故障原因、等待时长、当前维修状态、责任人等。
+    实时维修雷达：所有非 running 机台的等待/维修时长均在 SQL 层用
+    EXTRACT(EPOCH ...) 计算，禁止 Python timedelta 循环。
     """
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            # 查询所有非 running 状态的机台（异常机台）
             cur.execute("""
-                SELECT 
+                SELECT
                     m.id,
                     m.machine_number,
                     m.machine_name,
@@ -5195,59 +5372,46 @@ def get_realtime_radar_data():
                     m.fault_reason,
                     m.fault_reported_at,
                     m.tech_arrival_time,
+                    m.diagnosing_start_time,
                     m.tech_user_id,
                     m.current_mold_id,
-                    mo.mold_number AS mold_number,
-                    mo.mold_name AS mold_name,
-                    u.real_name AS tech_name,
-                    u.username AS tech_username
+                    mo.mold_number,
+                    mo.mold_name,
+                    u.real_name   AS tech_name,
+                    u.username    AS tech_username,
+                    -- 等待时长：故障上报 → 技术人员到场
+                    GREATEST(0,
+                        EXTRACT(EPOCH FROM (
+                            COALESCE(m.tech_arrival_time, CURRENT_TIMESTAMP)
+                            - COALESCE(m.fault_reported_at, CURRENT_TIMESTAMP)
+                        )) / 60
+                    ) AS wait_minutes,
+                    -- 维修时长：到场 → 开始诊断
+                    CASE
+                        WHEN m.diagnosing_start_time IS NOT NULL
+                             AND m.tech_arrival_time IS NOT NULL
+                        THEN GREATEST(0,
+                            EXTRACT(EPOCH FROM (
+                                m.diagnosing_start_time - m.tech_arrival_time
+                            )) / 60
+                        )
+                        ELSE 0
+                    END AS repair_minutes
                 FROM machines m
-                LEFT JOIN molds mo ON m.current_mold_id = mo.id
-                LEFT JOIN users u ON m.tech_user_id = u.id
+                LEFT JOIN dies mo ON m.current_mold_id = mo.id
+                LEFT JOIN users  u  ON m.tech_user_id  = u.id
                 WHERE m.status != 'running'
-                ORDER BY 
+                ORDER BY
                     CASE m.status
-                        WHEN 'fault' THEN 1
+                        WHEN 'fault'         THEN 1
                         WHEN 'pending_check' THEN 2
-                        WHEN 'repairing' THEN 3
-                        WHEN 'offline' THEN 4
+                        WHEN 'repairing'     THEN 3
+                        WHEN 'offline'       THEN 4
                         ELSE 5
                     END,
-                    m.fault_reported_at ASC NULLS LAST
+                    m.fault_reported_at ASC NULLS LAST;
             """)
-            machines = cur.fetchall()
-            
-            result = []
-            now = datetime.datetime.now()
-            for m in machines:
-                # 计算等待时长
-                wait_minutes = 0
-                if m.get('fault_reported_at'):
-                    delta = now - m['fault_reported_at']
-                    wait_minutes = int(delta.total_seconds() / 60)
-                
-                # 计算维修时长（如果有到场时间）
-                repair_minutes = 0
-                if m.get('tech_arrival_time'):
-                    delta = now - m['tech_arrival_time']
-                    repair_minutes = int(delta.total_seconds() / 60)
-                
-                result.append({
-                    'id': m['id'],
-                    'machine_number': m['machine_number'],
-                    'machine_name': m['machine_name'] or '',
-                    'status': m['status'],
-                    'fault_reason': m['fault_reason'] or '',
-                    'fault_reported_at': m['fault_reported_at'],
-                    'wait_minutes': wait_minutes,
-                    'repair_minutes': repair_minutes,
-                    'tech_name': m['tech_name'] or '',
-                    'tech_username': m['tech_username'] or '',
-                    'mold_number': m['mold_number'] or '',
-                    'mold_name': m['mold_name'] or '',
-                })
-            
-            return result
+            return cur.fetchall()
 
 
 def get_tech_staff_monthly_efficiency(tech_user_id=None):
@@ -5374,7 +5538,7 @@ def get_offline_molds_queue():
                     m.tech_user_id,
                     u.real_name AS tech_name
                 FROM machines m
-                LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                LEFT JOIN dies mo ON m.current_mold_id = mo.id
                 LEFT JOIN users u ON m.tech_user_id = u.id
                 WHERE m.status = 'offline'
                 ORDER BY m.mold_offline_time ASC
@@ -5476,7 +5640,7 @@ def get_mold_fault_analysis(period='month'):
                         THEN EXTRACT(EPOCH FROM (m.diagnosing_start_time - m.tech_arrival_time)) / 60
                     END
                 ) AS avg_repair_minutes
-            FROM molds mo
+            FROM dies mo
             INNER JOIN machines m ON mo.id = m.current_mold_id
             WHERE m.fault_reported_at >= %s
             GROUP BY mo.id, mo.mold_number, mo.mold_name
@@ -5588,7 +5752,7 @@ def create_offline_mold_record(machine_id, updater_id):
                     mo.mold_number,
                     mo.mold_name
                 FROM machines m
-                LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                LEFT JOIN dies mo ON m.current_mold_id = mo.id
                 WHERE m.id = %s
             """, (machine_id,))
             machine = cur.fetchone()
@@ -5645,7 +5809,7 @@ def resolve_mold_by_key(mold_key):
                            pt.part_number AS current_part_number, pt.internal_name AS current_part_name
                     FROM mold_offline_records mor
                     LEFT JOIN machines m ON mor.machine_id = m.id
-                    LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                    LEFT JOIN dies mo ON m.current_mold_id = mo.id
                     LEFT JOIN parts pt ON m.current_part_id = pt.id
                     WHERE mor.id = %s
                 """, (record_id,))
@@ -5659,7 +5823,7 @@ def resolve_mold_by_key(mold_key):
             cur.execute("""
                 SELECT m.*, mo.mold_number, mo.mold_name,
                        pt.part_number AS current_part_number, pt.internal_name AS current_part_name
-                FROM molds mo
+                FROM dies mo
                 LEFT JOIN machines m ON m.current_mold_id = mo.id
                 LEFT JOIN parts pt ON m.current_part_id = pt.id
                 WHERE mo.mold_number = %s
@@ -5683,7 +5847,7 @@ def resolve_mold_by_key(mold_key):
                 SELECT m.*, mo.mold_number, mo.mold_name,
                        pt.part_number AS current_part_number, pt.internal_name AS current_part_name
                 FROM machines m
-                LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                LEFT JOIN dies mo ON m.current_mold_id = mo.id
                 LEFT JOIN parts pt ON m.current_part_id = pt.id
                 WHERE m.machine_number = %s
             """, (mold_key,))
@@ -5753,7 +5917,7 @@ def tech_twoscan_process(mold_key, tech_user_id):
                     SELECT m.*, mo.mold_number, mo.mold_name,
                            pt.part_number AS current_part_number, pt.internal_name AS current_part_name
                     FROM machines m
-                    LEFT JOIN molds mo ON m.current_mold_id = mo.id
+                    LEFT JOIN dies mo ON m.current_mold_id = mo.id
                     LEFT JOIN parts pt ON m.current_part_id = pt.id
                     WHERE m.id = %s
                 """, (machine_id,))
@@ -6135,7 +6299,7 @@ def get_pending_repair_pool(tech_user_id=None, search_key=''):
                 if row:
                     offline_minutes = 0
                     if row['offline_time']:
-                        offline_minutes = (datetime.now() - row['offline_time']).total_seconds() / 60
+                        offline_minutes = (datetime.datetime.now() - row['offline_time']).total_seconds() / 60
                     current_repair = {
                         'id': row['id'],
                         'machine_id': row['machine_id'],
@@ -7392,6 +7556,7 @@ def calc_part_pricing(
 def create_part_with_mold_and_pricing(
         part_number: str,
         internal_name: str,
+        remark: str = "",
         material_name: str = "",
         pricing_mode: str = "independent",
         *,
@@ -7410,13 +7575,14 @@ def create_part_with_mold_and_pricing(
         customer_id: int = None,
         alias_part_number: str = None,
         operator_id: int = None,
+        drawing_file_path: str = None,
 ) -> int:
     """
-    单事务创建零件 + 模具 + 报价单（parts + molds + quotes 三表原子写入）。
+    单事务创建零件 + 模具 + 报价单（parts + dies + quotes 三表原子写入）。
 
     严格遵循 CLAUDE.md:
       - 纯 SQL（psycopg2），无 ORM
-      - T/W/P 存入 molds 表（厚度 → thickness_mm, 宽度 → width_mm, 步距 → pitch_mm）
+      - T/W/P 存入 dies 表（厚度 → thickness_mm, 宽度 → width_mm, 步距 → pitch_mm）
       - 显式 conn.commit() / conn.rollback()
     """
     # 路径 A（关联参考）：继承老件的 T/W/P
@@ -7447,44 +7613,49 @@ def create_part_with_mold_and_pricing(
     new_part_id = None
     try:
         with conn.cursor() as cur:
-            # ── 1. 校验零件号唯一性 ───────────────────────────────
+            # ── 1. 校验件号唯一性 ────────────────────────────────────
+            # 先查是否存在同名件号
             cur.execute(
                 "SELECT 1 FROM parts WHERE part_number = %s LIMIT 1;",
                 (part_number,))
             if cur.fetchone():
-                raise ValueError(f"零件号【{part_number}】已存在")
+                # 同名件号存在：remark 为空则报错；remark 非空则检查 (part_number, remark) 联合唯一
+                if not remark or not remark.strip():
+                    raise ValueError(f"零件号【{part_number}】已存在，请填写备注以区分重复件号")
+                cur.execute(
+                    "SELECT 1 FROM parts WHERE part_number = %s AND remark = %s LIMIT 1;",
+                    (part_number, remark))
+                if cur.fetchone():
+                    raise ValueError(f"零件号【{part_number}】+备注【{remark}】已存在")
 
             # ── 2. INSERT parts → RETURNING id ────────────────────
             cur.execute("""
                 INSERT INTO parts (
-                    part_number, internal_name, material_name,
-                    thickness, width, press_stroke, cavities,
-                    mold_tonnage,
-                    sample_judgment_status,
+                    part_number, internal_name, remark, material_name,
+                    sample_judgment_status, drawing_url,
                     version, part_status,
                     created_at, updated_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s, %s,
                     'V1.0', 'DRAFT',
                     NOW(), NOW()
                 )
                 RETURNING id;
             """, (
-                part_number, internal_name, material_name,
-                thickness, width, press_stroke, cavity_count,
-                press_tonnage,
-                'pending',
+                part_number, internal_name, remark, material_name,
+                'pending', drawing_file_path,
             ))
             new_part_id = cur.fetchone()[0]
 
-            # ── 3. INSERT molds（Die 模具主档）─────────────────────
+            # ── 3. INSERT dies（Die 模具主档）─────────────────────
             mold_number = f"DIE-{part_number}"
             cur.execute(
-                "SELECT 1 FROM molds WHERE mold_number = %s LIMIT 1;",
+                "SELECT 1 FROM dies WHERE mold_number = %s LIMIT 1;",
                 (mold_number,))
             if not cur.fetchone():
                 cur.execute("""
-                    INSERT INTO molds (
+                    INSERT INTO dies (
                         mold_number, part_id, cavity_count,
                         press_tonnage, lifecycle_status,
                         thickness_mm, width_mm, pitch_mm,
@@ -7534,10 +7705,10 @@ def create_part_with_mold_and_pricing(
                     approval_status,
                     submitted_by,
                     nomination_status, nomination_attachment,
-                    machine_type,
+                    machine_type, customer_id,
                     created_at, updated_at
                 ) VALUES (
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                     NOW(),NOW()
                 )
                 RETURNING id;
@@ -7548,10 +7719,10 @@ def create_part_with_mold_and_pricing(
                 stamping_fee or 0.0, surface_fee or 0.0, 0.0,
                 profit_margin or 5.0,
                 final_price_override, '[]',
-                'DRAFT',
+                'WAITING_FOR_TECH' if pricing_mode == 'pending_tech' else 'DRAFT',
                 operator_id,
                 None, None,
-                machine_type,
+                machine_type, customer_id,
             ))
 
         # ── 6. 提交事务 ───────────────────────────────────────
@@ -7572,8 +7743,9 @@ def create_part_with_mold_and_pricing(
 def create_part_with_pricing(
         part_number: str,
         internal_name: str,
-        material_name: str,
-        pricing_mode: str,          # 'independent' | 'reference'
+        remark: str = "",
+        material_name: str = "",
+        pricing_mode: str = "independent",
         *,
         referenced_part_id: int = None,
         thickness: float = None,
@@ -7628,30 +7800,34 @@ def create_part_with_pricing(
     # ── 写入 parts 表 ──────────────────────────────────────────────
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
+            # 允许件号重复：同名件号存在时 remark 为空则报错
             cur.execute(
                 "SELECT 1 FROM parts WHERE part_number = %s LIMIT 1;",
                 (part_number,))
             if cur.fetchone():
-                raise ValueError(f"零件号【{part_number}】已存在")
+                if not remark or not remark.strip():
+                    raise ValueError(f"零件号【{part_number}】已存在，请填写备注以区分重复件号")
+                cur.execute(
+                    "SELECT 1 FROM parts WHERE part_number = %s AND remark = %s LIMIT 1;",
+                    (part_number, remark))
+                if cur.fetchone():
+                    raise ValueError(f"零件号【{part_number}】+备注【{remark}】已存在")
 
             cur.execute("""
                 INSERT INTO parts (
-                    part_number, internal_name, material_name,
-                    thickness, width, press_stroke, cavities,
-                    mold_tonnage,
+                    part_number, internal_name, remark, material_name,
                     sample_judgment_status,
                     version, part_status,
                     created_at, updated_at
                 ) VALUES (
-                    %s, %s, %s, %s, %s, %s, %s, %s, %s,
+                    %s, %s, %s, %s,
+                    %s,
                     'V1.0', 'DRAFT',
                     NOW(), NOW()
                 )
                 RETURNING id;
             """, (
-                part_number, internal_name, material_name,
-                thickness, width, press_stroke, cavity_count,
-                press_tonnage,
+                part_number, internal_name, remark, material_name,
                 sample_judgment_status,
             ))
             new_part_id = cur.fetchone()[0]
@@ -7746,7 +7922,7 @@ def create_quote(
         profit_margin: float = None,
         final_price_override: float = None,
         override_fields: list = None,
-        approval_status: str = "DRAFT",
+        approval_status: str = "WAITING_FOR_TECH",
         submitted_by: int = None,
         nomination_status: str = None,
         nomination_attachment: str = None,
@@ -7766,7 +7942,9 @@ def create_quote(
     stamping_fee/surface_fee/treatment_fee/profit_margin  : 费用/利润
     final_price_override : 人工覆盖总价
     override_fields  : 被覆盖字段列表（JSON 数组）
-    approval_status  : 'DRAFT' | 'PENDING_BOSS'
+    approval_status  : 'WAITING_FOR_TECH'（业务提交图纸后待开发填写参数）
+                     | 'DRAFT'（技术部直接建档）
+                     | 'PENDING_BOSS'（提交老板审批）
     submitted_by     : 提交人用户 ID
     operator_id      : 操作人用户 ID（用于快照记录）
 
@@ -7871,8 +8049,19 @@ def update_quote(
         press_stroke: float = None,
         cavity_count: int = None,
         scrap_rate: float = None,
+        gross_weight: float = None,
+        material_net_cost: float = None,
+        material_name: str = None,
+        snapshot_mat_name: str = None,
+        snapshot_mat_price: float = None,
+        snapshot_density: float = None,
+        snapshot_scrap_price: float = None,
+        final_price: float = None,
         stamping_fee: float = None,
+        inspection_fee: float = None,
+        packaging_fee: float = None,
         surface_fee: float = None,
+        mold_cost: float = None,
         treatment_fee: float = None,
         profit_margin: float = None,
         final_price_override: float = None,
@@ -7880,7 +8069,13 @@ def update_quote(
         material_cost_override: float = None,
         override_fields: list = None,
         nomination_status: str = None,
-        nomination_attachment: str = None) -> bool:
+        nomination_attachment: str = None,
+        machine_type: str = None,
+        press_tonnage: int = None,
+        material_utilization: float = None,
+        annual_avg: float = None,
+        lifecycle_years: float = None,
+        customer_id: int = None) -> bool:
     """
     更新报价单字段（仅 DRAFT / REJECTED 状态允许编辑）。
     """
@@ -7897,20 +8092,48 @@ def update_quote(
     if pricing_mode is not None:       _add("pricing_mode", pricing_mode)
     if thickness is not None:          _add("thickness", thickness)
     if width is not None:              _add("width", width)
-    if press_stroke is not None:      _add("press_stroke", press_stroke)
-    if cavity_count is not None:       _add("cavity_count", cavity_count)
-    if scrap_rate is not None:        _add("scrap_rate", scrap_rate)
+    if press_stroke is not None:       _add("press_stroke", press_stroke)
+    if cavity_count is not None:        _add("cavity_count", cavity_count)
+    if scrap_rate is not None:         _add("scrap_rate", scrap_rate)
+    if gross_weight is not None:       _add("gross_weight", gross_weight)
+    if material_net_cost is not None:  _add("material_net_cost", material_net_cost)
+    if material_name is not None:       _add("material_name", material_name)
+    if snapshot_mat_name is not None:  _add("snapshot_mat_name", snapshot_mat_name)
+    if snapshot_mat_price is not None:  _add("snapshot_mat_price", snapshot_mat_price)
+    if snapshot_density is not None:   _add("snapshot_density", snapshot_density)
+    if snapshot_scrap_price is not None: _add("snapshot_scrap_price", snapshot_scrap_price)
+    if final_price is not None:        _add("final_price", final_price)
     if stamping_fee is not None:       _add("stamping_fee", stamping_fee)
-    if surface_fee is not None:        _add("surface_fee", surface_fee)
-    if treatment_fee is not None:      _add("treatment_fee", treatment_fee)
-    if profit_margin is not None:      _add("profit_margin", profit_margin)
+    if inspection_fee is not None:      _add("inspection_fee", inspection_fee)
+    if packaging_fee is not None:       _add("packaging_fee", packaging_fee)
+    if surface_fee is not None:         _add("surface_fee", surface_fee)
+    if mold_cost is not None:           _add("mold_cost", mold_cost)
+    if treatment_fee is not None:        _add("treatment_fee", treatment_fee)
+    if profit_margin is not None:       _add("profit_margin", profit_margin)
     if final_price_override is not None: _add("final_price_override", final_price_override)
     if unit_price_override is not None: _add("unit_price_override", unit_price_override)
     if material_cost_override is not None: _add("material_cost_override", material_cost_override)
     if override_fields is not None:
         _add("override_fields", _json.dumps(override_fields) if override_fields else '[]')
-    if nomination_status is not None:  _add("nomination_status", nomination_status)
+    if nomination_status is not None:   _add("nomination_status", nomination_status)
     if nomination_attachment is not None: _add("nomination_attachment", nomination_attachment)
+    if machine_type is not None:         _add("machine_type", machine_type)
+    if press_tonnage is not None:        _add("press_tonnage", press_tonnage)
+    if material_utilization is not None:  _add("material_utilization", material_utilization)
+    if annual_avg is not None:            _add("annual_avg", annual_avg)
+    if lifecycle_years is not None:       _add("lifecycle_years", lifecycle_years)
+
+    # customer_id 变更时触发图纸迁移（null -> 有值）
+    _trigger_migrate = False
+    if customer_id is not None:
+        with psycopg2.connect(**DB_CONFIG) as _conn:
+            with _conn.cursor() as _cur:
+                _cur.execute("SELECT customer_id FROM quotes WHERE id = %s", (quote_id,))
+                _row = _cur.fetchone()
+                _old_cid = _row[0] if _row else None
+                if _old_cid is None and customer_id is not None:
+                    _trigger_migrate = True
+        _add("customer_id", customer_id)
 
     if not fields:
         return True
@@ -7925,6 +8148,9 @@ def update_quote(
             cur.execute(sql, vals)
             row = cur.fetchone()
             conn.commit()
+            # customer_id 从 null 更新为有值 → 触发图纸迁移
+            if _trigger_migrate:
+                migrate_drawings_for_quote(quote_id)
             return row is not None
 
 
@@ -7936,14 +8162,15 @@ def get_quote_by_id(quote_id: int):
                 SELECT q.*, p.part_number, p.internal_name, p.material_name
                 FROM quotes q
                 JOIN parts p ON q.part_id = p.id
-                WHERE q.id = %s;
+                WHERE q.id = %s
+                  AND q.is_deleted = FALSE;
             """, (quote_id,))
             row = cur.fetchone()
             return dict(row) if row else None
 
 
 def get_quotes_by_part(part_id: int):
-    """返回某零件的全部报价单历史（按时间倒序）。"""
+    """返回某零件的全部报价单历史（含软删除，按时间倒序）。"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
@@ -7962,7 +8189,7 @@ def get_quotes_by_part(part_id: int):
 
 
 def get_latest_quote_by_part(part_id: int):
-    """返回某零件的最新一条报价单。"""
+    """返回某零件的最新一条未删除报价单。"""
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute("""
@@ -7971,16 +8198,151 @@ def get_latest_quote_by_part(part_id: int):
                 FROM quotes q
                 JOIN parts p ON q.part_id = p.id
                 WHERE q.part_id = %s
+                  AND q.is_deleted = FALSE
                 ORDER BY q.created_at DESC LIMIT 1;
             """, (part_id,))
             row = cur.fetchone()
             return dict(row) if row else None
 
 
+def get_quote_detail_for_edit(quote_id: int):
+    """
+    根据 quote_id 返回报价单完整数据，供报价单编辑页使用。
+    返回 dict 含: quote(报价单), part(零件主档)
+    """
+    import datetime as _dt
+
+    def _serialize(val):
+        if isinstance(val, (_dt.datetime, _dt.date)):
+            return val.isoformat()
+        if hasattr(val, '__float__'):  # Decimal 等
+            return float(val)
+        return val
+
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT q.*,
+                       p.id AS part_id, p.part_number, p.internal_name,
+                       p.material_name AS part_material_name, p.remark
+                FROM quotes q
+                JOIN parts p ON q.part_id = p.id
+                WHERE q.id = %s AND q.is_deleted = FALSE;
+            """, (quote_id,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            row = dict(row)
+            quote = {k: _serialize(v) for k, v in row.items()}
+            part = {
+                'id': quote.pop('part_id', None),
+                'part_number': quote.pop('part_number', None),
+                'internal_name': quote.pop('internal_name', None),
+                'material_name': quote.pop('part_material_name', None),
+                'remark': quote.pop('remark', None),
+            }
+            return {
+                'quote': quote,
+                'part': part,
+            }
+
+
+def _safe_path_name(s):
+    """将任意字符串转为安全的文件系统路径段（去斜杠星号等）。"""
+    import re
+    return re.sub(r'[\\/:*?"<>|]', '_', (s or '').strip())
+
+
+def migrate_drawings_for_quote(quote_id: int) -> dict:
+    """
+    当报价单 customer_id 发生变化时，将 _unassigned 目录下的图纸迁移到标准路径。
+    迁移对象：parts.drawing_url（业务图纸）和 quotes.sdr_drawing_path（SDR 图纸）。
+    返回迁移报告：{moved_files: [...], errors: [...]}
+    """
+    import os as _os
+
+    _BASE = _os.path.join("static", "uploads", "drawings")
+    _UNASSIGNED = _os.path.join(_BASE, "_unassigned")
+
+    report = {'moved_files': [], 'errors': []}
+
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            # 查该报价单的 part_id 和 customer_id
+            cur.execute("""
+                SELECT q.part_id, q.sdr_drawing_path, p.drawing_url,
+                       tc.name as customer_name, p.internal_name, p.part_number
+                FROM quotes q
+                JOIN parts p ON q.part_id = p.id
+                LEFT JOIN tooling_customers tc ON COALESCE(q.customer_id, p.customer_id) = tc.id
+                WHERE q.id = %s
+            """, (quote_id,))
+            row = cur.fetchone()
+            if not row:
+                return report
+
+            part_id, sdr_path, drawing_url, customer_name, part_name, part_number = row
+
+            # 生成标准路径（若无客户则返回 None，不迁移）
+            if not customer_name:
+                return report
+
+            std_subdir = '/'.join([
+                _safe_path_name(customer_name),
+                _safe_path_name(part_name or ''),
+                _safe_path_name(part_number or str(part_id)),
+            ]) + '/drawings'
+            std_base = _os.path.join(_BASE, std_subdir)
+
+            # 迁移业务图纸
+            if drawing_url and drawing_url.startswith('/static/uploads/drawings/_unassigned'):
+                old_path = _os.path.join(_BASE, drawing_url.replace('/static/uploads/drawings/', ''))
+                new_path = _os.path.join(std_base, _os.path.basename(old_path))
+                if _os.path.exists(old_path):
+                    try:
+                        _os.makedirs(std_base, exist_ok=True)
+                        _os.rename(old_path, new_path)
+                        new_url = f'/static/uploads/drawings/{std_subdir}{_os.path.basename(old_path)}'
+                        cur.execute("UPDATE parts SET drawing_url = %s WHERE id = %s", (new_url, part_id))
+                        conn.commit()
+                        report['moved_files'].append({
+                            'from': drawing_url,
+                            'to': new_url,
+                            'type': 'drawing'
+                        })
+                    except OSError as e:
+                        report['errors'].append(str(e))
+                else:
+                    report['errors'].append(f"文件不存在: {old_path}")
+
+            # 迁移 SDR 图纸
+            if sdr_path and sdr_path.startswith('/static/uploads/drawings/_unassigned'):
+                old_path = _os.path.join(_BASE, sdr_path.replace('/static/uploads/drawings/', ''))
+                new_path = _os.path.join(std_base, _os.path.basename(old_path))
+                if _os.path.exists(old_path):
+                    try:
+                        _os.makedirs(std_base, exist_ok=True)
+                        _os.rename(old_path, new_path)
+                        new_url = f'/static/uploads/drawings/{std_subdir}{_os.path.basename(old_path)}'
+                        cur.execute("UPDATE quotes SET sdr_drawing_path = %s WHERE id = %s", (new_url, quote_id))
+                        conn.commit()
+                        report['moved_files'].append({
+                            'from': sdr_path,
+                            'to': new_url,
+                            'type': 'sdr'
+                        })
+                    except OSError as e:
+                        report['errors'].append(str(e))
+                else:
+                    report['errors'].append(f"SDR 文件不存在: {old_path}")
+
+    return report
+
+
 def submit_quote_to_boss(quote_id: int, operator_id: int = None):
     """
     将报价单提交至 PENDING_BOSS 审核。
-    状态校验：仅 DRAFT / REJECTED 可提交。
+    状态校验：TECH_APPROVED / DRAFT / REJECTED 均可提交（业务部直接报价走 DRAFT，技术审核后走 TECH_APPROVED）。
     """
     import datetime as _dt
     with psycopg2.connect(**DB_CONFIG) as conn:
@@ -7992,12 +8354,217 @@ def submit_quote_to_boss(quote_id: int, operator_id: int = None):
                     submitted_by    = %s,
                     updated_at      = NOW()
                 WHERE id = %s
-                  AND approval_status IN ('DRAFT', 'REJECTED')
+                  AND approval_status IN ('TECH_APPROVED', 'DRAFT', 'REJECTED')
+                  AND is_deleted = FALSE
                 RETURNING id;
             """, (_dt.datetime.now(), operator_id, quote_id))
             row = cur.fetchone()
             conn.commit()
             return row is not None
+
+
+def tech_approve_quote(quote_id: int, operator_id: int = None) -> bool:
+    """
+    技术部审核通过（WAITING_FOR_TECH → TECH_APPROVED）。
+    """
+    import datetime as _dt
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE quotes
+                SET approval_status = 'TECH_APPROVED',
+                    updated_at      = NOW()
+                WHERE id = %s
+                  AND approval_status = 'WAITING_FOR_TECH'
+                  AND is_deleted = FALSE
+                RETURNING id;
+            """, (quote_id,))
+            row = cur.fetchone()
+            conn.commit()
+            return row is not None
+
+
+def tech_reject_quote(quote_id: int, rejection_reason: str,
+                      operator_id: int = None) -> bool:
+    """
+    技术部驳回（WAITING_FOR_TECH → TECH_REJECTED）。
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE quotes
+                SET approval_status  = 'TECH_REJECTED',
+                    rejection_reason = %s,
+                    updated_at       = NOW()
+                WHERE id = %s
+                  AND approval_status = 'WAITING_FOR_TECH'
+                  AND is_deleted = FALSE
+                RETURNING id;
+            """, (rejection_reason, quote_id))
+            row = cur.fetchone()
+            conn.commit()
+            return row is not None
+
+
+def update_quote_tech_params(
+        quote_id: int,
+        thickness: float = None,
+        width: float = None,
+        press_stroke: float = None,
+        cavity_count: int = None,
+        mold_cost: float = None,
+        press_tonnage: int = None,
+        sdr_drawing_path: str = None,
+        material_utilization: float = None,
+        mold_life: int = None,
+        mold_type: str = None,
+        operator_id: int = None) -> bool:
+    """
+    开发填写技术参数：T/W/P、模具费、穴数、吨位、模具寿命、材料利用率、模具类型，以及上传SDR图纸。
+    业务提交图纸后，报价单进入 WAITING_FOR_TECH 状态，开发填写参数后变为 TECH_APPROVED。
+    仅 WAITING_FOR_TECH 状态可操作。
+    """
+    fields = []
+    vals = []
+    if thickness is not None:
+        fields.append("thickness = %s"); vals.append(thickness)
+    if width is not None:
+        fields.append("width = %s"); vals.append(width)
+    if press_stroke is not None:
+        fields.append("press_stroke = %s"); vals.append(press_stroke)
+    if cavity_count is not None:
+        fields.append("cavity_count = %s"); vals.append(cavity_count)
+    if mold_cost is not None:
+        fields.append("mold_cost = %s"); vals.append(mold_cost)
+    if press_tonnage is not None:
+        fields.append("press_tonnage = %s"); vals.append(press_tonnage)
+    if sdr_drawing_path is not None:
+        fields.append("sdr_drawing_path = %s"); vals.append(sdr_drawing_path)
+    if material_utilization is not None:
+        fields.append("material_utilization = %s"); vals.append(material_utilization)
+    if mold_life is not None:
+        fields.append("mold_life = %s"); vals.append(mold_life)
+    if mold_type is not None:
+        fields.append("mold_type = %s"); vals.append(mold_type)
+
+    if not fields:
+        return False
+
+    # 填写参数后自动变为 TECH_APPROVED
+    fields.append("approval_status = %s"); vals.append("TECH_APPROVED")
+
+    vals.append(quote_id)
+    sql = f"""
+        UPDATE quotes SET {', '.join(fields)}, updated_at = NOW()
+        WHERE id = %s AND approval_status = 'WAITING_FOR_TECH' AND is_deleted = FALSE
+        RETURNING id;
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(sql, vals)
+            row = cur.fetchone()
+            conn.commit()
+            return row is not None
+
+
+def _to_json_serializable(obj):
+    """将 Decimal 等类型转换为 JSON 可序列化类型"""
+    from decimal import Decimal
+    if isinstance(obj, Decimal):
+        return float(obj)
+    if isinstance(obj, datetime.datetime):
+        return obj.isoformat()
+    if isinstance(obj, datetime.date):
+        return obj.isoformat()
+    return obj
+
+
+def get_pending_tech_quotes():
+    """
+    返回所有待技术审核的报价单（WAITING_FOR_TECH 状态）。
+    含零件基础信息 + 提交人信息 + 图纸路径 + 材料利用率 + 模具寿命。
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT q.id, q.part_id, q.quote_serial,
+                       p.part_number, p.internal_name, p.material_name,
+                       p.drawing_url AS business_drawing_path,
+                       q.thickness, q.width, q.press_stroke,
+                       q.cavity_count, q.mold_cost,
+                       q.press_tonnage, q.sdr_drawing_path,
+                       q.material_utilization, q.mold_life, q.mold_type,
+                       q.approval_status, q.created_at,
+                       u.real_name AS submitted_by_name
+                FROM quotes q
+                JOIN parts p ON q.part_id = p.id
+                LEFT JOIN users u ON q.submitted_by = u.id
+                WHERE q.approval_status = 'WAITING_FOR_TECH'
+                  AND q.is_deleted = FALSE
+                ORDER BY q.created_at ASC;
+            """)
+            rows = []
+            for r in cur.fetchall():
+                row = dict(r)
+                for k, v in row.items():
+                    row[k] = _to_json_serializable(v)
+                rows.append(row)
+            return rows
+
+
+# ── 模具类型管理 ────────────────────────────────────────────────
+
+def get_all_mold_types():
+    """获取所有模具类型"""
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("SELECT id, code, name, sort_order FROM mold_types ORDER BY sort_order, id")
+            rows = []
+            for r in cur.fetchall():
+                row = dict(r)
+                for k, v in row.items():
+                    row[k] = _to_json_serializable(v)
+                rows.append(row)
+            return rows
+
+
+def create_mold_type(code: str, name: str, sort_order: int = 0) -> dict:
+    """创建模具类型"""
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO mold_types (code, name, sort_order)
+                VALUES (%s, %s, %s)
+                RETURNING id, code, name, sort_order
+            """, (code, name, sort_order))
+            conn.commit()
+            row = cur.fetchone()
+            return {"id": row[0], "code": row[1], "name": row[2], "sort_order": row[3]}
+
+
+def update_mold_type(type_id: int, code: str, name: str, sort_order: int = 0) -> bool:
+    """更新模具类型"""
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("""
+                UPDATE mold_types SET code = %s, name = %s, sort_order = %s
+                WHERE id = %s
+            """, (code, name, sort_order, type_id))
+            conn.commit()
+            return cur.rowcount > 0
+
+
+def delete_mold_type(type_id: int) -> bool:
+    """删除模具类型"""
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            # 检查是否被 quotes 使用
+            cur.execute("SELECT COUNT(*) FROM quotes WHERE mold_type = (SELECT code FROM mold_types WHERE id = %s)", (type_id,))
+            if cur.fetchone()[0] > 0:
+                return False  # 正在使用中，无法删除
+            cur.execute("DELETE FROM mold_types WHERE id = %s", (type_id,))
+            conn.commit()
+            return cur.rowcount > 0
 
 
 def approve_quote(quote_id: int, operator_id: int = None) -> bool:
@@ -8016,8 +8583,191 @@ def approve_quote(quote_id: int, operator_id: int = None) -> bool:
                     updated_at      = NOW()
                 WHERE id = %s
                   AND approval_status = 'PENDING_BOSS'
+                  AND is_deleted = FALSE
                 RETURNING id;
             """, (_dt.datetime.now(), operator_id, quote_id))
+            row = cur.fetchone()
+            conn.commit()
+            return row is not None
+
+
+def get_pending_boss_quotes():
+    """
+    返回所有 PENDING_BOSS 状态的报价单（老板待审核列表）。
+    包含零件信息 + 完整价格参数 + 提交人。
+    """
+    import datetime as _dt
+    import decimal as _dec
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT
+                    q.id                          AS quote_id,
+                    q.quote_serial,
+                    q.approval_status,
+                    q.submitted_at,
+                    --
+                    -- 零件基础信息
+                    p.id                          AS part_id,
+                    p.part_number,
+                    p.internal_name,
+                    p.material_name,
+                    --
+                    -- 物理参数
+                    q.thickness,
+                    q.width,
+                    q.press_stroke,
+                    q.cavity_count,
+                    q.annual_usage,
+                    q.scrap_rate,
+                    --
+                    -- 价格参数
+                    q.gross_weight,
+                    q.snapshot_mat_name,
+                    q.snapshot_mat_price,
+                    q.snapshot_density,
+                    q.snapshot_scrap_price,
+                    q.material_net_cost,
+                    q.stamping_fee,
+                    q.inspection_fee,
+                    q.packaging_fee,
+                    q.surface_fee,
+                    q.treatment_fee,
+                    q.profit_margin,
+                    q.mold_cost,
+                    q.machine_type,
+                    q.final_price,
+                    q.unit_price_override,
+                    q.material_cost_override,
+                    q.final_price_override,
+                    q.override_fields,
+                    q.price_snapshot,
+                    --
+                    -- 提交人
+                    u.real_name                    AS submitted_by_name,
+                    q.rejection_reason
+                FROM quotes q
+                JOIN parts p ON q.part_id = p.id
+                LEFT JOIN users u ON q.submitted_by = u.id
+                WHERE q.approval_status = 'PENDING_BOSS'
+                  AND (q.is_deleted = FALSE OR q.is_deleted IS NULL)
+                ORDER BY q.submitted_at ASC;
+            """)
+            rows = cur.fetchall()
+
+    # 序列化 Decimal / datetime，并对缺失的 computed 字段实时补算
+    result = []
+    for row in rows:
+        d = dict(row)
+        for k, v in d.items():
+            if isinstance(v, (_dt.datetime, _dt.date, _dt.time)):
+                d[k] = v.isoformat() if hasattr(v, 'isoformat') else str(v)
+            elif isinstance(v, _dec.Decimal):
+                d[k] = float(v)
+
+        # 当 material_net_cost 为 NULL 但有 T/W/P 时，实时调用白盒补算
+        if d.get("material_net_cost") is None and d.get("thickness") and d.get("width") and d.get("press_stroke"):
+            try:
+                calc_params = {
+                    "thickness": float(d["thickness"]),
+                    "width": float(d["width"]),
+                    "press_stroke": float(d["press_stroke"]),
+                    "material_name": d.get("material_name") or "",
+                    "cavity_count": int(d.get("cavity_count") or 1),
+                    "scrap_rate": float(d.get("scrap_rate") or 0.10),
+                    "gross_weight_g": float(d["gross_weight"]) if d.get("gross_weight") else None,
+                    "stamping_fee": float(d.get("stamping_fee") or 0),
+                    "inspection_fee": float(d.get("inspection_fee") or 0),
+                    "packaging_fee": float(d.get("packaging_fee") or 0),
+                    "surface_fee": float(d.get("surface_fee") or 0),
+                    "treatment_fee": float(d.get("treatment_fee") or 0),
+                    "profit_margin": float(d.get("profit_margin") or 0),
+                    "override_material_cost": float(d["material_cost_override"]) if d.get("material_cost_override") else None,
+                    "override_final_price": float(d["final_price_override"]) if d.get("final_price_override") else None,
+                    "override_unit_price": float(d["unit_price_override"]) if d.get("unit_price_override") else None,
+                }
+                calc = calc_part_pricing(**calc_params)
+                if calc and not calc.get("error"):
+                    d["gross_weight"] = calc.get("gross_weight")
+                    d["snapshot_mat_name"] = d.get("snapshot_mat_name") or calc.get("material_name")
+                    d["snapshot_mat_price"] = calc.get("unit_price")
+                    d["snapshot_density"] = calc.get("density")
+                    d["snapshot_scrap_price"] = calc.get("scrap_price")
+                    d["material_net_cost"] = calc.get("material_net_cost")
+                    d["final_price"] = calc.get("final_price")
+                    if d.get("gross_weight") is not None and d.get("gross_weight") != d.get("gross_weight"):
+                        pass  # already set above
+            except Exception:
+                pass  # 静默失败，保持 NULL
+
+        result.append(d)
+    return result
+
+
+def boss_update_quote(quote_id: int, body: dict) -> bool:
+    """
+    老板快速修改报价单字段。
+    仅 PENDING_BOSS 状态可操作。
+    """
+    fields = []
+    params = []
+
+    # T/W/P
+    if body.get("thickness") is not None:
+        fields.append("thickness = %s"); params.append(body["thickness"])
+    if body.get("width") is not None:
+        fields.append("width = %s"); params.append(body["width"])
+    if body.get("press_stroke") is not None:
+        fields.append("press_stroke = %s"); params.append(body["press_stroke"])
+    if body.get("cavity_count") is not None:
+        fields.append("cavity_count = %s"); params.append(body["cavity_count"])
+    if body.get("machine_type") is not None:
+        fields.append("machine_type = %s"); params.append(body["machine_type"])
+    if body.get("gross_weight") is not None:
+        fields.append("gross_weight = %s"); params.append(body["gross_weight"])
+
+    if body.get("stamping_fee") is not None:
+        fields.append("stamping_fee = %s")
+        params.append(body["stamping_fee"])
+    if body.get("inspection_fee") is not None:
+        fields.append("inspection_fee = %s"); params.append(body["inspection_fee"])
+    if body.get("packaging_fee") is not None:
+        fields.append("packaging_fee = %s"); params.append(body["packaging_fee"])
+    if body.get("surface_fee") is not None:
+        fields.append("surface_fee = %s")
+        params.append(body["surface_fee"])
+    if body.get("treatment_fee") is not None:
+        fields.append("treatment_fee = %s")
+        params.append(body["treatment_fee"])
+    if body.get("profit_margin") is not None:
+        fields.append("profit_margin = %s")
+        params.append(body["profit_margin"])
+    if body.get("unit_price_override") is not None:
+        fields.append("unit_price_override = %s")
+        params.append(body["unit_price_override"])
+    if body.get("material_cost_override") is not None:
+        fields.append("material_cost_override = %s")
+        params.append(body["material_cost_override"])
+    if body.get("final_price_override") is not None:
+        fields.append("final_price_override = %s")
+        params.append(body["final_price_override"])
+
+    if not fields:
+        return True  # 无字段更新，视为成功
+
+    fields.append("updated_at = NOW()")
+    params.append(quote_id)
+
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute(f"""
+                UPDATE quotes
+                SET {', '.join(fields)}
+                WHERE id = %s
+                  AND approval_status = 'PENDING_BOSS'
+                  AND (is_deleted = FALSE OR is_deleted IS NULL)
+                RETURNING id;
+            """, tuple(params))
             row = cur.fetchone()
             conn.commit()
             return row is not None
@@ -8041,6 +8791,7 @@ def reject_quote(quote_id: int, rejection_reason: str,
                     updated_at      = NOW()
                 WHERE id = %s
                   AND approval_status = 'PENDING_BOSS'
+                  AND is_deleted = FALSE
                 RETURNING id;
             """, (rejection_reason, quote_id))
             row = cur.fetchone()
@@ -8050,20 +8801,155 @@ def reject_quote(quote_id: int, rejection_reason: str,
 
 def delete_quote(quote_id: int) -> bool:
     """
-    删除报价单（仅 DRAFT 状态允许删除，防止误删已审批数据）。
-    返回 True 表示删除成功，False 表示状态不允许删除。
+    级联删除报价单及关联的零件主档（含 dies / die_parts / quotes / 库存 / alias）。
+
+    仅 DRAFT 状态允许删除，且该零件不能有 APPROVED 报价单（防止误删已执行件）。
+    若零件有 PENDING_BOSS 等非 DRAFT 报价单，拒绝删除。
+    返回 True 表示删除成功，False 表示不允许删除。
     """
-    with psycopg2.connect(**DB_CONFIG) as conn:
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
         with conn.cursor() as cur:
+            # ── 1. 校验报价单状态 ─────────────────────────────────
             cur.execute("""
-                DELETE FROM quotes
-                WHERE id = %s
-                  AND approval_status = 'DRAFT'
-                RETURNING id;
+                SELECT id, part_id, approval_status, is_deleted
+                FROM quotes
+                WHERE id = %s AND (is_deleted = FALSE OR is_deleted IS NULL);
             """, (quote_id,))
-            row = cur.fetchone()
+            quote_row = cur.fetchone()
+            if not quote_row:
+                return False
+            _, part_id, status, _ = quote_row
+            if status != 'DRAFT':
+                return False
+
+            # ── 2. 检查零件是否存在 APPROVED/PENDING 等非 DRAFT 报价单 ─
+            cur.execute("""
+                SELECT 1 FROM quotes
+                WHERE part_id = %s
+                  AND id != %s
+                  AND approval_status NOT IN ('DRAFT', 'REJECTED')
+                  AND (is_deleted = FALSE OR is_deleted IS NULL)
+                LIMIT 1;
+            """, (part_id, quote_id))
+            if cur.fetchone():
+                return False
+
+            # ── 3. 清理 machines.current_part_id（若机台正在生产该零件则置空）──
+            cur.execute("""
+                UPDATE machines
+                SET current_part_id = NULL
+                WHERE current_part_id = %s;
+            """, (part_id,))
+
+            # ── 4. 清理 machines.current_mold_id（若 dies 被当前机台占用则置空）──
+            cur.execute("""
+                UPDATE machines
+                SET current_mold_id = NULL
+                WHERE current_mold_id IN (
+                    SELECT id FROM dies WHERE part_id = %s
+                );
+            """, (part_id,))
+
+            # ── 4. 软删除关联 quotes（统一走 is_deleted）──────────────
+            cur.execute("""
+                UPDATE quotes
+                SET is_deleted = TRUE
+                WHERE part_id = %s;
+            """, (part_id,))
+
+            # ── 5. 物理删除关联数据（按依赖顺序）───────────────────
+            # 5a. 删除客户别名
+            cur.execute("DELETE FROM part_aliases WHERE internal_part_id = %s;", (part_id,))
+            # 5b. 删除库存（会级联删除 finished_inventory_sf / remnant_inventory_sf）
+            cur.execute("DELETE FROM finished_inventory WHERE part_id = %s;", (part_id,))
+            cur.execute("DELETE FROM remnant_inventory WHERE part_id = %s;", (part_id,))
+            # 5c. 删除生产报工（含 SF 表）
+            cur.execute("DELETE FROM production_logs WHERE part_id = %s;", (part_id,))
+            cur.execute("DELETE FROM sf_production_logs WHERE part_id = %s;", (part_id,))
+            # 5d. 删除模具-零件关联（会触发 dies FK 级联删除 dies）
+            cur.execute("DELETE FROM die_parts WHERE part_id = %s;", (part_id,))
+            # 5e. 删除零件主档（die_parts FK 级联删除 dies）
+            cur.execute("DELETE FROM parts WHERE id = %s;", (part_id,))
+
             conn.commit()
-            return row is not None
+            return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def delete_part_by_id(part_id: int) -> bool:
+    """
+    直接按零件 ID 物理删除（用于清理孤立的测试零件）。
+    忽略报价单状态（不管是 APPROVED 还是软删除），强制级联删除所有关联数据。
+    警告：这是危险操作，不可逆。
+
+    删除顺序：machines 清理 → quotes → production_plans/plan_machines →
+              part_aliases → 库存 → production_logs → die_parts → parts
+    """
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            # ── 1. 清理机台占用 ─────────────────────────────────
+            cur.execute("""
+                UPDATE machines
+                SET current_part_id = NULL
+                WHERE current_part_id = %s;
+            """, (part_id,))
+            cur.execute("""
+                UPDATE machines
+                SET current_mold_id = NULL
+                WHERE current_mold_id IN (
+                    SELECT id FROM dies WHERE part_id = %s
+                );
+            """, (part_id,))
+
+            # ── 2. 物理删除所有关联报价单 ───────────────────
+            cur.execute("DELETE FROM quotes WHERE part_id = %s;", (part_id,))
+
+            # ── 3. 删除生产计划及关联 ─────────────────────────
+            # plan_machines 依赖 production_plans，必须先删
+            cur.execute("""
+                DELETE FROM plan_machines
+                WHERE plan_id IN (SELECT id FROM production_plans WHERE part_id = %s);
+            """, (part_id,))
+            cur.execute("DELETE FROM production_plans WHERE part_id = %s;", (part_id,))
+
+            # ── 4. 删除客户别名 ──────────────────────────────
+            cur.execute("DELETE FROM part_aliases WHERE internal_part_id = %s;", (part_id,))
+
+            # ── 5. 删除库存（级联删除 finished_inventory_sf / remnant_inventory_sf）──
+            cur.execute("DELETE FROM finished_inventory WHERE part_id = %s;", (part_id,))
+            cur.execute("DELETE FROM remnant_inventory WHERE part_id = %s;", (part_id,))
+
+            # ── 6. 删除生产报工 ──────────────────────────────
+            # sf_production_logs 通过 work_order_id → production_logs 间接关联零件，
+            # 删除 production_logs 后，sf_production_logs 成为孤儿记录，
+            # 但没有外键约束，不影响引用完整性，单独删除即可
+            cur.execute("DELETE FROM production_logs WHERE part_id = %s;", (part_id,))
+            cur.execute("""
+                DELETE FROM sf_production_logs
+                WHERE work_order_id IN (
+                    SELECT id FROM production_logs WHERE part_id = %s
+                );
+            """, (part_id,))
+
+            # ── 7. 删除模具-零件关联（触发 dies 级联删除）───
+            cur.execute("DELETE FROM die_parts WHERE part_id = %s;", (part_id,))
+
+            # ── 8. 物理删除零件主档 ─────────────────────────
+            cur.execute("DELETE FROM parts WHERE id = %s;", (part_id,))
+
+            conn.commit()
+            return True
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 
 def reopen_quote_as_new(quote_id: int, operator_id: int = None) -> int:
@@ -8073,7 +8959,7 @@ def reopen_quote_as_new(quote_id: int, operator_id: int = None) -> int:
     """
     with psycopg2.connect(**DB_CONFIG) as conn_src:
         with conn_src.cursor(cursor_factory=RealDictCursor) as cur_src:
-            cur_src.execute("SELECT * FROM quotes WHERE id = %s;", (quote_id,))
+            cur_src.execute("SELECT * FROM quotes WHERE id = %s AND is_deleted = FALSE;", (quote_id,))
             parent = cur_src.fetchone()
 
     if not parent:
@@ -8152,7 +9038,7 @@ def get_parts_for_pricing_list(status_filter: str = ""):
             # 当指定了 status_filter 时：只返回最新报价单状态 = 该状态的零件
             if status_filter:
                 cur.execute(f"""
-                    SELECT p.id, p.part_number, p.internal_name, p.material_name,
+                    SELECT p.id, p.part_number, p.internal_name, p.remark, p.material_name,
                            q.thickness, q.width, q.press_stroke, q.cavity_count,
                            q.final_price   AS current_price,
                            q.approval_status,
@@ -8164,6 +9050,7 @@ def get_parts_for_pricing_list(status_filter: str = ""):
                         FROM quotes
                         WHERE part_id = p.id
                           AND approval_status = %s
+                          AND is_deleted = FALSE
                         ORDER BY created_at DESC
                         LIMIT 1
                     ) q ON TRUE
@@ -8171,7 +9058,7 @@ def get_parts_for_pricing_list(status_filter: str = ""):
                 """, (status_filter,))
             else:
                 cur.execute("""
-                    SELECT p.id, p.part_number, p.internal_name, p.material_name,
+                    SELECT p.id, p.part_number, p.internal_name, p.remark, p.material_name,
                            q.thickness, q.width, q.press_stroke, q.cavity_count,
                            q.final_price   AS current_price,
                            q.approval_status,
@@ -8182,6 +9069,7 @@ def get_parts_for_pricing_list(status_filter: str = ""):
                                final_price, approval_status, pricing_mode
                         FROM quotes
                         WHERE part_id = p.id
+                          AND is_deleted = FALSE
                         ORDER BY created_at DESC
                         LIMIT 1
                     ) q ON TRUE
@@ -8257,8 +9145,6 @@ def update_part_manual_override(
 
     拆分后：这些字段已从 parts 表迁移至 quotes 表。
     仅更新最新一条 DRAFT / REJECTED 状态的报价单。
-
-    override_fields：JSON 数组，记录哪些字段被覆盖（用于前端蓝色样式渲染）
     """
     import json as _json
 
@@ -8267,7 +9153,9 @@ def update_part_manual_override(
             # 找到该零件最新允许编辑的报价单
             cur.execute("""
                 SELECT id FROM quotes
-                WHERE part_id = %s AND approval_status IN ('DRAFT', 'REJECTED')
+                WHERE part_id = %s
+                  AND approval_status IN ('DRAFT', 'REJECTED')
+                  AND is_deleted = FALSE
                 ORDER BY created_at DESC LIMIT 1;
             """, (part_id,))
             row = cur.fetchone()
@@ -8449,16 +9337,21 @@ def confirm_nomination(
         part_id: int,
         operator_id: int,
         attachment_filenames: list = None,
-        price_snapshot: dict = None):
+        price_snapshot: dict = None,
+        mold_number: str = None,
+        mold_type: str = None,
+        press_tonnage: str = None,
+        ppap_no: str = None):
     """
-    定点终裁确认接口（重构版：写入 quotes 表）。
+    定点终裁确认接口（V7.1：定点后写入 parts 模具字段）。
 
     V3.1 §2.1 Nomination 定点流程：
       1. 业务上传定点凭证（PDF/图片）
       2. 系统执行"价格快照"（price_snapshot），切断与 material_base_prices 的联动
       3. 报价单状态 → production_ready
+      4. 定点模具基础信息同步写入 parts 表（mold_number/mold_type/press_tonnage/ppap_no）
 
-    定点写入 quotes 表（报价单维度），parts 表字段同步更新作为汇总。
+    定点后数据流向：quotes → parts（模具字段）+ tooling_molds（模具台账基础）
 
     参数
     ----
@@ -8466,6 +9359,10 @@ def confirm_nomination(
     operator_id        : int       确认人（业务主管 / admin）
     attachment_filenames: list[str] 定点凭证文件名列表
     price_snapshot     : dict      可选，手动传入快照数据；None=自动构建
+    mold_number        : str       模具编号（定点后填写）
+    mold_type          : str       模具类型（级进模/单工程/传递模）
+    press_tonnage      : str       冲压吨位，如 200T
+    ppap_no            : str       PPAP 编号
 
     返回
     ----
@@ -8545,6 +9442,8 @@ def confirm_nomination(
             "thickness":       float(q_data.get('thickness') or 0),
             "width":           float(q_data.get('width') or 0),
             "press_stroke":    float(q_data.get('press_stroke') or 0),
+            "customer_product_no": q_data.get('customer_product_no') or '',
+            "vehicle_model":   q_data.get('vehicle_model') or '',
             "snapshot_at":     _dt.datetime.now().isoformat(),
         }
 
@@ -8576,8 +9475,18 @@ def confirm_nomination(
             conn.commit()
 
     # ── 同步更新 parts 表汇总字段 ─────────────────────────────────
+    # 先从 quotes 读 customer_product_no 和 vehicle_model（定点前quotes中已填）
+    with psycopg2.connect(**DB_CONFIG) as conn_q2:
+        with conn_q2.cursor(cursor_factory=RealDictCursor) as cur_q2:
+            cur_q2.execute("""
+                SELECT customer_product_no, vehicle_model
+                FROM quotes WHERE id = %s;
+            """, (quote_id,))
+            quote_extra = dict(cur_q2.fetchone()) if cur_q2.fetchone() else {}
+
     with psycopg2.connect(**DB_CONFIG) as conn2:
         with conn2.cursor() as cur2:
+            # parts 定点字段（原有）
             cur2.execute("""
                 UPDATE parts SET
                     nomination_status        = 'production_ready',
@@ -8595,6 +9504,36 @@ def confirm_nomination(
                 part_id,
             ))
             conn2.commit()
+
+    # ── 定点模具基础信息写入 parts（新字段，nom004 迁移后生效）─────
+    _cpn = quote_extra.get('customer_product_no')
+    _vm  = quote_extra.get('vehicle_model')
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn3:
+            with conn3.cursor() as cur3:
+                cur3.execute("""
+                    UPDATE parts SET
+                        customer_product_no = COALESCE(%s, customer_product_no),
+                        vehicle_model      = COALESCE(%s, vehicle_model),
+                        mold_number       = %s,
+                        mold_type         = %s,
+                        press_tonnage     = %s,
+                        ppap_no           = %s,
+                        updated_at         = NOW()
+                    WHERE id = %s;
+                """, (
+                    _cpn,
+                    _vm,
+                    mold_number,
+                    mold_type,
+                    press_tonnage,
+                    ppap_no,
+                    part_id,
+                ))
+                conn3.commit()
+    except Exception:
+        # 迁移未执行时跳过，不阻塞定点流程
+        pass
 
     return {
         "ok": True,
@@ -9434,7 +10373,7 @@ def activate_mass_production(task_id: int, part_id: int, user_id: int) -> dict:
 
 
 # ---------------------------------------------------------------------------
-# 历史 Excel 智能导入（molds 表）
+# 历史 Excel 智能导入（dies 表）
 # ---------------------------------------------------------------------------
 
 def import_legacy_molds_from_csv(
@@ -9442,7 +10381,7 @@ def import_legacy_molds_from_csv(
         created_by_user_id: int | None = None
 ) -> dict:
     """
-    解析历史 CSV，按列名映射字段，批量 Upsert 至 molds 表。
+    解析历史 CSV，按列名映射字段，批量 Upsert 至 dies 表。
 
     CSV 列名规范
     -------------
@@ -9469,7 +10408,7 @@ def import_legacy_molds_from_csv(
     --------
     使用 psycopg2.extras.execute_batch 进行批量 Upsert：
 
-      INSERT INTO molds (mold_number, part_id, mold_type, mold_set_count,
+      INSERT INTO dies (mold_number, part_id, mold_type, mold_set_count,
                          cavity_count, press_tonnage, remarks,
                          lifecycle_status, created_at, updated_at)
       VALUES (...)
@@ -9620,7 +10559,7 @@ def import_legacy_molds_from_csv(
 
     # ── 5. 批量 Upsert（白名单字段，不碰 lifecycle_status）──────────
     sql = f"""
-        INSERT INTO molds (
+        INSERT INTO dies (
             mold_number, part_id, mold_type, mold_set_count,
             cavity_count, press_tonnage, remarks,
             lifecycle_status, created_at, updated_at
@@ -9676,14 +10615,14 @@ def import_legacy_molds_from_csv(
             if mns:
                 ph = ','.join(['%s'] * len(mns))
                 cur.execute(
-                    f"SELECT COUNT(*) FROM molds WHERE mold_number = ANY(ARRAY[{ph}]::text[]);",
+                    f"SELECT COUNT(*) FROM dies WHERE mold_number = ANY(ARRAY[{ph}]::text[]);",
                     (mns,))
                 count_before = cur.fetchone()[0]
             else:
                 count_before = 0
 
     sql = f"""
-        INSERT INTO molds (
+        INSERT INTO dies (
             mold_number, part_id, mold_type, mold_set_count,
             cavity_count, press_tonnage, remarks,
             lifecycle_status, created_at, updated_at
@@ -9727,7 +10666,7 @@ def import_legacy_molds_from_csv(
             if mns:
                 ph = ','.join(['%s'] * len(mns))
                 cur.execute(
-                    f"SELECT COUNT(*) FROM molds WHERE mold_number = ANY(ARRAY[{ph}]::text[]);",
+                    f"SELECT COUNT(*) FROM dies WHERE mold_number = ANY(ARRAY[{ph}]::text[]);",
                     (mns,))
                 count_after = cur.fetchone()[0]
             else:
@@ -10235,7 +11174,7 @@ def get_all_equipments():
                     ON wo.equipment_id = e.id
                     AND wo.order_status IN ('SCHEDULED', 'RUNNING')
                 LEFT JOIN parts pt ON wo.part_id = pt.id
-                LEFT JOIN molds  mo ON wo.mold_id = mo.id
+                LEFT JOIN dies  mo ON wo.die_id = mo.id
                 LEFT JOIN users  u  ON e.current_operator_id = u.id
                 LEFT JOIN LATERAL (
                     SELECT id, repair_mode, status
@@ -10469,7 +11408,7 @@ def get_all_work_orders(filters: dict = None) -> list:
                     wo.is_first_piece_required,
                     wo.first_piece_passed_at,
                     wo.first_piece_passed_by,
-                    wo.mold_id,
+                    wo.die_id,
                     wo.created_at, wo.updated_at,
                     pt.part_number, pt.internal_name,
                     e.equipment_code, e.equipment_name,
@@ -10482,7 +11421,7 @@ def get_all_work_orders(filters: dict = None) -> list:
                 FROM work_orders wo
                 JOIN parts pt ON wo.part_id = pt.id
                 LEFT JOIN equipments e ON wo.equipment_id = e.id
-                LEFT JOIN molds m ON wo.mold_id = m.id
+                LEFT JOIN dies m ON wo.die_id = m.id
                 LEFT JOIN users u ON wo.created_by = u.id
                 {where}
                 ORDER BY
@@ -10748,7 +11687,7 @@ def add_production_log(wo_id: int, equipment_id: int,
                        mo.cavity_count
                 FROM work_orders wo
                 JOIN parts pt ON wo.part_id = pt.id
-                LEFT JOIN molds mo ON wo.mold_id = mo.id
+                LEFT JOIN dies mo ON wo.die_id = mo.id
                 WHERE wo.id = %s;
             """, (wo_id,))
             wo = cur.fetchone()
@@ -10883,7 +11822,7 @@ def get_work_order_summary(wo_id: int) -> dict:
                 FROM work_orders wo
                 JOIN parts pt ON wo.part_id = pt.id
                 LEFT JOIN equipments e ON wo.equipment_id = e.id
-                LEFT JOIN molds mo ON wo.mold_id = mo.id
+                LEFT JOIN dies mo ON wo.die_id = mo.id
                 WHERE wo.id = %s;
             """, (wo_id,))
             wo = cur.fetchone()
@@ -11065,7 +12004,7 @@ def get_maintenance_logs(equipment_id: int = None,
                        )) / 60 AS repair_duration_min
                 FROM maintenance_logs ml
                 LEFT JOIN equipments e ON ml.equipment_id = e.id
-                LEFT JOIN molds  mo ON ml.mold_id = mo.id
+                LEFT JOIN dies  mo ON ml.mold_id = mo.id
                 LEFT JOIN users  u  ON ml.tech_id = u.id
                 {where}
                 ORDER BY ml.start_time DESC
@@ -11531,13 +12470,19 @@ def get_part_inventory_summary(part_id: int) -> dict:
             }
 
 
-# ── 模具物理参数更新（扩展 update_mold 不够用时的专用函数）────────────────────
+# ── 模具物理参数更新（扩展 update_die 不够用时的专用函数）────────────────────
 
-def update_mold_physical_params(mold_id: int,
+def update_die_physical_params(mold_id: int,
                                  thickness_mm: float = None,
                                  width_mm: float = None,
                                  pitch_mm: float = None) -> dict | None:
-    """更新模具 T/W/P 物理参数，不传则跳过。"""
+    """
+    更新模具 T/W/P 物理参数，不传则跳过。
+
+    同步规则（cursorrules V6.0 §2.3）：
+      更新后自动将 T/W/P 同步回所有关联零件的 parts 表缓存字段，
+      保证 parts 表尽量新鲜（仅作降级兜底，不是生产主数据源）。
+    """
     fields, vals = [], []
     if thickness_mm is not None:
         fields.append("thickness_mm = %s"); vals.append(thickness_mm)
@@ -11546,13 +12491,30 @@ def update_mold_physical_params(mold_id: int,
     if pitch_mm is not None:
         fields.append("pitch_mm = %s"); vals.append(pitch_mm)
     if not fields:
-        return get_mold_by_id(mold_id)
+        return get_die_by_id(mold_id)
     vals.append(mold_id)
-    sql = "UPDATE molds SET " + ", ".join(fields) + ", updated_at = NOW() WHERE id = %s RETURNING *;"
+    sql = "UPDATE dies SET " + ", ".join(fields) + ", updated_at = NOW() WHERE id = %s RETURNING *;"
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             try:
                 cur.execute(sql, vals)
+
+                # 同步 T/W/P 回 parts 表缓存（die_parts 关联表）
+                if thickness_mm is not None or width_mm is not None:
+                    sync_fields, sync_vals = [], []
+                    if thickness_mm is not None:
+                        sync_fields.append("thickness = %s"); sync_vals.append(thickness_mm)
+                    if width_mm is not None:
+                        sync_fields.append("width = %s"); sync_vals.append(width_mm)
+                    if sync_fields:
+                        cur.execute(f"""
+                            UPDATE parts
+                            SET {', '.join(sync_fields)}, updated_at = NOW()
+                            WHERE id IN (
+                                SELECT part_id FROM die_parts WHERE die_id = %s
+                            );
+                        """, sync_vals + [mold_id])
+
                 conn.commit()
                 row = cur.fetchone()
                 return dict(row) if row else None
@@ -11562,8 +12524,203 @@ def update_mold_physical_params(mold_id: int,
 
 
 # =============================================================================
-# 库存列表查询（带客户过滤 + 别名展示）
+# 零件-模具关联表（die-link）：一个零件 × 一个模具 = 一行
+# 支持前端筛选器：默认本月 + 之前欠发
 # =============================================================================
+# 零件表（仅展示，供全员快速查询零件基础信息）
+# 字段：件号、名称、原料、T、W、P、表面处理、模具号
+# =============================================================================
+
+def get_parts_for_list_view() -> list:
+    """
+    返回所有零件的基础信息，供全员快速查询。
+    - T/W/P 优先取 APPROVED 报价的参数；若报价单中无 APPROVED，
+      则取 parts 表本身的 thickness/width/press_stroke 字段。
+    - 表面处理取 APPROVED 报价单的 surface_fee 字段（若为 0 视为无处理）。
+    - 模具号：同一零件关联多个模具时，用逗号拼接。
+    - 图纸：暂无图纸表，字段留空，后续扩展。
+    - 按件号升序排列。
+    """
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            # 先查 APPROVED 报价的参数（每个零件取最新一条）
+            cur.execute("""
+                SELECT DISTINCT ON (part_id)
+                       part_id,
+                       thickness,
+                       width,
+                       press_stroke,
+                       surface_fee,
+                       cavity_count
+                FROM quotes
+                WHERE approval_status = 'APPROVED'
+                  AND is_deleted = FALSE
+                ORDER BY part_id, updated_at DESC
+            """)
+            approved = {r["part_id"]: r for r in cur.fetchall()}
+
+            # 再查所有零件关联的模具号（逗号拼接）
+            cur.execute("""
+                SELECT mp.part_id,
+                       STRING_AGG(DISTINCT d.mold_number, ', ' ORDER BY d.mold_number) AS mold_numbers
+                FROM die_parts mp
+                JOIN dies d ON d.id = mp.die_id
+                GROUP BY mp.part_id
+            """)
+            mold_map = {r["part_id"]: r["mold_numbers"] for r in cur.fetchall()}
+
+            # 最后查所有零件基础数据
+            cur.execute("""
+                SELECT id, part_number, internal_name, material_name,
+                       remark,
+                       COALESCE(thickness, 0) AS thickness_fallback,
+                       COALESCE(width, 0)      AS width_fallback,
+                       COALESCE(press_stroke, 0) AS stroke_fallback
+                FROM parts
+                ORDER BY part_number ASC
+            """)
+            rows = cur.fetchall()
+
+    result = []
+    for row in rows:
+        pid = row["id"]
+        q = approved.get(pid, {})
+        # T/W/P: 报价单优先，parts 表兜底
+        thickness  = q.get("thickness")     if q.get("thickness")     is not None else row["thickness_fallback"]
+        width      = q.get("width")         if q.get("width")         is not None else row["width_fallback"]
+        press_stroke = q.get("press_stroke") if q.get("press_stroke") is not None else row["stroke_fallback"]
+        # 表面处理：surface_fee > 0 时说明有处理
+        surface_fee  = q.get("surface_fee") or 0
+        surface_txt  = ("是" if surface_fee > 0 else "") if q else ""
+        # 模具号
+        mold_numbers = mold_map.get(pid, "")
+
+        result.append({
+            "id":           pid,
+            "part_number":  row["part_number"],
+            "internal_name": row["internal_name"],
+            "material_name": row["material_name"],
+            "remark":       row["remark"],
+            "thickness":    thickness  or None,
+            "width":        width      or None,
+            "press_stroke": press_stroke or None,
+            "surface_txt":  surface_txt,
+            "mold_numbers": mold_numbers,
+            "drawing":      "",   # 图纸字段，预留扩展
+        })
+    return result
+
+
+# =============================================================================
+
+def get_parts_with_die_link(
+        part_name: str = "",
+        mold_number: str = "",
+        month: str = ""
+) -> list:
+    """
+    零件-模具关联表：每个 (part_id, mold_id) 组合输出一行。
+
+    显示字段：零件信息 / 模具信息 / 报价 / 重量 / 表面处理 / 订单与发货
+    跳转支持：零件→模具详情，模具→零件列表
+
+    参数
+    ----
+    part_name  : 零件编号/名称模糊搜索
+    mold_number : 模具编号模糊搜索
+    month       : "YYYY-MM"，空则默认本月；查询条件为 <= 该月（含欠发）
+    """
+    if not month:
+        month = datetime.date.today().strftime("%Y-%m")
+
+    params = []
+    conditions = []
+
+    if part_name:
+        conditions.append("(p.part_number ILIKE %s OR p.internal_name ILIKE %s)")
+        params.extend([f"%{part_name}%", f"%{part_name}%"])
+
+    if mold_number:
+        conditions.append("d.mold_number ILIKE %s")
+        params.append(f"%{mold_number}%")
+
+    where_clause = " AND ".join(conditions) if conditions else "1=1"
+
+    sql = f"""
+        SELECT
+            p.id         AS part_id,
+            p.part_number,
+            p.internal_name  AS part_name,
+            p.material_name,
+            p.part_status,
+
+            d.id         AS mold_id,
+            d.mold_number,
+            d.mold_name,
+            d.cavity_count   AS mold_cavities,
+            d.press_tonnage  AS mold_tonnage,
+
+            COALESCE(d.thickness_mm, p.thickness)     AS thickness,
+            COALESCE(d.width_mm,    p.width)          AS width,
+            COALESCE(d.pitch_mm,    p.press_stroke)   AS pitch,
+
+            COALESCE(mat.default_density, 7.85) AS density,
+
+            ROUND(
+                (COALESCE(d.thickness_mm, p.thickness) * 1000
+                 * COALESCE(d.width_mm,    p.width)     * 1000
+                 * COALESCE(d.pitch_mm,    p.press_stroke) * 1e-6
+                 * COALESCE(mat.default_density, 7.85)
+                 * COALESCE(d.cavity_count, q.cavity_count, 1)
+                )::NUMERIC, 4
+            ) AS gross_weight,
+
+            q.final_price,
+            q.surface_fee,
+            NULL::TEXT AS surface_type,
+
+            COALESCE(SUM(pp.total_qty), 0)::INTEGER    AS order_qty,
+            COALESCE(SUM(pp.delivered_qty), 0)::INTEGER AS shipped_qty,
+            GREATEST(
+                COALESCE(SUM(pp.total_qty), 0)
+                - COALESCE(SUM(pp.delivered_qty), 0),
+                0
+            )::INTEGER                                  AS backlog_qty
+
+        FROM die_parts mp
+        JOIN parts p ON p.id = mp.part_id
+        LEFT JOIN dies d ON d.id = mp.die_id
+        LEFT JOIN material_base_prices mat ON mat.material_name = p.material_name
+        LEFT JOIN LATERAL (
+            SELECT
+                q2.final_price,
+                q2.surface_fee,
+                q2.cavity_count
+            FROM quotes q2
+            WHERE q2.part_id = p.id
+              AND q2.approval_status = 'APPROVED'
+              AND q2.is_deleted = FALSE
+            ORDER BY q2.updated_at DESC
+            LIMIT 1
+        ) q ON TRUE
+        LEFT JOIN production_plans pp ON pp.part_id = p.id
+            AND DATE_TRUNC('month', pp.due_date) <= DATE %s
+        WHERE {where_clause}
+        GROUP BY
+            p.id, p.part_number, p.internal_name, p.material_name, p.part_status,
+            p.thickness, p.width, p.press_stroke,
+            d.id, d.mold_number, d.mold_name, d.cavity_count, d.press_tonnage,
+            d.thickness_mm, d.width_mm, d.pitch_mm,
+            mat.default_density,
+            q.final_price, q.surface_fee, q.cavity_count
+        ORDER BY p.id DESC, d.id DESC;
+    """
+    params.append(f"{month}-01")
+
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(sql, params)
+            return [dict(r) for r in cur.fetchall()]
 
 def get_finished_inventory_list(customer_name: str = None) -> list:
     """

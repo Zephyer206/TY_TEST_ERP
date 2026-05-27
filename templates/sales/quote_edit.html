@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>编辑报价单 - TY_Tset_ERP</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; }
+        .topbar {
+            background: #1e3a5f;
+            color: white;
+            padding: 0 16px;
+            height: 52px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+        }
+        .topbar-title { font-size: 15px; font-weight: 700; }
+        .topbar-right { display: flex; align-items: center; gap: 10px; }
+        .topbar-right .chip { padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.2); font-size: 11px; font-weight: 600; }
+        .topbar-right a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 20px; }
+        .content { padding: 16px 14px 80px; max-width: 760px; margin: 0 auto; }
+        .steps { display: flex; gap: 6px; margin-bottom: 16px; }
+        .step { flex: 1; text-align: center; padding: 8px 4px; border-radius: 8px; font-size: 12px; font-weight: 600; background: white; color: #9ca3af; border: 1.5px solid #e5e7eb; }
+        .step.active { background: #7c3aed; color: white; border-color: #7c3aed; }
+        .step.done { background: #f3f4f6; color: #059669; border-color: #059669; }
+        .card { background: white; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .card-title { font-size: 14px; font-weight: 800; color: #111827; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1.5px solid #f3f4f6; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .form-row.single { grid-template-columns: 1fr; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 5px; display: block; }
+        .form-label .required { color: #dc2626; margin-left: 2px; }
+        .form-input, .form-select { width: 100%; padding: 9px 12px; border: 1.5px solid #e5e7eb; border-radius: 9px; font-size: 14px; outline: none; background: #fff; }
+        .form-input:focus, .form-select:focus { border-color: #7c3aed; }
+        .form-input.manual-override { color: #1d4ed8; font-weight: 700; }
+        .form-hint { font-size: 11px; color: #9ca3af; margin-top: 3px; }
+        .form-hint.blue { color: #1d4ed8; }
+        .material-row { display: flex; gap: 8px; align-items: stretch; }
+        .material-row .form-select { flex: 1; }
+        .btn-new-material { padding: 9px 14px; border: 1.5px solid #7c3aed; border-radius: 9px; background: #faf5ff; color: #7c3aed; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+        .btn-new-material:hover { background: #ede9fe; }
+        .btn-edit-material { padding: 9px 14px; border: 1.5px solid #9ca3af; border-radius: 9px; background: #f9fafb; color: #6b7280; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .btn-edit-material:hover:not(:disabled) { background: #f3f4f6; color: #374151; border-color: #6b7280; }
+        .btn-edit-material:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-del-material { padding: 9px 14px; border: 1.5px solid #fca5a5; border-radius: 9px; background: #fff5f5; color: #dc2626; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s; }
+        .btn-del-material:hover { background: #fef2f2; border-color: #dc2626; }
+        .path-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+        .path-card { border: 2px solid #e5e7eb; border-radius: 12px; padding: 14px; cursor: pointer; transition: all 0.2s; position: relative; }
+        .path-card:hover { border-color: #7c3aed; box-shadow: 0 4px 12px rgba(124,58,237,0.15); }
+        .path-card.selected { border-color: #7c3aed; background: #faf5ff; }
+        .path-radio { position: absolute; opacity: 0; width: 0; height: 0; }
+        .path-label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: #374151; cursor: pointer; }
+        .path-dot { width: 18px; height: 18px; border-radius: 50%; border: 2px solid #d1d5db; flex-shrink: 0; transition: all 0.2s; }
+        .path-card.selected .path-dot { border-color: #7c3aed; background: #7c3aed; }
+        .path-icon { font-size: 22px; margin-bottom: 6px; }
+        .path-name { font-size: 14px; font-weight: 800; color: #111827; margin-bottom: 4px; }
+        .path-desc { font-size: 11px; color: #6b7280; line-height: 1.4; }
+        .path-tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; margin-top: 6px; }
+        .tag-a { background: #fef3c7; color: #92400e; }
+        .tag-b { background: #dbeafe; color: #1e40af; }
+        .ref-price-box { background: linear-gradient(135deg, #fffbeb, #fef3c7); border: 1.5px solid #f59e0b; border-radius: 12px; padding: 14px; margin-bottom: 12px; }
+        .ref-price-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+        .ref-price-title { font-size: 12px; font-weight: 700; color: #92400e; }
+        .ref-price-badge { font-size: 11px; background: #f59e0b; color: white; padding: 2px 8px; border-radius: 10px; font-weight: 700; }
+        .ref-price-value { font-size: 28px; font-weight: 900; color: #d97706; line-height: 1; margin: 4px 0; }
+        .ref-price-unit { font-size: 12px; color: #b45309; }
+        .calc-panel { background: #f8fafc; border: 1.5px solid #e2e8f0; border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+        .calc-title { font-size: 13px; font-weight: 800; color: #1e40af; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .calc-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+        .calc-row:last-child { border-bottom: none; }
+        .calc-key { color: #475569; }
+        .calc-val { font-weight: 700; color: #111827; }
+        .calc-val.override { color: #1d4ed8; }
+        .calc-total { background: linear-gradient(135deg, #1e40af, #1d4ed8); color: white; border-radius: 10px; padding: 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .calc-total-label { font-size: 13px; opacity: 0.9; }
+        .calc-total-val { font-size: 26px; font-weight: 900; }
+        .section-hidden { display: none; }
+        .btn-bar { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+        .btn { padding: 11px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .btn-primary { background: #7c3aed; color: white; box-shadow: 0 4px 12px rgba(124,58,237,0.35); }
+        .btn-primary:hover { background: #6d28d9; }
+        .btn-secondary { background: #f3f4f6; color: #374151; }
+        .btn-secondary:hover { background: #e5e7eb; }
+        .toast { display: none; position: fixed; top: 80px; left: 50%; transform: translateX(-50%); padding: 10px 24px; border-radius: 30px; font-size: 14px; font-weight: 600; z-index: 200; }
+        .toast.show { display: block; }
+        .toast.ok { background: #10b981; color: white; }
+        .toast.err { background: #ef4444; color: white; }
+        .divider { border: none; border-top: 1px solid #f3f4f6; margin: 14px 0; }
+        .upload-area { border: 2px dashed #d1d5db; border-radius: 10px; padding: 16px; text-align: center; cursor: pointer; transition: border-color 0.2s; background: #fafafa; }
+        .upload-area:hover, .upload-area.dragover { border-color: #7c3aed; background: #faf5ff; }
+        .upload-area input[type=file] { display: none; }
+        .upload-label { font-size: 13px; color: #6b7280; cursor: pointer; }
+        .upload-label b { color: #7c3aed; }
+        .upload-preview { font-size: 12px; color: #059669; margin-top: 6px; font-weight: 600; }
+        .change-badge { font-size: 11px; padding: 1px 6px; border-radius: 6px; font-weight: 700; }
+        .change-up { background: #dbeafe; color: #1d4ed8; }
+        .change-down { background: #d1fae5; color: #059669; }
+        .override-legend { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #6b7280; margin-bottom: 10px; }
+        .override-dot { width: 10px; height: 10px; border-radius: 50%; background: #1d4ed8; flex-shrink: 0; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.45); z-index: 300; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box-sm { background: white; border-radius: 16px; padding: 24px; width: 380px; max-width: 95vw; box-shadow: 0 20px 60px rgba(0,0,0,0.25); }
+        .modal-box-sm h3 { font-size: 15px; font-weight: 800; color: #1e1b4b; margin-bottom: 18px; display: flex; align-items: center; gap: 8px; }
+        .modal-box-sm .form-group { margin-bottom: 10px; }
+        .modal-box-sm .btn-row { display: flex; gap: 10px; justify-content: flex-end; margin-top: 18px; }
+        .part-name-row { display: flex; gap: 8px; align-items: center; }
+        .part-name-row .form-input { flex: 1; }
+        .btn-manage-dict { padding: 9px 14px; border: 1.5px solid #d1d5db; border-radius: 9px; background: #f9fafb; color: #6b7280; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .btn-manage-dict:hover { background: #f3f4f6; color: #374151; }
+        .dict-item-list { list-style: none; max-height: 260px; overflow-y: auto; }
+        .dict-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+        .dict-item:last-child { border-bottom: none; }
+        .dict-item-name { color: #374151; }
+        .btn-del-item { padding: 3px 10px; border: 1px solid #fca5a5; border-radius: 6px; background: #fff; color: #dc2626; font-size: 12px; cursor: pointer; }
+        .btn-del-item:hover { background: #fef2f2; }
+        .dict-add-row { display: flex; gap: 8px; margin-top: 12px; }
+        .dict-add-row .form-input { flex: 1; }
+        .treatment-row { display: flex; gap: 8px; align-items: center; }
+        .treatment-row .form-select { flex: 1; min-width: 0; }
+        .treatment-fee-input { width: 130px; }
+        .treat-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px; }
+        .treat-item:last-child { border-bottom: none; }
+        .treat-item-info { display: flex; flex-direction: column; gap: 2px; }
+        .treat-item-name { color: #374151; font-weight: 600; }
+        .treat-item-meta { font-size: 11px; color: #9ca3af; }
+        .treat-mode-badge { display: inline-block; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-net-weight { background: #dbeafe; color: #1e40af; }
+        .badge-manual { background: #fef3c7; color: #92400e; }
+        .treat-empty { text-align: center; color: #9ca3af; font-size: 13px; padding: 20px; }
+        .treat-add-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+        .treat-add-form .form-row { display: flex; gap: 8px; }
+        .treat-add-form .form-row .form-group { flex: 1; }
+        .treat-add-row { display: flex; gap: 8px; align-items: flex-end; }
+        .treat-add-row .form-input { flex: 1; }
+        .treat-form-group { display: flex; flex-direction: column; gap: 4px; }
+        .treat-form-group label { font-size: 11px; color: #6b7280; font-weight: 600; }
+        @media (max-width: 480px) { .form-row { grid-template-columns: 1fr; } .path-selector { grid-template-columns: 1fr; } }
+        /* 报价单信息卡 */
+        .quote-info-card { background: #eff6ff; border: 1.5px solid #3b82f6; border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; }
+        .quote-info-row { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 4px; }
+        .quote-info-row:last-child { margin-bottom: 0; }
+        .quote-info-label { color: #6b7280; }
+        .quote-info-val { font-weight: 700; color: #1e40af; }
+        .status-badge { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+        .status-draft { background: #f3f4f6; color: #6b7280; }
+        .status-pending { background: #fef3c7; color: #92400e; }
+        .status-approved { background: #d1fae5; color: #059669; }
+        .status-rejected { background: #fee2e2; color: #dc2626; }
+    </style>
+</head>
+<body>
+{% include "common/_admin_nav.html" %}
+
+<div class="content">
+
+    <!-- 报价单信息 -->
+    <div class="quote-info-card" id="quoteInfoCard">
+        <div class="quote-info-row">
+            <span class="quote-info-label">零件图号</span>
+            <span class="quote-info-val" id="dispPartNumber">{{ quote_data.part.part_number }}</span>
+        </div>
+        <div class="quote-info-row">
+            <span class="quote-info-label">报价单号</span>
+            <span class="quote-info-val">{{ quote_data.quote.quote_serial or ('#' + (quote_data.quote.id|string)) }}</span>
+        </div>
+        <div class="quote-info-row">
+            <span class="quote-info-label">报价状态</span>
+            <span class="quote-info-val">
+                {% if quote_data.quote.approval_status == 'DRAFT' %}<span class="status-badge status-draft">草稿</span>
+                {% elif quote_data.quote.approval_status == 'WAITING_FOR_TECH' %}<span class="status-badge status-pending">待技术审核</span>
+                {% elif quote_data.quote.approval_status == 'TECH_APPROVED' %}<span class="status-badge status-approved">开发已填写</span>
+                {% elif quote_data.quote.approval_status == 'PENDING_BOSS' %}<span class="status-badge status-pending">待老板审批</span>
+                {% elif quote_data.quote.approval_status == 'REJECTED' %}<span class="status-badge status-rejected">已驳回</span>
+                {% elif quote_data.quote.approval_status == 'APPROVED' %}<span class="status-badge status-approved">已审批</span>
+                {% else %}<span class="status-badge status-draft">{{ quote_data.quote.approval_status }}</span>
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <form id="mainForm">
+
+        <!-- 基础参数 -->
+        <div class="card">
+            <div class="card-title">&#x1F4CF; 基础参数</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">零件图号</label>
+                    <input type="text" class="form-input" value="{{ quote_data.part.part_number }}" readonly style="background:#f3f4f6;color:#6b7280;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">零件名称</label>
+                    <input type="text" class="form-input" value="{{ quote_data.part.internal_name or '' }}" readonly style="background:#f3f4f6;color:#6b7280;">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">材料牌号</label>
+                <div class="material-row">
+                    <select name="material_name" id="selMaterial" class="form-select" onchange="onMaterialChange()">
+                        <option value="">— 选择材料 —</option>
+                        {% for m in materials %}
+                        <option value="{{ m.material_name }}"
+                                data-density="{{ m.default_density }}"
+                                data-price="{{ m.default_price }}"
+                                data-scrap="{{ m.scrap_price or '' }}">
+                            {{ m.material_name }} — 密度 {{ m.default_density }} / 单价 {{ m.default_price }} 元/kg{% if m.scrap_price %}/废料 {{ m.scrap_price }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn-new-material" onclick="openMaterialModal()">+ 新建</button>
+                    <button type="button" class="btn-del-material" onclick="deleteCurrentMaterial()" title="从字典中删除当前选中材料（不影响已保存的报价单）">- 删除</button>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">厚度 T (mm)</label>
+                    <input type="number" name="thickness" id="inpT" class="form-input" step="0.001" min="0" placeholder="0.8" oninput="triggerCalc()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">宽度 W (mm)</label>
+                    <input type="number" name="width" id="inpW" class="form-input" step="0.01" min="0" placeholder="300" oninput="triggerCalc()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">冲程 P (mm)</label>
+                    <input type="number" name="press_stroke" id="inpP" class="form-input" step="0.01" min="0" placeholder="120" oninput="triggerCalc()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">穴数（一出几）</label>
+                    <input type="number" name="cavity_count" id="inpCav" class="form-input" value="1" min="1" oninput="triggerCalc()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">材料利用率（%）</label>
+                    <input type="number" id="inpUtil" class="form-input" step="0.1" value="100" min="0" max="100" oninput="triggerCalc()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">利润率（%）</label>
+                    <input type="number" id="inpProfit" class="form-input" step="0.1" value="5" min="0" oninput="triggerCalc()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">吨位/机型（开发填写）</label>
+                    <input type="text" id="inpMachineType" class="form-input" readonly style="background:#f3f4f6;color:#6b7280;" placeholder="技术部填写后自动带入">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">年用量（件/年）</label>
+                    <input type="number" id="inpAnnualUsage" class="form-input" placeholder="选填">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">年均用量（件/年）</label>
+                    <input type="number" id="inpAnnualAvg" class="form-input" placeholder="年均年用量" oninput="triggerCalc()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">生命周期（年）</label>
+                    <input type="number" id="inpLifecycle" class="form-input" placeholder="如：5" min="1" oninput="triggerCalc()">
+                </div>
+            </div>
+        </div>
+
+        <!-- 费用明细 -->
+        <div class="card">
+            <div class="card-title">&#x1F4B0; 费用明细</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">冲压费（元/件）</label>
+                    <input type="number" id="inpStampFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">全检费（元/件）</label>
+                    <input type="number" id="inpInspFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">包装费（元/件）</label>
+                    <input type="number" id="inpPkgFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">表面处理费（元/件）</label>
+                    <input type="number" id="inpSurfaceFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="form-label">模具费（元/件）</label>
+                <input type="number" id="inpMoldCost" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
+            </div>
+            <div class="form-hint blue">模具费均摊到每件的价格，可根据模具寿命调整</div>
+        </div>
+
+        <!-- 白盒核算结果 -->
+        <div class="calc-panel" id="calcPanel">
+            <div class="calc-title">&#x1F4CA; 报价预览</div>
+            <div class="calc-row"><span class="calc-key">毛重</span><span class="calc-val" id="dispGrossWeight">—</span></div>
+            <div class="calc-row"><span class="calc-key">净重</span><span class="calc-val" id="dispNetWeight">—</span></div>
+            <div class="calc-row"><span class="calc-key">材料单价</span><span class="calc-val" id="dispUnitPrice">—</span></div>
+            <div class="calc-row"><span class="calc-key">废料单价</span><span class="calc-val" id="dispScrapPrice">—</span></div>
+            <div class="calc-row"><span class="calc-key">材料净成本</span><span class="calc-val" id="dispMatCost">—</span></div>
+            <div class="calc-row"><span class="calc-key">废料价值</span><span class="calc-val" id="dispScrap">—</span></div>
+            <div class="calc-row"><span class="calc-key">冲压费</span><span class="calc-val" id="dispStampFee">—</span></div>
+            <div class="calc-row"><span class="calc-key">全检费</span><span class="calc-val" id="dispInspFee">—</span></div>
+            <div class="calc-row"><span class="calc-key">包装费</span><span class="calc-val" id="dispPkgFee">—</span></div>
+            <div class="calc-row"><span class="calc-key">表面处理费</span><span class="calc-val" id="dispSurfaceFee">—</span></div>
+            <div class="calc-row"><span class="calc-key">模具费</span><span class="calc-val" id="dispMoldCost">—</span></div>
+            <div class="calc-total">
+                <span class="calc-total-label">最终报价</span>
+                <span class="calc-total-val" id="dispTotal">— 元/件</span>
+            </div>
+            <div class="override-legend">
+                <div class="override-dot"></div>
+                <span>蓝色数值 = 人工覆盖原始计算值</span>
+            </div>
+        </div>
+
+        <div class="btn-bar">
+            <button type="button" class="btn btn-secondary" onclick="history.back()">取消</button>
+            <button type="submit" class="btn btn-primary" id="btnSubmit" onclick="return onSubmit()">&#x2714; 保存报价单</button>
+        </div>
+    </form>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- 材料字典管理 Modal -->
+<div class="modal-overlay" id="modalNewMaterial" onclick="if(event.target===this)closeMaterialModal()">
+    <div class="modal-box-sm">
+        <h3 id="mModalTitle">&#x2699;&#xFE0F; 新建材料</h3>
+        <div class="form-group"><label class="form-label">材料名称</label><input type="text" id="mMatName" class="form-input"><input type="hidden" id="mMatNameOriginal"></div>
+        <div class="form-row"><div class="form-group"><label class="form-label">密度（g/cm³）</label><input type="number" id="mDensity" class="form-input" step="0.001"></div><div class="form-group"><label class="form-label">单价（元/kg）</label><input type="number" id="mPrice" class="form-input" step="0.01"></div></div>
+        <div class="form-group"><label class="form-label">废料单价（元/kg）</label><input type="number" id="mScrap" class="form-input" step="0.01" placeholder="留空则按 9 折处理"></div>
+        <div class="btn-row"><button type="button" class="btn btn-secondary" onclick="closeMaterialModal()">取消</button><button type="button" class="btn btn-primary" id="btnMatSubmit" onclick="submitMaterialForm()">确认创建</button></div>
+    </div>
+</div>
+
+<!-- 字典管理 Modal -->
+<div class="modal-overlay" id="modalDict" onclick="if(event.target===this)closeDictModal()">
+    <div class="modal-box-sm" style="width:440px;">
+        <h3>&#x2699;&#xFE0F; 零件名称字典</h3>
+        <ul class="dict-item-list" id="dictList"></ul>
+        <div class="dict-add-row"><input type="text" id="dictNewName" class="form-input" placeholder="输入新名称…"><button type="button" class="btn btn-primary" onclick="submitDictAdd()">添加</button></div>
+        <div class="btn-row" style="margin-top:12px;"><button type="button" class="btn btn-secondary" onclick="closeDictModal()">关闭</button></div>
+    </div>
+</div>
+
+<script src="/static/js/api_config.js"></script>
+<script>
+// ── 全局状态 ─────────────────────────────────────────────────────
+var selectedPath = null;   // 'A' | 'B' | 'C'
+var autoTotal = null;
+var _quoteId = {{ quote_data.quote.id }};
+var _partId = {{ quote_data.part.id }};
+var _originalCalc = null;
+
+// ── 预填表单（服务端数据）───────────────────────────────────────
+(function initFromServerData() {
+    var q = {{ quote_data.quote | tojson | safe }};
+    var p = {{ quote_data.part | tojson | safe }};
+
+    // 材料（服务端已序列化）
+    if (q.material_name) {
+        var selMat = document.getElementById('selMaterial');
+        for (var i = 0; i < selMat.options.length; i++) {
+            if (selMat.options[i].value === q.material_name) {
+                selMat.selectedIndex = i;
+                break;
+            }
+        }
+    }
+
+    // T/W/P
+    if (q.thickness) document.getElementById('inpT').value = q.thickness;
+    if (q.width) document.getElementById('inpW').value = q.width;
+    if (q.press_stroke) document.getElementById('inpP').value = q.press_stroke;
+    if (q.cavity_count) document.getElementById('inpCav').value = q.cavity_count;
+    if (q.material_utilization) document.getElementById('inpUtil').value = q.material_utilization;
+    if (q.profit_margin != null) document.getElementById('inpProfit').value = q.profit_margin;
+
+    // 吨位/设备（来自技术参数，只读）
+    if (q.machine_type) document.getElementById('inpMachineType').value = q.machine_type;
+
+    // 年用量拆分
+    if (q.annual_usage) document.getElementById('inpAnnualUsage').value = q.annual_usage;
+    if (q.annual_avg != null) document.getElementById('inpAnnualAvg').value = q.annual_avg;
+    if (q.lifecycle_years != null) document.getElementById('inpLifecycle').value = q.lifecycle_years;
+
+    // 费用
+    if (q.stamping_fee != null) document.getElementById('inpStampFee').value = q.stamping_fee;
+    if (q.inspection_fee != null) document.getElementById('inpInspFee').value = q.inspection_fee;
+    if (q.packaging_fee != null) document.getElementById('inpPkgFee').value = q.packaging_fee;
+    if (q.surface_fee != null) document.getElementById('inpSurfaceFee').value = q.surface_fee;
+    if (q.mold_cost != null) document.getElementById('inpMoldCost').value = q.mold_cost;
+
+    setTimeout(function() { triggerCalc(); }, 200);
+})();
+
+// ── Toast ─────────────────────────────────────────────────────
+function showToast(msg, kind) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (kind || 'ok');
+    setTimeout(function() { t.className = 'toast'; }, 3000);
+}
+
+// ── 白盒核算 ──────────────────────────────────────────────────
+function triggerCalc() {
+    clearTimeout(window._calcTimer);
+    window._calcTimer = setTimeout(doCalc, 500);
+}
+
+function doCalc() {
+    var matName = document.getElementById('selMaterial').value;
+    if (!matName) return;
+
+    var matSel = document.getElementById('selMaterial');
+    var matOpt = matSel.options[matSel.selectedIndex];
+    var matPrice = parseFloat(matOpt && matOpt.getAttribute('data-price')) || 0;
+    var matDensity = parseFloat(matOpt && matOpt.getAttribute('data-density')) || 0;
+    var matScrap = parseFloat(matOpt && matOpt.getAttribute('data-scrap')) || matPrice * 0.9;
+
+    var t = parseFloat(document.getElementById('inpT').value) || 0;
+    var w = parseFloat(document.getElementById('inpW').value) || 0;
+    var p_ = parseFloat(document.getElementById('inpP').value) || 0;
+    var cav = parseInt(document.getElementById('inpCav').value) || 1;
+    var util = parseFloat(document.getElementById('inpUtil').value) || 100;
+    var stampFee = parseFloat(document.getElementById('inpStampFee').value) || 0;
+    var inspFee = parseFloat(document.getElementById('inpInspFee').value) || 0;
+    var pkgFee = parseFloat(document.getElementById('inpPkgFee').value) || 0;
+    var surfFee = parseFloat(document.getElementById('inpSurfaceFee').value) || 0;
+    var moldFee = parseFloat(document.getElementById('inpMoldCost').value) || 0;
+    var profit = parseFloat(document.getElementById('inpProfit').value) || 0;
+
+    if (!t || !w || !p_) return;
+
+    var grossWeight = t * w * p_ * matDensity / 1000;
+    var netWeight = grossWeight * (util / 100);
+    var scrapWeight = grossWeight - netWeight;
+    var scrapVal = scrapWeight * matScrap / 1000;
+    var matCost = netWeight * matPrice / 1000;
+    var matNetCost = Math.max(0, matCost - scrapVal);
+    var total = (matNetCost + stampFee + inspFee + pkgFee + surfFee + moldFee / cav) * (1 + profit / 100);
+
+    autoTotal = total;
+
+    function fmt(v) { return v.toFixed(4); }
+    document.getElementById('dispGrossWeight').textContent = fmt(grossWeight) + ' g';
+    document.getElementById('dispNetWeight').textContent = fmt(netWeight) + ' g';
+    document.getElementById('dispUnitPrice').textContent = fmt(matPrice) + ' 元/kg';
+    document.getElementById('dispScrapPrice').textContent = fmt(matScrap) + ' 元/kg';
+    document.getElementById('dispMatCost').textContent = fmt(matCost) + ' 元/件';
+    document.getElementById('dispScrap').textContent = fmt(scrapVal) + ' 元/件';
+    document.getElementById('dispStampFee').textContent = fmt(stampFee) + ' 元/件';
+    document.getElementById('dispInspFee').textContent = fmt(inspFee) + ' 元/件';
+    document.getElementById('dispPkgFee').textContent = fmt(pkgFee) + ' 元/件';
+    document.getElementById('dispSurfaceFee').textContent = fmt(surfFee) + ' 元/件';
+    document.getElementById('dispMoldCost').textContent = fmt(moldFee / cav) + ' 元/件';
+    document.getElementById('dispTotal').textContent = fmt(total) + ' 元/件';
+}
+
+// ── 材料变化 ─────────────────────────────────────────────────
+function onMaterialChange() {
+    triggerCalc();
+}
+
+// ── 字典管理 ─────────────────────────────────────────────────
+var _dictType = 'part_name';
+function openDictModal() {
+    document.getElementById('modalDict').classList.add('open');
+    loadDictItems();
+}
+function closeDictModal() { document.getElementById('modalDict').classList.remove('open'); }
+function loadDictItems() {
+    sendApiRequest('sales.dict_items', null, { pathParams: { type: _dictType } })
+        .then(function(r) {
+            var list = document.getElementById('dictList');
+            if (!r.data || !r.data.length) { list.innerHTML = '<li class="dict-item" style="color:#9ca3af">暂无数据</li>'; return; }
+            list.innerHTML = r.data.map(function(item) {
+                return '<li class="dict-item"><span class="dict-item-name">' + escHtml(item.dict_value) + '</span><button class="btn-del-item" onclick="deleteDictItem(' + item.id + ')">删除</button></li>';
+            }).join('');
+        });
+}
+function submitDictAdd() {
+    var name = document.getElementById('dictNewName').value.trim();
+    if (!name) return;
+    sendApiRequest('sales.dict_add', { dict_type: _dictType, dict_value: name })
+        .then(function() { loadDictItems(); document.getElementById('dictNewName').value = ''; });
+}
+function deleteDictItem(id) {
+    if (!confirm('确认删除？')) return;
+    sendApiRequest('sales.dict_delete', null, { pathParams: { type: _dictType, id: id } })
+        .then(function() { loadDictItems(); });
+}
+document.getElementById('modalDict').addEventListener('click', function(e) { if (e.target === this) closeDictModal(); });
+
+// ── 材料新建 Modal ────────────────────────────────────────────
+function openMaterialModal() {
+    document.getElementById('mMatName').value = '';
+    document.getElementById('mMatNameOriginal').value = '';
+    document.getElementById('mDensity').value = '';
+    document.getElementById('mPrice').value = '';
+    document.getElementById('mScrap').value = '';
+    document.getElementById('modalNewMaterial').classList.add('open');
+}
+function closeMaterialModal() { document.getElementById('modalNewMaterial').classList.remove('open'); }
+document.getElementById('modalNewMaterial').addEventListener('click', function(e) { if (e.target === this) closeMaterialModal(); });
+function submitMaterialForm() {
+    var name = document.getElementById('mMatName').value.trim();
+    var density = parseFloat(document.getElementById('mDensity').value);
+    var price = parseFloat(document.getElementById('mPrice').value);
+    var scrap = parseFloat(document.getElementById('mScrap').value) || null;
+    if (!name || !density || !price) { showToast('请填写完整', 'err'); return; }
+    sendApiRequest('sales.materials_quick_add', { material_name: name, default_density: density, default_price: price, scrap_price: scrap })
+        .then(function(r) {
+            if (r.code === 200 || r.code === 0) {
+                var sel = document.getElementById('selMaterial');
+                var opt = document.createElement('option');
+                opt.value = name;
+                opt.text = name + ' — 密度 ' + density + ' / 单价 ' + price + ' 元/kg{% if m.scrap_price %}/废料 {{ m.scrap_price }}{% endif %}';
+                opt.setAttribute('data-density', density);
+                opt.setAttribute('data-price', price);
+                opt.setAttribute('data-scrap', scrap || '');
+                sel.appendChild(opt);
+                sel.value = name;
+                closeMaterialModal();
+                triggerCalc();
+            } else {
+                showToast(r.message || '创建失败', 'err');
+            }
+        })
+        .catch(function(err) {
+            showToast(err.message || '创建失败', 'err');
+        });
+}
+
+function deleteCurrentMaterial() {
+    var sel = document.getElementById('selMaterial');
+    var val = sel.value;
+    if (!val) { showToast('请先选择要删除的材料', 'err'); return; }
+    if (!confirm('确认从材料字典中删除「' + val + '」？\n已使用此材料的报价单不受影响。')) return;
+    var row = document.querySelector('#selMaterial option[value="' + val.replace(/"/g, '\\"') + '"]');
+    sendApiRequest('sales.material_delete', null, { pathParams: { id: encodeURIComponent(val) } })
+        .then(function(r) {
+            if (r.code === 200 || r.code === 0) {
+                if (row) row.remove();
+                sel.value = '';
+                triggerCalc();
+                showToast('已删除', 'ok');
+            } else {
+                showToast(r.message || '删除失败', 'err');
+            }
+        })
+        .catch(function(err) {
+            showToast(err.message || '删除失败', 'err');
+        });
+}
+function escHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── 提交 ─────────────────────────────────────────────────────
+function onSubmit() {
+    var btn = document.getElementById('btnSubmit');
+    var originalText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = '保存中…';
+
+    var payload = {
+        material_name: document.getElementById('selMaterial').value || null,
+        thickness: parseFloat(document.getElementById('inpT').value) || null,
+        width: parseFloat(document.getElementById('inpW').value) || null,
+        press_stroke: parseFloat(document.getElementById('inpP').value) || null,
+        cavity_count: parseInt(document.getElementById('inpCav').value) || 1,
+        material_utilization: parseFloat(document.getElementById('inpUtil').value) || null,
+        profit_margin: parseFloat(document.getElementById('inpProfit').value) || null,
+        stamping_fee: parseFloat(document.getElementById('inpStampFee').value) || null,
+        inspection_fee: parseFloat(document.getElementById('inpInspFee').value) || null,
+        packaging_fee: parseFloat(document.getElementById('inpPkgFee').value) || null,
+        surface_fee: parseFloat(document.getElementById('inpSurfaceFee').value) || null,
+        mold_cost: parseFloat(document.getElementById('inpMoldCost').value) || null,
+        annual_usage: parseInt(document.getElementById('inpAnnualUsage').value) || null,
+        annual_avg: parseFloat(document.getElementById('inpAnnualAvg').value) || null,
+        lifecycle_years: parseFloat(document.getElementById('inpLifecycle').value) || null,
+        final_price: autoTotal || null,
+    };
+
+    sendApiRequest('sales.quote_update', payload, { pathParams: { id: _quoteId } })
+        .then(function(r) {
+            if (r.code === 200 || r.code === 0) {
+                showToast('保存成功', 'ok');
+                setTimeout(function() { history.back(); }, 800);
+            } else {
+                throw new Error(r.message || '保存失败');
+            }
+        })
+        .catch(function(err) {
+            showToast(err.message || '保存失败', 'err');
+            alert('保存失败：' + (err.message || '网络错误'));
+        })
+        .finally(function() {
+            btn.disabled = false;
+            btn.textContent = originalText;
+        });
+
+    return false;
+}
+</script>
+</body>
+</html>

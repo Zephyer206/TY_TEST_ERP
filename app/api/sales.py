@@ -4,10 +4,14 @@ app/api/sales.py
   - api_router:  /api/*  (无前缀，直接挂根)
   - router:      /sales/* (页面路由)
 """
-from fastapi import APIRouter, Form, Request, HTTPException
+from fastapi import APIRouter, Form, Request, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
+import psycopg2
+import re
+import os
+import uuid
 from app.core.auth import get_current_user
 from app.core.templates import templates
 from app.models.schemas import PartCreateRequest
@@ -44,11 +48,15 @@ from app.services.db_service import (
     get_quote_by_id,
     get_quotes_by_part,
     get_latest_quote_by_part,
+    get_quote_detail_for_edit,
     update_quote,
     submit_quote_to_boss,
     approve_quote,
     reject_quote,
+    get_pending_boss_quotes,
+    boss_update_quote,
     delete_quote,
+    delete_part_by_id,
     reopen_quote_as_new,
     get_part_inventory_summary,
     get_finished_inventory,
@@ -60,6 +68,10 @@ from app.services.db_service import (
     adjust_finished_inventory,
     adjust_remnant_inventory,
     get_all_customers,
+    get_parts_with_die_link,
+    get_part_by_id,
+    get_all_tooling_customers,
+    DB_CONFIG,
 )
 
 # ── API 路由（无前缀，路径如 /api/part/{id}）─────────────────
@@ -67,6 +79,9 @@ api_router = APIRouter(prefix="", tags=["sales-api"])
 
 # ── 页面路由（/sales 前缀）───────────────────────────────────
 router = APIRouter(prefix="/sales", tags=["sales"])
+
+# ── 老板页面路由（无前缀，/boss/*）──────────────────────────
+boss_router = APIRouter(tags=["boss"])
 
 
 # ═══════════════════════════════════════════════════════════════════
@@ -88,17 +103,19 @@ def api_create_part(request: Request, body: PartCreateRequest):
             status_code=403)
 
     try:
+        is_independent = body.pricing_mode == "independent"
         part_id = create_part_with_mold_and_pricing(
             part_number=body.part_number,
             internal_name=body.internal_name,
+            remark=body.remark,
             material_name=body.material_name,
             pricing_mode=body.pricing_mode,
             referenced_part_id=body.referenced_part_id,
-            thickness=body.thickness if body.pricing_mode == "independent" else None,
-            width=body.width if body.pricing_mode == "independent" else None,
-            press_stroke=body.press_stroke if body.pricing_mode == "independent" else None,
-            cavity_count=body.cavity_count if body.pricing_mode == "independent" else 1,
-            material_utilization=body.material_utilization if body.pricing_mode == "independent" else 100.0,
+            thickness=body.thickness if is_independent else None,
+            width=body.width if is_independent else None,
+            press_stroke=body.press_stroke if is_independent else None,
+            cavity_count=body.cavity_count if is_independent else 1,
+            material_utilization=body.material_utilization if is_independent else 100.0,
             machine_type=body.machine_type,
             press_tonnage=body.press_tonnage,
             stamping_fee=body.stamping_fee,
@@ -108,6 +125,7 @@ def api_create_part(request: Request, body: PartCreateRequest):
             customer_id=body.customer_id,
             alias_part_number=body.alias_part_number,
             operator_id=user["id"],
+            drawing_file_path=body.drawing_file_path,
         )
         return JSONResponse(jsonable_encoder({
             "code": 0,
@@ -236,6 +254,125 @@ def part_unbind(request: Request, part_id: int):
         return JSONResponse(jsonable_encoder({"code": 400, "message": str(e), "data": None}), status_code=400)
 
 
+@api_router.get("/api/customers")
+def api_customers_list(request: Request):
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    rows = get_all_tooling_customers()
+    return JSONResponse({"code": 200, "data": [{"id": r["id"], "name": r["name"]} for r in rows]})
+
+
+class CustomerBody(BaseModel):
+    name: str
+
+
+@api_router.post("/api/customers")
+def api_customer_create(request: Request, body: CustomerBody):
+    user = get_current_user(request)
+    if not user or user["role_level"] < 4:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import psycopg2
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("INSERT INTO tooling_customers (name, created_at) VALUES (%s, NOW()) RETURNING id", (body.name.strip(),))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+    return JSONResponse({"code": 0, "data": {"id": new_id, "name": body.name.strip()}})
+
+
+@api_router.put("/api/customers/{cid}")
+def api_customer_update(request: Request, cid: int, body: CustomerBody):
+    user = get_current_user(request)
+    if not user or user["role_level"] < 4:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import psycopg2
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tooling_customers SET name=%s WHERE id=%s", (body.name.strip(), cid))
+        conn.commit()
+    return JSONResponse({"code": 0, "message": "已更新"})
+
+
+@api_router.delete("/api/customers/{cid}")
+def api_customer_delete(request: Request, cid: int):
+    user = get_current_user(request)
+    if not user or user["role_level"] < 4:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import psycopg2
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM tooling_customers WHERE id=%s", (cid,))
+        conn.commit()
+    return JSONResponse({"code": 0, "message": "已删除"})
+
+
+_DRAWING_BASE_DIR = os.path.join("static", "uploads", "drawings")
+
+
+def _get_drawing_subdir(part_id: int) -> str:
+    """根据零件 ID 获取图纸存放子目录。
+    有客户 → 客户名/零件名/零件号/drawings
+    无客户 → _unassigned/{part_id}/drawings
+    """
+    import re
+    def _safe(s):
+        return re.sub(r'[\\/:*?"<>|]', '_', (s or '').strip())
+    try:
+        with psycopg2.connect(**DB_CONFIG) as conn:
+            with conn.cursor() as cur:
+                cur.execute("""
+                    SELECT tc.name, p.internal_name, p.part_number
+                    FROM parts p
+                    LEFT JOIN tooling_customers tc ON p.customer_id = tc.id
+                    WHERE p.id = %s
+                """, (part_id,))
+                row = cur.fetchone()
+                if not row:
+                    return f"_unassigned/{part_id}/drawings"
+                customer_name, part_name, part_number = row
+                if not customer_name:
+                    return f"_unassigned/{part_id}/drawings"
+                segs = [_safe(customer_name), _safe(part_name or ''), _safe(part_number or str(part_id))]
+                return '/'.join(s for s in segs if s) + "/drawings"
+    except Exception:
+        return f"_unassigned/{part_id}/drawings"
+
+
+def _save_drawing_file(file_obj: UploadFile, subdir: str) -> str:
+    """将文件保存到 _DRAWING_BASE_DIR/subdir/，返回 /static/uploads/drawings/subdir/文件名。"""
+    allowed = {'.pdf', '.dwg', '.dxf', '.png', '.jpg', '.jpeg'}
+    ext = os.path.splitext(file_obj.filename or '')[1].lower()
+    if ext not in allowed:
+        raise ValueError(f"不支持的文件格式: {ext}")
+    save_dir = os.path.join(_DRAWING_BASE_DIR, subdir)
+    os.makedirs(save_dir, exist_ok=True)
+    save_name = f"{uuid.uuid4().hex}{ext}"
+    save_path = os.path.join(save_dir, save_name)
+    content = file_obj.file.read()
+    if len(content) > 20 * 1024 * 1024:
+        raise ValueError("文件超过 20MB 限制")
+    with open(save_path, 'wb') as f:
+        f.write(content)
+    return f"/static/uploads/drawings/{subdir}/{save_name}"
+
+
+@api_router.post("/api/parts/drawing-upload")
+async def api_drawing_upload(request: Request, file: UploadFile = File(...), part_id: int = Form(...)):
+    """上传业务图纸文件，按 客户名/零件名/零件号/drawings 分类存放。"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    try:
+        subdir = _get_drawing_subdir(part_id)
+        url_path = _save_drawing_file(file, subdir)
+        return JSONResponse({"code": 0, "message": "上传成功", "data": {"path": url_path}})
+    except ValueError as e:
+        return JSONResponse({"code": 1, "message": str(e)}, status_code=400)
+    except Exception as e:
+        return JSONResponse({"code": 1, "message": f"上传失败: {e}"}, status_code=500)
+
+
 class CalcPricingBody(BaseModel):
     thickness: float = 0        # 厚度 T (mm)
     width: float = 0            # 宽度 W (mm)
@@ -251,9 +388,12 @@ class CalcPricingBody(BaseModel):
     inspection_fee: float = 0    # 全检费
     packaging_fee: float = 0     # 包装运费
     surface_fee: float = 0      # 表面处理费
+    mold_cost: float = 0         # 模具费
     treatment_fee: float = 0     # 处理费合计
     profit_margin: float = 0      # 利润率系数
     override_final_price: float | None = None
+    override_material_cost: float | None = None  # 材料净成本覆盖（元）
+    unit_price_override: float | None = None      # 材料单价覆盖（元/kg）
     machine_type: str | None = None  # 使用设备（吨位/型号）
 
 
@@ -289,17 +429,33 @@ class QuoteUpdateBody(BaseModel):
     press_stroke: float | None = None
     cavity_count: int | None = None
     scrap_rate: float | None = None
+    gross_weight: float | None = None
+    material_net_cost: float | None = None
+    material_name: str | None = None
+    snapshot_mat_name: str | None = None
+    snapshot_mat_price: float | None = None
+    snapshot_density: float | None = None
+    snapshot_scrap_price: float | None = None
+    final_price: float | None = None
     stamping_fee: float | None = None
+    inspection_fee: float | None = None
+    packaging_fee: float | None = None
     surface_fee: float | None = None
+    mold_cost: float | None = None
     treatment_fee: float | None = None
     profit_margin: float | None = None
     final_price_override: float | None = None
-    unit_price_override: float | None = None   # 材料单价覆盖（元/kg）
-    material_cost_override: float | None = None  # 材料净成本覆盖（元）
+    unit_price_override: float | None = None
+    material_cost_override: float | None = None
     override_fields: list[str] | None = None
     nomination_status: str | None = None
     nomination_attachment: str | None = None
     machine_type: str | None = None
+    press_tonnage: int | None = None
+    material_utilization: float | None = None
+    annual_avg: float | None = None
+    lifecycle_years: float | None = None
+    customer_id: int | None = None
 
 
 @api_router.post("/api/calc-pricing")
@@ -651,6 +807,31 @@ def remove_dict(request: Request, dict_type: str, item_id: int):
         return JSONResponse({"code": 400, "message": str(e)}, status_code=400)
 
 
+@router.get("/quotes/{quote_id}/edit")
+def quote_edit_page(request: Request, quote_id: int):
+    """报价单编辑页面 — 从零件报价列表点击非 APPROVED 卡片进入"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 4:
+        raise HTTPException(status_code=403, detail="权限不足")
+    # 取报价单详情（含 part + quote + calc）
+    quote_data = get_quote_detail_for_edit(quote_id)
+    if not quote_data:
+        raise HTTPException(status_code=404, detail="报价单不存在")
+    materials = get_material_base_prices_for_select()
+    ref_parts = get_all_parts_for_pricing_select()
+    part_name_list = get_dict_items("part_name")
+    return templates.TemplateResponse("sales/quote_edit.html", {
+        "request": request,
+        "user": user,
+        "quote_data": quote_data,
+        "materials": materials,
+        "ref_parts": ref_parts,
+        "part_name_list": part_name_list,
+    })
+
+
 @router.get("/parts/new")
 def sales_part_new_page(request: Request):
     user = get_current_user(request)
@@ -677,6 +858,7 @@ def sales_part_new_page(request: Request):
 def sales_part_new(request: Request,
                    part_number: str = Form(...),
                    internal_name: str = Form(""),
+                   remark: str = Form(""),
                    surface_type: str = Form(""),
                    coating_color: str = Form(""),
                    surface_area: float = Form(0),
@@ -704,6 +886,7 @@ def sales_part_new(request: Request,
         part_id = create_part_with_pricing(
             part_number=part_number,
             internal_name=internal_name,
+            remark=remark,
             material_name="",
             pricing_mode=pricing_track,
             referenced_part_id=reference_part_id,
@@ -739,7 +922,7 @@ def sales_parts_list_page(request: Request, status_filter: str = ""):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login")
-    if user["role_level"] < 4:
+    if user["role_level"] < 1:
         raise HTTPException(status_code=403, detail="权限不足")
     parts = get_parts_for_pricing_list(status_filter=status_filter.upper() if status_filter else "")
     return templates.TemplateResponse("sales/part_pricing.html", {
@@ -748,12 +931,27 @@ def sales_parts_list_page(request: Request, status_filter: str = ""):
     })
 
 
+# ── 零件表（仅展示，供全员查询）───────────────────────────────────────────────
+
+@router.get("/parts")
+def sales_part_list_page(request: Request):
+    """零件表页面 — 全员可访问，仅展示零件基础信息"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    from app.services.db_service import get_parts_for_list_view
+    parts = get_parts_for_list_view()
+    return templates.TemplateResponse("sales/part_list.html", {
+        "request": request, "user": user, "parts": parts,
+    })
+
+
 @router.get("/parts/pricing")
 def sales_part_pricing_page(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login")
-    if user["role_level"] < 4:
+    if user["role_level"] < 1:
         raise HTTPException(status_code=403, detail="权限不足")
     parts = get_parts_for_pricing_list()
     return templates.TemplateResponse("sales/part_pricing.html", {
@@ -780,10 +978,15 @@ def sales_part_pricing_detail(request: Request, part_id: int):
 
 @router.post("/parts/{part_id}/nominate")
 def sales_nominate(request: Request, part_id: int,
-                   attachment_url: str = Form("")):
+                   attachment_url: str = Form(""),
+                   mold_number: str = Form(""),
+                   mold_type: str = Form(""),
+                   press_tonnage: str = Form(""),
+                   ppap_no: str = Form("")):
     """
     定点终裁确认（从报价单 quotes 维度定点）。
     confirmed_price 参数已从签名移除——定点价格来自报价单的 final_price_override。
+    定点后模具基础信息（mold_number/mold_type/press_tonnage/ppap_no）同步写入 parts 表。
     """
     user = get_current_user(request)
     if not user or user["role_level"] < 5:
@@ -793,6 +996,10 @@ def sales_nominate(request: Request, part_id: int,
             part_id=part_id,
             operator_id=user["id"],
             attachment_filenames=[attachment_url] if attachment_url else None,
+            mold_number=mold_number or None,
+            mold_type=mold_type or None,
+            press_tonnage=press_tonnage or None,
+            ppap_no=ppap_no or None,
         )
         return RedirectResponse(f"/sales/detail/{part_id}", 303)
     except Exception as e:
@@ -845,8 +1052,19 @@ def update_quote_legacy_route(request: Request, quote_id: int, body: QuoteUpdate
             press_stroke=body.press_stroke,
             cavity_count=body.cavity_count,
             scrap_rate=body.scrap_rate,
+            gross_weight=body.gross_weight,
+            material_net_cost=body.material_net_cost,
+            material_name=body.material_name,
+            snapshot_mat_name=body.snapshot_mat_name,
+            snapshot_mat_price=body.snapshot_mat_price,
+            snapshot_density=body.snapshot_density,
+            snapshot_scrap_price=body.snapshot_scrap_price,
+            final_price=body.final_price,
             stamping_fee=body.stamping_fee,
+            inspection_fee=body.inspection_fee,
+            packaging_fee=body.packaging_fee,
             surface_fee=body.surface_fee,
+            mold_cost=body.mold_cost,
             treatment_fee=body.treatment_fee,
             profit_margin=body.profit_margin,
             final_price_override=body.final_price_override,
@@ -856,6 +1074,8 @@ def update_quote_legacy_route(request: Request, quote_id: int, body: QuoteUpdate
             nomination_status=body.nomination_status,
             nomination_attachment=body.nomination_attachment,
             machine_type=body.machine_type,
+            press_tonnage=body.press_tonnage,
+            material_utilization=body.material_utilization,
         )
         if not ok:
             return JSONResponse({"code": 400, "message": "报价单不存在或状态不允许编辑"}, status_code=400)
@@ -889,23 +1109,41 @@ def create_quote_route(request: Request, part_id: int):
                 surface_fee=latest.get('surface_fee'),
                 treatment_fee=latest.get('treatment_fee'),
                 profit_margin=latest.get('profit_margin'),
-                approval_status='DRAFT',
+                approval_status='WAITING_FOR_TECH',
                 operator_id=user['id'],
             )
         else:
-            # 无 APPROVED 报价单，取 parts 主档 T/W/P
-            from app.services.db_service import get_part_by_id
+            # 无 APPROVED 报价单，取 parts 主档 T/W/P（parts 表无 T/W/P，从 dies 表补取）
             part = get_part_by_id(part_id)
             if not part:
                 return JSONResponse({"code": 404, "message": "零件不存在"}, status_code=404)
+
+            # 从 dies 表取 T/W/P（parts 表本身无此字段）
+            twp = {'thickness': None, 'width': None, 'press_stroke': None, 'cavity_count': 1}
+            with psycopg2.connect(**DB_CONFIG) as conn_twp:
+                with conn_twp.cursor() as cur_twp:
+                    cur_twp.execute("""
+                        SELECT thickness_mm, width_mm, pitch_mm, cavity_count
+                        FROM dies
+                        WHERE part_id = %s
+                          AND lifecycle_status != 'SCRAPPED'
+                        LIMIT 1;
+                    """, (part_id,))
+                    row_twp = cur_twp.fetchone()
+                    if row_twp:
+                        twp['thickness']   = float(row_twp[0]) if row_twp[0] else None
+                        twp['width']       = float(row_twp[1]) if row_twp[1] else None
+                        twp['press_stroke'] = float(row_twp[2]) if row_twp[2] else None
+                        twp['cavity_count'] = int(row_twp[3]) if row_twp[3] else 1
+
             new_id = create_quote(
                 part_id=part_id,
                 pricing_mode='independent',
-                thickness=part.get('thickness'),
-                width=part.get('width'),
-                press_stroke=part.get('press_stroke'),
-                cavity_count=part.get('cavity_count') or 1,
-                approval_status='DRAFT',
+                thickness=twp['thickness'],
+                width=twp['width'],
+                press_stroke=twp['press_stroke'],
+                cavity_count=twp['cavity_count'],
+                approval_status='WAITING_FOR_TECH',
                 operator_id=user['id'],
             )
         return JSONResponse(jsonable_encoder({
@@ -1025,8 +1263,19 @@ def update_quote_route(request: Request, quote_id: int, body: QuoteUpdateBody):
             press_stroke=body.press_stroke,
             cavity_count=body.cavity_count,
             scrap_rate=body.scrap_rate,
+            gross_weight=body.gross_weight,
+            material_net_cost=body.material_net_cost,
+            material_name=body.material_name,
+            snapshot_mat_name=body.snapshot_mat_name,
+            snapshot_mat_price=body.snapshot_mat_price,
+            snapshot_density=body.snapshot_density,
+            snapshot_scrap_price=body.snapshot_scrap_price,
+            final_price=body.final_price,
             stamping_fee=body.stamping_fee,
+            inspection_fee=body.inspection_fee,
+            packaging_fee=body.packaging_fee,
             surface_fee=body.surface_fee,
+            mold_cost=body.mold_cost,
             treatment_fee=body.treatment_fee,
             profit_margin=body.profit_margin,
             final_price_override=body.final_price_override,
@@ -1036,11 +1285,102 @@ def update_quote_route(request: Request, quote_id: int, body: QuoteUpdateBody):
             nomination_status=body.nomination_status,
             nomination_attachment=body.nomination_attachment,
             machine_type=body.machine_type,
+            press_tonnage=body.press_tonnage,
+            material_utilization=body.material_utilization,
+            annual_avg=body.annual_avg,
+            lifecycle_years=body.lifecycle_years,
+            customer_id=body.customer_id,
         )
         if not ok:
             return JSONResponse({"code": 400, "message": "报价单不存在或状态不允许编辑"}, status_code=400)
         return JSONResponse(jsonable_encoder({"code": 200, "message": "修改已保存"}))
     except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
+
+@api_router.put("/api/quotes/{quote_id}/recalculate")
+def recalc_quote(request: Request, quote_id: int, body: CalcPricingBody = None):
+    """
+    重算报价单：将白盒核算结果完整写回 quotes 表。
+    前端保存前调用此接口，把 material_net_cost / final_price 等快照字段全部更新。
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 4:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import logging
+    logger2 = logging.getLogger(__name__)
+    try:
+        # 先查当前报价单状态
+        quote = get_quote_by_id(quote_id)
+        if not quote:
+            return JSONResponse({"code": 404, "message": "报价单不存在"}, status_code=404)
+        if quote.get("approval_status") not in ("DRAFT", "REJECTED", "PENDING_BOSS"):
+            return JSONResponse({"code": 400, "message": "当前状态不允许修改"}, status_code=400)
+
+        # 调用白盒核算引擎
+        calc = calc_part_pricing(
+            thickness=body.thickness if body else 0,
+            width=body.width if body else 0,
+            press_stroke=body.press_stroke if body else 0,
+            material_name=body.material_name if body else "",
+            cavity_count=body.cavity_count if body else 1,
+            scrap_rate=body.scrap_rate if body else 0.10,
+            gross_weight_g=body.gross_weight_g,
+            net_weight_g=body.net_weight_g,
+            scrap_weight_g=body.scrap_weight_g,
+            material_utilization=body.material_utilization if body else 100.0,
+            stamping_fee=body.stamping_fee if body else 0,
+            inspection_fee=body.inspection_fee if body else 0,
+            packaging_fee=body.packaging_fee if body else 0,
+            surface_fee=body.surface_fee if body else 0,
+            treatment_fee=body.treatment_fee if body else 0,
+            profit_margin=body.profit_margin if body else 0,
+            override_final_price=body.override_final_price if body else None,
+            override_material_cost=body.override_material_cost if body else None,
+            override_unit_price=body.unit_price_override if body else None,
+            machine_type=body.machine_type if body else None,
+        )
+
+        if calc.get("error"):
+            return JSONResponse({"code": 422, "message": calc["error"], "data": None}, status_code=422)
+
+        # 写回数据库
+        ok = update_quote(
+            quote_id=quote_id,
+            gross_weight=calc.get("gross_weight"),
+            material_net_cost=calc.get("material_net_cost"),
+            snapshot_mat_name=body.material_name if body else "",
+            snapshot_mat_price=calc.get("unit_price"),
+            snapshot_density=calc.get("density"),
+            snapshot_scrap_price=calc.get("scrap_price"),
+            final_price=calc.get("final_price"),
+            stamping_fee=calc.get("stamping_fee"),
+            inspection_fee=calc.get("inspection_fee"),
+            packaging_fee=calc.get("packaging_fee"),
+            surface_fee=calc.get("surface_fee"),
+            mold_cost=body.mold_cost if body else None,
+            treatment_fee=calc.get("treatment_fee"),
+            profit_margin=calc.get("profit_margin"),
+            final_price_override=calc.get("final_price_override") or body.override_final_price if body else None,
+            unit_price_override=calc.get("unit_price_override") if calc.get("unit_price_override") else None,
+            material_cost_override=calc.get("material_net_cost_override") if calc.get("material_net_cost_override") else None,
+            thickness=body.thickness if body else None,
+            width=body.width if body else None,
+            press_stroke=body.press_stroke if body else None,
+            cavity_count=body.cavity_count if body else None,
+            scrap_rate=calc.get("scrap_rate"),
+            machine_type=body.machine_type if body else None,
+        )
+
+        if not ok:
+            return JSONResponse({"code": 400, "message": "更新失败"}, status_code=400)
+
+        return JSONResponse(jsonable_encoder({"code": 200, "message": "核算结果已保存", "data": calc}))
+    except Exception as e:
+        import traceback
+        logger2.error("[API recalc] EXCEPTION: %s\n%s", e, traceback.format_exc())
         return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
 
 
@@ -1057,6 +1397,25 @@ def delete_quote_route(request: Request, quote_id: int):
         if not ok:
             return JSONResponse({"code": 400, "message": "仅草稿状态的报价单可删除，或该单不存在"}, status_code=400)
         return JSONResponse(jsonable_encoder({"code": 200, "message": "报价单已删除"}))
+    except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
+
+@api_router.delete("/api/parts/{part_id}")
+def delete_part_route(request: Request, part_id: int):
+    """
+    直接按零件 ID 强制删除（忽略报价单状态）。
+    用于清理孤立的测试零件（如 APPROVED + 已软删除报价单的 TEST 零件）。
+    权限：role_level >= 4（业务/技术）。
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 4:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    try:
+        delete_part_by_id(part_id)
+        return JSONResponse(jsonable_encoder({"code": 200, "message": "零件及关联数据已删除"}))
     except Exception as e:
         return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
 
@@ -1255,3 +1614,146 @@ def inventory_page(request: Request):
         "user": user,
         "customers": customers,
     })
+
+
+# ── 零件-模具关联表页面路由 ────────────────────────────────────────────────
+
+@router.get("/parts/die-link", response_class=HTMLResponse)
+def parts_die_link_page(request: Request):
+    """零件-模具关联表（die-link）：一个零件 × 一个模具 = 一行，含净重/价格/订单发货统计。"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 4:
+        raise HTTPException(status_code=403, detail="权限不足")
+    return templates.TemplateResponse("sales/part_die_link.html", {
+        "request": request,
+        "user": user,
+    })
+
+
+@api_router.get("/parts/die-link/json")
+def parts_die_link_json(
+        part_name: str = "",
+        mold_number: str = "",
+        month: str = ""):
+    """零件-模具关联表数据接口。"""
+    try:
+        rows = get_parts_with_die_link(
+            part_name=part_name,
+            mold_number=mold_number,
+            month=month,
+        )
+        return JSONResponse({"code": 200, "data": rows})
+    except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
+
+# =============================================================================
+#  老板报价审批 (boss)
+# =============================================================================
+
+@boss_router.get("/boss/quotes")
+def boss_quote_approval_page(request: Request):
+    """老板报价审批首页 — 仅 role_level >= 9 可访问"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 9:
+        raise HTTPException(status_code=403, detail="仅老板可访问")
+    return templates.TemplateResponse("boss/quote_approval.html", {
+        "request": request,
+        "user": user,
+    })
+
+
+@api_router.get("/api/boss/quotes")
+def boss_quote_list(request: Request):
+    """
+    返回老板待审批的报价单列表（status = PENDING_BOSS）。
+    包含零件参数 + 价格明细 + 提交人信息。
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 9:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    try:
+        rows = get_pending_boss_quotes()
+        return JSONResponse({"code": 200, "data": rows})
+    except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
+
+class BossQuickEditBody(BaseModel):
+    thickness: float | None = None
+    width: float | None = None
+    press_stroke: float | None = None
+    cavity_count: int | None = None
+    machine_type: str | None = None
+    gross_weight: float | None = None
+    material_cost_override: float | None = None
+    stamping_fee: float | None = None
+    inspection_fee: float | None = None
+    packaging_fee: float | None = None
+    surface_fee: float | None = None
+    treatment_fee: float | None = None
+    profit_margin: float | None = None
+    final_price_override: float | None = None
+    unit_price_override: float | None = None
+    mold_cost: float | None = None
+
+
+@api_router.put("/api/boss/quotes/{quote_id}")
+def boss_quick_edit(request: Request, quote_id: int, body: BossQuickEditBody):
+    """
+    老板快速修改报价单字段（在批准前调整价格参数）。
+    仅 PENDING_BOSS 状态可操作。
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 9:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    try:
+        ok = boss_update_quote(quote_id, body.model_dump(exclude_none=True))
+        if not ok:
+            return JSONResponse({"code": 400, "message": "报价单状态不允许修改（仅 PENDING_BOSS 可操作）"}, status_code=400)
+        return JSONResponse({"code": 200, "message": "修改成功"})
+    except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
+
+@api_router.post("/api/boss/quotes/{quote_id}/approve")
+def boss_approve(request: Request, quote_id: int):
+    """老板批准报价单"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 9:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    try:
+        ok = approve_quote(quote_id, operator_id=user["id"])
+        if not ok:
+            return JSONResponse({"code": 400, "message": "报价单状态不允许通过"}, status_code=400)
+        return JSONResponse({"code": 200, "message": "审核通过"})
+    except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
+
+@api_router.post("/api/boss/quotes/{quote_id}/reject")
+def boss_reject(request: Request, quote_id: int, body: RejectBody):
+    """老板驳回报价单"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 9:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    try:
+        ok = reject_quote(quote_id, rejection_reason=body.reason, operator_id=user["id"])
+        if not ok:
+            return JSONResponse({"code": 400, "message": "报价单状态不允许驳回"}, status_code=400)
+        return JSONResponse({"code": 200, "message": "驳回成功"})
+    except Exception as e:
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+
