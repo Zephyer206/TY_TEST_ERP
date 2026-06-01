@@ -8,13 +8,68 @@ from fastapi import APIRouter, Form, Request, HTTPException, UploadFile, File
 from fastapi.responses import HTMLResponse, RedirectResponse, JSONResponse
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel
+from urllib.parse import quote
 import psycopg2
+from psycopg2.extras import RealDictCursor
 import re
 import os
+import io
+import openpyxl
+
+# 零件实物图目录（相对于 static/uploads/part_images/）
+_PART_IMG_BASE = os.path.join("static", "uploads", "part_images")
+
+def _get_image_url(customer_name: str, part_number: str) -> str | None:
+    """根据客户名和零件号，查找已导出的实物图 URL（Windows 中文路径兼容）。
+
+    支持图片共享：子件（如 A00125983-04）无独立图片时，
+    自动回溯查找其父件（如 A00125983-03）的图片。
+    """
+    if not customer_name or not part_number:
+        return None
+
+    def _find_in_dir(cname, pname):
+        part_dir = os.path.join(_PART_IMG_BASE, cname, pname)
+        try:
+            files = os.listdir(part_dir)
+        except OSError:
+            return None
+        for f in files:
+            ext = os.path.splitext(f)[1].lower()
+            if ext in ('.jpg', '.jpeg', '.png', '.webp', '.gif'):
+                encoded_cust = quote(cname, safe='')
+                encoded_part = quote(pname, safe='')
+                return f"/static/uploads/part_images/{encoded_cust}/{encoded_part}/{encoded_part}{ext}"
+        return None
+
+    # 1. 直接查找当前零件
+    url = _find_in_dir(customer_name, part_number)
+    if url:
+        return url
+
+    # 2. 共享图片：去掉常见后缀回溯父件
+    #    A00125983-4（喷涂）→ A00125983-3（喷涂）→ A00125983-3
+    #    A00125983-04 → A00125983-03 → A00125983-03
+    parent = part_number
+    for _ in range(3):
+        # 去掉末尾的（喷涂）或类似后缀
+        parent = re.sub(r'（[^）]*）\s*$', '', parent).strip()
+        # 去掉末尾一位（处理 A00125983-04 → A00125983-0 → A00125983）
+        parent = re.sub(r'-\d+$', lambda m: '-' + str(int(m.group()[1:]) // 10), parent) if re.search(r'-\d+$', parent) else parent
+        if parent == part_number:
+            break
+        url = _find_in_dir(customer_name, parent)
+        if url:
+            return url
+
+    return None
 import uuid
+import json
+from datetime import datetime, date
+from decimal import Decimal
 from app.core.auth import get_current_user
 from app.core.templates import templates
-from app.models.schemas import PartCreateRequest
+from app.models.schemas import PartCreateRequest, CalcPricingBody, QuoteCreateBody
 from app.services.db_service import (
     create_part_with_pricing,
     create_part_with_mold_and_pricing,
@@ -120,6 +175,7 @@ def api_create_part(request: Request, body: PartCreateRequest):
             press_tonnage=body.press_tonnage,
             stamping_fee=body.stamping_fee,
             surface_fee=body.surface_fee,
+            treatment_fee=body.treatment_fee,
             profit_margin=body.profit_margin,
             final_price_override=body.final_price_override,
             customer_id=body.customer_id,
@@ -302,6 +358,23 @@ def api_customer_delete(request: Request, cid: int):
     import psycopg2
     with psycopg2.connect(**DB_CONFIG) as conn:
         with conn.cursor() as cur:
+            # 检查是否有零件价格数据（parts 表或 quotes 表有关联）
+            cur.execute("""
+                SELECT COUNT(*) FROM parts WHERE customer_id = %s;
+            """, (cid,))
+            part_count = cur.fetchone()[0]
+
+            cur.execute("""
+                SELECT COUNT(*) FROM quotes WHERE customer_id = %s;
+            """, (cid,))
+            quote_count = cur.fetchone()[0]
+
+            if part_count > 0 or quote_count > 0:
+                return JSONResponse({
+                    "code": 400,
+                    "message": f"无法删除：该客户下有 {part_count} 个零件和 {quote_count} 张报价单，请先清理关联数据"
+                }, status_code=400)
+
             cur.execute("DELETE FROM tooling_customers WHERE id=%s", (cid,))
         conn.commit()
     return JSONResponse({"code": 0, "message": "已删除"})
@@ -373,53 +446,7 @@ async def api_drawing_upload(request: Request, file: UploadFile = File(...), par
         return JSONResponse({"code": 1, "message": f"上传失败: {e}"}, status_code=500)
 
 
-class CalcPricingBody(BaseModel):
-    thickness: float = 0        # 厚度 T (mm)
-    width: float = 0            # 宽度 W (mm)
-    press_stroke: float = 0    # 行程 P (mm)
-    material_name: str = ""      # 材料牌号
-    cavity_count: int = 1        # 穴数
-    scrap_rate: float = 0.10    # 废料率（仅作参考展示）
-    gross_weight_g: float | None = None   # 前端已算好的毛重（g），直接用
-    net_weight_g: float | None = None      # 前端已算好的净重（g），直接用
-    scrap_weight_g: float | None = None    # 前端已算好的废料重（g），直接用
-    material_utilization: float = 100.0    # 材料利用率（%），用户在前端输入，默认100
-    stamping_fee: float = 0      # 冲压费
-    inspection_fee: float = 0    # 全检费
-    packaging_fee: float = 0     # 包装运费
-    surface_fee: float = 0      # 表面处理费
-    mold_cost: float = 0         # 模具费
-    treatment_fee: float = 0     # 处理费合计
-    profit_margin: float = 0      # 利润率系数
-    override_final_price: float | None = None
-    override_material_cost: float | None = None  # 材料净成本覆盖（元）
-    unit_price_override: float | None = None      # 材料单价覆盖（元/kg）
-    machine_type: str | None = None  # 使用设备（吨位/型号）
-
-
-class QuoteCreateBody(BaseModel):
-    """创建报价单时接收的参数（对应 quotes 表字段）"""
-    part_id: int
-    annual_usage: int = 0
-    pricing_mode: str = "independent"   # 'independent' | 'reference'
-    thickness: float | None = None
-    width: float | None = None
-    press_stroke: float | None = None
-    cavity_count: int = 1
-    scrap_rate: float = 0.10
-    stamping_fee: float = 0
-    surface_fee: float = 0
-    treatment_fee: float = 0
-    profit_margin: float = 0
-    final_price_override: float | None = None
-    override_fields: list[str] = []
-    approval_status: str = "DRAFT"      # 'DRAFT' | 'PENDING_BOSS'
-    submitted_by: int | None = None
-    nomination_status: str | None = None
-    nomination_attachment: str | None = None
-    machine_type: str | None = None
-
-
+# CalcPricingBody 和 QuoteCreateBody 已迁移至 app/models/schemas.py
 class QuoteUpdateBody(BaseModel):
     """更新报价单参数"""
     annual_usage: int | None = None
@@ -456,17 +483,17 @@ class QuoteUpdateBody(BaseModel):
     annual_avg: float | None = None
     lifecycle_years: float | None = None
     customer_id: int | None = None
+    mold_discount_mode: str | None = None
+    mold_discount_rate: float | None = None
+    treatment_items: list | None = None
 
 
 @api_router.post("/api/calc-pricing")
 def calc_pricing(request: Request, body: CalcPricingBody = None):
-    """白盒报价核算（JSON body），Path B 实时核算调用"""
+    """白盒报价核算（JSON body），Path B 实时核算调用（无需登录）"""
     import logging
     logger2 = logging.getLogger(__name__)
     logger2.debug("[API /api/calc-pricing] received body=%s", body)
-    user = get_current_user(request)
-    if not user:
-        return JSONResponse({"code": 401, "message": "未登录", "data": None}, status_code=401)
     try:
         result = calc_part_pricing(
             thickness=body.thickness if body else 0,
@@ -484,6 +511,7 @@ def calc_pricing(request: Request, body: CalcPricingBody = None):
             packaging_fee=body.packaging_fee if body else 0,
             surface_fee=body.surface_fee if body else 0,
             treatment_fee=body.treatment_fee if body else 0,
+            mold_cost=body.mold_cost if body else 0,
             profit_margin=body.profit_margin if body else 0,
             override_final_price=body.override_final_price if body else None,
             machine_type=body.machine_type if body else None,
@@ -707,11 +735,8 @@ class TreatmentBody(BaseModel):
 
 
 @api_router.get("/api/dict/treatments")
-def list_treatments(request: Request):
-    """返回所有表面处理方式列表"""
-    user = get_current_user(request)
-    if not user:
-        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+def list_treatments():
+    """返回所有表面处理方式列表（无需登录）"""
     try:
         rows = get_all_treatments()
         return JSONResponse({"code": 200, "data": rows})
@@ -721,27 +746,19 @@ def list_treatments(request: Request):
 
 @api_router.post("/api/dict/treatments")
 def create_or_update_treatment(request: Request, body: TreatmentBody):
-    user = get_current_user(request)
-    if not user:
-        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
-    if user["role_level"] < 4:
-        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    """新增/更新处理方式（无需登录）"""
     if body.calc_mode not in ("manual", "net_weight"):
         return JSONResponse({"code": 400, "message": "calc_mode must be manual or net_weight"}, status_code=400)
     try:
         result = upsert_treatment(body.name, body.calc_mode, body.rate, body.unit)
-        return JSONResponse(jsonable_encoder(result))
+        return JSONResponse(jsonable_encoder({"code": 200, "message": "success", "data": result}))
     except Exception as e:
         return JSONResponse({"code": 400, "message": str(e)}, status_code=400)
 
 
 @api_router.delete("/api/dict/treatments/{treatment_id}")
-def remove_treatment(request: Request, treatment_id: int):
-    user = get_current_user(request)
-    if not user:
-        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
-    if user["role_level"] < 4:
-        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+def remove_treatment(treatment_id: int):
+    """删除处理方式（无需登录）"""
     try:
         ok = delete_treatment(treatment_id)
         if not ok:
@@ -1290,6 +1307,9 @@ def update_quote_route(request: Request, quote_id: int, body: QuoteUpdateBody):
             annual_avg=body.annual_avg,
             lifecycle_years=body.lifecycle_years,
             customer_id=body.customer_id,
+            mold_discount_mode=body.mold_discount_mode,
+            mold_discount_rate=body.mold_discount_rate,
+            treatment_items=body.treatment_items,
         )
         if not ok:
             return JSONResponse({"code": 400, "message": "报价单不存在或状态不允许编辑"}, status_code=400)
@@ -1336,6 +1356,7 @@ def recalc_quote(request: Request, quote_id: int, body: CalcPricingBody = None):
             packaging_fee=body.packaging_fee if body else 0,
             surface_fee=body.surface_fee if body else 0,
             treatment_fee=body.treatment_fee if body else 0,
+            mold_cost=body.mold_cost if body else 0,
             profit_margin=body.profit_margin if body else 0,
             override_final_price=body.override_final_price if body else None,
             override_material_cost=body.override_material_cost if body else None,
@@ -1364,8 +1385,10 @@ def recalc_quote(request: Request, quote_id: int, body: CalcPricingBody = None):
             treatment_fee=calc.get("treatment_fee"),
             profit_margin=calc.get("profit_margin"),
             final_price_override=calc.get("final_price_override") or body.override_final_price if body else None,
-            unit_price_override=calc.get("unit_price_override") if calc.get("unit_price_override") else None,
-            material_cost_override=calc.get("material_net_cost_override") if calc.get("material_net_cost_override") else None,
+            unit_price_override=calc.get("material_unit_price_override") if calc.get("material_unit_price_override") else None,
+            material_cost_override=body.override_material_cost if body and body.override_material_cost is not None else calc.get("material_net_cost_override"),
+            override_fields=calc.get("override_flags") or [],
+            material_utilization=calc.get("material_utilization"),
             thickness=body.thickness if body else None,
             width=body.width if body else None,
             press_stroke=body.press_stroke if body else None,
@@ -1653,6 +1676,777 @@ def parts_die_link_json(
 #  老板报价审批 (boss)
 # =============================================================================
 
+@api_router.get("/api/boss/price-cards/template")
+def download_price_template(request: Request):
+    """下载价格成本核算模板"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    import os
+    template_path = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "static", "uploads", "prices", "价格成本核算模板.xlsx"
+    )
+    if not os.path.exists(template_path):
+        return JSONResponse({"code": 404, "message": "模板文件不存在"}, status_code=404)
+
+    from starlette.responses import FileResponse
+    return FileResponse(
+        template_path,
+        filename="价格成本核算模板.xlsx",
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+@boss_router.get("/boss/price-cards")
+def boss_price_cards_page(request: Request):
+    """价格成本卡片 — 业务和老板可访问"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 5:
+        raise HTTPException(status_code=403, detail="仅业务和老板可访问")
+    return templates.TemplateResponse("boss/price_cards_choose.html", {
+        "request": request,
+        "user": user,
+    })
+
+
+@boss_router.get("/boss/price-cards/{customer_id}")
+def boss_price_cards_customer_page(request: Request, customer_id: int):
+    """某客户的价格成本卡片列表"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 5:
+        raise HTTPException(status_code=403, detail="仅业务和老板可访问")
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT name FROM tooling_customers WHERE id=%s", (customer_id,))
+            row = cur.fetchone()
+            customer_name = row[0] if row else "未知客户"
+    finally:
+        conn.close()
+
+    return templates.TemplateResponse("boss/price_cards_list.html", {
+        "request": request,
+        "user": user,
+        "customer_id": customer_id,
+        "customer_name": customer_name,
+    })
+
+
+@boss_router.get("/boss/price-cards/{customer_id}/detail/{price_id}")
+def boss_price_card_detail_page(request: Request, customer_id: int, price_id: int):
+    """价格成本卡片详情页"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 5:
+        raise HTTPException(status_code=403, detail="仅业务和老板可访问")
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT name FROM tooling_customers WHERE id=%s", (customer_id,))
+            row = cur.fetchone()
+            customer_name = row[0] if row else "未知客户"
+    finally:
+        conn.close()
+
+    return templates.TemplateResponse("boss/price_card_detail.html", {
+        "request": request,
+        "user": user,
+        "customer_id": customer_id,
+        "customer_name": customer_name,
+        "price_id": price_id,
+    })
+
+
+@api_router.get("/api/boss/customers")
+def boss_customer_list(request: Request):
+    """获取所有客户列表，供价格成本卡片使用"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id, name FROM tooling_customers ORDER BY name;")
+            rows = [{"id": r[0], "name": r[1]} for r in cur.fetchall()]
+    return JSONResponse({"code": 200, "data": rows})
+
+
+class BossCustomerBody(BaseModel):
+    name: str
+
+
+@api_router.post("/api/boss/customers")
+def boss_customer_create(request: Request, body: BossCustomerBody):
+    """新增客户（业务/老板可用）"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import psycopg2
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            # 检查重名
+            cur.execute("SELECT id FROM tooling_customers WHERE name=%s", (body.name.strip(),))
+            if cur.fetchone():
+                return JSONResponse({"code": 400, "message": "客户名称已存在"}, status_code=400)
+            cur.execute("INSERT INTO tooling_customers (name, created_at) VALUES (%s, NOW()) RETURNING id",
+                         (body.name.strip(),))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+    return JSONResponse({"code": 0, "data": {"id": new_id, "name": body.name.strip()}})
+
+
+@api_router.put("/api/boss/customers/{cid}")
+def boss_customer_update(request: Request, cid: int, body: BossCustomerBody):
+    """更新客户名称（业务/老板可用）"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import psycopg2
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("UPDATE tooling_customers SET name=%s WHERE id=%s", (body.name.strip(), cid))
+        conn.commit()
+    return JSONResponse({"code": 0, "message": "已更新"})
+
+
+@api_router.delete("/api/boss/customers/{cid}")
+def boss_customer_delete(request: Request, cid: int):
+    """删除客户（业务/老板可用），有价格数据则禁止删除"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+    import psycopg2
+    with psycopg2.connect(**DB_CONFIG) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM parts WHERE customer_id = %s", (cid,))
+            part_count = cur.fetchone()[0]
+            cur.execute("SELECT COUNT(*) FROM quotes WHERE customer_id = %s", (cid,))
+            quote_count = cur.fetchone()[0]
+            if part_count > 0 or quote_count > 0:
+                return JSONResponse({
+                    "code": 400,
+                    "message": f"无法删除：该客户下有 {part_count} 个零件和 {quote_count} 张报价单"
+                }, status_code=400)
+            cur.execute("DELETE FROM tooling_customers WHERE id=%s", (cid,))
+        conn.commit()
+    return JSONResponse({"code": 0, "message": "已删除"})
+
+
+# ============================================================================
+# 价格成本卡片 API
+# ============================================================================
+
+def _calc_material_cost(gross_weight, net_weight, material_unit_price, scrap_price):
+    """计算材料成本（元/件）= 净重(kg) × 材料单价（元/kg）。
+
+    scrap_price 存的是废料比率（0~1），作为参考值不参与成本计算。
+    """
+    if net_weight is None or material_unit_price is None:
+        return None
+    nw = float(net_weight or 0)
+    mp = float(material_unit_price or 0)
+    return round(nw * mp, 4)
+
+
+def _calc_current_price(years_data, reductions_data, current_year):
+    """
+    计算当前价格：
+    1. 取最新录入的单价
+    2. 若最新录入年份 >= current_year，按录入值
+    3. 否则按年降规则自动推算
+    返回 (unit_price, year, source: '录入'/'年降推算')
+    """
+    if not years_data:
+        return None, None, None
+    sorted_years = sorted(years_data, key=lambda x: x['year'], reverse=True)
+    latest = sorted_years[0]
+
+    if latest['year'] >= current_year:
+        return latest['unit_price'], latest['year'], '录入'
+
+    # 按年降规则推算到 current_year
+    base_price = latest['unit_price']
+    base_year = latest['year']
+    applied = 0
+    for r in sorted(reductions_data, key=lambda x: x['start_year']):
+        if r['start_year'] <= base_year:
+            continue
+        years_elapsed = min(r['start_year'], current_year) - base_year
+        if years_elapsed <= 0:
+            continue
+        pct = float(r['reduction_pct'] or 0) / 100.0
+        effective_elapsed = years_elapsed - applied
+        if effective_elapsed > 0:
+            base_price = base_price * ((1 - pct) ** effective_elapsed)
+            applied += effective_elapsed
+        if base_year + applied >= current_year:
+            break
+    return round(base_price, 4), current_year, '年降推算'
+
+
+class PriceCardCostUpdate(BaseModel):
+    material_name: str | None = None
+    net_weight: float | None = None
+    gross_weight: float | None = None
+    material_unit_price: float | None = None
+    scrap_price: float | None = None
+    surface_treatment: list | None = None
+    surface_treatment_cost: float | None = None
+    material_cost: float | None = None   # 独立材料成本（元/件），直接存储
+    remark: str | None = None
+    cost_override: float | None = None
+
+
+@api_router.get("/api/boss/price-cards/{customer_id}")
+def price_card_list(request: Request, customer_id: int):
+    """获取某客户下所有零件的价格卡片列表"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    current_year = datetime.now().year
+    prev_year = current_year - 1
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT p.id AS price_id, p.part_id, p.customer_id,
+                       p.material_name, p.net_weight, p.gross_weight,
+                       p.material_unit_price, p.scrap_price,
+                       p.surface_treatment,
+                       p.surface_treatment_cost, p.cost_override,
+                       p.updated_at,
+                       pt.part_number, pt.internal_name,
+                       tc.name AS customer_name
+                FROM prices p
+                JOIN parts pt ON p.part_id = pt.id
+                LEFT JOIN tooling_customers tc ON p.customer_id = tc.id
+                WHERE p.customer_id = %s
+                ORDER BY pt.internal_name;
+            """, (customer_id,))
+            rows = [dict(r) for r in cur.fetchall()]
+
+        result = []
+        for row in rows:
+            for k, v in row.items():
+                if isinstance(v, (datetime, date)):
+                    row[k] = v.isoformat()
+                elif isinstance(v, Decimal):
+                    row[k] = float(v)
+
+            price_id = row['price_id']
+
+            # 年份数据
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT id, year, unit_price, annual_sales
+                    FROM price_years WHERE price_id=%s ORDER BY year DESC;
+                """, (price_id,))
+                years_data = [dict(r) for r in cur.fetchall()]
+                for y in years_data:
+                    for k, v in y.items():
+                        if isinstance(v, Decimal):
+                            y[k] = float(v)
+
+            # 年降规则
+            with conn.cursor(cursor_factory=RealDictCursor) as cur:
+                cur.execute("""
+                    SELECT id, reduction_pct, start_year, duration_years, reason
+                    FROM annual_reductions WHERE price_id=%s ORDER BY start_year DESC;
+                """, (price_id,))
+                reductions_data = [dict(r) for r in cur.fetchall()]
+                for r in reductions_data:
+                    for k, v in r.items():
+                        if isinstance(v, Decimal):
+                            r[k] = float(v)
+
+            # 计算成本
+            gross = row.get('gross_weight')
+            net = row.get('net_weight')
+            mp = row.get('material_unit_price')
+            sp = row.get('scrap_price')
+            stc = row.get('surface_treatment_cost') or 0
+            override = row.get('cost_override')
+
+            mat_cost = _calc_material_cost(gross, net, mp, sp)
+            if override is not None:
+                total_cost = override
+            elif mat_cost is not None:
+                total_cost = round(mat_cost + (stc or 0), 4)
+            else:
+                total_cost = None
+
+            # 当前价格（最新录入 or 年降推算）
+            cur_price, cur_price_year, price_source = _calc_current_price(
+                years_data, reductions_data, current_year)
+
+            # 去年销量
+            prev_year_sales = None
+            for y in years_data:
+                if y['year'] == prev_year:
+                    prev_year_sales = y.get('annual_sales')
+                    break
+
+            result.append({
+                "price_id": price_id,
+                "part_id": row['part_id'],
+                "customer_id": row['customer_id'],
+                "part_number": row['part_number'],
+                "internal_name": row['internal_name'],
+                "customer_name": row['customer_name'],
+                "image_url": _get_image_url(row.get('customer_name'), row.get('part_number')),
+                "total_cost": total_cost,
+                "prev_year_sales": prev_year_sales,
+                "current_price": cur_price,
+                "current_price_year": cur_price_year,
+                "price_source": price_source,
+                "updated_at": row['updated_at'],
+            })
+
+        return JSONResponse({"code": 200, "data": result})
+    finally:
+        conn.close()
+
+
+@api_router.get("/api/boss/price-cards/detail/{price_id}")
+def price_card_detail(request: Request, price_id: int):
+    """获取单个零件价格卡片详情"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    current_year = datetime.now().year
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT p.id, p.part_id, p.customer_id,
+                       p.material_name, p.net_weight, p.gross_weight,
+                       p.material_unit_price, p.scrap_price,
+                       p.surface_treatment,
+                       p.surface_treatment_cost, p.material_cost, p.remark, p.cost_override,
+                       p.created_at, p.updated_at,
+                       pt.part_number, pt.internal_name,
+                       tc.name AS customer_name
+                FROM prices p
+                JOIN parts pt ON p.part_id = pt.id
+                LEFT JOIN tooling_customers tc ON p.customer_id = tc.id
+                WHERE p.id = %s;
+            """, (price_id,))
+            row = cur.fetchone()
+            if not row:
+                return JSONResponse({"code": 404, "message": "价格台账不存在"}, status_code=404)
+
+        for k, v in row.items():
+            if isinstance(v, (datetime, date)):
+                row[k] = v.isoformat()
+            elif isinstance(v, Decimal):
+                row[k] = float(v)
+
+        # 年份数据
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, year, unit_price, annual_sales
+                FROM price_years WHERE price_id=%s ORDER BY year DESC;
+            """, (price_id,))
+            years_data = [dict(r) for r in cur.fetchall()]
+            for y in years_data:
+                for k, v in y.items():
+                    if isinstance(v, Decimal):
+                        y[k] = float(v)
+
+        # 年降规则
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, reduction_pct, start_year, duration_years, reason, created_by, created_at
+                FROM annual_reductions WHERE price_id=%s ORDER BY start_year DESC;
+            """, (price_id,))
+            reductions_data = [dict(r) for r in cur.fetchall()]
+            for r in reductions_data:
+                for k, v in r.items():
+                    if isinstance(v, (datetime, date)):
+                        r[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        r[k] = float(v)
+
+        # 调价历史
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, adjusted_at, old_price, new_price,
+                       adjustment_type, reason, operator_id
+                FROM manual_adjustments WHERE price_id=%s ORDER BY adjusted_at DESC;
+            """, (price_id,))
+            adj_data = [dict(r) for r in cur.fetchall()]
+            for a in adj_data:
+                for k, v in a.items():
+                    if isinstance(v, (datetime, date)):
+                        a[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        a[k] = float(v)
+
+        # 计算当前价格
+        cur_price, cur_price_year, price_source = _calc_current_price(
+            years_data, reductions_data, current_year)
+
+        # 材料成本：优先取 DB 存储值（来自 Excel 导入或手动填写的独立材料成本）
+        mat_cost = row.get('material_cost')
+        if mat_cost is None:
+            mat_cost = _calc_material_cost(
+                row.get('gross_weight'), row.get('net_weight'),
+                row.get('material_unit_price'), row.get('scrap_price'))
+
+        # 总成本
+        stc = row.get('surface_treatment_cost') or 0
+        override = row.get('cost_override')
+        if override is not None:
+            total_cost = override
+        elif mat_cost is not None:
+            total_cost = round(mat_cost + stc, 4)
+        else:
+            total_cost = None
+
+        result = dict(row)
+        result['material_cost'] = mat_cost
+        result['total_cost_calc'] = total_cost
+        result['current_price'] = cur_price
+        result['current_price_year'] = cur_price_year
+        result['price_source'] = price_source
+        result['years_data'] = years_data
+        result['reductions_data'] = reductions_data
+        result['adjustments_data'] = adj_data
+        result['image_url'] = _get_image_url(row.get('customer_name'), row.get('part_number'))
+        # 材料牌号列表（供前端选择）
+        result['material_grades'] = get_material_base_prices_for_select()
+        # 数据库存 kg → API 统一返回 g（前端显示用 g）
+        if result.get('net_weight') is not None:
+            result['net_weight'] = round(float(result['net_weight']) * 1000, 6)
+        if result.get('gross_weight') is not None:
+            result['gross_weight'] = round(float(result['gross_weight']) * 1000, 6)
+
+        # 兜底：把 result 里所有剩余 Decimal / date/datetime 全部转成可 JSON 序列化的类型
+        def _sanitize(obj):
+            if isinstance(obj, dict):
+                return {k: _sanitize(v) for k, v in obj.items()}
+            elif isinstance(obj, list):
+                return [_sanitize(x) for x in obj]
+            elif isinstance(obj, Decimal):
+                return float(obj)
+            elif isinstance(obj, (datetime, date)):
+                return obj.isoformat()
+            return obj
+
+        result = _sanitize(result)
+
+        return JSONResponse({"code": 200, "data": result})
+    finally:
+        conn.close()
+
+
+@api_router.put("/api/boss/price-cards/detail/{price_id}")
+def price_card_update(request: Request, price_id: int, body: PriceCardCostUpdate):
+    """更新价格台账成本要素"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    updates = {}
+    for field, val in [
+        ('material_name', body.material_name),
+        ('net_weight', body.net_weight),
+        ('gross_weight', body.gross_weight),
+        ('material_unit_price', body.material_unit_price),
+        ('scrap_price', body.scrap_price),
+        ('surface_treatment_cost', body.surface_treatment_cost),
+        ('material_cost', body.material_cost),
+        ('remark', body.remark),
+        ('cost_override', body.cost_override),
+    ]:
+        if val is not None:
+            # 前端提交 g → 数据库存 kg
+            if field in ('net_weight', 'gross_weight'):
+                val = round(float(val) / 1000, 6)
+            updates[field] = val
+
+    if body.surface_treatment is not None:
+        updates['surface_treatment'] = json.dumps(body.surface_treatment)
+
+    if not updates:
+        return JSONResponse({"code": 0, "message": "无变更"})
+
+    set_clause = ', '.join(f"{k}=%s" for k in updates)
+    set_clause += ', updated_at=NOW()'
+    values = list(updates.values()) + [price_id]
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(
+                f"UPDATE prices SET {set_clause} WHERE id=%s",
+                values
+            )
+        conn.commit()
+        return JSONResponse({"code": 0, "message": "已更新"})
+    except Exception as e:
+        conn.rollback()
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+    finally:
+        conn.close()
+
+
+class ReductionBody(BaseModel):
+    reduction_pct: float
+    start_year: int
+    duration_years: int = 0
+    reason: str = ""
+
+
+class CloneBody(BaseModel):
+    target_part_id: int
+    target_customer_id: int | None = None  # 不填则沿用源 customer_id
+
+
+@api_router.post("/api/boss/price-cards/detail/{price_id}/clone")
+def price_card_clone(request: Request, price_id: int, body: CloneBody):
+    """
+    将源价格台账（price_id）克隆一份给目标零件，复制内容：
+    - 成本要素（material_name / net_weight / gross_weight /
+              material_unit_price / scrap_price /
+              surface_treatment_cost / material_cost / remark）
+    - price_years（年份价格 + 销量）
+    - annual_reductions（年降规则）
+    - manual_adjustments（调价历史）
+    返回新创建的价格台账 ID。
+    """
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    target_part_id = body.target_part_id
+    target_customer_id = body.target_customer_id
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            # 验证源台账存在
+            cur.execute("SELECT part_id, customer_id, material_name, net_weight, gross_weight, "
+                        "material_unit_price, scrap_price, surface_treatment, surface_treatment_cost, "
+                        "material_cost, remark, cost_override, created_at "
+                        "FROM prices WHERE id=%s", (price_id,))
+            src = cur.fetchone()
+            if not src:
+                return JSONResponse({"code": 404, "message": "源价格台账不存在"}, status_code=404)
+
+            # 验证目标零件存在
+            cur.execute("SELECT id FROM parts WHERE id=%s", (target_part_id,))
+            if not cur.fetchone():
+                return JSONResponse({"code": 404, "message": "目标零件不存在"}, status_code=404)
+
+            src_customer = src[1]
+            cust_id = target_customer_id if target_customer_id is not None else src_customer
+
+            # 检查目标台账是否已存在
+            cur.execute("SELECT id FROM prices WHERE part_id=%s AND customer_id=%s LIMIT 1",
+                        (target_part_id, cust_id))
+            existing = cur.fetchone()
+            if existing:
+                return JSONResponse({
+                    "code": 409,
+                    "message": f"目标零件在此客户下已存在价格台账（id={existing[0]}），请先删除再克隆"
+                }, status_code=409)
+
+        # 在同一事务中执行克隆
+        with conn.cursor() as cur:
+            cols = ('part_id', 'customer_id', 'material_name', 'net_weight', 'gross_weight',
+                    'material_unit_price', 'scrap_price', 'surface_treatment',
+                    'surface_treatment_cost', 'material_cost', 'remark', 'cost_override',
+                    'created_at', 'updated_at')
+
+            def _json(v):
+                return v if isinstance(v, str) else None
+
+            cur.execute(f"""
+                INSERT INTO prices
+                    (part_id, customer_id, material_name, net_weight, gross_weight,
+                     material_unit_price, scrap_price, surface_treatment,
+                     surface_treatment_cost, material_cost, remark, cost_override,
+                     created_at, updated_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,NOW())
+                RETURNING id
+            """, (
+                target_part_id, cust_id,
+                src[2], src[3], src[4],
+                src[5], src[6],
+                _json(src[7]), src[8],
+                src[9], src[10], src[11],
+                src[12],
+            ))
+            new_price_id = cur.fetchone()[0]
+
+            # 克隆 price_years
+            cur.execute("""
+                INSERT INTO price_years
+                    (price_id, year, unit_price, annual_sales, created_at, updated_at)
+                SELECT %s, year, unit_price, annual_sales, NOW(), NOW()
+                FROM price_years WHERE price_id=%s
+            """, (new_price_id, price_id))
+
+            # 克隆 annual_reductions
+            cur.execute("""
+                INSERT INTO annual_reductions
+                    (price_id, reduction_pct, start_year, duration_years, reason, created_by, created_at)
+                SELECT %s, reduction_pct, start_year, duration_years, reason, created_by, NOW()
+                FROM annual_reductions WHERE price_id=%s
+            """, (new_price_id, price_id))
+
+            # 克隆 manual_adjustments
+            cur.execute("""
+                INSERT INTO manual_adjustments
+                    (price_id, adjusted_at, old_price, new_price, adjustment_type, reason, operator_id)
+                SELECT %s, adjusted_at, old_price, new_price, adjustment_type, reason, operator_id
+                FROM manual_adjustments WHERE price_id=%s
+            """, (new_price_id, price_id))
+
+        conn.commit()
+        return JSONResponse({
+            "code": 0,
+            "message": "克隆成功",
+            "data": {
+                "new_price_id": new_price_id,
+                "target_part_id": target_part_id,
+                "customer_id": cust_id,
+            }
+        })
+    except Exception as e:
+        conn.rollback()
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+    finally:
+        conn.close()
+
+
+class NewPriceCardBody(BaseModel):
+    part_id: int
+    customer_id: int
+
+
+@api_router.post("/api/boss/price-cards/parts")
+def price_card_parts_list(request: Request):
+    """获取可分配价格的零件列表"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT p.id, p.part_number, p.internal_name,
+                       COALESCE(p.material_name, '') AS material_name
+                FROM parts p
+                ORDER BY p.part_number;
+            """)
+            rows = cur.fetchall()
+        return JSONResponse({"code": 200, "data": [dict(r) for r in rows]})
+    finally:
+        conn.close()
+
+
+@api_router.post("/api/boss/price-cards")
+def price_card_create(request: Request, body: NewPriceCardBody):
+    """为某客户创建零件价格台账"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            # 检查是否已存在
+            cur.execute(
+                "SELECT id FROM prices WHERE part_id=%s AND customer_id=%s",
+                (body.part_id, body.customer_id)
+            )
+            if cur.fetchone():
+                return JSONResponse({"code": 400, "message": "该零件的价格台账已存在"}, status_code=400)
+
+            # 检查零件是否存在
+            cur.execute("SELECT id FROM parts WHERE id=%s", (body.part_id,))
+            if not cur.fetchone():
+                return JSONResponse({"code": 404, "message": "零件不存在"}, status_code=404)
+
+            cur.execute("""
+                INSERT INTO prices (part_id, customer_id, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
+                RETURNING id;
+            """, (body.part_id, body.customer_id))
+            new_id = cur.fetchone()[0]
+        conn.commit()
+        return JSONResponse({"code": 0, "data": {"price_id": new_id, "part_id": body.part_id, "customer_id": body.customer_id}})
+    except Exception as e:
+        conn.rollback()
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+    finally:
+        conn.close()
+
+
+@api_router.post("/api/boss/price-cards/detail/{price_id}/reduction")
+def price_card_add_reduction(request: Request, price_id: int, body: ReductionBody):
+    """为某价格台账添加年降规则"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("""
+                INSERT INTO annual_reductions
+                    (price_id, reduction_pct, start_year, duration_years, reason, created_by, created_at)
+                VALUES (%s,%s,%s,%s,%s,%s,NOW())
+            """, (price_id, body.reduction_pct, body.start_year,
+                  body.duration_years, body.reason, user["id"]))
+        conn.commit()
+        return JSONResponse({"code": 0, "message": "年降规则已添加"})
+    except Exception as e:
+        conn.rollback()
+        return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
+    finally:
+        conn.close()
+
+
 @boss_router.get("/boss/quotes")
 def boss_quote_approval_page(request: Request):
     """老板报价审批首页 — 仅 role_level >= 9 可访问"""
@@ -1698,10 +2492,13 @@ class BossQuickEditBody(BaseModel):
     packaging_fee: float | None = None
     surface_fee: float | None = None
     treatment_fee: float | None = None
+    mold_cost: float | None = None
     profit_margin: float | None = None
     final_price_override: float | None = None
     unit_price_override: float | None = None
-    mold_cost: float | None = None
+    mold_discount_mode: str | None = None
+    mold_discount_rate: float | None = None
+    treatment_items: list | None = None
 
 
 @api_router.put("/api/boss/quotes/{quote_id}")
@@ -1757,3 +2554,391 @@ def boss_reject(request: Request, quote_id: int, body: RejectBody):
     except Exception as e:
         return JSONResponse({"code": 500, "message": str(e)}, status_code=500)
 
+
+# ═══════════════════════════════════════════════════════════════════
+#  Excel 价格台账批量导入
+# ═══════════════════════════════════════════════════════════════════
+
+class PriceImportPreview(BaseModel):
+    customer_id: int
+    filename: str
+    rows: list[dict]
+    summary: dict
+
+
+def _parse_price_excel_bytes(content: bytes, customer_id: int) -> tuple[list[dict], dict]:
+    """解析 Excel 文件内容，返回（行列表，汇总信息）。
+
+    支持两种格式：
+      - 新模板（18列，文件头含"本厂产品名称"）：col=0「原图产品编号」...
+        各列：原图产品编号 | 图片 | 本厂产品名称 | 模具类型 | 材质 | 用料规格 |
+              参考冲床吨位 | 单件毛重量(g) | 产品净重/g | 材料价格 | 废料价格 |
+              材料成本 | 表面处理 | 胶成本 | 喷涂成本/外协成本 | 成本 | 2025年开票价格 | 2025销量
+      - 旧格式（<16列）：按 idx() 动态匹配，col_stc 之前的「成本」列为总成本（非材料成本）
+
+    子行（重量/价格全为 null）继承上一个主行的数据。
+    """
+    wb = openpyxl.load_workbook(io.BytesIO(content), data_only=True)
+    # 优先找有完整数据的 Sheet（零件编号 + 重量列都有实际数据的）
+    sheets_priority = []
+    for name in wb.sheetnames:
+        ws = wb[name]
+        if ws.max_row < 3:
+            continue
+        headers = [str(c).strip() if c is not None else '' for c in next(ws.iter_rows(values_only=True))]
+        header_str = '|'.join(headers)
+
+        def idx_hdr(keywords):
+            for i, h in enumerate(headers):
+                if h and any(kw in h for kw in keywords):
+                    return i
+            return -1
+
+        col_part  = idx_hdr(['原图产品编号', '零件编号', '规格型号', '件号'])
+        col_gross = idx_hdr(['单件毛重量', '毛重', 'gross'])
+        col_net   = idx_hdr(['单件净重量', '产品净重', '净重'])
+
+        # 统计实际数据行中有零件编号且有重量数据的行数
+        score = 0
+        for row in ws.iter_rows(values_only=True):
+            part = row[col_part] if col_part >= 0 else None
+            gross = row[col_gross] if col_gross >= 0 else None
+            net   = row[col_net]   if col_net   >= 0 else None
+            if part and str(part).strip() and not any(x in str(part) for x in ('总计', '合计')):
+                if col_gross >= 0 or col_net >= 0:
+                    score += 1
+
+        entry = (name, headers, score)
+        if '原图产品编号' in header_str or '件号' in header_str:
+            sheets_priority.insert(0, entry)
+        else:
+            sheets_priority.append(entry)
+
+    # 按数据完整性排序
+    sheets_priority.sort(key=lambda x: x[2], reverse=True)
+
+    if not sheets_priority:
+        raise ValueError("未找到有效数据 Sheet")
+
+    target_name, headers, _ = sheets_priority[0]
+    ws = wb[target_name]
+
+    # ── 新模板列索引（从 0 开始，按顺序精确指定）───────────────────────────────
+    # 0:原图产品编号  1:图片  2:本厂产品名称  3:模具类型  4:材质
+    # 5:用料规格  6:参考冲床吨位  7:单件毛重量(g)  8:产品净重/g
+    # 9:材料价格  10:废料价格  11:材料成本  12:表面处理
+    # 13:胶成本  14:喷涂成本/外协成本  15:成本  16:2025年开票价格  17:2025销量
+    #
+    # 对于其他格式旧 Excel，列索引可能不同 → 如果命中旧格式的列名特征则动态取
+    # 最终以「col_cost=11」「col_stc=14」「col_price=16」「col_sales=17」为准
+
+    def idx(keywords):
+        for i, h in enumerate(headers):
+            if h and any(kw in h for kw in keywords):
+                return i
+        return -1
+
+    # ── 动态列索引（通用格式）────────────────────────────────────────────────
+    col_part  = idx(['原图产品编号', '零件编号', '规格型号', '件号'])
+    col_gross = idx(['单件毛重量', '毛重', 'gross'])
+    col_net   = idx(['单件净重量', '产品净重', '净重'])
+    col_mp    = idx(['材料价格'])
+    col_sp    = idx(['废料价格'])
+    col_stc   = idx(['喷涂成本', '胶成本', '回火', '外协成本'])
+    col_price = idx(['价格', '单价', 'price'])
+    col_sales = idx(['销量', 'sales', '年销量'])
+
+    # ── 材料成本 / 总成本列的智能判定────────────────────────────────────────
+    # 新模板（18列）：col=11「材料成本」，col=15「成本」（总成本）
+    # 旧格式：col<col_stc 的「成本」= 总成本（不是材料成本）
+    if len(headers) >= 16 and col_part >= 0:
+        # 疑似新模板：件号列存在 且 总列数>=16 → 用固定偏移
+        _mat_cost_col   = 11    # 新模板「材料成本」
+        _total_cost_col = 15    # 新模板「成本」总
+    else:
+        # 旧格式：用 idx 动态取，并根据与 col_stc 的相对位置判断
+        _cost_raw = idx(['成本'])
+        if _cost_raw >= 0 and _cost_raw < col_stc:
+            # 旧格式「成本」在 stc 之前 → 该列是总成本，mat_cost 无此列由公式算
+            _mat_cost_col   = -1
+            _total_cost_col = _cost_raw
+        else:
+            # 新格式或找不到「成本」列
+            _mat_cost_col   = _cost_raw if _cost_raw >= 0 else -1
+            _total_cost_col = _cost_raw if _cost_raw >= 0 else -1
+
+    rows_out = []
+    last_valid = None
+
+    for i, row in enumerate(ws.iter_rows(values_only=True)):
+        if i == 0:
+            continue
+
+        part = _cell(row, col_part)
+        if not part:
+            continue
+        part = str(part).strip()
+
+        # 剥离件号末尾的括号内容（如「A00125983-3（喷涂）」→ 件号「A00125983-3」，备注「喷涂」）
+        suffix_match = re.search(r'[（(][^）)]+[）)]\s*$', part)
+        part_remark = None
+        if suffix_match:
+            part_remark = suffix_match.group()[1:-1].strip()  # 去掉首尾括号
+            part = part[:suffix_match.start()].strip()
+
+        if '总计' in part or '合计' in part or not part:
+            last_valid = None
+            continue
+
+        gross = _num(row, col_gross)
+        net   = _num(row, col_net)
+        mp_excel = _num(row, col_mp)
+        sp_excel = _num(row, col_sp)
+        stc_excel = _num(row, col_stc)
+        # 总成本（= Excel「成本」列 = 材料净成本，不含 stc）
+        excel_total_cost = _num(row, _total_cost_col) if _total_cost_col >= 0 else None
+        # 材料成本（= Excel「材料成本」列，或由公式计算得出）
+        mat_cost = _num(row, _mat_cost_col) if _mat_cost_col >= 0 else None
+        price = _num(row, col_price)
+        sales = _num(row, col_sales)
+
+        if gross is None and net is None and mp_excel is None:
+            if last_valid:
+                gross = last_valid['gross_weight']
+                net   = last_valid['net_weight']
+                mp_excel = last_valid['material_unit_price']
+                sp_excel = last_valid['scrap_price']
+                stc_excel = last_valid.get('surface_treatment_cost')
+                excel_total_cost = last_valid.get('excel_cost')
+                mat_cost = last_valid.get('material_cost')
+                if part_remark:
+                    last_valid['remark'] = part_remark
+        else:
+            last_valid = {}
+            if part_remark:
+                last_valid['remark'] = part_remark
+
+        # Excel 重量列为 g，数据库存 kg → /1000
+        gross_kg = round(gross / 1000, 8) if gross is not None else None
+        net_kg   = round(net   / 1000, 8) if net   is not None else None
+
+        # scrap_ratio = (gross - net) / gross（废料比率，0~1）
+        scrap_ratio = None
+        if gross is not None and net is not None and gross != 0:
+            scrap_ratio = round((gross - net) / gross, 6)
+
+        # material_unit_price（元/kg）：优先用 Excel 列9「材料价格」；
+        # 若无则用「材料成本/净重」推算（仅当两者均缺失时）
+        mp_db = _num(row, col_mp) if col_mp >= 0 else None
+        if mp_db is None and mat_cost is not None and net_kg and net_kg != 0:
+            mp_db = round(mat_cost / net_kg, 6)
+
+        # 若无「材料成本」列（旧格式），则从总成本反推：mat_cost = total - stc
+        if mat_cost is None and excel_total_cost is not None:
+            mat_cost = round(excel_total_cost - (stc_excel or 0), 6)
+
+        # 总成本：excel_total_cost（不含 stc） + stc
+        total_cost = round((excel_total_cost or 0) + (stc_excel or 0), 6) if excel_total_cost is not None else None
+
+        # stc 已是元/件
+        stc_db = stc_excel
+
+        if net is not None:
+            last_valid.update({
+                'gross_weight': gross_kg, 'net_weight': net_kg,
+                'material_unit_price': mp_db, 'scrap_price': scrap_ratio,
+                'surface_treatment_cost': stc_db,
+                'material_cost': mat_cost,
+                'excel_cost': excel_total_cost,
+                'remark': part_remark,
+            })
+
+        rows_out.append({
+            'part_number': part,
+            'remark': part_remark,
+            'gross_weight': gross_kg,
+            'net_weight': net_kg,
+            'material_unit_price': mp_db,
+            'scrap_price': scrap_ratio,
+            'surface_treatment_cost': stc_db,
+            'material_cost': mat_cost,
+            'cost_override': total_cost,
+            'current_price': price,
+            'prev_year_sales': sales,
+        })
+
+    summary = {
+        'total_rows': len(rows_out),
+        'with_weight': sum(1 for r in rows_out if r['gross_weight'] is not None),
+        'with_price': sum(1 for r in rows_out if r['current_price'] is not None),
+        'with_sales': sum(1 for r in rows_out if r['prev_year_sales'] is not None),
+        'sheet': target_name,
+    }
+    return rows_out, summary
+
+
+def _cell(row, col: int):
+    if col < 0 or col >= len(row):
+        return None
+    v = row[col]
+    if v is None:
+        return None
+    s = str(v).strip()
+    return s if s else None
+
+
+def _num(row, col: int):
+    if col < 0 or col >= len(row):
+        return None
+    v = row[col]
+    if v is None:
+        return None
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return None
+
+
+@api_router.post("/api/boss/price-cards/import-preview")
+async def price_import_preview(
+    request: Request,
+    file: UploadFile = File(...),
+    customer_id: int = Form(...),
+):
+    """解析 Excel 文件，返回预览数据（不写入数据库）"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return JSONResponse({"code": 400, "message": "仅支持 .xlsx / .xls 文件"}, status_code=400)
+
+    try:
+        content = await file.read()
+        rows, summary = _parse_price_excel_bytes(content, customer_id)
+        return JSONResponse({
+            "code": 0,
+            "data": {
+                "filename": file.filename,
+                "customer_id": customer_id,
+                "rows": rows,
+                "summary": summary,
+            }
+        })
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"code": 500, "message": f"解析失败: {e}"}, status_code=500)
+
+
+@api_router.post("/api/boss/price-cards/import-confirm")
+async def price_import_confirm(
+    request: Request,
+    file: UploadFile = File(...),
+    customer_id: int = Form(...),
+):
+    """确认导入：写入/更新数据库（upsert）"""
+    user = get_current_user(request)
+    if not user:
+        return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
+    if user["role_level"] < 5:
+        return JSONResponse({"code": 403, "message": "权限不足"}, status_code=403)
+
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return JSONResponse({"code": 400, "message": "仅支持 .xlsx / .xls 文件"}, status_code=400)
+
+    try:
+        content = await file.read()
+        rows, summary = _parse_price_excel_bytes(content, customer_id)
+
+        conn = psycopg2.connect(**DB_CONFIG)
+        try:
+            with conn.cursor() as cur:
+                imported = 0
+                skipped = 0
+
+                for row_data in rows:
+                    part_number = row_data['part_number']
+                    if not part_number:
+                        skipped += 1
+                        continue
+
+                    cur.execute("SELECT id FROM parts WHERE part_number=%s LIMIT 1", (part_number,))
+                    part_row = cur.fetchone()
+                    if part_row:
+                        part_id = part_row[0]
+                    else:
+                        cur.execute(
+                            "INSERT INTO parts (part_number, internal_name, status, created_at, updated_at) "
+                            "VALUES (%s, %s, 'DRAFT', NOW(), NOW()) RETURNING id",
+                            (part_number, part_number))
+                        part_id = cur.fetchone()[0]
+
+                    cur.execute(
+                        "SELECT id FROM prices WHERE part_id=%s AND customer_id=%s LIMIT 1",
+                        (part_id, customer_id))
+                    price_row = cur.fetchone()
+
+                    fields = []
+                    for f in ('gross_weight', 'net_weight', 'material_unit_price',
+                               'scrap_price', 'surface_treatment_cost',
+                               'material_cost', 'remark', 'cost_override'):
+                        if row_data.get(f) is not None:
+                            fields.append(f)
+
+                    if price_row:
+                        price_id = price_row[0]
+                        if fields:
+                            set_parts = ', '.join(f'{f}=%s' for f in fields)
+                            vals = tuple(row_data[f] for f in fields) + (price_id,)
+                            cur.execute(
+                                f"UPDATE prices SET {set_parts}, updated_at=NOW() WHERE id=%s",
+                                vals)
+                        imported += 1
+                    else:
+                        col_names = ', '.join(fields)
+                        placeholders = ', '.join(['%s'] * len(fields))
+                        vals = [part_id, customer_id] + [row_data[f] for f in fields]
+                        cur.execute(
+                            "INSERT INTO prices (part_id, customer_id, " + col_names
+                            + ", created_at, updated_at) VALUES (%s, %s, "
+                            + placeholders + ", NOW(), NOW())",
+                            vals)
+                        imported += 1
+
+                    # 写入/更新年销量（price_id 需要重新获取）
+                    price_sales = row_data.get('prev_year_sales')
+                    price_val = row_data.get('current_price')
+                    if price_sales is not None or price_val is not None:
+                        cur.execute("SELECT id FROM prices WHERE part_id=%s AND customer_id=%s LIMIT 1", (part_id, customer_id))
+                        pid = cur.fetchone()[0]
+                        prev_year = 2025
+                        if price_sales is not None:
+                            cur.execute("""
+                                INSERT INTO price_years (price_id, year, unit_price, annual_sales, updated_at)
+                                VALUES (%s, %s, %s, %s, NOW())
+                                ON CONFLICT (price_id, year) DO UPDATE SET
+                                    unit_price = COALESCE(EXCLUDED.unit_price, price_years.unit_price),
+                                    annual_sales = COALESCE(EXCLUDED.annual_sales, price_years.annual_sales),
+                                    updated_at = NOW()
+                            """, (pid, prev_year,
+                                  price_val if price_val is not None else None,
+                                  int(price_sales) if price_sales is not None else None))
+
+            conn.commit()
+            return JSONResponse({
+                "code": 0,
+                "message": f"导入完成：新增/更新 {imported} 条，忽略 {skipped} 行",
+                "data": {"imported": imported, "skipped": skipped, "summary": summary},
+            })
+        finally:
+            conn.close()
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return JSONResponse({"code": 500, "message": f"导入失败: {e}"}, status_code=500)
+
+
+# ============================================================================

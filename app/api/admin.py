@@ -142,3 +142,19 @@ def admin_audit_batch(request: Request,
     ids = [int(x.strip()) for x in log_ids.split(",") if x.strip().isdigit()]
     batch_audit_production_log(ids, user["id"], approved)
     return RedirectResponse("/audit", 303)
+
+
+# ============================================================================
+# 价格管理页面（老板/业务）
+# ============================================================================
+@router.get("/price-management", response_class=HTMLResponse)
+def price_management_page(request: Request):
+    """价格管理系统主页面"""
+    user = get_current_user(request)
+    if not user:
+        return RedirectResponse("/login")
+    if user["role_level"] < 4:
+        raise HTTPException(status_code=403, detail="权限不足")
+    return templates.TemplateResponse("admin/price_management.html", {
+        "request": request, "user": user,
+    })

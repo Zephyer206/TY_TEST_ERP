@@ -50,7 +50,7 @@ class ProductionReportResponse(BaseModel):
 
 class MaintenanceTriggerRequest(BaseModel):
     equipment_id: int      = Field(..., description="机台 ID")
-    mold_id:      Optional[int] = Field(None, description="关联模具 ID（MOLD_* 模式必填）")
+    die_id:       Optional[int] = Field(None, description="关联模具 ID（MOLD_* 模式必填）")
     repair_mode:  str      = Field(..., description="MOLD_DISMOUNTED | MOLD_ON_MACHINE | MACHINE_REPAIR")
     fault_reason: str      = Field("", description="故障描述")
 
@@ -64,10 +64,10 @@ class MaintenanceCompleteRequest(BaseModel):
 class MaintenanceTriggerData(BaseModel):
     maintenance_log_id:    int          = Field(..., description="维修记录 ID")
     equipment_id:          int          = Field(..., description="机台 ID")
-    mold_id:               Optional[int] = Field(None, description="模具 ID")
+    die_id:                Optional[int] = Field(None, description="模具 ID")
     repair_mode:           str          = Field(..., description="维修模式")
     new_equipment_status: str          = Field(..., description="机台新状态")
-    new_mold_status:       Optional[str] = Field(None, description="模具新状态")
+    new_die_status:        Optional[str] = Field(None, description="模具新状态")
 
 
 class MaintenanceResolveData(BaseModel):
@@ -75,8 +75,8 @@ class MaintenanceResolveData(BaseModel):
     maint_status:       str          = Field(..., description="维修记录状态 RESOLVED/CANCELLED")
     equipment_id:       Optional[int] = Field(None, description="机台 ID")
     equipment_status:    Optional[str] = Field(None, description="机台新状态")
-    mold_id:            Optional[int] = Field(None, description="模具 ID")
-    mold_status:        Optional[str] = Field(None, description="模具新状态")
+    die_id:             Optional[int] = Field(None, description="模具 ID")
+    die_status:         Optional[str] = Field(None, description="模具新状态")
 
 
 class MaintenanceResponse(BaseModel):
@@ -221,15 +221,25 @@ class WipRow(BaseModel):
 # ============================================================================
 
 class PartProfileCreateRequest(BaseModel):
-    """源头建档：录入 T/W/P + 模具参数。"""
+    """技术部源头建档：录入零件基础信息（T/W/P 物理参数归 dies 表，此处不含）。"""
     part_number:  str   = Field(..., min_length=1, description="零件号（必须唯一）")
     internal_name: str  = Field(..., min_length=1, description="内部名称")
     material_name: str  = Field(..., min_length=1, description="材料牌号")
-    thickness:     float = Field(..., gt=0, description="料厚 T（mm），必须 > 0")
-    width:         float = Field(..., gt=0, description="宽度 W（mm），必须 > 0")
-    press_stroke: float = Field(..., gt=0, description="步距 P（mm），必须 > 0")
-    cavity_count: int   = Field(1, ge=1, description="出数（≥1），默认 1")
-    mold_tonnage: float  = Field(0.0, ge=0, description="要求吨位（≥0）")
+    remark:        Optional[str] = Field("", description="备注")
+
+
+class DieCreateRequest(BaseModel):
+    """技术部建立模具档案（生产方案主档，含 T/W/P 物理参数）。"""
+    part_id:       int   = Field(..., description="关联零件 ID")
+    die_number:    str   = Field(..., min_length=1, description="模具编号")
+    die_name:      str   = Field("", description="模具名称")
+    die_type:      str   = Field("progressive", description="模具类型: progressive/compound/single")
+    thickness_mm:  float = Field(..., gt=0, description="料厚 T（mm）")
+    width_mm:      float = Field(..., gt=0, description="宽度 W（mm）")
+    pitch_mm:      float = Field(..., gt=0, description="步距 P（mm）")
+    cavity_count:  int   = Field(1, ge=1, description="出数（≥1）")
+    press_tonnage: int   = Field(0, ge=0, description="适用吨位（整数吨）")
+    remark:        Optional[str] = Field("", description="备注")
 
 
 # ============================================================================
@@ -243,6 +253,7 @@ class PartCreateRequest(BaseModel):
     """
     part_number:          str   = Field(..., min_length=1, description="零件图号（唯一）")
     internal_name:        str   = Field(..., min_length=1, description="内部件号名称")
+    remark:               Optional[str] = Field("", description="备注（件号重复时必填，用于区分同名零件）")
     material_name:        str   = Field("", description="材料牌号")
     pricing_mode:         str   = Field("independent", description="报价模式: independent / reference")
     referenced_part_id:   Optional[int] = Field(None, description="关联参考件 ID（路径 A）")
@@ -255,11 +266,13 @@ class PartCreateRequest(BaseModel):
     press_tonnage:        int   = Field(0, ge=0, description="模具吨位 (整数吨)")
     stamping_fee:         Optional[float] = Field(None, ge=0, description="冲压费（元/件）")
     surface_fee:          Optional[float] = Field(None, ge=0, description="表面处理费（元/件）")
+    treatment_fee:        Optional[float] = Field(None, ge=0, description="表面处理费合计（元）")
     profit_margin:        Optional[float] = Field(None, ge=0, le=100, description="利润率 (%)")
     final_price_override: Optional[float] = Field(None, ge=0, description="手动覆盖总价（元/件）")
     customer_id:          Optional[int] = Field(None, description="客户 ID")
     alias_part_number:    Optional[str] = Field("", description="客户件号别名")
     operator_id:          Optional[int] = Field(None, description="操作员 ID")
+    drawing_file_path:    Optional[str] = Field(None, description="图纸文件路径")
 
 
 class PartProfileData(BaseModel):
@@ -402,3 +415,56 @@ class PkgWipRow(BaseModel):
     produced_qty:  int    = Field(..., description="累计产出")
     target_qty:   int    = Field(..., description="目标量")
     order_status:  str    = Field(..., description="工单状态")
+
+
+# ============================================================================
+# §Sales 白盒报价相关 Schema（sales.py 中定义，为保持架构统一移至此）
+# ============================================================================
+
+class CalcPricingBody(BaseModel):
+    """白盒实时核算请求体。"""
+    thickness: float = Field(0, description="厚度 T (mm)")
+    width: float = Field(0, description="宽度 W (mm)")
+    press_stroke: float = Field(0, description="冲压行程 P (mm)")
+    material_name: str = Field("", description="材料牌号")
+    cavity_count: int = Field(1, ge=1, description="穴数（≥1）")
+    scrap_rate: float = Field(0.10, description="废料率（仅作参考展示）")
+    gross_weight_g: float | None = Field(None, description="前端已算好的毛重（g），直接用")
+    net_weight_g: float | None = Field(None, description="前端已算好的净重（g），直接用")
+    scrap_weight_g: float | None = Field(None, description="前端已算好的废料重（g），直接用")
+    material_utilization: float = Field(100.0, ge=0, le=100, description="材料利用率（%），默认 100")
+    stamping_fee: float = Field(0, ge=0, description="冲压费（元/件）")
+    inspection_fee: float = Field(0, ge=0, description="全检费（元/件）")
+    packaging_fee: float = Field(0, ge=0, description="包装运费（元/件）")
+    surface_fee: float = Field(0, ge=0, description="表面处理费（元/件）")
+    mold_cost: float = Field(0, ge=0, description="模具费（元/件）")
+    treatment_fee: float = Field(0, ge=0, description="处理费合计（元/件）")
+    profit_margin: float = Field(0, ge=0, description="利润率（%）")
+    override_final_price: float | None = Field(None, ge=0, description="人工覆盖最终总价（元/件）")
+    override_material_cost: float | None = Field(None, ge=0, description="人工覆盖材料净成本（元）")
+    unit_price_override: float | None = Field(None, ge=0, description="人工覆盖材料单价（元/kg）")
+    machine_type: str | None = Field(None, max_length=50, description="使用设备（吨位/型号）")
+
+
+class QuoteCreateBody(BaseModel):
+    """创建报价单时接收的参数（对应 quotes 表字段）。"""
+    part_id: int = Field(..., description="零件 ID")
+    annual_usage: int = Field(0, ge=0, description="年用量")
+    pricing_mode: str = Field("independent", description="报价模式: independent / reference")
+    thickness: float | None = Field(None, description="厚度 T (mm)")
+    width: float | None = Field(None, description="宽度 W (mm)")
+    press_stroke: float | None = Field(None, description="冲压行程 P (mm)")
+    cavity_count: int = Field(1, ge=1, description="穴数（≥1）")
+    scrap_rate: float = Field(0.10, description="废料率")
+    material_utilization: float | None = Field(None, ge=0, le=100, description="材料利用率（%）")
+    stamping_fee: float = Field(0, ge=0, description="冲压费（元/件）")
+    surface_fee: float = Field(0, ge=0, description="表面处理费（元/件）")
+    treatment_fee: float = Field(0, ge=0, description="处理费合计（元）")
+    profit_margin: float = Field(0, ge=0, description="利润率（%）")
+    final_price_override: float | None = Field(None, ge=0, description="人工覆盖最终总价（元/件）")
+    override_fields: list[str] = Field(default_factory=list, description="被覆盖字段列表")
+    approval_status: str = Field("DRAFT", description="报价单状态: DRAFT / PENDING_BOSS")
+    submitted_by: int | None = Field(None, description="提交人用户 ID")
+    nomination_status: str | None = Field(None, description="品牌认定状态")
+    nomination_attachment: str | None = Field(None, description="品牌认定附件路径")
+    machine_type: str | None = Field(None, max_length=50, description="使用设备（吨位/型号）")

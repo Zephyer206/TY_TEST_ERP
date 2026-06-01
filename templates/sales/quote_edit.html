@@ -79,6 +79,8 @@
         .calc-val.override { color: #1d4ed8; }
         .calc-total { background: linear-gradient(135deg, #1e40af, #1d4ed8); color: white; border-radius: 10px; padding: 12px; margin-top: 10px; display: flex; justify-content: space-between; align-items: center; }
         .calc-total-label { font-size: 13px; opacity: 0.9; }
+        .override-tag { background: #1d4ed8; color: white; font-size: 11px; padding: 2px 6px; border-radius: 10px; font-weight: 600; vertical-align: middle; }
+        .mold-charge-tag { background: #f59e0b; color: white; font-size: 12px; padding: 3px 8px; border-radius: 10px; font-weight: 600; vertical-align: middle; margin-left: 6px; }
         .calc-total-val { font-size: 26px; font-weight: 900; }
         .section-hidden { display: none; }
         .btn-bar { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
@@ -152,6 +154,40 @@
         .status-pending { background: #fef3c7; color: #92400e; }
         .status-approved { background: #d1fae5; color: #059669; }
         .status-rejected { background: #fee2e2; color: #dc2626; }
+
+        /* ── 表面处理行 ── */
+        .treat-row { margin-bottom: 8px; }
+        .treat-row-inner { display: flex; gap: 8px; align-items: center; }
+        .treat-row-inner .form-select { flex: 1; min-width: 0; }
+        .treat-row-inner .treat-fee-input { width: 130px; }
+        .treat-row-hint { font-size: 11px; color: #9ca3af; margin-top: 2px; padding-left: 2px; }
+
+        /* ── 处理管理弹窗 ── */
+        .treat-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 8px 12px; border-bottom: 1px solid #f3f4f6; font-size: 13px;
+        }
+        .treat-item:last-child { border-bottom: none; }
+        .treat-item-info { display: flex; flex-direction: column; gap: 2px; }
+        .treat-item-name { color: #374151; font-weight: 600; }
+        .treat-item-meta { font-size: 11px; color: #9ca3af; }
+        .treat-mode-badge {
+            display: inline-block; padding: 1px 6px; border-radius: 4px;
+            font-size: 11px; font-weight: 700;
+        }
+        .badge-net-weight { background: #dbeafe; color: #1e40af; }
+        .badge-manual { background: #fef3c7; color: #92400e; }
+        .treat-empty { text-align: center; color: #9ca3af; font-size: 13px; padding: 20px; }
+        .treat-add-form { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb; }
+        .treat-add-form .form-row { display: flex; gap: 8px; }
+        .treat-add-form .form-row .form-group { flex: 1; }
+        .treat-add-row { display: flex; gap: 8px; align-items: flex-end; }
+        .treat-add-row .form-input { flex: 1; }
+
+        /* ── 模具费折扣 ── */
+        .mold-discount-row { display: flex; gap: 10px; align-items: center; margin-bottom: 6px; }
+        .mold-discount-row .disc-label { font-size: 12px; color: #6b7280; white-space: nowrap; }
+        .mold-discount-row .disc-input { width: 70px; }
     </style>
 </head>
 <body>
@@ -249,16 +285,6 @@
             </div>
             <div class="form-row">
                 <div class="form-group">
-                    <label class="form-label">吨位/机型（开发填写）</label>
-                    <input type="text" id="inpMachineType" class="form-input" readonly style="background:#f3f4f6;color:#6b7280;" placeholder="技术部填写后自动带入">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">年用量（件/年）</label>
-                    <input type="number" id="inpAnnualUsage" class="form-input" placeholder="选填">
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
                     <label class="form-label">年均用量（件/年）</label>
                     <input type="number" id="inpAnnualAvg" class="form-input" placeholder="年均年用量" oninput="triggerCalc()">
                 </div>
@@ -266,6 +292,13 @@
                     <label class="form-label">生命周期（年）</label>
                     <input type="number" id="inpLifecycle" class="form-input" placeholder="如：5" min="1" oninput="triggerCalc()">
                 </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="form-label">吨位/机型（技术部填写）</label>
+                    <input type="text" id="inpMachineType" class="form-input" readonly style="background:#f3f4f6;color:#6b7280;" placeholder="技术部填写后自动带入">
+                </div>
+                <div class="form-group"></div>
             </div>
         </div>
 
@@ -287,16 +320,52 @@
                     <label class="form-label">包装费（元/件）</label>
                     <input type="number" id="inpPkgFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
                 </div>
-                <div class="form-group">
-                    <label class="form-label">表面处理费（元/件）</label>
-                    <input type="number" id="inpSurfaceFee" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
-                </div>
             </div>
+
+            <!-- 表面处理：多重动态工序 -->
+            <div class="form-group">
+                <label class="form-label">表面处理工序</label>
+                <div id="treatment-list-container"></div>
+                <button type="button" id="btnAddTreat" onclick="addTreatmentRow()" style="margin-top:8px; font-size:13px; padding:9px 16px; border:1.5px solid #7c3aed; border-radius:9px; background:#faf5ff; color:#7c3aed; font-weight:700; cursor:pointer;">
+                    + 添加表面处理工序
+                </button>
+                <div style="margin-top:6px;">
+                    <button type="button" class="btn-manage-dict" onclick="openTreatModal()">&#x2699;&#xFE0F; 管理处理方式</button>
+                </div>
+                <div class="form-hint" id="treatHint">可添加多道处理工序（如热处理→电镀→喷涂），费用自动汇总</div>
+            </div>
+
+            <!-- 模具费 -->
             <div class="form-group">
                 <label class="form-label">模具费（元/件）</label>
                 <input type="number" id="inpMoldCost" class="form-input" step="0.01" value="0" min="0" oninput="triggerCalc()">
             </div>
-            <div class="form-hint blue">模具费均摊到每件的价格，可根据模具寿命调整</div>
+            <div class="form-group" style="margin-top:-8px;">
+                <div class="mold-discount-row">
+                    <span class="disc-label">收取模式：</span>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="moldDiscountMode" value="amortized" checked onchange="onMoldDiscountModeChange()">
+                        分摊（按年均用量×生命周期）
+                    </label>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;font-size:13px;">
+                        <input type="radio" name="moldDiscountMode" value="direct" onchange="onMoldDiscountModeChange()">
+                        直接收取
+                    </label>
+                </div>
+                <div class="mold-discount-row" style="margin-top:4px;">
+                    <span class="disc-label">折扣率：</span>
+                    <select id="selMoldDiscount" class="form-select" style="width:100px;" onchange="onMoldDiscountChange()">
+                        <option value="1.0">不打折</option>
+                        <option value="0.75">75折</option>
+                        <option value="0.8">8折</option>
+                        <option value="0.85">85折</option>
+                        <option value="0.9">9折</option>
+                        <option value="0.95">95折</option>
+                        <option value="0.5">5折</option>
+                    </select>
+                    <span class="disc-label" id="dispMoldEffectiveCost" style="color:#7c3aed;font-weight:600;"></span>
+                </div>
+            </div>
         </div>
 
         <!-- 白盒核算结果 -->
@@ -304,15 +373,17 @@
             <div class="calc-title">&#x1F4CA; 报价预览</div>
             <div class="calc-row"><span class="calc-key">毛重</span><span class="calc-val" id="dispGrossWeight">—</span></div>
             <div class="calc-row"><span class="calc-key">净重</span><span class="calc-val" id="dispNetWeight">—</span></div>
+            <div class="calc-row"><span class="calc-key">废料重</span><span class="calc-val" id="dispScrapWeight">—</span></div>
             <div class="calc-row"><span class="calc-key">材料单价</span><span class="calc-val" id="dispUnitPrice">—</span></div>
             <div class="calc-row"><span class="calc-key">废料单价</span><span class="calc-val" id="dispScrapPrice">—</span></div>
             <div class="calc-row"><span class="calc-key">材料净成本</span><span class="calc-val" id="dispMatCost">—</span></div>
-            <div class="calc-row"><span class="calc-key">废料价值</span><span class="calc-val" id="dispScrap">—</span></div>
+            <div class="calc-row"><span class="calc-key">废料价值</span><span class="calc-val" id="dispScrapVal">—</span></div>
             <div class="calc-row"><span class="calc-key">冲压费</span><span class="calc-val" id="dispStampFee">—</span></div>
             <div class="calc-row"><span class="calc-key">全检费</span><span class="calc-val" id="dispInspFee">—</span></div>
             <div class="calc-row"><span class="calc-key">包装费</span><span class="calc-val" id="dispPkgFee">—</span></div>
             <div class="calc-row"><span class="calc-key">表面处理费</span><span class="calc-val" id="dispSurfaceFee">—</span></div>
             <div class="calc-row"><span class="calc-key">模具费</span><span class="calc-val" id="dispMoldCost">—</span></div>
+            <div class="calc-row"><span class="calc-key">生命周期总件数</span><span class="calc-val" id="dispLifecyclePcs">—</span></div>
             <div class="calc-total">
                 <span class="calc-total-label">最终报价</span>
                 <span class="calc-total-val" id="dispTotal">— 元/件</span>
@@ -353,7 +424,54 @@
     </div>
 </div>
 
-<script src="/static/js/api_config.js"></script>
+<!-- 表面处理方式管理弹窗 -->
+<div class="modal-overlay" id="modalTreat" onclick="if(event.target===this)closeTreatModal()">
+    <div class="modal-box-sm" style="width:460px;">
+        <h3>&#x2699;&#xFE0F; 管理表面处理方式</h3>
+        <ul id="treatItemList" style="list-style:none; max-height:220px; overflow-y:auto;"></ul>
+        <div id="treatEmpty" style="display:none; text-align:center; color:#9ca3af; font-size:13px; padding:20px;">暂无处理方式，请添加</div>
+        <div class="treat-add-form" id="treatFormArea">
+            <div style="font-size:12px; font-weight:700; color:#374151; margin-bottom:4px;">
+                <span id="treatFormTitle">新增处理方式</span>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1.5;">
+                    <label class="form-label">处理名称 *</label>
+                    <input type="text" id="treatName" class="form-input" placeholder="如：热处理、电镀锌">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">计价方式 *</label>
+                    <select id="treatCalcMode" class="form-select">
+                        <option value="manual">手动输入</option>
+                        <option value="net_weight">按净重计价</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label" id="treatRateLabel">费率（手动时填 0）</label>
+                    <input type="number" id="treatRate" class="form-input" step="0.01" min="0" placeholder="0.00">
+                </div>
+                <div class="form-group" style="flex:1;">
+                    <label class="form-label">费率单位</label>
+                    <select id="treatUnit" class="form-select">
+                        <option value="元/件">元/件</option>
+                        <option value="元/kg">元/kg</option>
+                    </select>
+                </div>
+            </div>
+            <div class="treat-add-row">
+                <button type="button" class="btn btn-secondary" id="btnTreatCancel" onclick="resetTreatForm()" style="flex:0;">取消</button>
+                <button type="button" class="btn btn-primary" id="btnTreatSubmit" onclick="submitTreatItem()">确认添加</button>
+            </div>
+        </div>
+        <div class="btn-row" style="margin-top:12px;">
+            <button type="button" class="btn btn-secondary" onclick="closeTreatModal()">关闭</button>
+        </div>
+    </div>
+</div>
+
+<script src="/static/js/api_config.js?v=20260528"></script>
 <script>
 // ── 全局状态 ─────────────────────────────────────────────────────
 var selectedPath = null;   // 'A' | 'B' | 'C'
@@ -386,11 +504,14 @@ var _originalCalc = null;
     if (q.material_utilization) document.getElementById('inpUtil').value = q.material_utilization;
     if (q.profit_margin != null) document.getElementById('inpProfit').value = q.profit_margin;
 
-    // 吨位/设备（来自技术参数，只读）
-    if (q.machine_type) document.getElementById('inpMachineType').value = q.machine_type;
+    // 吨位/设备（来自技术参数，只读；优先 machine_type，无则用 press_tonnage）
+    if (q.machine_type) {
+        document.getElementById('inpMachineType').value = q.machine_type;
+    } else if (q.press_tonnage) {
+        document.getElementById('inpMachineType').value = q.press_tonnage + 'T';
+    }
 
-    // 年用量拆分
-    if (q.annual_usage) document.getElementById('inpAnnualUsage').value = q.annual_usage;
+    // 年用量
     if (q.annual_avg != null) document.getElementById('inpAnnualAvg').value = q.annual_avg;
     if (q.lifecycle_years != null) document.getElementById('inpLifecycle').value = q.lifecycle_years;
 
@@ -398,10 +519,39 @@ var _originalCalc = null;
     if (q.stamping_fee != null) document.getElementById('inpStampFee').value = q.stamping_fee;
     if (q.inspection_fee != null) document.getElementById('inpInspFee').value = q.inspection_fee;
     if (q.packaging_fee != null) document.getElementById('inpPkgFee').value = q.packaging_fee;
-    if (q.surface_fee != null) document.getElementById('inpSurfaceFee').value = q.surface_fee;
     if (q.mold_cost != null) document.getElementById('inpMoldCost').value = q.mold_cost;
 
-    setTimeout(function() { triggerCalc(); }, 200);
+    // 模具费折扣
+    if (q.mold_discount_mode) {
+        var radios = document.getElementsByName('moldDiscountMode');
+        for (var i = 0; i < radios.length; i++) {
+            radios[i].checked = radios[i].value === q.mold_discount_mode;
+        }
+    }
+    if (q.mold_discount_rate != null) {
+        document.getElementById('selMoldDiscount').value = String(q.mold_discount_rate);
+    }
+
+    // 表面处理工序（从 treatment_items JSONB 恢复动态行）
+    if (q.treatment_items && Array.isArray(q.treatment_items)) {
+        q.treatment_items.forEach(function(item) {
+            addTreatmentRow(function(sel, inp) {
+                for (var i = 0; i < sel.options.length; i++) {
+                    if (sel.options[i].value === item.name) {
+                        sel.selectedIndex = i;
+                        break;
+                    }
+                }
+                inp.value = item.fee != null ? item.fee : 0;
+                onTreatSelectChange(sel.closest('.treat-row').id, { skipCalc: true });
+            });
+        });
+    }
+
+    // 加载表面处理字典（渲染下拉框）
+    loadTreatments();
+
+    setTimeout(function() { triggerCalc(); }, 300);
 })();
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -419,14 +569,10 @@ function triggerCalc() {
 }
 
 function doCalc() {
-    var matName = document.getElementById('selMaterial').value;
-    if (!matName) return;
-
     var matSel = document.getElementById('selMaterial');
     var matOpt = matSel.options[matSel.selectedIndex];
-    var matPrice = parseFloat(matOpt && matOpt.getAttribute('data-price')) || 0;
-    var matDensity = parseFloat(matOpt && matOpt.getAttribute('data-density')) || 0;
-    var matScrap = parseFloat(matOpt && matOpt.getAttribute('data-scrap')) || matPrice * 0.9;
+    var matName = matSel.value;
+    var matDensity = parseFloat(matOpt && matOpt.getAttribute('data-density')) || 7.85;
 
     var t = parseFloat(document.getElementById('inpT').value) || 0;
     var w = parseFloat(document.getElementById('inpW').value) || 0;
@@ -436,38 +582,194 @@ function doCalc() {
     var stampFee = parseFloat(document.getElementById('inpStampFee').value) || 0;
     var inspFee = parseFloat(document.getElementById('inpInspFee').value) || 0;
     var pkgFee = parseFloat(document.getElementById('inpPkgFee').value) || 0;
-    var surfFee = parseFloat(document.getElementById('inpSurfaceFee').value) || 0;
     var moldFee = parseFloat(document.getElementById('inpMoldCost').value) || 0;
     var profit = parseFloat(document.getElementById('inpProfit').value) || 0;
+    var annualAvg = parseFloat(document.getElementById('inpAnnualAvg').value) || 0;
+    var lifecycle = parseFloat(document.getElementById('inpLifecycle').value) || 0;
+    var machineType = (document.getElementById('inpMachineType') || {}).value || '';
 
-    if (!t || !w || !p_) return;
+    // 参数不全，静默等待
+    if (!matName || !t || !w || !p_) return;
 
-    var grossWeight = t * w * p_ * matDensity / 1000;
+    // 前端快速算毛重（用于传给 API 和模具费分摊预览）
+    var grossWeight = t * w * p_ * matDensity * cav / 1000;
     var netWeight = grossWeight * (util / 100);
     var scrapWeight = grossWeight - netWeight;
-    var scrapVal = scrapWeight * matScrap / 1000;
-    var matCost = netWeight * matPrice / 1000;
-    var matNetCost = Math.max(0, matCost - scrapVal);
-    var total = (matNetCost + stampFee + inspFee + pkgFee + surfFee + moldFee / cav) * (1 + profit / 100);
 
-    autoTotal = total;
+    // 表面处理：动态工序汇总（API 内部也会算，这里先给预览值）
+    var treatFeeTotal = getTreatFeeForCalc(grossWeight);
 
-    function fmt(v) { return v.toFixed(4); }
-    document.getElementById('dispGrossWeight').textContent = fmt(grossWeight) + ' g';
-    document.getElementById('dispNetWeight').textContent = fmt(netWeight) + ' g';
-    document.getElementById('dispUnitPrice').textContent = fmt(matPrice) + ' 元/kg';
-    document.getElementById('dispScrapPrice').textContent = fmt(matScrap) + ' 元/kg';
-    document.getElementById('dispMatCost').textContent = fmt(matCost) + ' 元/件';
-    document.getElementById('dispScrap').textContent = fmt(scrapVal) + ' 元/件';
-    document.getElementById('dispStampFee').textContent = fmt(stampFee) + ' 元/件';
-    document.getElementById('dispInspFee').textContent = fmt(inspFee) + ' 元/件';
-    document.getElementById('dispPkgFee').textContent = fmt(pkgFee) + ' 元/件';
-    document.getElementById('dispSurfaceFee').textContent = fmt(surfFee) + ' 元/件';
-    document.getElementById('dispMoldCost').textContent = fmt(moldFee / cav) + ' 元/件';
-    document.getElementById('dispTotal').textContent = fmt(total) + ' 元/件';
+    // 模具费：按分摊模式计算每件分摊值（显示用）
+    var moldMode = document.querySelector('input[name="moldDiscountMode"]:checked').value;
+    var moldRate = parseFloat(document.getElementById('selMoldDiscount').value) || 1.0;
+    var effectiveMoldFeePerPc;
+    var totalPcs = annualAvg * lifecycle;
+    if (moldMode === 'amortized' && totalPcs > 0) {
+        effectiveMoldFeePerPc = (moldFee * moldRate) / totalPcs;
+        document.getElementById('dispMoldEffectiveCost').textContent =
+            '分摊后 ' + effectiveMoldFeePerPc.toFixed(4) + ' 元/件（生命周期内共 ' + _formatChinese(totalPcs) + '）';
+    } else {
+        effectiveMoldFeePerPc = (moldFee * moldRate) / cav;
+        var discount = moldRate < 1.0 ? '（' + Math.round(moldRate * 100) + '折后）' : '';
+        document.getElementById('dispMoldEffectiveCost').textContent =
+            '每件 ' + effectiveMoldFeePerPc.toFixed(4) + ' 元/件 ' + discount;
+    }
+
+    // 生命周期PCS
+    var dispPcs = document.getElementById('dispLifecyclePcs');
+    if (totalPcs > 0) {
+        dispPcs.textContent = _formatChinese(totalPcs) + ' 件';
+        dispPcs.parentElement.style.display = '';
+    } else {
+        dispPcs.textContent = '—';
+        dispPcs.parentElement.style.display = 'none';
+    }
+
+    // ── 调用后端白盒引擎 ───────────────────────────────────────
+    // 模摊模式：每件分摊模具费加入 base_total；收模具费模式：传 0，最终价旁另显示
+    var apiMoldCost = (moldMode === 'amortized') ? effectiveMoldFeePerPc : 0;
+    var body = {
+        thickness: t,
+        width: w,
+        press_stroke: p_,
+        material_name: matName,
+        cavity_count: cav,
+        scrap_rate: 1.0 - (util / 100.0),
+        gross_weight_g: grossWeight,
+        net_weight_g: netWeight,
+        scrap_weight_g: scrapWeight,
+        material_utilization: util,
+        stamping_fee: stampFee,
+        inspection_fee: inspFee,
+        packaging_fee: pkgFee,
+        surface_fee: 0,
+        treatment_fee: treatFeeTotal,
+        mold_cost: apiMoldCost,
+        mold_mode: moldMode,
+        profit_margin: profit,
+        machine_type: machineType || null,
+    };
+
+    sendApiRequest('sales.calc_pricing', body, {})
+    .then(function(d) {
+        var payload = (d && d.data !== undefined) ? d.data : d;
+        if (!payload) { showToast('核算返回数据为空', 'err'); return; }
+        if (payload.error) { showToast(payload.error, 'err'); return; }
+        autoTotal = payload.final_price;
+        renderCalcResult(payload);
+    })
+    .catch(function(err) {
+        console.error('[doCalc] 请求失败:', err);
+        showToast('核算请求失败：' + (err.message || String(err)), 'err');
+    });
 }
 
-// ── 材料变化 ─────────────────────────────────────────────────
+// ── 渲染白盒核算结果（与 part_create.html 保持一致）────────────────
+function renderCalcResult(d) {
+    var isOverride = d.override_flags && d.override_flags.length > 0;
+    var matName = (document.getElementById('selMaterial') || {}).value || '';
+
+    var gw = d.gross_weight || 0;
+    var nw = d.net_weight || 0;
+    var sw = d.scrap_weight || 0;
+    window._lastGrossWeight = gw;
+
+    // 毛重展示（含公式说明）
+    var gwFormula = (d.formula_display && d.formula_display.gross_weight)
+        ? d.formula_display.gross_weight.formula : '';
+    document.getElementById('dispGrossWeight').innerHTML =
+        fmt2(gw) + ' g <span class="calc-formula">' + escHtml(gwFormula) + '</span>';
+
+    // 净重展示
+    var nwEl = document.getElementById('dispNetWeight');
+    if (nwEl) nwEl.textContent = fmt2(nw) + ' g';
+
+    // 废料重展示
+    var swEl = document.getElementById('dispScrapWeight');
+    if (swEl) swEl.textContent = fmt2(sw) + ' g';
+
+    // 材料单价（含覆盖标记）
+    var unitClass = d.override_flags && d.override_flags.includes('material_unit_price_override') ? ' override' : '';
+    var unitEl = document.getElementById('dispUnitPrice');
+    if (unitEl) {
+        unitEl.className = 'calc-val' + unitClass;
+        unitEl.innerHTML = fmt2(d.unit_price) + ' 元/kg <span class="calc-formula">' +
+            '材料：' + escHtml(d.material_name || matName) + '\n' +
+            '密度：' + d.density + ' g/cm³\n' +
+            '单价：' + d.unit_price + ' 元/kg\n' +
+            '废料回收：' + d.scrap_price + ' 元/kg</span>';
+    }
+
+    // 材料净成本（含覆盖标记和公式）
+    var costClass = d.override_flags && d.override_flags.includes('material_net_cost_override') ? ' override' : '';
+    var matCostEl = document.getElementById('dispMatCost');
+    if (matCostEl) {
+        matCostEl.className = 'calc-val' + costClass;
+        var costFormula = (d.formula_display && d.formula_display.material_net_cost)
+            ? d.formula_display.material_net_cost.formula : '';
+        matCostEl.innerHTML = fmt2(d.material_net_cost) + ' 元 <span class="calc-formula">' + escHtml(costFormula) + '</span>';
+    }
+
+    // 废料回收价
+    // 废料单价（每 kg）
+    var scrapEl = document.getElementById('dispScrapPrice');
+    if (scrapEl) scrapEl.textContent = fmt2(d.scrap_price) + ' 元/kg';
+
+    // 废料价值 = 废料重 × 废料单价
+    var scrapValEl = document.getElementById('dispScrapVal');
+    if (scrapValEl) {
+        var sw = d.scrap_weight || 0;
+        var sp = d.scrap_price || 0;
+        var scrapValAmt = sw * sp / 1000;
+        scrapValEl.textContent = fmt2(scrapValAmt) + ' 元/件';
+    }
+
+    // 各费用项
+    if (document.getElementById('dispStampFee')) document.getElementById('dispStampFee').textContent = fmt2(d.stamping_fee) + ' 元/件';
+    if (document.getElementById('dispInspFee')) document.getElementById('dispInspFee').textContent = fmt2(d.inspection_fee) + ' 元/件';
+    if (document.getElementById('dispPkgFee')) document.getElementById('dispPkgFee').textContent = fmt2(d.packaging_fee) + ' 元/件';
+    if (document.getElementById('dispSurfaceFee')) document.getElementById('dispSurfaceFee').textContent = fmt2(d.surface_fee) + ' 元/件';
+    if (document.getElementById('dispTreatFee')) document.getElementById('dispTreatFee').textContent = fmt2(d.treatment_fee) + ' 元/件';
+    // 模具费模式判断（前端本地读）
+    var moldModeEl = document.querySelector('input[name="moldDiscountMode"]:checked');
+    var moldMode = moldModeEl ? moldModeEl.value : 'amortized';
+    var moldDisplayFee = (d.mold_cost != null) ? d.mold_cost : 0;
+    var dispMoldEl = document.getElementById('dispMoldCost');
+    if (dispMoldEl) {
+        if (moldMode === 'amortized') {
+            dispMoldEl.textContent = fmt2(moldDisplayFee) + ' 元/件';
+        } else {
+            var moldFeeInput = parseFloat(document.getElementById('inpMoldCost').value) || 0;
+            dispMoldEl.textContent = '（另收 ' + fmt2(moldFeeInput) + ' 元）';
+        }
+    }
+
+    // 最终总价
+    var totalHtml = fmt2(d.final_price) + ' 元/件';
+    if (moldMode !== 'amortized') {
+        var moldFeeInput = parseFloat(document.getElementById('inpMoldCost').value) || 0;
+        totalHtml += ' <span class="mold-charge-tag">+ 模具费 ' + fmt2(moldFeeInput) + ' 元（一次性）</span>';
+    }
+    if (isOverride) totalHtml += ' <span class="override-tag">已覆盖</span>';
+    document.getElementById('dispTotal').innerHTML = totalHtml;
+
+    // 模具分摊预览（doCalc 已处理，这里覆盖以显示最新值）
+    updateMoldEffectiveCostPreview();
+}
+
+function fmt2(v) {
+    if (v == null || isNaN(v)) return '—';
+    return Number(v).toFixed(4);
+}
+
+function escHtml(s) {
+    if (s == null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function updateMoldEffectiveCostPreview() {
+    // 模具费预览已由 doCalc 局部更新，无需重复处理
+}
 function onMaterialChange() {
     triggerCalc();
 }
@@ -525,7 +827,7 @@ function submitMaterialForm() {
                 var sel = document.getElementById('selMaterial');
                 var opt = document.createElement('option');
                 opt.value = name;
-                opt.text = name + ' — 密度 ' + density + ' / 单价 ' + price + ' 元/kg{% if m.scrap_price %}/废料 {{ m.scrap_price }}{% endif %}';
+                opt.text = name + ' \u2014 密度 ' + density + ' / 单价 ' + price + ' 元/kg' + (scrap ? '/废料 ' + scrap : '');
                 opt.setAttribute('data-density', density);
                 opt.setAttribute('data-price', price);
                 opt.setAttribute('data-scrap', scrap || '');
@@ -568,12 +870,37 @@ function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ── 中文数字格式化 ───────────────────────────────────────────────
+function _formatChinese(num) {
+    num = Math.round(num);
+    if (num >= 100000000) {
+        return (num / 100000000).toFixed(1).replace(/\.0$/,'') + '亿';
+    }
+    if (num >= 10000) {
+        return (num / 10000).toFixed(1).replace(/\.0$/,'') + '万';
+    }
+    return num.toLocaleString();
+}
+
 // ── 提交 ─────────────────────────────────────────────────────
 function onSubmit() {
     var btn = document.getElementById('btnSubmit');
     var originalText = btn.textContent;
     btn.disabled = true;
     btn.textContent = '保存中…';
+
+    // 收集表面处理工序
+    var treatmentItems = [];
+    document.querySelectorAll('.treat-row').forEach(function(row) {
+        var sel = row.querySelector('.treat-sel');
+        if (!sel.value) return;
+        var inp = row.querySelector('.treat-fee-input');
+        treatmentItems.push({ name: sel.value, fee: parseFloat(inp.value) || 0 });
+    });
+
+    // surface_fee 为 treatment_items 汇总值（兼容旧字段）
+    var surfFeeTotal = 0;
+    treatmentItems.forEach(function(item) { surfFeeTotal += (item.fee || 0); });
 
     var payload = {
         material_name: document.getElementById('selMaterial').value || null,
@@ -586,9 +913,11 @@ function onSubmit() {
         stamping_fee: parseFloat(document.getElementById('inpStampFee').value) || null,
         inspection_fee: parseFloat(document.getElementById('inpInspFee').value) || null,
         packaging_fee: parseFloat(document.getElementById('inpPkgFee').value) || null,
-        surface_fee: parseFloat(document.getElementById('inpSurfaceFee').value) || null,
         mold_cost: parseFloat(document.getElementById('inpMoldCost').value) || null,
-        annual_usage: parseInt(document.getElementById('inpAnnualUsage').value) || null,
+        mold_discount_mode: document.querySelector('input[name="moldDiscountMode"]:checked').value,
+        mold_discount_rate: parseFloat(document.getElementById('selMoldDiscount').value) || 1.0,
+        treatment_items: treatmentItems.length > 0 ? treatmentItems : null,
+        surface_fee: surfFeeTotal > 0 ? surfFeeTotal : null,
         annual_avg: parseFloat(document.getElementById('inpAnnualAvg').value) || null,
         lifecycle_years: parseFloat(document.getElementById('inpLifecycle').value) || null,
         final_price: autoTotal || null,
@@ -613,6 +942,306 @@ function onSubmit() {
         });
 
     return false;
+}
+
+// ── 表面处理字典（window 全局缓存）───────────────────────────────
+window.treatmentDictCache = null;
+var _treatRowCounter = 0;
+var _lastGrossWeight = 0;
+
+// 加载字典（幂等缓存）
+function loadTreatments() {
+    if (window.treatmentDictCache !== null) {
+        fetchAndRenderTreatments();
+        return;
+    }
+    sendApiRequest('sales.treatments_list', null, {})
+    .then(function(r) {
+        window.treatmentDictCache = r.data || [];
+        fetchAndRenderTreatments();
+    })
+    .catch(function() {
+        showToast('加载处理方式失败', 'err');
+    });
+}
+
+function fetchAndRenderTreatments() {
+    var data = window.treatmentDictCache || [];
+    // 渲染管理弹窗列表
+    var list = document.getElementById('treatItemList');
+    var empty = document.getElementById('treatEmpty');
+    if (list) list.innerHTML = '';
+    if (!data.length) {
+        if (empty) empty.style.display = 'block';
+    } else {
+        if (empty) empty.style.display = 'none';
+        data.forEach(function(t) {
+            var badge = t.calc_mode === 'net_weight'
+                ? '<span class="treat-mode-badge badge-net-weight">按净重</span>'
+                : '<span class="treat-mode-badge badge-manual">手动输入</span>';
+            var li = document.createElement('li');
+            li.className = 'treat-item';
+            li.innerHTML =
+                '<div class="treat-item-info">' +
+                    '<span class="treat-item-name">' + escHtml(t.name) + '</span>' +
+                    '<span class="treat-item-meta">' + badge + '</span>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;">' +
+                    '<button type="button" class="btn-del-item" onclick="editTreatItem(' + t.id + ')">编辑</button>' +
+                    '<button type="button" class="btn-del-item" onclick="deleteTreatItem(' + t.id + ')">删除</button>' +
+                '</div>';
+            if (list) list.appendChild(li);
+        });
+    }
+    // 刷新所有行内下拉框
+    document.querySelectorAll('.treat-sel').forEach(function(sel) {
+        var saved = sel.value;
+        sel.innerHTML = '<option value="">— 不需要处理 —</option>';
+        data.forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t.name;
+            opt.setAttribute('data-mode', t.calc_mode || 'manual');
+            opt.setAttribute('data-rate', t.rate || '0');
+            opt.setAttribute('data-unit', t.unit || '元/件');
+            opt.textContent = t.name + '（' + (t.calc_mode === 'net_weight' ? '按净重' : '手动输入）');
+            sel.appendChild(opt);
+        });
+        sel.value = saved;
+    });
+}
+
+function renderTreatSelect(sel) {
+    sel.innerHTML = '<option value="">— 不需要处理 —</option>';
+    (window.treatmentDictCache || []).forEach(function(t) {
+        var opt = document.createElement('option');
+        opt.value = t.name;
+        opt.setAttribute('data-mode', t.calc_mode || 'manual');
+        opt.setAttribute('data-rate', t.rate || '0');
+        opt.setAttribute('data-unit', t.unit || '元/件');
+        opt.textContent = t.name + '（' + (t.calc_mode === 'net_weight'
+            ? '按净重×' + t.rate + (t.unit || '元/件')
+            : '手动输入）');
+        sel.appendChild(opt);
+    });
+}
+
+// 动态行：添加（可选回调用于恢复选中状态）
+function addTreatmentRow(callback) {
+    var container = document.getElementById('treatment-list-container');
+    if (!container) return;
+    _treatRowCounter++;
+    var rowId = 'treat-row-' + _treatRowCounter;
+    var row = document.createElement('div');
+    row.className = 'treat-row';
+    row.id = rowId;
+    row.innerHTML =
+        '<div class="treat-row-inner">' +
+            '<select class="treat-sel form-select" onchange="onTreatSelectChange(\'' + rowId + '\')">' +
+                '<option value="">— 不需要处理 —</option>' +
+            '</select>' +
+            '<input type="number" class="treat-fee-input form-input" step="0.01" min="0" value="0" placeholder="处理费（元/件）" oninput="onTreatFeeInput(\'' + rowId + '\')">' +
+            '<button type="button" class="btn-del-item" onclick="removeTreatmentRow(this)">&#x274C;</button>' +
+        '</div>' +
+        '<div class="treat-row-hint" id="' + rowId + '-hint"></div>';
+    container.appendChild(row);
+    var sel = row.querySelector('.treat-sel');
+    var inp = row.querySelector('.treat-fee-input');
+    if (window.treatmentDictCache !== null) {
+        renderTreatSelect(sel);
+    }
+    if (callback) callback(sel, inp);
+    updateTreatHint();
+    triggerCalc();
+}
+
+function removeTreatmentRow(btn) {
+    var row = btn ? btn.closest('.treat-row') : null;
+    if (row) row.remove();
+    updateTreatHint();
+    triggerCalc();
+}
+
+// 下拉框变化
+function onTreatSelectChange(rowId, opts) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+    var sel = row.querySelector('.treat-sel');
+    var inp = row.querySelector('.treat-fee-input');
+    var hint = document.getElementById(rowId + '-hint');
+    var opt = sel.selectedOptions[0];
+    var mode = opt ? opt.getAttribute('data-mode') : 'manual';
+    var rate = opt ? parseFloat(opt.getAttribute('data-rate') || '0') : 0;
+    var unit = opt ? opt.getAttribute('data-unit') || '元/件' : '元/件';
+
+    if (!sel.value) {
+        inp.readOnly = false;
+        inp.placeholder = '处理费（元/件）';
+        inp.value = '0';
+        hint.textContent = '';
+    } else if (mode === 'net_weight') {
+        inp.readOnly = true;
+        inp.placeholder = '按净重自动计算';
+        var fee = _lastGrossWeight * rate;
+        inp.value = fee.toFixed(4);
+        hint.innerHTML = '<b style="color:#1e40af">按净重</b>：毛重 ' + _lastGrossWeight.toFixed(3) + ' g × ' + rate + ' ' + unit;
+    } else {
+        inp.readOnly = false;
+        inp.placeholder = '手动输入处理费（元/件）';
+        inp.value = inp.value || '0';
+        hint.innerHTML = '<b style="color:#92400e">手动输入</b>';
+    }
+    updateTreatHint();
+    if (!opts || !opts.skipCalc) triggerCalc();
+}
+
+function onTreatFeeInput(rowId) {
+    updateTreatHint();
+    triggerCalc();
+}
+
+// 汇总表面处理费（供 doCalc 调用）
+function getTreatFeeForCalc(grossWeight) {
+    _lastGrossWeight = grossWeight || 0;
+    var total = 0;
+    document.querySelectorAll('.treat-row').forEach(function(row) {
+        var sel = row.querySelector('.treat-sel');
+        if (!sel.value) return;
+        var inp = row.querySelector('.treat-fee-input');
+        var opt = sel.selectedOptions[0];
+        var mode = opt ? opt.getAttribute('data-mode') : 'manual';
+        if (mode === 'net_weight') {
+            var rate = parseFloat(opt.getAttribute('data-rate') || '0');
+            total += _lastGrossWeight * rate / 1000;  // rate 单位：元/kg → 转元/件
+        } else {
+            total += parseFloat(inp.value) || 0;
+        }
+    });
+    return total;
+}
+
+// 底部提示文字
+function updateTreatHint() {
+    var hintEl = document.getElementById('treatHint');
+    if (!hintEl) return;
+    var rows = document.querySelectorAll('.treat-row');
+    var names = [];
+    rows.forEach(function(row) {
+        var sel = row.querySelector('.treat-sel');
+        if (sel && sel.value) names.push(sel.value);
+    });
+    if (names.length) {
+        hintEl.textContent = '已选：' + names.join(' → ');
+    } else {
+        hintEl.textContent = '可添加多道处理工序（如热处理→电镀→喷涂），费用自动汇总';
+    }
+}
+
+// ── 表面处理管理弹窗 ────────────────────────────────────────────
+function openTreatModal() {
+    document.getElementById('modalTreat').classList.add('open');
+    if (window.treatmentDictCache === null) loadTreatments();
+    else fetchAndRenderTreatments();
+}
+function closeTreatModal() { document.getElementById('modalTreat').classList.remove('open'); resetTreatForm(); }
+document.getElementById('modalTreat').addEventListener('click', function(e) { if (e.target === this) closeTreatModal(); });
+
+var _editingTreatId = null;
+function editTreatItem(id) {
+    var t = (window.treatmentDictCache || []).find(function(x) { return x.id === id; });
+    if (!t) return;
+    _editingTreatId = id;
+    document.getElementById('treatFormTitle').textContent = '编辑：' + t.name;
+    document.getElementById('treatName').value = t.name;
+    document.getElementById('treatCalcMode').value = t.calc_mode || 'manual';
+    document.getElementById('treatRate').value = t.rate || 0;
+    document.getElementById('treatUnit').value = t.unit || '元/件';
+    document.getElementById('treatRateLabel').textContent =
+        (t.calc_mode === 'net_weight' ? '费率（元/kg）' : '费率（手动时填 0）');
+    document.getElementById('btnTreatSubmit').textContent = '确认修改';
+}
+
+function resetTreatForm() {
+    _editingTreatId = null;
+    document.getElementById('treatFormTitle').textContent = '新增处理方式';
+    document.getElementById('treatName').value = '';
+    document.getElementById('treatCalcMode').value = 'manual';
+    document.getElementById('treatRate').value = '0';
+    document.getElementById('treatUnit').value = '元/件';
+    document.getElementById('treatRateLabel').textContent = '费率（手动时填 0）';
+    document.getElementById('btnTreatSubmit').textContent = '确认添加';
+}
+
+document.getElementById('treatCalcMode').addEventListener('change', function() {
+    document.getElementById('treatRateLabel').textContent =
+        this.value === 'net_weight' ? '费率（元/kg）' : '费率（手动时填 0）';
+});
+
+function submitTreatItem() {
+    var name = document.getElementById('treatName').value.trim();
+    var calc_mode = document.getElementById('treatCalcMode').value;
+    var rate = parseFloat(document.getElementById('treatRate').value) || 0;
+    var unit = document.getElementById('treatUnit').value;
+    if (!name) { showToast('请填写名称', 'err'); return; }
+
+    sendApiRequest('sales.treatments_upsert', {
+        name: name, calc_mode: calc_mode, rate: rate, unit: unit
+    })
+    .then(function(r) {
+        if (r.code === 0 || r.code === 200) {
+            window.treatmentDictCache = null;
+            loadTreatments();
+            resetTreatForm();
+            showToast('保存成功', 'ok');
+        } else {
+            showToast(r.message || '保存失败', 'err');
+        }
+    })
+    .catch(function(e) { showToast('请求失败: ' + e.message, 'err'); });
+}
+
+function deleteTreatItem(id) {
+    if (!confirm('确认删除该处理方式？')) return;
+    sendApiRequest('sales.treatments_delete', null, { pathParams: { treatment_id: id } })
+    .then(function(r) {
+        if (r.code === 0 || r.code === 200) {
+            window.treatmentDictCache = null;
+            loadTreatments();
+            showToast('已删除', 'ok');
+        } else {
+            showToast(r.message || '删除失败', 'err');
+        }
+    })
+    .catch(function(e) { showToast(e.message || '删除失败', 'err'); });
+}
+
+// ── 模具费折扣 UI ───────────────────────────────────────────────
+function onMoldDiscountModeChange() {
+    updateMoldEffectiveCost();
+    triggerCalc();
+}
+function onMoldDiscountChange() {
+    updateMoldEffectiveCost();
+    triggerCalc();
+}
+function updateMoldEffectiveCost() {
+    var moldMode = document.querySelector('input[name="moldDiscountMode"]:checked').value;
+    var moldRate = parseFloat(document.getElementById('selMoldDiscount').value) || 1.0;
+    var moldFee = parseFloat(document.getElementById('inpMoldCost').value) || 0;
+    var annualAvg = parseFloat(document.getElementById('inpAnnualAvg').value) || 0;
+    var lifecycle = parseFloat(document.getElementById('inpLifecycle').value) || 0;
+    var cav = parseInt(document.getElementById('inpCav').value) || 1;
+
+    if (moldMode === 'amortized' && annualAvg > 0 && lifecycle > 0) {
+        var totalPcs = annualAvg * lifecycle;
+        var cost = (moldFee * moldRate) / totalPcs;
+        document.getElementById('dispMoldEffectiveCost').textContent =
+            '分摊后 ' + cost.toFixed(4) + ' 元/件（生命周期共 ' + _formatChinese(totalPcs) + '）';
+    } else {
+        var cost = (moldFee * moldRate) / cav;
+        var discount = moldRate < 1.0 ? '（' + Math.round(moldRate * 100) + '折后）' : '';
+        document.getElementById('dispMoldEffectiveCost').textContent =
+            '每件 ' + cost.toFixed(4) + ' 元/件 ' + discount;
+    }
 }
 </script>
 </body>

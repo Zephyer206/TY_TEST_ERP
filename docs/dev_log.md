@@ -3473,3 +3473,152 @@ upsert_material_base_price() 返回 draft_parts > 0
 
 
 
+
+
+---
+
+## 2026-05-22 | 领域解耦重构影响分析报告（待执行）
+
+**执笔人：** 首席架构师（Claude Sonnet 4.6）
+**任务背景：** 将"工程零件数据"与"商业报价数据"彻底分离，建立 `parts`（工程主数据）与 `quotes`（报价单）的清晰边界。
+
+---
+
+### 一、现状诊断：解耦已完成 80%，但存在残留耦合
+
+经过全局代码扫描，**好消息是**：本项目已经历过一次 `split_parts_and_quotes_v2` 迁移，`parts` 表中的大部分价格字段（`pending_price`、`current_price`、`price_status`、`stamping_fee`、`surface_fee`、`profit_margin` 等）已被删除，`quotes` 表已建立并投入使用。
+
+**坏消息是**：仍存在以下四类残留耦合问题，需要本次重构彻底清除。
+
+---
+
+### 二、残留耦合问题清单
+
+#### 问题 A：`PartCreateRequest` Schema 混入了报价字段
+
+**文件：** `app/models/schemas.py`
+
+**现状：** `PartCreateRequest` 包含以下本应属于 `QuoteCreateBody` 的字段：
+```
+stamping_fee, surface_fee, profit_margin,
+final_price_override, pricing_mode, referenced_part_id,
+material_utilization, machine_type, press_tonnage
+```
+
+**影响路由：**
+- `POST /api/parts/create`（`api_create_part` 函数）
+- `POST /sales/parts/new`（`sales_part_new` 函数）
+
+**修复方案：** `PartCreateRequest` 只保留工程字段；创建零件时同步创建 `Quote` 的逻辑已存在（`create_part_with_mold_and_pricing` 三表原子事务），只需确保 Schema 分层清晰，前端传参路径正确。
+
+---
+
+#### 问题 B：`create_part_with_pricing` 函数缺少 quote 创建步骤
+
+**文件：** `app/services/db_service.py`
+
+**现状：** `create_part_with_pricing(...)` 函数：INSERT `parts` 时写入 `thickness, width, press_stroke, cavities, mold_tonnage`，但**没有同步创建对应的 `quotes` 记录**（仅创建了 part，未创建 quote）。
+
+相比之下，`create_part_with_mold_and_pricing` 已正确实现三表原子事务（parts + molds + quotes）。
+
+**修复方案：** `create_part_with_pricing` 必须同步创建 `quotes` 记录（DRAFT 状态）。
+
+---
+
+#### 问题 C：前端模板中存在通过 `p.approval_status` 读取报价状态的越界引用
+
+**文件：** `templates/sales/part_pricing.html`（第 243 行）、`templates/material_prices.html`（第 429 行）
+
+**现状：**
+```jinja2
+{{ p.approval_status }}  {# 第 243 行，p 是 Part 对象，但 approval_status 属于 quotes 表 #}
+```
+这是一个**越界读取**——`parts` 表中已无此字段，此处能工作只因为后端查询时通过 JOIN 将 `quotes.approval_status` 混入了 `part` 对象返回给模板。
+
+**修复方案：** 将模板中的 `p.approval_status` 改为 `quote.approval_status`，并确保后端路由传递独立的 `quote` 对象给模板，而非将 quote 字段混入 part 对象。
+
+---
+
+#### 问题 D：重复路由定义（需清理）
+
+**文件：** `app/api/sales.py`
+
+**现状：** `/sales/parts` 路径被定义了两次：
+- `sales_parts_list_page`（先注册，FastAPI 实际生效）
+- `sales_part_list_page`（后注册，被覆盖，实际无效）
+
+同样，报价工作流存在两套重复路由（单数 vs 复数形式）：
+- `/api/quote/{id}/submit` 和 `/api/quotes/{id}/submit`
+- `/api/quote/{id}/approve` 和 `/api/quotes/{id}/approve`
+- `/api/quote/{id}/reject` 和 `/api/quotes/{id}/reject`
+
+**修复方案：** 统一使用复数形式 `/api/quotes/{id}/...`，删除单数形式的旧路由，同步更新 `api_config.js`。
+
+---
+
+### 三、本次重构的具体执行范围
+
+#### 第一阶段：数据库与模型层
+
+| 序号 | 操作 | 文件 | 具体内容 |
+|------|------|------|----------|
+| 1.1 | 清理 `PartCreateRequest` | `app/models/schemas.py` | 将 `stamping_fee, surface_fee, profit_margin, final_price_override, pricing_mode, referenced_part_id, material_utilization, machine_type, press_tonnage` 从 `PartCreateRequest` 中移除，改为独立的 `QuoteInitBody` |
+| 1.2 | 修复 `create_part_with_pricing` | `app/services/db_service.py` | 确保该函数在创建 part 后同步创建 DRAFT 状态的 quote 记录 |
+
+#### 第二阶段：后端服务与路由层
+
+| 序号 | 操作 | 文件 | 具体内容 |
+|------|------|------|----------|
+| 2.1 | 清理重复路由 | `app/api/sales.py` | 删除单数形式 `/api/quote/{id}/...` 旧路由，统一使用 `/api/quotes/{id}/...` |
+| 2.2 | 清理重复页面路由 | `app/api/sales.py` | 删除 `sales_part_list_page`（无效的第二个 `/sales/parts` 定义） |
+| 2.3 | 同步更新 `api_config.js` | `static/js/api_config.js` | 确认所有前端调用指向复数形式路由 |
+| 2.4 | 重构 `get_part_detail` 返回结构 | `app/api/sales.py` | 确保返回 `{part: {...}, quote: {...}}` 分层结构，而非将 quote 字段混入 part 对象 |
+
+#### 第三阶段：前端模板层
+
+| 序号 | 操作 | 文件 | 具体内容 |
+|------|------|------|----------|
+| 3.1 | 修复越界引用 | `templates/sales/part_pricing.html` 第 243 行 | `p.approval_status` → `quote.approval_status` |
+| 3.2 | 修复越界引用 | `templates/material_prices.html` 第 429 行 | `p.approval_status` → `quote.approval_status` |
+| 3.3 | 审查 `part_create.html` | `templates/sales/part_create.html` | 确认创建零件时的报价字段（stamping_fee 等）通过独立的 quote 创建接口提交，而非混入 part 创建请求 |
+
+---
+
+### 四、不需要修改的部分（已正确实现）
+
+以下内容**已经符合领域解耦原则**，本次重构不触碰：
+
+1. **`quotes` 表的完整 CRUD 路由**（`/api/quotes/{id}` 系列）——已正确实现
+2. **报价审批状态机**（`DRAFT → PENDING_BOSS → APPROVED/REJECTED`）——已正确实现
+3. **白盒核算引擎**（`calc_pricing` 接口）——已基于 `quotes` 参数计算，无需修改
+4. **`get_part_pricing_summary`**——已通过 JOIN 正确聚合 part + quote + material 三表数据
+5. **`create_part_with_mold_and_pricing`**——已实现三表原子事务（parts + molds + quotes）
+6. **`templates/sales/part_pricing.html` 中的大部分 quote 字段引用**——已正确通过 `quote.xxx` 访问
+
+---
+
+### 五、风险评估
+
+| 风险项 | 等级 | 说明 |
+|--------|------|------|
+| Schema 修改影响前端表单 | 中 | `PartCreateRequest` 字段变更需同步修改 `part_create.html` 的提交逻辑 |
+| 重复路由清理影响现有调用 | 低 | 单数形式路由在 `api_config.js` 中未登记，前端已使用复数形式 |
+| `p.approval_status` 越界引用 | 低 | 目前通过 JOIN 混入能工作，但语义错误，需修正 |
+| `create_part_with_pricing` 缺少 quote 创建 | 中 | 若此函数被调用，会产生无 quote 的孤立 part，影响后续定价流程 |
+
+---
+
+### 六、执行顺序建议
+
+```
+1. 先修复 db_service.py（create_part_with_pricing 补充 quote 创建）
+2. 再修复 schemas.py（PartCreateRequest 字段分层）
+3. 再修复 sales.py（清理重复路由，重构 get_part_detail 返回结构）
+4. 最后修复模板（p.approval_status 越界引用）
+5. 全程不需要新建迁移文件（数据库 schema 已正确，无需变更表结构）
+```
+
+---
+
+*报告生成时间：2026-05-22*
+*下一步：等待架构师确认后开始执行*

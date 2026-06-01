@@ -141,9 +141,36 @@ def prod_manager_page(request: Request):
         return RedirectResponse("/login")
     if user["role_level"] < 3:
         raise HTTPException(status_code=403, detail="权限不足")
+    import datetime as _dt
+    import decimal as _dec
     data = get_manager_dashboard_data()
+    _now = _dt.datetime.now()
+
+    def _serialize_rows(rows, compute_elapsed=False):
+        result = []
+        for row in rows:
+            d = dict(row)
+            if compute_elapsed:
+                ts = d.get('fault_reported_at') or d.get('tech_arrival_time')
+                if ts and isinstance(ts, (_dt.datetime, _dt.date)):
+                    d['elapsed_min'] = int((_now - ts).total_seconds() / 60)
+                else:
+                    d['elapsed_min'] = 0
+            for k, v in d.items():
+                if isinstance(v, (_dt.datetime, _dt.date, _dt.time)):
+                    d[k] = v.isoformat()
+                elif isinstance(v, _dec.Decimal):
+                    d[k] = float(v)
+            result.append(d)
+        return result
+
+    data['machines']        = _serialize_rows(data.get('machines', []), compute_elapsed=True)
+    data['unassigned_plans'] = _serialize_rows(data.get('unassigned_plans', []))
+    data['active_plans']    = _serialize_rows(data.get('active_plans', []))
+
     return templates.TemplateResponse("prod/prod_manager_dashboard.html", {
         "request": request, "user": user,
+        "now": _now,
         **data,
     })
 
@@ -155,8 +182,17 @@ def prod_manager_json(request: Request):
         return JSONResponse({"error": "未登录"}, status_code=401)
     if user["role_level"] < 3:
         return JSONResponse({"error": "权限不足"}, status_code=403)
+    import datetime, decimal, json
     data = get_manager_dashboard_data()
-    return JSONResponse(data)
+
+    def _default(obj):
+        if isinstance(obj, (datetime.datetime, datetime.date, datetime.time)):
+            return obj.isoformat()
+        if isinstance(obj, decimal.Decimal):
+            return float(obj)
+        raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
+
+    return JSONResponse(json.loads(json.dumps(data, default=_default)))
 
 
 @router.post("/manager/intervene")

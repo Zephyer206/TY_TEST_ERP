@@ -6,37 +6,70 @@ from fastapi import Request, HTTPException
 from fastapi.responses import RedirectResponse
 from urllib.parse import unquote
 
+# view_as → (display_dept, override_role_level)
+# 仅 is_superadmin 可使用，模拟不同部门+角色视角
+VIEW_AS_MAP = {
+    # 部门视角（保持原 role_level）
+    "sales":     ("sales",     None),
+    "prod":      ("prod",      None),
+    "tech":      ("tech",      None),
+    "qc":        ("qc",        None),
+    "pkg":       ("pkg",       None),
+    "whse":      ("whse",      None),
+    "spraying":  ("spraying",  None),
+    "admin":     ("admin",     None),
+    # 生产部角色视角
+    "prod-op":   ("prod",      1),   # 生产部-操作工
+    "prod-lead": ("prod",      3),   # 生产部-组长
+    # 开发部角色视角
+    "dev-mold":  ("dev-mold",  2),   # 开发部-模具工程师
+    "dev-design":("dev-design",4),   # 开发部-设计工程师
+    # 业务视角
+    "sales-mgr": ("sales",     5),   # 业务经理
+}
+
 
 def get_current_user(request: Request):
     """
     从请求 Cookie 中解析当前登录用户信息。
     支持视图切换（view_as）：仅 is_superadmin 可切换 department 显示，
-    真实权限（role_level）保持不变。
+    真实权限（role_level）保持不变（除非使用 prod-op/prod-lead 等角色模拟）。
+    is_superadmin 基于真实 role_level（cookie 中的原始值），不受 view_as 影响。
     """
     user_id = request.cookies.get("user_id")
     if not user_id:
         return None
     username = unquote(request.cookies.get("username") or "")
     real_name = unquote(request.cookies.get("real_name") or "")
-    role_level = int(request.cookies.get("role_level", 1))
+    real_role_level = int(request.cookies.get("role_level", 1))
     real_department = request.cookies.get("department") or request.cookies.get("dept") or "prod"
     view_as = request.cookies.get("view_as") or ""
-    is_superadmin = role_level >= 9
-    if view_as and is_superadmin and view_as in ("sales", "prod", "tech", "qc", "pkg", "admin", "whse", "spraying"):
-        display_department = view_as
+    # is_superadmin 基于真实权限，不受视角切换影响
+    is_superadmin = real_role_level > 9
+
+    # view_as 解析：仅 admin 可使用
+    if view_as and is_superadmin and view_as in VIEW_AS_MAP:
+        display_dept, override_role = VIEW_AS_MAP[view_as]
+        role_level = override_role if override_role is not None else real_role_level
     else:
-        display_department = real_department
+        display_dept = real_department
+        role_level = real_role_level
         view_as = ""
+
     position = unquote(request.cookies.get("position") or "")
     if not position:
         if role_level >= 9:
-            position = "\u8001\u677f"
+            position = "老板"
         elif role_level == 5:
-            position = "\u4e1a\u52a1\u7ecf\u7406" if real_department == "sales" else "\u7ec4\u957f"
+            position = "业务经理" if display_dept == "sales" else "组长"
+        elif role_level == 4:
+            position = "设计工程师"
+        elif role_level == 3:
+            position = "组长"
         elif role_level == 2:
-            position = "\u5f00\u53d1\u5de5\u7a0b\u5e08"
+            position = "模具工程师"
         else:
-            position = "\u64cd\u4f5c\u5de5"
+            position = "操作工"
 
     # is_tech 仅在需要时从数据库拉取（延迟加载，避免全局导入循环）
     is_tech = False
@@ -50,9 +83,10 @@ def get_current_user(request: Request):
         "id": int(user_id),
         "username": username,
         "role_level": role_level,
-        "dept": display_department,
-        "department": display_department,
+        "dept": display_dept,
+        "department": display_dept,
         "real_department": real_department,
+        "real_role_level": real_role_level,
         "position": position,
         "real_name": real_name,
         "is_tech": is_tech,
@@ -62,13 +96,13 @@ def get_current_user(request: Request):
 
 
 def is_global_admin(user):
-    """判断是否为全局管理员（role_level >= 9）"""
-    return user and user.get("role_level", 0) >= 9
+    """判断是否为全局管理员（role_level > 9）"""
+    return user and user.get("real_role_level", 0) > 9
 
 
 def can_bypass_dept(user):
-    """Global Bypass: is_superadmin=True 或 role_level >= 9 则允许穿透所有部门拦截"""
-    return user and (user.get("is_superadmin") or user.get("role_level", 0) >= 9)
+    """Global Bypass: is_superadmin=True 或 real_role_level >= 9 则允许穿透所有部门拦截"""
+    return user and (user.get("is_superadmin") or user.get("real_role_level", 0) >= 9)
 
 
 def require_login(user):
@@ -79,5 +113,5 @@ def require_login(user):
 
 
 def can_see_all_molds(user):
-    """Level 9\uff08\u8001\u677f\uff09\u3001Level 5\uff08\u4e1a\u52a1\u7ecf\u7406/\u7ec4\u957f\uff09\u3001Level 2\uff08\u5f00\u53d1\uff09\u53ef\u89c1\u5168\u90e8\u6a21\u5177"""
+    """Level 9（老板）、Level 5（业务经理/组长）、Level 2（开发）可见全部模具"""
     return user and user.get("role_level", 0) in (9, 5, 2)

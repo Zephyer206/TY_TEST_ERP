@@ -57,15 +57,17 @@ app.include_router(prod.router)           # /prod/*
 app.include_router(prod_sessions.router)  # /prod/sessions/* â?çäº§ä¼è¯é»å£å­?
 app.include_router(sales.api_router)     # /api/* â?AJAX æ¥å£ï¼å¿é¡»å¨ /sales ä¹åï¼?
 app.include_router(sales.router)          # /sales/*
+app.include_router(sales.boss_router)       # /boss/*
 app.include_router(materials.router)          # /materials/*
 app.include_router(materials.material_api_router)  # /api/materials/* â?QR èµç  JSON API
 app.include_router(qc.router)            # /qc/*
 app.include_router(qa.router)            # /qa/* â?åè´¨ä¸å®¡è®?
 app.include_router(pkg.router)           # /pkg/* ¡ª °ü×°Ò³ÃæÂ·ÓÉ
 app.include_router(pkg_api.router)       # /pkg/* ¡ª °ü×° JSON API£¨Èë¿â + ½á°¸£©
-app.include_router(tech_api.router)      # /tech/* ¡ª ´òÑùÓëÔ´Í·½¨µµ JSON API
+app.include_router(tech_api.router)      # /tech/* — 页面路由
+app.include_router(tech_api.api_router)  # /api/tech/* — JSON API
 app.include_router(spray.router)          # /spray/*
 app.include_router(admin.router)          # /machines /audit
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False)
+    uvicorn.run("main:app", host="0.0.0.0", port=8000)

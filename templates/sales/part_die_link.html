@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>零件-模具关联表 - 云冲压 ERP</title>
+    <script src="/static/js/api_config.js?v=20250621"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --blue: #1d4ed8; --blue-light: #dbeafe; --blue-dark: #1e40af;
+            --green: #059669; --green-light: #d1fae5;
+            --amber: #d97706; --amber-light: #fef3c7;
+            --red: #dc2626; --red-light: #fef2f2;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-400: #9ca3af; --gray-600: #4b5563; --gray-800: #1f2937;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; color: var(--gray-800); }
+
+        /* ── 顶栏 ── */
+        .topbar { background: var(--blue-dark); color: white; padding: 0 16px; height: 52px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+        .topbar-title { font-size: 16px; font-weight: 700; letter-spacing: 0.5px; }
+        .topbar-back { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 20px; }
+        .topbar-right a { color: rgba(255,255,255,0.85); text-decoration: none; font-size: 20px; }
+
+        /* ── 筛选栏 ── */
+        .filter-bar { background: white; padding: 10px 14px; display: flex; gap: 8px; flex-wrap: wrap;
+            align-items: center; border-bottom: 1px solid var(--gray-200); }
+        .filter-bar input {
+            flex: 1; min-width: 120px; height: 36px; padding: 0 10px;
+            border: 1.5px solid var(--gray-200); border-radius: 8px;
+            font-size: 13px; outline: none; background: var(--gray-50); color: var(--gray-800);
+        }
+        .filter-bar input:focus { border-color: var(--blue); background: white; }
+        .filter-bar input::placeholder { color: var(--gray-400); }
+        .month-input { max-width: 130px; }
+        .btn {
+            height: 36px; padding: 0 14px; border: none; border-radius: 8px;
+            font-size: 13px; font-weight: 700; cursor: pointer; transition: opacity 0.15s; white-space: nowrap;
+        }
+        .btn:hover { opacity: 0.85; }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-ghost { background: transparent; color: var(--gray-600); border: 1.5px solid var(--gray-200); }
+
+        /* ── 统计摘要 ── */
+        .summary-bar { background: var(--blue-dark); color: white; padding: 8px 14px;
+            display: flex; gap: 16px; overflow-x: auto; white-space: nowrap; }
+        .summary-bar span { font-size: 12px; opacity: 0.9; }
+        .summary-bar strong { font-size: 13px; margin-left: 4px; }
+
+        /* ── 表格 ── */
+        .table-wrap { overflow-x: auto; padding: 10px 14px 80px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; background: white;
+            border-radius: 10px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        thead { background: var(--gray-100); }
+        th {
+            padding: 9px 8px; text-align: left; font-weight: 700; color: var(--gray-600);
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap;
+            border-bottom: 1.5px solid var(--gray-200);
+        }
+        td { padding: 8px 8px; border-bottom: 1px solid var(--gray-100); vertical-align: middle;
+            color: var(--gray-800); }
+        tr:last-child td { border-bottom: none; }
+        tbody tr:hover { background: var(--gray-50); }
+
+        /* ── 列样式 ── */
+        .link { color: var(--blue); font-weight: 600; text-decoration: none; cursor: pointer; }
+        .link:hover { text-decoration: underline; }
+        .link-mold { color: var(--amber); font-weight: 600; text-decoration: none; cursor: pointer; }
+        .link-mold:hover { text-decoration: underline; }
+        .money { font-weight: 700; color: var(--green); font-size: 12px; }
+        .weight { font-weight: 600; color: var(--gray-800); }
+        .badge {
+            display: inline-block; padding: 1px 7px; border-radius: 6px;
+            font-size: 10px; font-weight: 700;
+        }
+        .badge-sampling { background: var(--amber-light); color: var(--amber); }
+        .badge-production { background: var(--green-light); color: var(--green); }
+        .badge-obsolete { background: var(--gray-100); color: var(--gray-400); }
+        .badge-default { background: var(--gray-100); color: var(--gray-600); }
+        .num { text-align: right; font-variant-numeric: tabular-nums; }
+        .backlog { color: var(--red); font-weight: 700; }
+        .ok { color: var(--green); }
+        .zero { color: var(--gray-400); }
+
+        /* ── 状态机颜色（行级） ── */
+        tr.row-sampling td { border-left: 3px solid var(--amber); }
+        tr.row-production td { border-left: 3px solid var(--green); }
+        tr.row-obsolete td { border-left: 3px solid var(--gray-400); opacity: 0.7; }
+
+        /* ── 空状态 ── */
+        .empty-state { text-align: center; padding: 48px 20px; color: var(--gray-400); }
+        .empty-state .icon { font-size: 36px; margin-bottom: 10px; }
+        .empty-state p { font-size: 14px; }
+
+        /* ── Loading ── */
+        .loading { text-align: center; padding: 32px; color: var(--gray-400); font-size: 13px; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="/sales" class="topbar-back">&#x2190;</a>
+    <span class="topbar-title">零件-模具关联表</span>
+    <div class="topbar-right"><a href="/sales" title="返回业务菜单">&#x2699;</a></div>
+</div>
+
+<!-- 筛选栏 -->
+<div class="filter-bar">
+    <input id="inputPart" type="text" placeholder="零件编号 / 名称" onkeydown="if(event.key==='Enter')loadData()">
+    <input id="inputMold" type="text" placeholder="模具编号" onkeydown="if(event.key==='Enter')loadData()">
+    <input id="inputMonth" class="month-input" type="month" placeholder="统计月份">
+    <button class="btn btn-primary" onclick="loadData()">查询</button>
+    <button class="btn btn-ghost" onclick="resetFilters()">重置</button>
+</div>
+
+<!-- 统计摘要（AJAX 填充） -->
+<div class="summary-bar" id="summaryBar">
+    <span>记录<strong id="totalCount">—</strong>条</span>
+    <span>含欠发<strong id="backlogCount">—</strong>条</span>
+    <span>总欠发量<strong id="backlogQty">—</strong>件</span>
+</div>
+
+<!-- 表格 -->
+<div class="table-wrap">
+    <div id="loading" class="loading">加载中…</div>
+    <table id="mainTable" style="display:none;">
+        <thead>
+            <tr>
+                <th>零件编号</th>
+                <th>零件名称</th>
+                <th>模具编号</th>
+                <th>材质</th>
+                <th>T×W×P (mm)</th>
+                <th>穴数</th>
+                <th>净重 (kg)</th>
+                <th>价格 (¥)</th>
+                <th>表面处理</th>
+                <th class="num">订单</th>
+                <th class="num">已发</th>
+                <th class="num">欠发</th>
+                <th>状态</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
+    <div id="emptyState" class="empty-state" style="display:none;">
+        <div class="icon">&#x1F4E6;</div>
+        <p>当前筛选条件下无数据</p>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── 读取 URL 参数初始化筛选 ──
+    (function initFromUrl() {
+        var u = new URL(window.location.href);
+        var pn = u.searchParams.get('part_name');
+        var mn = u.searchParams.get('mold_number');
+        var mo = u.searchParams.get('month');
+        if (mn) document.getElementById('inputMold').value = mn;
+        if (pn) document.getElementById('inputPart').value = pn;
+        if (mo) document.getElementById('inputMonth').value = mo;
+    })();
+
+    // ── 初始化默认月份 ──
+    var today = new Date();
+    var yyyy = today.getFullYear();
+    var mm = String(today.getMonth() + 1).padStart(2, '0');
+    document.getElementById('inputMonth').value = yyyy + '-' + mm;
+
+    // ── 加载数据 ──
+    function loadData() {
+        var partName = document.getElementById('inputPart').value.trim();
+        var moldNumber = document.getElementById('inputMold').value.trim();
+        var month = document.getElementById('inputMonth').value.trim();
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('mainTable').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
+
+        var url = '/api/parts/die-link/json';
+        var params = [];
+        if (partName)    params.push('part_name=' + encodeURIComponent(partName));
+        if (moldNumber) params.push('mold_number=' + encodeURIComponent(moldNumber));
+        if (month)      params.push('month=' + encodeURIComponent(month));
+        if (params.length) url += '?' + params.join('&');
+
+        fetch(url)
+            .then(function(r) { return r.json(); })
+            .then(function(res) {
+                document.getElementById('loading').style.display = 'none';
+                if (res.code !== 200 || !res.data || res.data.length === 0) {
+                    document.getElementById('emptyState').style.display = 'block';
+                    updateSummary([]);
+                    return;
+                }
+                renderTable(res.data);
+                updateSummary(res.data);
+            })
+            .catch(function(err) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('emptyState').style.display = 'block';
+                console.error(err);
+            });
+    }
+
+    // ── 渲染表格 ──
+    function renderTable(rows) {
+        document.getElementById('mainTable').style.display = '';
+        var tbody = document.getElementById('tableBody');
+        tbody.innerHTML = '';
+
+        rows.forEach(function(r) {
+            var statusClass = r.part_status === 'SAMPLING' ? 'row-sampling'
+                            : r.part_status === 'MASS_PRODUCTION' ? 'row-production'
+                            : r.part_status === 'OBSOLETE' ? 'row-obsolete'
+                            : '';
+
+            var statusBadge = formatStatusBadge(r.part_status);
+            var price = r.final_price != null ? '¥' + Number(r.final_price).toFixed(2) : '—';
+            var surface = r.surface_type || (r.surface_fee > 0 ? '¥' + Number(r.surface_fee).toFixed(2) : '—');
+            var weight = r.gross_weight != null ? Number(r.gross_weight).toFixed(3) : '—';
+            var moldLink = r.mold_number
+                ? '<a class="link-mold" href="/tech/molds/' + r.mold_id + '/profile" target="_blank">' + escHtml(r.mold_number) + '</a>'
+                : '—';
+            var partLink = '<a class="link" href="/tech/parts/' + r.part_id + '/profile" target="_blank">' + escHtml(r.part_number || '—') + '</a>';
+            var backlogQty = Number(r.backlog_qty || 0);
+            var backlogCell = backlogQty > 0
+                ? '<span class="backlog">' + backlogQty + '</span>'
+                : '<span class="ok">0</span>';
+            var moldTonnage = r.mold_tonnage ? r.mold_tonnage + 'T' : '';
+
+            var tr = document.createElement('tr');
+            tr.className = statusClass;
+            tr.innerHTML =
+                '<td>' + partLink + '</td>' +
+                '<td>' + escHtml(r.part_name || '—') + '</td>' +
+                '<td>' + moldLink + '</td>' +
+                '<td>' + escHtml(r.material_name || '—') + '</td>' +
+                '<td>' + fmtTWP(r.thickness, r.width, r.pitch) + '</td>' +
+                '<td class="num">' + (r.mold_cavities || r.cavity_count || '—') + '</td>' +
+                '<td class="num weight">' + weight + '</td>' +
+                '<td><span class="money">' + price + '</span></td>' +
+                '<td>' + escHtml(surface) + '</td>' +
+                '<td class="num">' + Number(r.order_qty || 0) + '</td>' +
+                '<td class="num ' + (Number(r.shipped_qty || 0) > 0 ? 'ok' : 'zero') + '">' + Number(r.shipped_qty || 0) + '</td>' +
+                '<td class="num">' + backlogCell + '</td>' +
+                '<td>' + statusBadge + '</td>';
+            tbody.appendChild(tr);
+        });
+    }
+
+    // ── 更新摘要 ──
+    function updateSummary(rows) {
+        document.getElementById('totalCount').textContent = rows.length;
+        var backlogRows = rows.filter(function(r) { return Number(r.backlog_qty || 0) > 0; });
+        var backlogTotal = backlogRows.reduce(function(s, r) { return s + Number(r.backlog_qty || 0); }, 0);
+        document.getElementById('backlogCount').textContent = backlogRows.length;
+        document.getElementById('backlogQty').textContent = backlogTotal.toLocaleString();
+    }
+
+    // ── 重置筛选 ──
+    function resetFilters() {
+        document.getElementById('inputPart').value = '';
+        document.getElementById('inputMold').value = '';
+        document.getElementById('inputMonth').value = yyyy + '-' + mm;
+        loadData();
+    }
+
+    // ── 辅助函数 ──
+    function escHtml(s) {
+        if (s == null) return '';
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function fmtTWP(t, w, p) {
+        var parts = [];
+        if (t != null) parts.push('T=' + Number(t).toFixed(1));
+        if (w != null) parts.push('W=' + Number(w).toFixed(1));
+        if (p != null) parts.push('P=' + Number(p).toFixed(1));
+        return parts.length > 0 ? parts.join(' × ') : '—';
+    }
+
+    function formatStatusBadge(status) {
+        var map = {
+            'SAMPLING':       { cls: 'badge-sampling', label: '打样' },
+            'MASS_PRODUCTION':{ cls: 'badge-production', label: '量产' },
+            'OBSOLETE':       { cls: 'badge-obsolete', label: '淘汰' },
+            'DRAFT':          { cls: 'badge-default', label: '草稿' },
+        };
+        var b = map[status] || { cls: 'badge-default', label: status || '—' };
+        return '<span class="badge ' + b.cls + '">' + b.label + '</span>';
+    }
+
+    // ── 初始化加载 ──
+    loadData();
+})();
+</script>
+</body>
+</html>

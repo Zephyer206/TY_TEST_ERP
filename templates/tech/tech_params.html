@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>技术参数填写 - 云冲压 ERP</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --blue: #1d4ed8; --blue-dark: #1e40af; --blue-light: #dbeafe;
+            --green: #16a34a; --green-light: #dcfce7;
+            --amber: #d97706; --amber-light: #fef3c7;
+            --red: #dc2626; --red-light: #fef2f2;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-400: #9ca3af; --gray-600: #4b5563;
+            --gray-800: #1f2937; --gray-900: #111827;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; color: var(--gray-900); }
+
+        .topbar { background: var(--blue-dark); color: white; padding: 0 16px; height: 52px; display: flex; align-items: center; position: sticky; top: 0; z-index: 50; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
+        .topbar a { color: white; text-decoration: none; font-size: 18px; margin-right: 12px; }
+        .topbar-title { font-size: 16px; font-weight: 700; }
+
+        .content { padding: 16px 14px 100px; max-width: 640px; margin: 0 auto; }
+
+        /* 待处理卡片 */
+        .pending-section { margin-bottom: 20px; }
+        .section-title { font-size: 14px; font-weight: 700; color: var(--gray-600); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; }
+        .pending-badge { background: var(--red); color: white; font-size: 12px; font-weight: 700; padding: 2px 8px; border-radius: 10px; }
+
+        .quote-card {
+            background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07); cursor: pointer;
+            transition: box-shadow 0.15s, transform 0.1s;
+            border-left: 5px solid var(--amber);
+        }
+        .quote-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.12); transform: translateY(-1px); }
+        .quote-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .quote-part-num { font-size: 16px; font-weight: 800; color: var(--gray-900); }
+        .quote-serial { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+        .quote-status { font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 8px; }
+        .status-waiting { background: var(--amber-light); color: var(--amber); }
+        .quote-meta { font-size: 13px; color: var(--gray-600); display: flex; flex-wrap: wrap; gap: 8px; }
+        .quote-meta span { display: flex; align-items: center; gap: 4px; }
+        .quote-time { font-size: 11px; color: var(--gray-400); margin-top: 6px; }
+
+        /* 表单卡片 */
+        .form-card {
+            background: white; border-radius: 16px; padding: 20px 18px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.07); margin-bottom: 14px;
+        }
+        .form-card-title { font-size: 15px; font-weight: 800; color: var(--gray-900); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+        .form-card-title .icon { font-size: 20px; }
+
+        .part-info-box {
+            background: var(--blue-light); border-radius: 12px; padding: 14px;
+            margin-bottom: 16px;
+        }
+        .part-info-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+        .part-info-row:last-child { margin-bottom: 0; }
+        .part-info-label { color: var(--blue-dark); font-weight: 600; }
+        .part-info-value { color: var(--gray-900); font-weight: 700; }
+
+        .form-row { margin-bottom: 14px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 5px; display: block; }
+        .form-input { width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray-200); border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.15s; }
+        .form-input:focus { border-color: var(--blue); }
+        .form-input.has-value { border-color: var(--green); background: var(--green-light); }
+
+        .twp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+        .twp-item { text-align: center; }
+        .twp-label { font-size: 11px; color: var(--gray-400); font-weight: 600; margin-bottom: 4px; }
+        .twp-input { width: 100%; padding: 10px 8px; border: 1.5px solid var(--gray-200); border-radius: 10px; font-size: 16px; font-weight: 700; text-align: center; outline: none; transition: border-color 0.15s; }
+        .twp-input:focus { border-color: var(--blue); }
+        .twp-input.has-value { border-color: var(--green); background: var(--green-light); color: var(--green); }
+        .twp-unit { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+        .mold-cost-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .cavity-tonnage-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        /* SDR 上传 */
+        .sdr-upload-box {
+            border: 2px dashed var(--gray-200); border-radius: 12px;
+            padding: 24px; text-align: center; cursor: pointer;
+            transition: border-color 0.15s, background 0.15s;
+            position: relative;
+        }
+        .sdr-upload-box:hover { border-color: var(--blue); background: var(--blue-light); }
+        .sdr-upload-box.has-file { border-color: var(--green); background: var(--green-light); border-style: solid; }
+        .sdr-icon { font-size: 36px; margin-bottom: 8px; color: var(--gray-400); }
+        .sdr-upload-box.has-file .sdr-icon { color: var(--green); }
+        .sdr-text { font-size: 13px; color: var(--gray-600); font-weight: 600; }
+        .sdr-hint { font-size: 11px; color: var(--gray-400); margin-top: 4px; }
+        .sdr-filename { font-size: 13px; color: var(--green); font-weight: 700; word-break: break-all; margin-top: 6px; }
+        .sdr-input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+
+        /* 按钮 */
+        .btn-bar { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1.5px solid var(--gray-100); }
+        .btn { padding: 12px 24px; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+        .btn:active { transform: scale(0.97); }
+        .btn-primary { background: var(--blue); color: white; box-shadow: 0 4px 12px rgba(29,78,216,0.35); }
+        .btn-secondary { background: var(--gray-100); color: var(--gray-600); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+        /* 空状态 */
+        .empty-box { background: white; border-radius: 16px; padding: 48px 24px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-title { font-size: 16px; font-weight: 700; color: var(--gray-600); }
+        .empty-sub { font-size: 13px; color: var(--gray-400); margin-top: 6px; }
+
+        /* Toast */
+        .toast { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); background: #1f2937; color: white; padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 600; opacity: 0; transition: opacity 0.25s; pointer-events: none; white-space: nowrap; }
+        .toast.show { opacity: 1; }
+        .toast.error { background: var(--red); }
+        .toast.success { background: var(--green); }
+
+        /* Loading */
+        .page-loading { position: fixed; inset: 0; background: rgba(240,242,245,0.9); display: flex; align-items: center; justify-content: center; z-index: 400; flex-direction: column; gap: 14px; }
+        .page-loading.hidden { display: none; }
+        .spinner { width: 40px; height: 40px; border: 4px solid var(--gray-200); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text { font-size: 14px; color: var(--gray-600); }
+
+        /* 弹窗 */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 500; padding: 20px; }
+        .modal-content { background: white; border-radius: 14px; width: 100%; max-width: 400px; max-height: 80vh; overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { padding: 14px 16px; border-bottom: 1px solid var(--gray-200); display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 14px 16px; overflow-y: auto; flex: 1; }
+
+        /* 模具类型列表 */
+        .mt-item { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--gray-100); }
+        .mt-item:last-child { border-bottom: none; }
+        .mt-info { flex: 1; min-width: 0; }
+        .mt-name { font-size: 14px; font-weight: 600; color: var(--gray-900); }
+        .mt-code { font-size: 11px; color: var(--gray-400); }
+        .mt-actions { display: flex; gap: 6px; }
+        .mt-btn { padding: 4px 8px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; }
+        .mt-btn-edit { background: var(--blue-light); color: var(--blue); }
+        .mt-btn-del { background: var(--red-light); color: var(--red); }
+
+        /* 隐藏 */
+        .hidden { display: none !important; }
+
+        /* 底部导航 */
+        .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--gray-200); display: flex; z-index: 90; max-width: 640px; margin: 0 auto; }
+        .nav-item { flex: 1; text-align: center; padding: 10px 4px; font-size: 11px; font-weight: 600; color: var(--gray-600); text-decoration: none; cursor: pointer; }
+        .nav-item.active { color: var(--blue-dark); }
+        .nav-item .nav-icon { font-size: 22px; display: block; margin-bottom: 2px; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a href="/">&#8592;</a>
+    <span class="topbar-title">技术参数填写</span>
+</div>
+
+<div class="content">
+    <!-- 待处理列表 -->
+    <div class="pending-section" id="pendingSection">
+        <div class="section-title">
+            待处理报价单 <span class="pending-badge" id="pendingCount">0</span>
+        </div>
+        <div id="pendingList"></div>
+    </div>
+
+    <!-- 参数填写表单 -->
+    <div class="form-card hidden" id="formCard">
+        <div class="form-card-title">
+            <span class="icon">&#9881;</span> 技术参数填写
+        </div>
+
+        <div class="part-info-box" id="partInfoBox">
+            <div class="part-info-row">
+                <span class="part-info-label">零件号</span>
+                <span class="part-info-value" id="partNumber">--</span>
+            </div>
+            <div class="part-info-row">
+                <span class="part-info-label">零件名称</span>
+                <span class="part-info-value" id="partName">--</span>
+            </div>
+            <div class="part-info-row">
+                <span class="part-info-label">材料</span>
+                <span class="part-info-value" id="partMaterial">--</span>
+            </div>
+            <div class="part-info-row">
+                <span class="part-info-label">报价单号</span>
+                <span class="part-info-value" id="quoteSerial">--</span>
+            </div>
+        </div>
+
+        <!-- 图纸区域（业务图纸只读预览 + SDR 上传） -->
+        <div class="form-row">
+            <label class="form-label">📎 图纸</label>
+            <div id="drawingArea" style="background:#f0f9ff; border:1px solid #bae6fd; border-radius:10px; padding:12px;">
+                <!-- 业务图纸（只读预览） -->
+                <div id="businessDrawingSection" style="display:none; margin-bottom:12px; padding-bottom:12px; border-bottom:1px dashed #bae6fd;">
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span style="font-size:14px;">📄</span>
+                        <span style="font-size:12px; font-weight:600; color:#0369a1;">业务图纸</span>
+                    </div>
+                    <div id="businessDrawingName" style="font-size:13px; font-weight:600; color:#0369a1; word-break:break-all; margin-bottom:6px;">--</div>
+                    <!-- 预览区 -->
+                    <div id="businessDrawingPreviewIframe" style="display:none; margin-bottom:8px;">
+                        <iframe id="businessDrawingIframe" style="width:100%; height:250px; border:1px solid #bae6fd; border-radius:6px; background:white;"></iframe>
+                    </div>
+                    <div id="businessDrawingImgContainer" style="display:none; margin-bottom:8px; text-align:center;">
+                        <img id="businessDrawingImg" style="max-width:100%; max-height:250px; border:1px solid #bae6fd; border-radius:6px;">
+                    </div>
+                    <div style="display:flex; gap:8px;">
+                        <a id="businessDrawingLink" href="#" target="_blank" style="flex:1; display:none; padding:6px 12px; font-size:12px; background:#0369a1; color:white; text-decoration:none; border-radius:6px; text-align:center;">查看</a>
+                        <a id="businessDrawingDownload" href="#" download style="flex:1; display:none; padding:6px 12px; font-size:12px; background:#e2e8f0; color:#475569; text-decoration:none; border-radius:6px; text-align:center;">下载</a>
+                    </div>
+                </div>
+                <!-- SDR 图纸上传统 -->
+                <div>
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:8px;">
+                        <span style="font-size:14px;">📐</span>
+                        <span style="font-size:12px; font-weight:600; color:#7c3aed;">SDR 分析图纸（可选）</span>
+                    </div>
+                    <div class="sdr-upload-box" id="sdrUploadBox">
+                        <div class="sdr-icon">&#128196;</div>
+                        <div class="sdr-text" id="sdrText">点击上传 SDR 图纸</div>
+                        <div class="sdr-hint">支持 PDF / DWG / DXF / PNG / JPG</div>
+                        <div class="sdr-filename hidden" id="sdrFilename"></div>
+                        <input type="file" class="sdr-input" id="sdrInput" accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg">
+                    </div>
+                    <input type="hidden" id="sdrPath" value="">
+                </div>
+            </div>
+        </div>
+
+        <!-- T/W/P -->
+        <div class="form-row">
+            <label class="form-label">T / W / P 物理参数</label>
+            <div class="twp-grid">
+                <div class="twp-item">
+                    <div class="twp-label">厚度 T</div>
+                    <input type="number" step="0.01" class="twp-input" id="inputThickness" placeholder="0" min="0">
+                    <div class="twp-unit">mm</div>
+                </div>
+                <div class="twp-item">
+                    <div class="twp-label">宽度 W</div>
+                    <input type="number" step="0.01" class="twp-input" id="inputWidth" placeholder="0" min="0">
+                    <div class="twp-unit">mm</div>
+                </div>
+                <div class="twp-item">
+                    <div class="twp-label">行程 P</div>
+                    <input type="number" step="0.01" class="twp-input" id="inputPressStroke" placeholder="0" min="0">
+                    <div class="twp-unit">mm</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 穴数和吨位 -->
+        <div class="form-row">
+            <div class="cavity-tonnage-grid">
+                <div>
+                    <label class="form-label">穴数</label>
+                    <input type="number" class="form-input" id="inputCavityCount" placeholder="1" min="1" value="1">
+                </div>
+                <div>
+                    <label class="form-label">吨位</label>
+                    <input type="number" class="form-input" id="inputPressTonnage" placeholder="0" min="0">
+                    <div class="form-hint">吨（整数）</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 模具类型 + 模具费 -->
+        <div class="form-row">
+            <div class="cavity-tonnage-grid">
+                <div>
+                    <label class="form-label">模具类型</label>
+                    <div style="display:flex; gap:4px;">
+                        <select class="form-input" id="inputMoldType" style="cursor:pointer; flex:1;">
+                            <option value="">-- 请选择 --</option>
+                        </select>
+                        <button onclick="openMoldTypeManage()" style="padding:8px 10px; cursor:pointer; background:#e2e8f0; border:1px solid #cbd5e1; border-radius:8px; font-size:14px;" title="管理模具类型">&#9881;</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="form-label">模具费（元）</label>
+                    <input type="number" step="0.01" class="form-input" id="inputMoldCost" placeholder="0.00" min="0">
+                </div>
+            </div>
+        </div>
+
+        <!-- 材料利用率和模具寿命 -->
+        <div class="form-row">
+            <div class="cavity-tonnage-grid">
+                <div>
+                    <label class="form-label">材料利用率（%）</label>
+                    <input type="number" step="0.1" class="form-input" id="inputMaterialUtil" placeholder="100" min="0" max="100" value="100">
+                </div>
+                <div>
+                    <label class="form-label">模具寿命（万次）</label>
+                    <input type="number" class="form-input" id="inputMoldLife" placeholder="0" min="0">
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-bar">
+            <button class="btn btn-secondary" onclick="closeForm()">取消</button>
+            <button class="btn btn-primary" id="btnSubmit" onclick="submitParams()">提交参数</button>
+        </div>
+    </div>
+
+    <!-- 模具类型管理弹窗 -->
+    <div id="moldTypeModal" class="modal-overlay hidden" onclick="if(event.target===this)closeMoldTypeModal()">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span style="font-size:16px; font-weight:700;">模具类型管理</span>
+                <span onclick="closeMoldTypeModal()" style="cursor:pointer; font-size:20px;">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="margin-bottom:12px;">
+                    <div style="display:flex; gap:8px; margin-bottom:12px;">
+                        <input type="hidden" id="mtEditId">
+                        <input type="hidden" id="mtCode">
+                        <input type="text" id="mtName" class="form-input" placeholder="输入模具类型名称" style="flex:1;">
+                        <button class="btn btn-primary" onclick="saveMoldType()" style="padding:8px 12px;">保存</button>
+                    </div>
+                </div>
+                <div id="moldTypeList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 空状态 -->
+    <div class="empty-box hidden" id="emptyBox">
+        <div class="empty-icon">&#9989;</div>
+        <div class="empty-title">暂无待处理报价单</div>
+        <div class="empty-sub">所有报价单已完成技术参数填写</div>
+    </div>
+</div>
+
+<!-- 底部导航 -->
+<div class="bottom-nav">
+    <a href="/" class="nav-item">
+        <span class="nav-icon">&#127968;</span>首页
+    </a>
+    <a href="/tech/tech-params" class="nav-item active">
+        <span class="nav-icon">&#9881;</span>技术参数
+    </a>
+    <a href="/tech/pool" class="nav-item">
+        <span class="nav-icon">&#128295;</span>待修池
+    </a>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Loading -->
+<div class="page-loading hidden" id="pageLoading">
+    <div class="spinner"></div>
+    <div class="loading-text">加载中…</div>
+</div>
+
+<script>
+(function() {
+    var currentQuoteId = null;
+    var pendingList = [];
+
+    window.addEventListener('DOMContentLoaded', function() {
+        loadPendingQuotes();
+        loadMoldTypes();
+        initSdrUpload();
+        initTwpInputs();
+    });
+
+    // 显示 Toast
+    function showToast(msg, type) {
+        var el = document.getElementById('toast');
+        el.textContent = msg;
+        el.className = 'toast ' + (type || '');
+        el.classList.add('show');
+        setTimeout(function() { el.classList.remove('show'); }, 2500);
+    }
+
+    // 显示/隐藏 Loading
+    function setLoading(show) {
+        document.getElementById('pageLoading').classList.toggle('hidden', !show);
+    }
+
+    // 加载待处理报价单
+    function loadPendingQuotes() {
+        setLoading(true);
+        fetch('/api/tech/pending-quotes')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.code === 0) {
+                    pendingList = data.data || [];
+                    renderPendingList(pendingList);
+                } else {
+                    showToast(data.message || '加载失败', 'error');
+                }
+            })
+            .catch(function() {
+                showToast('网络异常', 'error');
+            })
+            .finally(function() {
+                setLoading(false);
+            });
+    }
+
+    // 渲染待处理列表
+    function renderPendingList(quotes) {
+        var countEl = document.getElementById('pendingCount');
+        var listEl = document.getElementById('pendingList');
+        var emptyEl = document.getElementById('emptyBox');
+        var pendingSection = document.getElementById('pendingSection');
+        var formCard = document.getElementById('formCard');
+
+        countEl.textContent = quotes.length;
+
+        if (quotes.length === 0) {
+            pendingSection.classList.add('hidden');
+            formCard.classList.add('hidden');
+            emptyEl.classList.remove('hidden');
+            return;
+        }
+
+        emptyEl.classList.add('hidden');
+        pendingSection.classList.remove('hidden');
+
+        listEl.innerHTML = quotes.map(function(q) {
+            var hasParams = (q.thickness || q.width || q.press_stroke || q.cavity_count);
+            return '<div class="quote-card" onclick="openForm(' + q.id + ', ' + escAttr(JSON.stringify(q)) + ')">' +
+                '<div class="quote-card-header">' +
+                    '<div>' +
+                        '<div class="quote-part-num">' + escHtml(q.part_number || '--') + '</div>' +
+                        '<div class="quote-serial">' + escHtml(q.quote_serial || '') + '</div>' +
+                    '</div>' +
+                    '<span class="quote-status status-waiting">待填写参数</span>' +
+                '</div>' +
+                '<div class="quote-meta">' +
+                    '<span>&#127807; ' + escHtml(q.internal_name || '--') + '</span>' +
+                    '<span>&#9881; ' + escHtml(q.material_name || '未设置') + '</span>' +
+                '</div>' +
+                '<div class="quote-time">提交时间: ' + fmtTime(q.created_at) + '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    // 打开表单（暴露到全局供 onclick 调用）
+    window.openForm = function(quoteId, quoteData) {
+        currentQuoteId = quoteId;
+        var q = typeof quoteData === 'string' ? JSON.parse(quoteData) : quoteData;
+
+        document.getElementById('partNumber').textContent = q.part_number || '--';
+        document.getElementById('partName').textContent = q.internal_name || '--';
+        document.getElementById('partMaterial').textContent = q.material_name || '未设置';
+        document.getElementById('quoteSerial').textContent = q.quote_serial || '--';
+
+        // 业务上传图纸（支持预览和下载）
+        var busPath = q.business_drawing_path || '';
+        var fileName = busPath ? busPath.split('/').pop() : '';
+        var fileExt = fileName ? fileName.split('.').pop().toLowerCase() : '';
+        var isViewable = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'].indexOf(fileExt) !== -1;
+        var fileUrl = busPath ? (busPath.startsWith('/') ? busPath : '/' + busPath) : '#';
+
+        var sectionEl = document.getElementById('businessDrawingSection');
+        var previewIframeEl = document.getElementById('businessDrawingIframe');
+        var previewImgEl = document.getElementById('businessDrawingImg');
+        var previewDivEl = document.getElementById('businessDrawingPreviewIframe');
+        var previewImgDivEl = document.getElementById('businessDrawingImgContainer');
+
+        if (busPath) {
+            sectionEl.style.display = '';
+            document.getElementById('businessDrawingName').textContent = fileName;
+
+            // 设置链接
+            var linkEl = document.getElementById('businessDrawingLink');
+            var downloadEl = document.getElementById('businessDrawingDownload');
+            linkEl.href = fileUrl;
+            linkEl.style.display = '';
+            downloadEl.href = fileUrl;
+            downloadEl.download = fileName;
+            downloadEl.style.display = '';
+
+            // 根据文件类型处理预览
+            previewDivEl.style.display = 'none';
+            previewImgDivEl.style.display = 'none';
+
+            if (isViewable) {
+                if (fileExt === 'pdf') {
+                    previewIframeEl.src = fileUrl;
+                    previewDivEl.style.display = '';
+                } else {
+                    previewImgEl.src = fileUrl;
+                    previewImgDivEl.style.display = '';
+                }
+            }
+        } else {
+            sectionEl.style.display = 'none';
+        }
+
+        // 填充已有参数
+        document.getElementById('inputThickness').value = q.thickness || '';
+        document.getElementById('inputWidth').value = q.width || '';
+        document.getElementById('inputPressStroke').value = q.press_stroke || '';
+        document.getElementById('inputCavityCount').value = q.cavity_count || 1;
+        document.getElementById('inputPressTonnage').value = q.press_tonnage || '';
+        document.getElementById('inputMoldCost').value = q.mold_cost || '';
+        document.getElementById('inputMaterialUtil').value = q.material_utilization || 100;
+        document.getElementById('inputMoldLife').value = q.mold_life || '';
+        document.getElementById('inputMoldType').value = q.mold_type || '';
+
+        // SDR 图纸
+        if (q.sdr_drawing_path) {
+            document.getElementById('sdrPath').value = q.sdr_drawing_path;
+            document.getElementById('sdrFilename').textContent = q.sdr_drawing_path.split('/').pop();
+            document.getElementById('sdrFilename').classList.remove('hidden');
+            document.getElementById('sdrText').textContent = '已上传';
+            document.getElementById('sdrUploadBox').classList.add('has-file');
+        } else {
+            document.getElementById('sdrPath').value = '';
+            document.getElementById('sdrFilename').classList.add('hidden');
+            document.getElementById('sdrText').textContent = '点击上传 SDR 图纸';
+            document.getElementById('sdrUploadBox').classList.remove('has-file');
+        }
+
+        updateTwpInputs();
+        document.getElementById('formCard').classList.remove('hidden');
+        document.getElementById('pendingSection').classList.add('hidden');
+        document.getElementById('emptyBox').classList.add('hidden');
+    }
+
+    // 关闭表单（暴露到全局供 onclick 调用）
+    window.closeForm = function() {
+        currentQuoteId = null;
+        document.getElementById('formCard').classList.add('hidden');
+        document.getElementById('pendingSection').classList.remove('hidden');
+        if (pendingList.length === 0) {
+            document.getElementById('emptyBox').classList.remove('hidden');
+        }
+    }
+
+    // 提交参数
+    window.submitParams = function() {
+        if (!currentQuoteId) {
+            showToast('请先选择一个报价单', 'error');
+            return;
+        }
+
+        var btn = document.getElementById('btnSubmit');
+        btn.disabled = true;
+        btn.textContent = '提交中…';
+
+        var params = {
+            thickness: parseFloat(document.getElementById('inputThickness').value) || null,
+            width: parseFloat(document.getElementById('inputWidth').value) || null,
+            press_stroke: parseFloat(document.getElementById('inputPressStroke').value) || null,
+            cavity_count: parseInt(document.getElementById('inputCavityCount').value) || 1,
+            press_tonnage: parseInt(document.getElementById('inputPressTonnage').value) || null,
+            mold_cost: parseFloat(document.getElementById('inputMoldCost').value) || null,
+            sdr_drawing_path: document.getElementById('sdrPath').value || null,
+            material_utilization: parseFloat(document.getElementById('inputMaterialUtil').value) || null,
+            mold_life: parseInt(document.getElementById('inputMoldLife').value) || null,
+            mold_type: document.getElementById('inputMoldType').value || null
+        };
+
+        fetch('/api/tech/quote/' + currentQuoteId + '/params', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(params)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.code === 0) {
+                showToast('技术参数已保存', 'success');
+                setTimeout(function() {
+                    closeForm();
+                    loadPendingQuotes();
+                }, 1200);
+            } else {
+                showToast(data.message || '提交失败', 'error');
+                btn.disabled = false;
+                btn.textContent = '提交参数';
+            }
+        })
+        .catch(function() {
+            showToast('网络异常', 'error');
+            btn.disabled = false;
+            btn.textContent = '提交参数';
+        });
+    }
+
+    // 初始化 SDR 上传
+    function initSdrUpload() {
+        var input = document.getElementById('sdrInput');
+        input.addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            if (!file) return;
+            if (!currentQuoteId) {
+                showToast('请先选择一个报价单', 'error');
+                return;
+            }
+
+            var formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/api/tech/quote/' + currentQuoteId + '/sdr-upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.code === 0) {
+                    document.getElementById('sdrPath').value = data.data.path;
+                    document.getElementById('sdrFilename').textContent = file.name;
+                    document.getElementById('sdrFilename').classList.remove('hidden');
+                    document.getElementById('sdrText').textContent = '上传成功';
+                    document.getElementById('sdrUploadBox').classList.add('has-file');
+                    showToast('SDR 图纸上传统功', 'success');
+                } else {
+                    showToast(data.message || '上传失败', 'error');
+                }
+            })
+            .catch(function() {
+                showToast('上传失败', 'error');
+            });
+        });
+    }
+
+    // 初始化 T/W/P 输入样式
+    function initTwpInputs() {
+        var inputs = ['inputThickness', 'inputWidth', 'inputPressStroke'];
+        inputs.forEach(function(id) {
+            document.getElementById(id).addEventListener('input', updateTwpInputs);
+        });
+    }
+
+    function updateTwpInputs() {
+        var inputs = ['inputThickness', 'inputWidth', 'inputPressStroke'];
+        inputs.forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el.value && parseFloat(el.value) > 0) {
+                el.classList.add('has-value');
+            } else {
+                el.classList.remove('has-value');
+            }
+        });
+    }
+
+    // ── 模具类型管理 ──────────────────────────────────────
+
+    window.openMoldTypeManage = function() {
+        document.getElementById('moldTypeModal').classList.remove('hidden');
+        loadMoldTypes();
+    }
+
+    window.closeMoldTypeModal = function() {
+        document.getElementById('moldTypeModal').classList.add('hidden');
+    }
+
+    function loadMoldTypes() {
+        fetch('/api/tech/mold-types')
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.code === 0) {
+                    renderMoldTypeList(data.data || []);
+                    updateMoldTypeSelect(data.data || []);
+                }
+            });
+    }
+
+    function updateMoldTypeSelect(types) {
+        var sel = document.getElementById('inputMoldType');
+        var currentVal = sel.value;
+        sel.innerHTML = '<option value="">-- 请选择 --</option>';
+        types.forEach(function(t) {
+            var opt = document.createElement('option');
+            opt.value = t.code;
+            opt.textContent = t.name;
+            sel.appendChild(opt);
+        });
+        sel.value = currentVal;
+    }
+
+    function renderMoldTypeList(types) {
+        var listEl = document.getElementById('moldTypeList');
+        if (types.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; color:var(--gray-400); padding:20px;">暂无模具类型</div>';
+            return;
+        }
+        listEl.innerHTML = types.map(function(t) {
+            return '<div class="mt-item">' +
+                '<div class="mt-info">' +
+                    '<div class="mt-name">' + escHtml(t.name) + '</div>' +
+                '</div>' +
+                '<div class="mt-actions">' +
+                    '<button class="mt-btn mt-btn-edit" onclick="editMoldType(' + t.id + ', \'' + escAttr(t.code) + '\', \'' + escAttr(t.name) + '\')">编辑</button>' +
+                    '<button class="mt-btn mt-btn-del" onclick="delMoldType(' + t.id + ')">删除</button>' +
+                '</div>' +
+            '</div>';
+        }).join('');
+    }
+
+    window.editMoldType = function(id, code, name) {
+        document.getElementById('mtEditId').value = id;
+        document.getElementById('mtCode').value = code;
+        document.getElementById('mtName').value = name;
+    }
+
+    window.saveMoldType = function() {
+        var id = document.getElementById('mtEditId').value;
+        var code = document.getElementById('mtCode').value.trim();
+        var name = document.getElementById('mtName').value.trim();
+
+        if (!name) {
+            showToast('名称不能为空', 'error');
+            return;
+        }
+
+        // 如果是新创建，自动生成代码
+        if (!code) {
+            code = name.toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+        }
+
+        var url = id ? '/api/tech/mold-types/' + id : '/api/tech/mold-types';
+        var method = id ? 'PUT' : 'POST';
+        var body = JSON.stringify({ code: code, name: name, sort_order: 0 });
+
+        fetch(url, { method: method, headers: { 'Content-Type': 'application/json' }, body: body })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.code === 0) {
+                    showToast('保存成功', 'success');
+                    document.getElementById('mtEditId').value = '';
+                    document.getElementById('mtCode').value = '';
+                    document.getElementById('mtName').value = '';
+                    loadMoldTypes();
+                } else {
+                    showToast(data.message || '保存失败', 'error');
+                }
+            });
+    }
+
+    window.delMoldType = function(id) {
+        if (!confirm('确定删除此模具类型？')) return;
+        fetch('/api/tech/mold-types/' + id, { method: 'DELETE' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.code === 0) {
+                    showToast('删除成功', 'success');
+                    loadMoldTypes();
+                } else {
+                    showToast(data.message || '删除失败', 'error');
+                }
+            });
+    }
+
+    // 工具函数
+    function escHtml(s) {
+        if (!s) return '';
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+    function escAttr(s) {
+        if (!s) return '';
+        return String(s).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+    function fmtTime(ts) {
+        if (!ts) return '--';
+        var d = new Date(ts);
+        if (isNaN(d.getTime())) return ts;
+        return d.getFullYear() + '-' +
+            String(d.getMonth()+1).padStart(2,'0') + '-' +
+            String(d.getDate()).padStart(2,'0') + ' ' +
+            String(d.getHours()).padStart(2,'0') + ':' +
+            String(d.getMinutes()).padStart(2,'0');
+    }
+})();
+</script>
+
+</body>
+</html>

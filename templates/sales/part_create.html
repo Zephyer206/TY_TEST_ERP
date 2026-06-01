@@ -269,6 +269,18 @@
         /* ── 分隔线 ── */
         .divider { border: none; border-top: 1px solid #f3f4f6; margin: 14px 0; }
 
+        /* ── 图纸上传 ── */
+        .upload-area {
+            border: 2px dashed #d1d5db; border-radius: 10px; padding: 16px;
+            text-align: center; cursor: pointer; transition: border-color 0.2s;
+            background: #fafafa;
+        }
+        .upload-area:hover, .upload-area.dragover { border-color: #7c3aed; background: #faf5ff; }
+        .upload-area input[type=file] { display: none; }
+        .upload-label { font-size: 13px; color: #6b7280; cursor: pointer; }
+        .upload-label b { color: #7c3aed; }
+        .upload-preview { font-size: 12px; color: #059669; margin-top: 6px; font-weight: 600; }
+
         /* ── 响应式 ── */
         @media (max-width: 480px) {
             .form-row { grid-template-columns: 1fr; }
@@ -318,6 +330,25 @@
                     </datalist>
                     <div class="form-hint">可下拉选择行业常用分类，也支持手动输入新名称</div>
                 </div>
+                <div class="form-group">
+                    <label class="form-label">备注 <span class="optional">（同名件号时填写）</span></label>
+                    <input type="text" name="remark" class="form-input" placeholder="件号重复时填写，用于区分">
+                    <div class="form-hint">同名件号时必须填写以区分，正常情况可不填</div>
+                </div>
+            </div>
+            <!-- 图纸上传 -->
+            <div class="form-group">
+                <label class="form-label">上传图纸（可选）</label>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('drawingFile').click()"
+                     ondragover="event.preventDefault();this.classList.add('dragover')"
+                     ondragleave="this.classList.remove('dragover')"
+                     ondrop="onDrawingDrop(event)">
+                    <input type="file" id="drawingFile" accept=".pdf,.dwg,.dxf,.png,.jpg,.jpeg"
+                           onchange="onDrawingSelect(this)">
+                    <label class="upload-label"><b>点击选择</b>或拖拽图纸文件到此处</label>
+                    <div class="upload-preview" id="uploadPreview"></div>
+                </div>
+                <div class="form-hint">支持 PDF / DWG / DXF / PNG / JPG，最大 20MB</div>
             </div>
             <div class="form-group">
                 <label class="form-label">材料牌号 <span class="required">*</span></label>
@@ -337,6 +368,24 @@
                     <button type="button" class="btn-edit-material" id="btnEditMaterial" onclick="openMaterialModal('edit')" disabled>&#x270F; 编辑材料</button>
                 </div>
                 <div class="form-hint">必选，将关联材料参数中心的密度与单价</div>
+            </div>
+            <!-- 客户选择 -->
+            <div class="form-group">
+                <label class="form-label">所属客户（可选）</label>
+                <div class="material-row">
+                    <select id="selCustomer" class="form-select" onchange="onCustomerChange()">
+                        <option value="">— 选择客户 —</option>
+                    </select>
+                    <button type="button" class="btn-new-material" onclick="openCustomerModal('create')">+ 新建客户</button>
+                    <button type="button" class="btn-edit-material" id="btnEditCustomer" onclick="openCustomerModal('edit')" disabled>&#x270F; 编辑</button>
+                </div>
+                <div class="form-hint">关联客户后可填写客户件号别名</div>
+            </div>
+            <!-- 客户件号别名（选客户后显示） -->
+            <div class="form-group" id="aliasGroup" style="display:none;">
+                <label class="form-label">客户件号别名</label>
+                <input type="text" name="alias_part_number" class="form-input" placeholder="如：Z101-2102">
+                <div class="form-hint">发货时将显示客户件号</div>
             </div>
         </div>
 
@@ -371,6 +420,19 @@
                     <div class="path-name">独立新件</div>
                     <div class="path-desc">输入 T/W/P 参数，白盒自动核算材料净成本</div>
                     <span class="path-tag tag-b">白盒自动核算</span>
+                </label>
+
+                <!-- 路径 C：先向开发获取参数 -->
+                <label class="path-card" id="cardC" onclick="selectPath('C')">
+                    <input type="radio" name="pricing_mode_radio" value="pending_tech" class="path-radio" id="radioC">
+                    <div class="path-label">
+                        <div class="path-dot"></div>
+                        <span>路径 C</span>
+                    </div>
+                    <div class="path-icon">&#x1F4AC;</div>
+                    <div class="path-name">先向开发询参</div>
+                    <div class="path-desc">先提交基础信息，等技术部填写 T/W/P 参数后再报价</div>
+                    <span class="path-tag" style="background:#dcfce7;color:#166534;">待技术确认</span>
                 </label>
             </div>
 
@@ -567,35 +629,25 @@
         </div>
 
         <!-- ══════════════════════════════════════════ -->
-        <!-- 第三步：客户别名（可选）                   -->
+        <!-- 第三步：确认提交                          -->
         <!-- ══════════════════════════════════════════ -->
         <div class="card" id="section3">
-            <div class="card-title">&#x1F3D7; 客户件号别名（可选）</div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label class="form-label">客户 ID</label>
-                    <input type="number" name="customer_id" id="inpCustomerId" class="form-input" placeholder="客户ID（待扩展）">
-                </div>
-                <div class="form-group">
-                    <label class="form-label">客户件号别名</label>
-                    <input type="text" name="alias_part_number" class="form-input" placeholder="如：Z101-2102">
-                    <div class="form-hint">发货时将显示客户件号（非内部名）</div>
-                </div>
-            </div>
+            <div class="card-title">&#x2714; 确认提交</div>
+            <div class="form-hint" style="font-size:13px;color:#374151;">请确认以上信息无误后点击「创建项目」。</div>
         </div>
 
         <!-- 隐藏字段 -->
         <input type="hidden" name="pricing_mode" id="hPricingMode" value="">
         <input type="hidden" name="referenced_part_id" id="hRefPartId" value="">
         <input type="hidden" name="action" value="create">
-        <!-- V12 新增：冲压参数（由 onSubmit 同步，路径 B 有效） -->
-        <!-- press_stroke / width / cavity_count 是可见字段，已通过原有 name= 提交 -->
-        <!-- 以下隐藏字段用于传递未绑定的额外参数 -->
         <input type="hidden" name="press_tonnage" id="hPressTonnage" value="">
         <input type="hidden" name="material_utilization" id="hMaterialUtil" value="">
         <input type="hidden" name="machine_type" id="hMachineType" value="">
+        <input type="hidden" name="customer_id" id="inpCustomerId" value="">
+        <input type="hidden" name="drawing_file_path" id="hDrawingPath" value="">
 
         <div class="btn-bar">
+            <button type="button" class="btn btn-secondary" onclick="history.back()">取消</button>
             <button type="button" class="btn btn-secondary" onclick="history.back()">取消</button>
             <button type="submit" class="btn btn-primary" id="btnSubmit" onclick="return onSubmit()">&#x2714; 创建项目</button>
         </div>
@@ -701,12 +753,109 @@
     </div>
 </div>
 
+<!-- 客户管理弹窗 -->
+<div class="modal-overlay" id="modalCustomer">
+    <div class="modal-box-sm">
+        <h3 id="cModalTitle">&#x1F3D7; 新建客户</h3>
+        <div class="form-group">
+            <label class="form-label">客户名称 <span class="required">*</span></label>
+            <input type="text" id="cName" class="form-input" placeholder="如：浙江某某机械有限公司">
+            <input type="hidden" id="cEditId">
+        </div>
+        <div class="btn-row">
+            <button type="button" class="btn btn-secondary" id="btnCustDelete" onclick="deleteCustomer()" style="display:none;background:#fef2f2;color:#dc2626;border:1px solid #fca5a5;">删除</button>
+            <button type="button" class="btn btn-secondary" onclick="closeCustomerModal()">取消</button>
+            <button type="button" class="btn btn-primary" id="btnCustSubmit" onclick="submitCustomerForm()">确认创建</button>
+        </div>
+    </div>
+</div>
+
 <script src="/static/js/api_config.js"></script>
 <script>
 // ── 全局状态 ──────────────────────────────────────────────────────────
 var selectedPath = null;   // 'A' | 'B'
 var autoTotal = null;       // 自动核算结果（用于变动百分比计算）
 var pendingOverrideTotal = null;  // 用户输入的覆盖总价
+var _editQuoteId = null;   // 非 null = 编辑已有报价单
+var _editQuoteStatus = null; // 报价单状态
+
+// ── 页面加载时：检查是否有预填数据（从零件报价列表页跳转）──────────────
+(function initFromSessionStorage() {
+    try {
+        var raw = sessionStorage.getItem("edit_part_data");
+        if (!raw) return;
+        var data = JSON.parse(raw);
+        if (!data || !data.part_id) return;
+
+        _editQuoteId = data.quote_id;
+        _editQuoteStatus = data.quote_status;
+
+        // 预填基础信息
+        var inpPartNum = document.getElementById('inpPartNumber');
+        if (inpPartNum && data.part_number) inpPartNum.value = data.part_number;
+
+        var inpRemark = document.getElementById('inpRemark');
+        if (inpRemark && data.remark) inpRemark.value = data.remark;
+
+        // 预填材料（需要等材料下拉加载完成）
+        var selMat = document.getElementById('selMaterial');
+        if (selMat && data.material_name) {
+            var matOpts = selMat.options;
+            for (var i = 0; i < matOpts.length; i++) {
+                if (matOpts[i].value === data.material_name) {
+                    selMat.selectedIndex = i;
+                    onMaterialChange();
+                    break;
+                }
+            }
+        }
+
+        // 预填 T/W/P
+        var inpT = document.getElementById('inpT');
+        if (inpT && data.thickness !== "") inpT.value = data.thickness;
+
+        var inpW = document.getElementById('inpW');
+        if (inpW && data.width !== "") inpW.value = data.width;
+
+        var inpP = document.getElementById('inpP');
+        if (inpP && data.press_stroke !== "") inpP.value = data.press_stroke;
+
+        var inpCav = document.getElementById('inpCav');
+        if (inpCav && data.cavity_count) inpCav.value = data.cavity_count;
+
+        var inpUtil = document.getElementById('inpUtil');
+        if (inpUtil && data.material_utilization) inpUtil.value = data.material_utilization;
+
+        var inpProfit = document.getElementById('inpProfit');
+        if (inpProfit && data.profit_margin) inpProfit.value = data.profit_margin;
+
+        // 预填报价模式
+        if (data.pricing_mode) {
+            if (data.pricing_mode === 'Associated' || data.pricing_mode === 'reference' || data.pricing_mode === 'Associated') {
+                selectPath('A');
+            } else if (data.pricing_mode === 'Independent' || data.pricing_mode === 'independent') {
+                selectPath('B');
+            } else if (data.pricing_mode === 'PendingTech' || data.pricing_mode === 'pending_tech') {
+                selectPath('C');
+            }
+        }
+
+        // 触发一次核算
+        setTimeout(function() { triggerCalc(); }, 300);
+
+        // 显示提示
+        var hint = document.createElement('div');
+        hint.style.cssText = 'margin:0 0 12px 0;padding:10px 14px;background:#eff6ff;border:1.5px solid #3b82f6;border-radius:10px;font-size:13px;color:#1e40af;font-weight:600;text-align:center;';
+        hint.textContent = '📋 编辑零件 — ' + (data.part_number || '零件 #' + data.part_id);
+        var form = document.getElementById('mainForm');
+        if (form && form.parentNode) form.parentNode.insertBefore(hint, form);
+
+        // 预填后清除 sessionStorage
+        sessionStorage.removeItem("edit_part_data");
+    } catch (e) {
+        console.error('[initFromSessionStorage]', e);
+    }
+})();
 
 // ── Toast ─────────────────────────────────────────────────────────────
 function showToast(msg, kind) {
@@ -721,20 +870,22 @@ function selectPath(path) {
     selectedPath = path;
     document.getElementById('cardA').classList.toggle('selected', path === 'A');
     document.getElementById('cardB').classList.toggle('selected', path === 'B');
+    document.getElementById('cardC').classList.toggle('selected', path === 'C');
     document.getElementById('radioA').checked = (path === 'A');
     document.getElementById('radioB').checked = (path === 'B');
-    document.getElementById('hPricingMode').value = (path === 'A') ? 'reference' : 'independent';
+    document.getElementById('radioC').checked = (path === 'C');
+    document.getElementById('hPricingMode').value = path === 'A' ? 'reference' : path === 'B' ? 'independent' : 'pending_tech';
 
     document.getElementById('pathAFields').classList.toggle('section-hidden', path !== 'A');
     document.getElementById('pathBFields').classList.toggle('section-hidden', path !== 'B');
 
-    // 步骤指示
     document.getElementById('step2').classList.add('active');
 
-    if (path === 'A') {
-        document.getElementById('inpT').removeAttribute('required');
+    var tInp = document.getElementById('inpT');
+    if (path === 'B') {
+        tInp.setAttribute('required', '1');
     } else {
-        document.getElementById('inpT').setAttribute('required', '1');
+        tInp.removeAttribute('required');
     }
 }
 
@@ -1022,7 +1173,7 @@ function onSubmit() {
                 showToast('路径 A 需输入最终总价', 'err');
                 return false;
             }
-        } else {
+        } else if (path === 'B') {
             var T = parseFloat(document.getElementById('inpT').value) || 0;
             var W = parseFloat(document.getElementById('inpW').value) || 0;
             var P = parseFloat(document.getElementById('inpP').value) || 0;
@@ -1032,6 +1183,7 @@ function onSubmit() {
                 return false;
             }
         }
+        // 路径 C 无需额外校验，T/W/P 留空等技术部填写
     } catch (e) {
         console.error('[onSubmit] 校验异常:', e);
         alert('表单校验异常：' + e.message);
@@ -1042,13 +1194,14 @@ function onSubmit() {
     // 第二阶段：构建 Payload + 发起 AJAX
     // ════════════════════════════════════════════════════════════
     btn.disabled = true;
-    btn.textContent = '创建中…';
+    btn.textContent = _editQuoteId ? '保存中…' : '创建中…';
 
     var payload = {
         part_number:    partNumber,
         internal_name:  internalName,
+        remark:         document.querySelector('[name=remark]') ? document.querySelector('[name=remark]').value.trim() : '',
         material_name:  matName,
-        pricing_mode:   path === 'A' ? 'reference' : 'independent',
+        pricing_mode:   path === 'A' ? 'reference' : path === 'B' ? 'independent' : 'pending_tech',
         referenced_part_id: path === 'A' ? parseInt(refId) || null : null,
         thickness:      path === 'B' ? T : null,
         width:          path === 'B' ? W : null,
@@ -1062,9 +1215,10 @@ function onSubmit() {
         profit_margin:  parseFloat(document.getElementById('inpProfit').value) || null,
         final_price_override: path === 'A'
             ? (parseFloat(document.getElementById('inpRefPrice').value) || null)
-            : (parseFloat(document.getElementById('inpTotalOverride').value) || null),
+            : (path === 'B' ? (parseFloat(document.getElementById('inpTotalOverride').value) || null) : null),
         customer_id:    parseInt(document.getElementById('inpCustomerId').value) || null,
         alias_part_number: document.querySelector('[name=alias_part_number]') ? document.querySelector('[name=alias_part_number]').value.trim() || '' : '',
+        drawing_file_path: document.getElementById('hDrawingPath').value || null,
     };
 
     // 收集表面处理费总计（动态工序行）
@@ -1080,27 +1234,53 @@ function onSubmit() {
         if (treatTotal > 0) payload.surface_fee = treatTotal;
     } catch (ignore) {}
 
-    try {
-        sendApiRequest('sales.part_create', payload)
-            .then(function(res) {
-                if (res.code === 0 && res.data && res.data.part_id) {
-                    showToast('创建成功，正在跳转…', 'ok');
-                    setTimeout(function() {
-                        window.location.href = res.data.redirect;
-                    }, 600);
-                } else {
-                    throw new Error(res.message || '服务器返回异常');
-                }
-            })
-            .catch(function(err) {
-                console.error('[onSubmit] 提交失败:', err);
-                alert('创建失败：' + (err.message || '网络异常，请检查后重试'));
-                showToast('创建失败：' + (err.message || '网络异常'), 'err');
-            })
-            .finally(function() {
-                btn.disabled = false;
-                btn.textContent = originalText;
-            });
+try {
+        // 区分编辑已有报价单 vs 新建零件
+        if (_editQuoteId) {
+            // 编辑已有报价单 → PUT /api/quotes/{id}
+            sendApiRequest('sales.quote_update', payload, { pathParams: { id: _editQuoteId } })
+                .then(function(res) {
+                    if (res.code === 200 || res.code === 0) {
+                        showToast('保存成功，正在跳转…', 'ok');
+                        setTimeout(function() {
+                            window.location.href = '/sales/parts';
+                        }, 600);
+                    } else {
+                        throw new Error(res.message || '服务器返回异常');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[onSubmit edit] 保存失败:', err);
+                    alert('保存失败：' + (err.message || '网络异常，请检查后重试'));
+                    showToast('保存失败：' + (err.message || '网络异常'), 'err');
+                })
+                .finally(function() {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                });
+        } else {
+            // 新建零件 → POST /api/parts/create
+            sendApiRequest('sales.part_create', payload)
+                .then(function(res) {
+                    if (res.code === 0 && res.data && res.data.part_id) {
+                        showToast('创建成功，正在跳转…', 'ok');
+                        setTimeout(function() {
+                            window.location.href = res.data.redirect;
+                        }, 600);
+                    } else {
+                        throw new Error(res.message || '服务器返回异常');
+                    }
+                })
+                .catch(function(err) {
+                    console.error('[onSubmit create] 提交失败:', err);
+                    alert('创建失败：' + (err.message || '网络异常，请检查后重试'));
+                    showToast('创建失败：' + (err.message || '网络异常'), 'err');
+                })
+                .finally(function() {
+                    btn.disabled = false;
+                    btn.textContent = originalText;
+                });
+        }
     } catch (e) {
         console.error('[onSubmit] AJAX 发起异常:', e);
         alert('系统错误：' + e.message);
@@ -1653,8 +1833,138 @@ function escHtml(s) {
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── 页面加载完成：预热处理方式缓存 ───────────────────────────────
+// ── 页面加载完成：预热处理方式缓存 + 加载客户列表 ─────────────────
 loadTreatments();
+loadCustomers();
+
+// ── 客户管理 ─────────────────────────────────────────────────────
+var _customerMode = 'create';
+
+function loadCustomers(selectId) {
+    apiGet('sales.customers_list')
+    .then(function(r) {
+        var sel = document.getElementById('selCustomer');
+        if (!sel || !r.data) return;
+        var cur = sel.value;
+        sel.innerHTML = '<option value="">— 选择客户 —</option>';
+        r.data.forEach(function(c) {
+            var opt = document.createElement('option');
+            opt.value = c.id;
+            opt.setAttribute('data-name', c.name);
+            opt.textContent = c.name;
+            sel.appendChild(opt);
+        });
+        if (selectId) sel.value = selectId;
+        else if (cur) sel.value = cur;
+        onCustomerChange();
+    })
+    .catch(function() {});
+}
+
+function onCustomerChange() {
+    var sel = document.getElementById('selCustomer');
+    var hasVal = !!sel.value;
+    document.getElementById('inpCustomerId').value = sel.value || '';
+    document.getElementById('btnEditCustomer').disabled = !hasVal;
+    document.getElementById('aliasGroup').style.display = hasVal ? '' : 'none';
+}
+
+function openCustomerModal(mode) {
+    _customerMode = mode;
+    document.getElementById('cName').value = '';
+    document.getElementById('cEditId').value = '';
+    document.getElementById('btnCustDelete').style.display = 'none';
+    if (mode === 'edit') {
+        var sel = document.getElementById('selCustomer');
+        var opt = sel.options[sel.selectedIndex];
+        if (!opt || !opt.value) { showToast('请先选择客户', 'err'); return; }
+        document.getElementById('cEditId').value = opt.value;
+        document.getElementById('cName').value = opt.getAttribute('data-name') || opt.textContent;
+        document.getElementById('cModalTitle').innerHTML = '&#x270F;&#xFE0F; 编辑客户';
+        document.getElementById('btnCustSubmit').textContent = '确认保存';
+        document.getElementById('btnCustDelete').style.display = '';
+    } else {
+        document.getElementById('cModalTitle').innerHTML = '&#x1F3D7; 新建客户';
+        document.getElementById('btnCustSubmit').textContent = '确认创建';
+    }
+    document.getElementById('modalCustomer').classList.add('open');
+}
+
+function closeCustomerModal() {
+    document.getElementById('modalCustomer').classList.remove('open');
+}
+
+document.getElementById('modalCustomer').addEventListener('click', function(e) {
+    if (e.target === this) closeCustomerModal();
+});
+
+function submitCustomerForm() {
+    var name = document.getElementById('cName').value.trim();
+    if (!name) { showToast('请填写客户名称', 'err'); return; }
+    var editId = document.getElementById('cEditId').value;
+    var req = _customerMode === 'edit'
+        ? apiPut('sales.customer_update', {name: name}, {id: editId})
+        : apiPost('sales.customer_create', {name: name});
+    req.then(function(r) {
+        if (r.code !== 0) { showToast(r.message || '操作失败', 'err'); return; }
+        showToast(_customerMode === 'edit' ? '已更新' : '已创建「' + name + '」', 'ok');
+        closeCustomerModal();
+        var newId = _customerMode === 'create' ? r.data.id : editId;
+        loadCustomers(newId);
+    }).catch(function() { showToast('网络错误', 'err'); });
+}
+
+function deleteCustomer() {
+    var editId = document.getElementById('cEditId').value;
+    if (!editId || !confirm('确定要删除该客户吗？')) return;
+    sendApiRequest('sales.customer_delete', null, { pathParams: { id: editId } })
+    .then(function(r) {
+        if (r.code !== 0) { showToast(r.message || '删除失败', 'err'); return; }
+        showToast('已删除', 'ok');
+        closeCustomerModal();
+        loadCustomers('');
+    }).catch(function() { showToast('网络错误', 'err'); });
+}
+
+// ── 图纸上传 ─────────────────────────────────────────────────────
+function onDrawingSelect(input) {
+    var file = input.files[0];
+    if (!file) return;
+    if (file.size > 20 * 1024 * 1024) {
+        showToast('文件超过 20MB 限制', 'err');
+        input.value = '';
+        return;
+    }
+    uploadDrawing(file);
+}
+
+function onDrawingDrop(event) {
+    event.preventDefault();
+    document.getElementById('uploadArea').classList.remove('dragover');
+    var file = event.dataTransfer.files[0];
+    if (!file) return;
+    uploadDrawing(file);
+}
+
+function uploadDrawing(file) {
+    document.getElementById('uploadPreview').textContent = '上传中…';
+    var fd = new FormData();
+    fd.append('file', file);
+    sendApiRequest('sales.drawing_upload', fd, {})
+    .then(function(r) {
+        if (r.code === 0 && r.data && r.data.path) {
+            document.getElementById('hDrawingPath').value = r.data.path;
+            document.getElementById('uploadPreview').textContent = '已上传：' + file.name;
+        } else {
+            showToast(r.message || '上传失败', 'err');
+            document.getElementById('uploadPreview').textContent = '';
+        }
+    })
+    .catch(function() {
+        showToast('上传失败，请重试', 'err');
+        document.getElementById('uploadPreview').textContent = '';
+    });
+}
 </script>
 </body>
 </html>

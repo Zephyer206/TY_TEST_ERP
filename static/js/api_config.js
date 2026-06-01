@@ -30,7 +30,7 @@
         'sales.dict_delete':          { url: '/api/dict/{type}/{id}',          method: 'DELETE'},
         'sales.treatments_list':     { url: '/api/dict/treatments',           method: 'GET'  },
         'sales.treatments_upsert':    { url: '/api/dict/treatments',           method: 'POST' },
-        'sales.treatments_delete':    { url: '/api/dict/treatments/{id}',      method: 'DELETE'},
+        'sales.treatments_delete':    { url: '/api/dict/treatments/{treatment_id}', method: 'DELETE'},
 
         // ── 库存体系（v12）──
         'sales.inventory_summary':         { url: '/api/parts/{partId}/inventory',              method: 'GET'  },
@@ -43,6 +43,7 @@
 
         // ── 报价工作流（quotes 状态机）──
         'sales.quote_update':   { url: '/api/quotes/{id}',                     method: 'PUT'   },
+        'sales.quote_recalculate': { url: '/api/quotes/{id}/recalculate',        method: 'PUT'   },
         'sales.quote_delete':   { url: '/api/quotes/{id}',                     method: 'DELETE'  },
         'sales.quote_submit':   { url: '/api/quotes/{id}/submit',             method: 'POST'  },
         'sales.quote_approve':  { url: '/api/quotes/{id}/approve',            method: 'POST'  },
@@ -191,6 +192,7 @@
         'pkg.wip_overview':          { url: '/pkg/wip/json',              method: 'GET'  },
         'pkg.defect_logs':           { url: '/pkg/defects/json',           method: 'GET'  },
         'pkg.force_close_packing':   { url: '/pkg/wip/{workOrderId}/force-close', method: 'POST' },
+
     };
 
     /**

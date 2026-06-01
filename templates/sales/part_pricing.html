@@ -370,7 +370,7 @@
         window.__VIEW_AS__   = "{{ user.view_as|default('') }}";  // 当前激活视图
     </script>
 
-<script src="/static/js/api_config.js?v=20250620"></script>
+<script src="/static/js/api_config.js?v=20260528"></script>
 <script>
 (function () {
     "use strict";
@@ -379,6 +379,7 @@
     var _currentPartId = null;
     var _currentQuoteId = null;   // 当前打开抽屉的零件对应的最新报价单 ID
     var _currentQuoteStatus = "DRAFT";  // 当前报价单状态，供 buildWhiteboxPanel 使用
+    var _currentPricingMode = null;  // 当前零件报价模式：'Associated' 或 'Independent'
     var _drawerData    = null;
     var _origCalc      = null;
 
@@ -451,6 +452,7 @@
                 var latestQuote = innerData.latest_quote || innerData.quote || {};
                 _currentQuoteId = latestQuote.id || null;
                 _currentQuoteStatus = latestQuote.approval_status || "DRAFT";
+                _currentPricingMode = latestQuote.pricing_mode || null;
 
                 renderDrawerContent(_drawerData, latestQuote, innerData.ref_price);
                 // 同时设置给 buildWhiteboxPanel 用的状态变量
@@ -1169,6 +1171,47 @@
         var mcVal = (mcEl && mcEl.value) ? parseFloat(mcEl.value) : null;
         var fpVal = (fpEl && fpEl.value) ? parseFloat(fpEl.value) : null;
 
+        // ── 路径 B：完整走白盒引擎重算 ─────────────────────────────
+        if (_currentPricingMode === 'Independent' && _currentQuoteId) {
+            var dd = _drawerData || {};
+            var part = dd.part || {};
+            var quote = (dd.latest_quote || dd.quote || {});
+            var calcBody = {
+                thickness:          part.thickness || 0,
+                width:               part.width || 0,
+                press_stroke:        part.press_stroke || 0,
+                material_name:       part.material_name || "",
+                cavity_count:        parseInt(quote.cavity_count) || 1,
+                scrap_rate:          parseFloat(quote.scrap_rate) || 0.10,
+                gross_weight_g:      gwVal,
+                net_weight_g:        null,
+                scrap_weight_g:      null,
+                material_utilization: parseFloat(quote.material_utilization) || 100.0,
+                stamping_fee:         parseFloat(quote.stamping_fee) || 0,
+                inspection_fee:      parseFloat(quote.inspection_fee) || 0,
+                packaging_fee:       parseFloat(quote.packaging_fee) || 0,
+                surface_fee:         parseFloat(quote.surface_fee) || 0,
+                mold_cost:           parseFloat(quote.mold_cost) || 0,
+                treatment_fee:        parseFloat(quote.treatment_fee) || 0,
+                profit_margin:       parseFloat(quote.profit_margin) || 0,
+                override_final_price: fpVal,
+                override_material_cost: mcVal,
+                machine_type:        quote.machine_type || null,
+            };
+            sendApiRequest("sales.quote_recalculate", calcBody, { pathParams: { id: _currentQuoteId } })
+                .then(function (d) {
+                    if (d.code === 200) {
+                        toast("核算结果已保存");
+                        setTimeout(function () { openDrawer(partId); }, 700);
+                    } else {
+                        toast((d.message || d.error) || "保存失败", "err");
+                    }
+                })
+                .catch(function () { toast("网络错误", "err"); });
+            return;
+        }
+
+        // ── 路径 A：直接写覆盖值 ────────────────────────────────
         var fields = [];
         if (gwVal !== null) fields.push("gross_weight");
         if (mcVal !== null) fields.push("material_net_cost_override");

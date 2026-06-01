@@ -32,6 +32,7 @@ from app.services.db_service import (
     get_material_alerts,
     get_oqc_reports,
     get_overdue_summary,
+    get_boss_kpi,
     get_part_by_id,
     get_part_progress,
     get_pending_inbound_orders,
@@ -75,11 +76,12 @@ def admin_switch_view(request: Request, dept: str = ""):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login")
-    if user.get("role_level", 0) < 9:
+    if user.get("real_role_level", 0) <= 9:
         raise HTTPException(status_code=403, detail="仅超级管理员可使用此功能")
     referer = request.headers.get("referer", "/")
     res = RedirectResponse(referer, status_code=303)
-    if dept in ("sales", "prod", "tech", "qc", "pkg", "admin", "whse", "spraying", ""):
+    if dept in ("sales", "prod", "tech", "qc", "pkg", "admin", "whse", "spraying",
+                "prod-op", "prod-lead", "dev-mold", "dev-design", "sales-mgr", ""):
         if dept:
             res.set_cookie("view_as", dept, max_age=60*60*8, httponly=True, samesite="lax")
         else:
@@ -169,6 +171,7 @@ def dashboard(request: Request):
         context["tonnage_groups"]= get_tonnage_dashboard()
         context["overdue_summary"]= get_overdue_summary()
         context["pending_quote_count"] = count_pending_quotes()
+        context["boss_kpi"]      = get_boss_kpi()
 
     if bypass or display_dept == 'whse':
         context["material_alerts"] = get_material_alerts()

@@ -1,4 +1,5 @@
 import re
+import json
 import psycopg2
 from psycopg2.extras import RealDictCursor
 import datetime
@@ -7310,6 +7311,7 @@ def calc_part_pricing(
         surface_fee: float = 0,
         treatment_fee: float = 0,
         profit_margin: float = 0,
+        mold_cost: float = 0,                  # 模具费（元/件）
         override_unit_price: float = None,
         override_material_cost: float = None,
         override_final_price: float = None,
@@ -7507,8 +7509,9 @@ def calc_part_pricing(
 
     # ── 最终总价 ──────────────────────────────────────────────────
     surf_fee = float(surface_fee)
-    base_total = mat_net_cost + float(stamping_fee) + float(inspection_fee) + float(packaging_fee) + surf_fee + treat_fee
-    logger.debug(f"[calc] base_total = mat_net_cost({mat_net_cost}) + stamping({stamping_fee}) + inspect({inspection_fee}) + pack({packaging_fee}) + surface({surf_fee}) + treat({treat_fee}) = {base_total}")
+    base_total = (mat_net_cost + float(stamping_fee) + float(inspection_fee) +
+                  float(packaging_fee) + surf_fee + treat_fee + float(mold_cost))
+    logger.debug(f"[calc] base_total = mat_net_cost({mat_net_cost}) + stamping({stamping_fee}) + inspect({inspection_fee}) + pack({packaging_fee}) + surface({surf_fee}) + treat({treat_fee}) + mold({mold_cost}) = {base_total}")
     if override_final_price is not None:
         final = float(override_final_price)
         result['override_flags'].append('final_price_override')
@@ -7544,6 +7547,7 @@ def calc_part_pricing(
     result['packaging_fee']  = round(float(packaging_fee), 4)
     result['surface_fee']    = round(float(surface_fee), 4)
     result['treatment_fee']  = round(float(treatment_fee), 4)
+    result['mold_cost']      = round(float(mold_cost), 4)
     result['profit_margin']  = round(float(profit_margin), 4)
     result['machine_type']   = machine_type
     return result
@@ -7570,6 +7574,7 @@ def create_part_with_mold_and_pricing(
         press_tonnage: int = 0,
         stamping_fee: float = None,
         surface_fee: float = None,
+        treatment_fee: float = None,
         profit_margin: float = None,
         final_price_override: float = None,
         customer_id: int = None,
@@ -7694,11 +7699,48 @@ def create_part_with_mold_and_pricing(
             )
             scrap_rate = max(0.0, min(1.0, 1.0 - (material_utilization or 100.0) / 100.0))
 
+            # ── 5a. 查材料基准价（用于快照）──────────────────────────
+            _density = 0.0
+            _mat_price = 0.0
+            _scrap_price = 0.0
+            if material_name:
+                with psycopg2.connect(**DB_CONFIG) as conn_mat:
+                    with conn_mat.cursor() as cur_mat:
+                        cur_mat.execute("""
+                            SELECT default_density, default_price, scrap_price
+                            FROM material_base_prices
+                            WHERE material_name = %s;
+                        """, (material_name,))
+                        _row_mat = cur_mat.fetchone()
+                        if _row_mat:
+                            _density = float(_row_mat[0] or 0)
+                            _mat_price = float(_row_mat[1] or 0)
+                            _scrap_price = float(_row_mat[2] or 0)
+
+            # ── 5b. 计算毛重和材料净成本快照 ──────────────────────
+            _gw = None
+            _mat_net_cost = None
+            _final_price = None
+            if thickness and width and press_stroke and _density > 0:
+                _gw = thickness * width * press_stroke * _density * (cavity_count or 1) / 1000.0
+                _util_pct = material_utilization or 100.0
+                _nw = _gw * (_util_pct / 100.0)
+                _sw = _gw - _nw
+                _mat_net_cost = (_gw / 1000.0 * _mat_price) - (_sw / 1000.0 * _scrap_price)
+                _base = (_mat_net_cost
+                         + (stamping_fee or 0.0)
+                         + (surface_fee or 0.0))
+                _margin = profit_margin or 5.0
+                _final_price = _base * (1 + _margin / 100.0) if _margin > 0 else _base
+
             cur.execute("""
                 INSERT INTO quotes (
                     part_id, quote_serial, pricing_mode,
                     thickness, width, press_stroke, cavity_count,
                     scrap_rate, gross_weight,
+                    snapshot_mat_name, snapshot_mat_price, snapshot_density, snapshot_scrap_price,
+                    material_net_cost, final_price,
+                    material_utilization,
                     stamping_fee, surface_fee, treatment_fee,
                     profit_margin,
                     final_price_override, override_fields,
@@ -7708,15 +7750,18 @@ def create_part_with_mold_and_pricing(
                     machine_type, customer_id,
                     created_at, updated_at
                 ) VALUES (
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                     NOW(),NOW()
                 )
                 RETURNING id;
             """, (
                 new_part_id, quote_serial, pricing_mode,
                 thickness, width, press_stroke, cavity_count,
-                scrap_rate, None,
-                stamping_fee or 0.0, surface_fee or 0.0, 0.0,
+                scrap_rate, _gw,
+                material_name, _mat_price, _density, _scrap_price,
+                _mat_net_cost, _final_price,
+                material_utilization or 100.0,
+                stamping_fee or 0.0, surface_fee or 0.0, treatment_fee or 0.0,
                 profit_margin or 5.0,
                 final_price_override, '[]',
                 'WAITING_FOR_TECH' if pricing_mode == 'pending_tech' else 'DRAFT',
@@ -7874,6 +7919,7 @@ def create_part_with_pricing(
                     part_id, quote_serial, pricing_mode,
                     thickness, width, press_stroke, cavity_count,
                     scrap_rate, gross_weight,
+                    material_utilization,
                     stamping_fee, surface_fee, treatment_fee,
                     profit_margin,
                     final_price_override, override_fields,
@@ -7883,7 +7929,7 @@ def create_part_with_pricing(
                     machine_type,
                     created_at, updated_at
                 ) VALUES (
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                     NOW(),NOW()
                 )
                 RETURNING id;
@@ -7891,6 +7937,7 @@ def create_part_with_pricing(
                 new_part_id, quote_serial, pricing_mode,
                 thickness, width, press_stroke, cavity_count,
                 _scrap_rate, gross_weight,
+                material_utilization or 100.0,
                 stamping_fee, surface_fee, 0.0,
                 profit_margin,
                 final_price_override, '[]',
@@ -7898,6 +7945,7 @@ def create_part_with_pricing(
                 operator_id,
                 None, None,
                 machine_type,
+                None, None,
             ))
             conn_q.commit()
 
@@ -7916,6 +7964,7 @@ def create_quote(
         press_stroke: float = None,
         cavity_count: int = 1,
         scrap_rate: float = 0.10,
+        material_utilization: float = None,
         stamping_fee: float = None,
         surface_fee: float = None,
         treatment_fee: float = None,
@@ -8009,6 +8058,7 @@ def create_quote(
                 INSERT INTO quotes (
                     part_id, quote_serial, pricing_mode,
                     thickness, width, press_stroke, cavity_count, scrap_rate,
+                    material_utilization,
                     snapshot_mat_price, snapshot_mat_name, snapshot_density,
                     snapshot_scrap_price,
                     stamping_fee, surface_fee, treatment_fee, profit_margin,
@@ -8019,13 +8069,14 @@ def create_quote(
                     machine_type,
                     created_at, updated_at
                 ) VALUES (
-                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
+                    %s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,
                     NOW(), NOW()
                 )
                 RETURNING id;
             """, (
                 part_id, quote_serial, pricing_mode,
                 thickness, width, press_stroke, cavity_count, scrap_rate,
+                material_utilization if material_utilization is not None else 100.0,
                 mat_price, mat_name, mat_density, scrap_mat_price,
                 stamping_fee, surface_fee, treatment_fee, profit_margin,
                 final_price_override, override_fields_json,
@@ -8033,6 +8084,7 @@ def create_quote(
                 submitted_by,
                 nomination_status, nomination_attachment,
                 machine_type,
+                None, None,
             ))
             new_quote_id = cur.fetchone()[0]
             conn.commit()
@@ -8075,7 +8127,10 @@ def update_quote(
         material_utilization: float = None,
         annual_avg: float = None,
         lifecycle_years: float = None,
-        customer_id: int = None) -> bool:
+        customer_id: int = None,
+        mold_discount_mode: str = None,
+        mold_discount_rate: float = None,
+        treatment_items: list = None) -> bool:
     """
     更新报价单字段（仅 DRAFT / REJECTED 状态允许编辑）。
     """
@@ -8122,6 +8177,10 @@ def update_quote(
     if material_utilization is not None:  _add("material_utilization", material_utilization)
     if annual_avg is not None:            _add("annual_avg", annual_avg)
     if lifecycle_years is not None:       _add("lifecycle_years", lifecycle_years)
+    if mold_discount_mode is not None:    _add("mold_discount_mode", mold_discount_mode)
+    if mold_discount_rate is not None:    _add("mold_discount_rate", mold_discount_rate)
+    if treatment_items is not None:
+        _add("treatment_items", _json.dumps(treatment_items) if treatment_items else None)
 
     # customer_id 变更时触发图纸迁移（null -> 有值）
     _trigger_migrate = False
@@ -8373,6 +8432,8 @@ def tech_approve_quote(quote_id: int, operator_id: int = None) -> bool:
             cur.execute("""
                 UPDATE quotes
                 SET approval_status = 'TECH_APPROVED',
+                    pricing_mode   = CASE WHEN pricing_mode = 'pending_tech'
+                                         THEN 'independent' ELSE pricing_mode END,
                     updated_at      = NOW()
                 WHERE id = %s
                   AND approval_status = 'WAITING_FOR_TECH'
@@ -8739,6 +8800,14 @@ def boss_update_quote(quote_id: int, body: dict) -> bool:
     if body.get("treatment_fee") is not None:
         fields.append("treatment_fee = %s")
         params.append(body["treatment_fee"])
+    if body.get("mold_cost") is not None:
+        fields.append("mold_cost = %s"); params.append(body["mold_cost"])
+    if body.get("mold_discount_mode") is not None:
+        fields.append("mold_discount_mode = %s"); params.append(body["mold_discount_mode"])
+    if body.get("mold_discount_rate") is not None:
+        fields.append("mold_discount_rate = %s"); params.append(body["mold_discount_rate"])
+    if body.get("treatment_items") is not None:
+        fields.append("treatment_items = %s"); params.append(json.dumps(body["treatment_items"]))
     if body.get("profit_margin") is not None:
         fields.append("profit_margin = %s")
         params.append(body["profit_margin"])
@@ -9655,8 +9724,12 @@ def get_part_pricing_summary(part_id: int):
                 'material_name': part['material_name'] or '',
                 'cavity_count': int(quote['cavity_count'] or 1),
                 'scrap_rate': float(quote.get('scrap_rate') or 0.10),
+                'material_utilization': float(quote.get('material_utilization') or 100.0),
                 'stamping_fee': float(quote.get('stamping_fee') or 0),
+                'inspection_fee': float(quote.get('inspection_fee') or 0),
+                'packaging_fee': float(quote.get('packaging_fee') or 0),
                 'surface_fee': float(quote.get('surface_fee') or 0),
+                'treatment_fee': float(quote.get('treatment_fee') or 0),
                 'profit_margin': float(quote.get('profit_margin') or 0),
                 'override_unit_price': (
                     float(quote['unit_price_override'])
@@ -9685,6 +9758,19 @@ def get_part_pricing_summary(part_id: int):
 
     # 历史报价单列表（用于详情页展示审批/驳回记录）
     history = get_quotes_by_part(part_id)
+
+    # 将 quotes 表的 pricing_mode 注入到 part 对象，供前端模板使用
+    # quotes 存的是 'reference'/'independent'，前端期望 'Associated'/'Independent'，做转换
+    if part and quote:
+        _pm = quote.get('pricing_mode')
+        part['pricing_mode'] = 'Associated' if _pm == 'reference' else ('Independent' if _pm == 'independent' else _pm)
+        part['thickness'] = quote.get('thickness')
+        part['width'] = quote.get('width')
+        part['press_stroke'] = quote.get('press_stroke')
+        part['cavity_count'] = quote.get('cavity_count')
+        part['material_utilization'] = quote.get('material_utilization')
+        part['final_price_override'] = quote.get('final_price_override')
+        part['gross_weight'] = quote.get('gross_weight')
 
     logger.debug("[summary] ====== get_part_pricing_summary EXIT")
     return {
@@ -9912,7 +9998,7 @@ def upsert_treatment(name: str, calc_mode: str, rate: float,
     """
     新增或更新处理方式（按 name 唯一键 upsert）。
     calc_mode: 'manual' | 'net_weight'
-    返回统一结构：{"code": 0/1, "message": str, "data": {...}}
+    返回数据字典，由 API 路由统一包装为 {code, message, data}。
     """
     _ensure_treatment_dicts_table()
     with psycopg2.connect(**DB_CONFIG) as conn:
@@ -9928,11 +10014,10 @@ def upsert_treatment(name: str, calc_mode: str, rate: float,
             """, (name, calc_mode, float(rate), unit))
             row = cur.fetchone()
             conn.commit()
-            # Decimal → float 以便 JSON 序列化
             d = dict(row)
             if 'rate' in d and hasattr(d['rate'], '__float__'):
                 d['rate'] = float(d['rate'])
-            return {"code": 0, "message": "success", "data": d}
+            return d
 
 
 def delete_treatment(treatment_id: int) -> bool:
@@ -12829,3 +12914,347 @@ def get_remnant_inventory_list(customer_name: str = None) -> list:
                     ORDER BY pt.part_number;
                 """)
             return [dict(r) for r in cur.fetchall()]
+
+
+# ============================================================================
+# 价格台账（prices）
+# ============================================================================
+
+def get_or_create_price_ledger(part_id: int, customer_id: int = None) -> dict:
+    """获取或创建价格台账主记录"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT id, part_id, customer_id, material_name,
+                       net_weight, gross_weight,
+                       material_unit_price, scrap_price,
+                       surface_treatment, created_at, updated_at
+                FROM prices
+                WHERE part_id = %s AND (customer_id = %s OR (customer_id IS NULL AND %s IS NULL));
+            """, (part_id, customer_id, customer_id))
+            row = cur.fetchone()
+            if row:
+                for k, v in row.items():
+                    if isinstance(v, (datetime, date)):
+                        row[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        row[k] = float(v)
+                return dict(row)
+
+            cur.execute("""
+                INSERT INTO prices (part_id, customer_id, created_at, updated_at)
+                VALUES (%s, %s, NOW(), NOW())
+                RETURNING id, part_id, customer_id, material_name,
+                          net_weight, gross_weight,
+                          material_unit_price, scrap_price,
+                          surface_treatment, created_at, updated_at;
+            """, (part_id, customer_id))
+            row = cur.fetchone()
+            conn.commit()
+            for k, v in row.items():
+                if isinstance(v, (datetime, date)):
+                    row[k] = v.isoformat()
+                elif isinstance(v, Decimal):
+                    row[k] = float(v)
+            return dict(row)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def upsert_price_ledger(part_id: int, customer_id: int = None,
+                         material_name: str = None, net_weight: float = None,
+                         gross_weight: float = None,
+                         material_unit_price: float = None,
+                         scrap_price: float = None,
+                         surface_treatment: list = None) -> dict:
+    """创建或更新价格台账主记录（成本要素）"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                INSERT INTO prices (part_id, customer_id, material_name, net_weight,
+                                   gross_weight, material_unit_price, scrap_price,
+                                   surface_treatment, updated_at)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NOW())
+                ON CONFLICT (part_id, customer_id)
+                DO UPDATE SET
+                    material_name = COALESCE(EXCLUDED.material_name, prices.material_name),
+                    net_weight = COALESCE(EXCLUDED.net_weight, prices.net_weight),
+                    gross_weight = COALESCE(EXCLUDED.gross_weight, prices.gross_weight),
+                    material_unit_price = COALESCE(EXCLUDED.material_unit_price, prices.material_unit_price),
+                    scrap_price = COALESCE(EXCLUDED.scrap_price, prices.scrap_price),
+                    surface_treatment = COALESCE(EXCLUDED.surface_treatment, prices.surface_treatment),
+                    updated_at = NOW()
+                RETURNING id, part_id, customer_id, material_name,
+                           net_weight, gross_weight,
+                           material_unit_price, scrap_price,
+                           surface_treatment, created_at, updated_at;
+            """, (part_id, customer_id,
+                  material_name, net_weight,
+                  gross_weight, material_unit_price, scrap_price,
+                  json.dumps(surface_treatment or []) if surface_treatment is not None else None))
+            row = cur.fetchone()
+            conn.commit()
+            for k, v in row.items():
+                if isinstance(v, (datetime, date)):
+                    row[k] = v.isoformat()
+                elif isinstance(v, Decimal):
+                    row[k] = float(v)
+            return dict(row)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_price_years(price_id: int):
+    """获取某价格台账的所有年份记录"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT py.id, py.price_id, py.year, py.unit_price,
+                       py.annual_sales, py.operator_id, py.updated_at,
+                       u.real_name AS operator_name
+                FROM price_years py
+                LEFT JOIN users u ON py.operator_id = u.id
+                WHERE py.price_id = %s
+                ORDER BY py.year DESC;
+            """, (price_id,))
+            rows = cur.fetchall()
+            for row in rows:
+                for k, v in row.items():
+                    if isinstance(v, (datetime, date)):
+                        row[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        row[k] = float(v)
+            return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def upsert_price_year(price_id: int, year: int, unit_price: float = None,
+                       annual_sales: int = None, operator_id: int = None) -> dict:
+    """创建或更新某年的单价和年销量"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                INSERT INTO price_years (price_id, year, unit_price, annual_sales, operator_id, updated_at)
+                VALUES (%s,%s,%s,%s,%s,NOW())
+                ON CONFLICT (price_id, year)
+                DO UPDATE SET
+                    unit_price = COALESCE(EXCLUDED.unit_price, price_years.unit_price),
+                    annual_sales = COALESCE(EXCLUDED.annual_sales, price_years.annual_sales),
+                    operator_id = COALESCE(EXCLUDED.operator_id, price_years.operator_id),
+                    updated_at = NOW()
+                RETURNING id, price_id, year, unit_price, annual_sales, updated_at;
+            """, (price_id, year, unit_price, annual_sales, operator_id))
+            row = cur.fetchone()
+            conn.commit()
+            for k, v in row.items():
+                if isinstance(v, (datetime, date)):
+                    row[k] = v.isoformat()
+                elif isinstance(v, Decimal):
+                    row[k] = float(v)
+            return dict(row)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_annual_reductions(price_id: int):
+    """获取某价格台账的所有年降规则"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT ar.id, ar.price_id, ar.reduction_pct, ar.start_year,
+                       ar.duration_years, ar.reason, ar.created_by, ar.created_at,
+                       u.real_name AS created_by_name
+                FROM annual_reductions ar
+                LEFT JOIN users u ON ar.created_by = u.id
+                WHERE ar.price_id = %s
+                ORDER BY ar.start_year DESC;
+            """, (price_id,))
+            rows = cur.fetchall()
+            for row in rows:
+                for k, v in row.items():
+                    if isinstance(v, (datetime, date)):
+                        row[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        row[k] = float(v)
+            return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def upsert_annual_reduction(price_id: int, reduction_pct: float, start_year: int,
+                             duration_years: int = 0, reason: str = "",
+                             created_by: int = None) -> dict:
+    """创建或更新年降规则（按 price_id + start_year 唯一）"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("SELECT id FROM annual_reductions WHERE price_id=%s AND start_year=%s",
+                        (price_id, start_year))
+            existing = cur.fetchone()
+            if existing:
+                cur.execute("""
+                    UPDATE annual_reductions
+                    SET reduction_pct=%s, duration_years=%s, reason=%s
+                    WHERE id=%s;
+                """, (reduction_pct, duration_years, reason, existing[0]))
+            else:
+                cur.execute("""
+                    INSERT INTO annual_reductions
+                        (price_id, reduction_pct, start_year, duration_years, reason, created_by, created_at)
+                    VALUES (%s,%s,%s,%s,%s,%s,NOW());
+                """, (price_id, reduction_pct, start_year, duration_years, reason, created_by))
+            conn.commit()
+            return {"success": True, "price_id": price_id, "reduction_pct": reduction_pct,
+                    "start_year": start_year, "duration_years": duration_years}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+def delete_annual_reduction(rule_id: int) -> dict:
+    """删除某条年降规则"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor() as cur:
+            cur.execute("DELETE FROM annual_reductions WHERE id = %s", (rule_id,))
+            conn.commit()
+            return {"success": True}
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_manual_adjustments(price_id: int, limit: int = 50):
+    """获取某价格台账的调价历史"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT ma.id, ma.price_id, ma.adjusted_at, ma.old_price, ma.new_price,
+                       ma.adjustment_type, ma.reason, ma.operator_id,
+                       u.real_name AS operator_name
+                FROM manual_adjustments ma
+                LEFT JOIN users u ON ma.operator_id = u.id
+                WHERE ma.price_id = %s
+                ORDER BY ma.adjusted_at DESC
+                LIMIT %s;
+            """, (price_id, limit))
+            rows = cur.fetchall()
+            for row in rows:
+                for k, v in row.items():
+                    if isinstance(v, (datetime, date)):
+                        row[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        row[k] = float(v)
+            return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def add_manual_adjustment(price_id: int, old_price: float, new_price: float,
+                           adjustment_type: str = "manual",
+                           reason: str = "", operator_id: int = None) -> dict:
+    """记录一次手动调价"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                INSERT INTO manual_adjustments
+                    (price_id, adjusted_at, old_price, new_price, adjustment_type, reason, operator_id)
+                VALUES (%s, NOW(), %s, %s, %s, %s, %s)
+                RETURNING id, price_id, adjusted_at, old_price, new_price, adjustment_type, reason;
+            """, (price_id, old_price, new_price, adjustment_type, reason, operator_id))
+            row = cur.fetchone()
+
+            current_year = datetime.now().year
+            cur.execute("""
+                INSERT INTO price_years (price_id, year, unit_price, operator_id, updated_at)
+                VALUES (%s, %s, %s, %s, NOW())
+                ON CONFLICT (price_id, year)
+                DO UPDATE SET unit_price = EXCLUDED.unit_price, updated_at = NOW();
+            """, (price_id, current_year, new_price, operator_id))
+
+            conn.commit()
+            for k, v in row.items():
+                if isinstance(v, (datetime, date)):
+                    row[k] = v.isoformat()
+                elif isinstance(v, Decimal):
+                    row[k] = float(v)
+            return dict(row)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def get_price_ledger_full(part_id: int, customer_id: int = None) -> dict:
+    """获取完整价格台账（含主记录、年份、年降、调价历史）"""
+    ledger = get_or_create_price_ledger(part_id, customer_id)
+    price_id = ledger['id']
+    ledger['years'] = get_price_years(price_id)
+    ledger['annual_reductions'] = get_annual_reductions(price_id)
+    ledger['adjustments'] = get_manual_adjustments(price_id)
+    return ledger
+
+
+def list_price_ledgers_by_customer(customer_id: int):
+    """获取某客户下所有零件的价格台账摘要"""
+    conn = psycopg2.connect(**DB_CONFIG)
+    try:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute("""
+                SELECT p.id AS price_id, p.part_id, p.customer_id,
+                       p.material_name, p.net_weight, p.gross_weight,
+                       p.material_unit_price, p.scrap_price,
+                       p.surface_treatment,
+                       p.updated_at,
+                       pt.part_number, pt.internal_name,
+                       tc.name AS customer_name,
+                       py.unit_price AS current_unit_price, py.year AS current_year,
+                       ar.reduction_pct, ar.start_year, ar.duration_years
+                FROM prices p
+                JOIN parts pt ON p.part_id = pt.id
+                LEFT JOIN tooling_customers tc ON p.customer_id = tc.id
+                LEFT JOIN LATERAL (
+                    SELECT unit_price, year FROM price_years
+                    WHERE price_id = p.id
+                    ORDER BY year DESC LIMIT 1
+                ) py ON TRUE
+                LEFT JOIN LATERAL (
+                    SELECT reduction_pct, start_year, duration_years
+                    FROM annual_reductions
+                    WHERE price_id = p.id
+                    ORDER BY start_year DESC LIMIT 1
+                ) ar ON TRUE
+                WHERE p.customer_id = %s
+                ORDER BY pt.internal_name;
+            """, (customer_id,))
+            rows = cur.fetchall()
+            for row in rows:
+                for k, v in row.items():
+                    if isinstance(v, (datetime, date)):
+                        row[k] = v.isoformat()
+                    elif isinstance(v, Decimal):
+                        row[k] = float(v)
+            return [dict(r) for r in rows]
+    finally:
+        conn.close()

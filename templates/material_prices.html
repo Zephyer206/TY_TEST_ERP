@@ -212,7 +212,7 @@
             <span class="mat-name">{{ p.material_name }}</span>
             <span class="mat-badge{% if p.updated_at %} updated{% else %} new{% endif %}">
                 {% if p.updated_at %}
-                    {{ p.updated_at.split(' ')[0] if ' ' in (p.updated_at|string) else p.updated_at }}
+                    {{ p.updated_at | string | truncate(10, True, '') }}
                 {% else %}预置{% endif %}
             </span>
         </div>

@@ -1,5 +1,5 @@
 
-# 云冲压 ERP 系统架构与执行准则 (V7.3)
+# 云冲压 ERP 系统架构与执行准则 (V7.4)
 
 ## 0. AI 助手行为准则（最高优先级）
 
@@ -42,27 +42,9 @@
 
 ---
 
-## 3. 核心三表架构（绝对红线）
-
-### 3.1 报价单工作流
-
-```
-业务提交图纸（零件+报价单）
-    ↓
-报价单状态: WAITING_FOR_TECH（待开发填写参数）
-    ↓
-开发填写 T/W/P、模具费、穴数、吨位、上传SDR图纸
-    ↓
-报价单状态: TECH_APPROVED（技术审核通过）
-    ↓
-业务填写价格并提交老板审批
-    ↓
-报价单状态: PENDING_BOSS → APPROVED
-```
-
----
-
-### 4.1 表职责分离
+## 3. 核心表架构（绝对红线）
+ 
+### 3.1 表职责分离
 
 | 表名 | 职责 | 禁止存入 |
 | --- | --- | --- |
@@ -92,7 +74,7 @@ Quotes (预报价，无模具信息)
 | 定价参数 | `pricing_mode`, `annual_usage` | 报价模式、年用量 |
 | 物理参数 | `thickness`, `width`, `press_stroke`, `cavity_count`, `scrap_rate` | T/W/P/穴数/废料率 |
 | 客户信息 | `customer_id`, `customer_product_no`, `vehicle_model` | 客户/产品号/车型（预报价阶段填写） |
-| 费用项 | `mold_cost`, `machine_type`, `stamping_fee`, `surface_fee`, `treatment_fee`, `profit_margin` | 各项费用 |
+| 费用项 | `mold_cost`, `mold_discount_mode`, `mold_discount_rate`, `machine_type`, `stamping_fee`, `surface_fee`, `treatment_fee`, `profit_margin` | 各项费用 |
 | 毛重/净重 | `gross_weight`, `material_net_cost` | 毛重、材料净成本 |
 | 材料快照 | `snapshot_mat_name`, `snapshot_mat_price`, `snapshot_density`, `snapshot_scrap_price` | 定型时材料价格 |
 | 最终价格 | `final_price`, `unit_price_override`, `material_cost_override`, `final_price_override`, `override_fields` | 最终价及覆盖值 |
@@ -100,8 +82,7 @@ Quotes (预报价，无模具信息)
 | 定点确认 | `nomination_status`, `nomination_attachment`, `nomination_confirmed_at/by` | 定点状态及凭证 |
 | 快照 | `price_snapshot` (JSONB) | 定点时完整价格快照 |
 
-**新增字段（nom004）**：`customer_id`、`customer_product_no`、`vehicle_model`
-**V7.4 新增**：`annual_avg`（年均用量）、`lifecycle_years`（生命周期）
+**新增字段**：`customer_id`、`customer_product_no`、`vehicle_model`（nom004），`annual_avg`（年均用量）、`lifecycle_years`（生命周期，V7.3），`treatment_items`（多道表面处理 JSONB），`mold_discount_mode`（模具费收取模式：`direct`=直接 / `amortized`=分摊），`mold_discount_rate`（模具费折扣率 0.0~1.0）
 
 ### 3.4 parts 表核心字段
 
@@ -120,19 +101,36 @@ Quotes (预报价，无模具信息)
 
 **注意**：远程服务器 `124.222.29.229` 的 DB 表名仍为 `tooling_molds`（`v14` 迁移尚未执行到远程）。
 
-### 3.6 定点确认写入规则
+### 3.6 treatment_dicts 表（表面处理字典）
+
+`treatment_dicts` 表管理表面处理工序的计价规则，供报价页和零件页共用。
+
+|| 字段 | 说明 |
+|| --- | --- |
+|| `id` | 主键 |
+|| `name` | 处理名称（如：热处理、电镀锌、喷涂）|
+|| `calc_mode` | `manual`=手动输入费用 / `net_weight`=按净重自动计价 |
+|| `rate` | 费率（`net_weight` 模式时为 元/kg，`manual` 模式时为 0）|
+|| `unit` | 费率单位（`元/件` / `元/kg`）|
+|| `is_active` | 软删除标记 |
+
+前端通过 `GET /api/dict/treatments`、`POST /api/dict/treatments`、`DELETE /api/dict/treatments/{treatment_id}` 操作。
+
+报价单中 `quotes.treatment_items`（JSONB）以数组形式存储多道表面处理：`[{"name":"热处理","fee":2.5}, {"name":"电镀锌","fee":1.8}]`。
+
+### 3.7 定点确认写入规则
 
 `confirm_nomination()` 执行时，同时写入 **parts** 表：
 
 | 来源（quotes） | 目标（parts）字段 |
 | --- | --- |
-| `customer_product_no` | `customer_product_no`（新增） |
-| `vehicle_model` | `vehicle_model`（新增） |
-| `mold_number`（定点时填写） | `mold_number`（新增） |
-| `mold_type`（定点时填写） | `mold_type`（新增） |
-| `press_tonnage`（定点时填写） | `press_tonnage`（新增） |
-| `ppap_no`（定点时填写） | `ppap_no`（新增） |
-| `price_snapshot` | `price_snapshot`（已有） |
+| `customer_product_no` | `customer_product_no` |
+| `vehicle_model` | `vehicle_model` |
+| `mold_number` | `mold_number` |
+| `mold_type` | `mold_type` |
+| `press_tonnage` | `press_tonnage` |
+| `ppap_no` | `ppap_no` |
+| `price_snapshot` | `price_snapshot` |
 
 ### 3.7 毛重核算公式
 
@@ -147,6 +145,8 @@ Cost = (GrossWeight - ScrapWeight) × material_price_snapshot - ScrapWeight × s
 
 ### 4.1 quotes.approval_status（7 态完整链）
 
+业务填写图纸 → 等待技术审核 → 技术审核通过 → 业务填写价格 → 老板审批
+
 ```
 WAITING_FOR_TECH → TECH_APPROVED ──┐
                  → TECH_REJECTED   │
@@ -155,13 +155,15 @@ WAITING_FOR_TECH → TECH_APPROVED ──┐
                                                     → REJECTED
 ```
 
-- `WAITING_FOR_TECH`：新建报价，等待技术部审核
-- `TECH_APPROVED`：技术部审核通过，可填写定价
-- `TECH_REJECTED`：技术部驳回
-- `DRAFT`：业务填写中（可从 TECH_APPROVED 或 REJECTED 重新进入）
-- `PENDING_BOSS`：已提交老板审批
-- `APPROVED`：老板审批通过（价格快照锁定）
-- `REJECTED`：老板驳回
+| 状态 | 说明 |
+| --- | --- |
+| `WAITING_FOR_TECH` | 新建报价，等待技术部填写参数（T/W/P、模具费、穴数、吨位） |
+| `TECH_APPROVED` | 技术审核通过，开发已填写参数，可进入业务定价 |
+| `TECH_REJECTED` | 技术部驳回 |
+| `DRAFT` | 业务填写中（可从 `TECH_APPROVED` 或 `REJECTED` 重新进入） |
+| `PENDING_BOSS` | 已提交老板审批 |
+| `APPROVED` | 老板审批通过，价格快照锁定 |
+| `REJECTED` | 老板驳回 |
 
 技术审核接口需 `role_level >= 2`（开发部）。
 
@@ -180,6 +182,51 @@ WAITING_FOR_TECH → TECH_APPROVED ──┐
 ### 4.5 production_plans.status
 
 `planned → in_progress → completed / cancelled / closed`
+
+---
+
+## 4.5 价格台账系统（V7.4 新增）
+
+### 4.5.1 核心表架构
+
+价格台账独立于报价单（quotes），为每个「零件+客户」建立完整的价格档案。
+
+|| 表名 | 职责 | 核心字段 |
+|| --- | --- | --- |
+|| `prices` | 价格台账主表 | part_id, customer_id, material_name, net_weight, gross_weight, material_unit_price, scrap_price, surface_treatment (JSONB), surface_treatment_cost, cost_override |
+|| `price_years` | 年份单价与销量 | price_id, year, unit_price, annual_sales |
+|| `annual_reductions` | 年降规则 | price_id, reduction_pct, start_year, duration_years, reason |
+|| `manual_adjustments` | 手动调价记录 | price_id, old_price, new_price, adjustment_type, reason |
+
+**表关系**：`prices` 是主表，通过 `price_id` FK 关联子表，唯一约束 `(part_id, customer_id)`。
+
+### 4.5.2 成本核算公式
+
+```python
+废料量(g) = 毛重(g) - 净重(g)
+材料成本(元/件) = 净重(g)/1000 × 材料单价 - 废料量(g)/1000 × 废料价
+总成本 = 材料成本 + 表面处理成本（或 cost_override 覆盖）
+```
+
+### 4.5.3 当前价格计算逻辑
+
+1. 取最新录入年份的单价；若该年份 ≥ 当前年份 → 直接使用
+2. 否则按年降规则逐年推算：`price = base_price × (1 - reduction_pct)^elapsed_years`
+
+### 4.5.4 入口页面与 API
+
+|| 入口 | URL | 权限 |
+|| --- | --- | --- |
+|| 价格管理系统（综合） | `/price-management` | role_level >= 4 |
+|| 价格成本卡片 | `/boss/price-cards` | role_level >= 5 |
+|| 材料参数中心 | `/material-prices` | 通用 |
+
+### 4.5.5 价格台账导入脚本
+
+`scripts/import_prices_from_excel.py` — 按客户逐一从 Excel 导入价格数据：
+- 支持字段映射（零件号、材质、T×W×PH、净重、毛重、材料单价、废料价、表面处理成本、2025单价、年销量）
+- 自动新建零件（parts 表）、新建/更新价格台账（prices 表）、写入年份价格（price_years 表）
+- 跳过 2025 单价为空的行
 
 ---
 
@@ -226,11 +273,11 @@ finally:
 
 ---
 
-## 5. 图纸文件存储规范
+## 6. 图纸文件存储规范
 
-### 5.1 路径结构
+### 6.1 路径结构
 
-所有图纸文件统一存放在 `static/uploads/drawings/` 下，按以下目录结构分类：
+所有图纸文件统一存放在 `static/uploads/drawings/` 下：
 
 ```
 static/uploads/drawings/
@@ -245,9 +292,9 @@ static/uploads/drawings/
 - 零件名称来自 `parts.internal_name`
 - 零件号来自 `parts.part_number`
 - 特殊字符（`\/:*?"<>|`）自动替换为 `_`
-- **无客户时**：路径为 `_unassigned/{part_id}/drawings`，上传后不会自动迁移
+- **无客户时**：路径为 `_unassigned/{part_id}/drawings`
 
-### 5.2 两类图纸上传
+### 6.2 两类图纸上传
 
 | 类型 | 上传入口 | API | 路由 |
 | --- | --- | --- | --- |
@@ -256,7 +303,7 @@ static/uploads/drawings/
 
 两者均使用 `quotes.sdr_drawing_path` 字段存储。
 
-### 5.3 无客户临时存放 + 自动归位
+### 6.3 无客户临时存放 + 自动归位
 
 **上传时**（`_get_drawing_subdir()` / `_get_drawing_subdir_by_quote()`）：
 - 有客户 → 直接存入标准路径
@@ -264,20 +311,18 @@ static/uploads/drawings/
 
 **客户分配时**（`update_quote(quote_id, customer_id=...)`）：
 - 当 `quotes.customer_id` 从 `null` 更新为有效值时，自动触发 `migrate_drawings_for_quote(quote_id)`
-- `migrate_drawings_for_quote()` 将 `_unassigned` 目录下的图纸文件迁移到标准路径，并同步更新数据库中的 URL
+- `migrate_drawings_for_quote()` 将 `_unassigned` 目录下的图纸文件迁移到标准路径，并同步更新数据库 URL
 - 迁移报告返回 `{moved_files: [...], errors: [...]}`
 
-**迁移函数位置**：`db_service.migrate_drawings_for_quote(quote_id)`
+**迁移函数**：`db_service.migrate_drawings_for_quote(quote_id)`
 
-### 5.4 旧图纸迁移脚本
+### 6.4 旧图纸迁移脚本
 
-`scripts/migrate_drawings.py` — 一次性脚本，将 `static/uploads/sdr/` 下的旧 SDR 文件迁移到新路径，并更新 `quotes.sdr_drawing_path`。
-
-**注意**：客户名从 `tooling_customers` 表读取，若该报价单无 `customer_id`，则目录名用零件号代替。
+`scripts/migrate_drawings.py` — 一次性脚本，将 `static/uploads/sdr/` 下的旧 SDR 文件迁移到新路径。
 
 ---
 
-## 6. 模板序列化规范（防 500 红线）
+## 7. 模板序列化规范（防 500 红线）
 
 凡是模板中使用 `| tojson` 过滤器的数据，**必须在 Python 路由函数中预先序列化**，将 `datetime`/`Decimal` 转为 `str`/`float`：
 
@@ -309,14 +354,14 @@ def _serialize_rows(rows, compute_elapsed=False):
 
 ---
 
-## 7. 前端 API 规范
+## 8. 前端 API 规范
 
 - 所有前端请求必须通过 `api_config.js` 中的 `sendApiRequest()` 分发，**禁止硬编码 fetch URL**
 - 后端新增路由必须同步在 `API_MAP` 中注册
 - 所有 fetch 调用必须包含完整的 `try...catch...finally`，`finally` 中无条件恢复按钮状态
 - 操作成功后显式调用 `window.location.reload()`
 
-### 7.1 当前已注册的关键 API 前缀
+### 8.1 当前已注册的关键 API 前缀
 
 | 前缀 | 模块 |
 | --- | --- |
@@ -332,7 +377,7 @@ def _serialize_rows(rows, compute_elapsed=False):
 
 ---
 
-## 8. 目录结构
+## 9. 目录结构
 
 ```
 app/api/          路由（APIRouter 模块化）
@@ -345,7 +390,7 @@ alembic/versions/ 数据库迁移脚本（当前最新：nom004quotes_parts_mold
 
 ---
 
-## 9. 强制自检清单（汇报完成前必查）
+## 10. 强制自检清单（汇报完成前必查）
 
 1. **防死锁**：前端 JS 是否所有 Promise 都有 `catch` 和 `finally`？
 2. **字典安全**：`psycopg2` 结果是否全部用 `.get()` 取值，无点操作符？

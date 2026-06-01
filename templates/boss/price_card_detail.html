@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>价格成本卡片详情 - 云冲压 ERP</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --blue: #1d4ed8; --blue-dark: #1e40af; --blue-light: #dbeafe;
+            --green: #16a34a; --green-light: #dcfce7;
+            --amber: #d97706; --amber-light: #fef3c7;
+            --red: #dc2626; --red-light: #fef2f2;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563;
+            --gray-800: #1f2937; --gray-900: #111827;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; color: var(--gray-900); }
+
+        /* Top bar */
+        .topbar {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            color: white; padding: 0 16px; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .topbar-title { font-size: 16px; font-weight: 800; }
+        .topbar-back { color: white; text-decoration: none; font-size: 14px; display: flex; align-items: center; gap: 4px; opacity: 0.9; }
+
+        /* Container */
+        .container { max-width: 900px; margin: 0 auto; padding: 16px 16px 80px; }
+
+        /* Section card */
+        .card { background: white; border-radius: 14px; padding: 18px; margin-bottom: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.07); }
+        .section-title { font-size: 12px; font-weight: 700; color: var(--gray-400); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 14px; }
+
+        /* Part header */
+        .part-header { display: flex; gap: 16px; align-items: flex-start; }
+        .part-img { width: 90px; height: 90px; border-radius: 10px; object-fit: cover; background: var(--gray-100); flex-shrink: 0; }
+        .part-img-ph { width: 90px; height: 90px; border-radius: 10px; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 36px; color: var(--gray-300); flex-shrink: 0; }
+        .part-info { flex: 1; min-width: 0; }
+        .part-name { font-size: 16px; font-weight: 900; color: var(--gray-900); margin-bottom: 4px; }
+        .part-no { font-size: 12px; color: var(--gray-400); margin-bottom: 2px; }
+        .part-customer { font-size: 12px; color: var(--blue); font-weight: 600; }
+
+        /* Cost summary bar */
+        .cost-bar { display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; }
+        .cost-item { flex: 1; min-width: 100px; }
+        .cost-item-label { font-size: 10px; color: var(--gray-400); margin-bottom: 2px; }
+        .cost-item-val { font-size: 18px; font-weight: 900; color: var(--amber); }
+        .cost-item-val.blue { color: var(--blue); }
+        .cost-item-val.green { color: var(--green); }
+        .cost-item-val .unit { font-size: 11px; font-weight: 400; color: var(--gray-400); }
+
+        /* Info grid */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .info-item { }
+        .info-label { font-size: 11px; color: var(--gray-400); margin-bottom: 3px; }
+        .info-value { font-size: 14px; font-weight: 700; color: var(--gray-800); }
+        .info-value.editable { background: var(--gray-50); border: 1.5px solid var(--gray-200); border-radius: 6px; padding: 5px 8px; cursor: pointer; transition: border-color 0.2s; min-height: 28px; display: flex; align-items: center; }
+        .info-value.editable:hover { border-color: var(--blue); background: var(--blue-light); }
+
+        /* Surface treatment tags */
+        .st-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+        .st-tag { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--gray-100); color: var(--gray-600); }
+        .st-more { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--blue-light); color: var(--blue); cursor: pointer; position: relative; }
+        .st-tooltip { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--gray-800); color: white; padding: 8px 12px; border-radius: 8px; font-size: 12px; white-space: nowrap; z-index: 10; }
+        .st-tooltip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--gray-800); }
+        .st-more:hover .st-tooltip { display: block; }
+
+        /* Year price table */
+        .year-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+        .year-table th { background: var(--gray-100); padding: 8px 12px; text-align: left; font-size: 11px; color: var(--gray-500); font-weight: 700; }
+        .year-table td { padding: 9px 12px; border-top: 1px solid var(--gray-100); }
+        .year-table tr:first-child td { font-weight: 700; }
+        .year-table .current-year td { background: var(--blue-light); }
+        .year-table .reduction td { color: var(--green); font-weight: 700; }
+
+        /* Annual reduction section */
+        .reduction-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--green-light); border-radius: 8px; margin-bottom: 8px; }
+        .reduction-pct { font-size: 20px; font-weight: 900; color: var(--green); }
+        .reduction-desc { font-size: 13px; color: var(--gray-700); }
+        .reduction-desc strong { color: var(--green); }
+
+        /* Adjustment history */
+        .adj-item { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--gray-100); }
+        .adj-item:last-child { border-bottom: none; }
+        .adj-date { font-size: 11px; color: var(--gray-400); width: 70px; flex-shrink: 0; padding-top: 2px; }
+        .adj-content { flex: 1; }
+        .adj-prices { font-size: 13px; font-weight: 700; color: var(--gray-800); }
+        .adj-from { text-decoration: line-through; color: var(--gray-400); }
+        .adj-arrow { margin: 0 4px; color: var(--amber); }
+        .adj-reason { font-size: 11px; color: var(--gray-500); margin-top: 2px; }
+
+        /* Add reduction button */
+        .btn { padding: 8px 14px; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--blue); color: white; }
+        .btn-primary:hover { background: var(--blue-dark); }
+        .btn-outline { background: white; color: var(--gray-600); border: 1.5px solid var(--gray-200); }
+        .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
+        .btn-green { background: var(--green-light); color: var(--green); }
+        .btn-green:hover { background: var(--green); color: white; }
+        .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+        /* Edit inline */
+        .edit-field { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+        .edit-label { font-size: 12px; color: var(--gray-500); width: 90px; flex-shrink: 0; }
+        .edit-input { flex: 1; padding: 6px 10px; border: 1.5px solid var(--gray-200); border-radius: 6px; font-size: 13px; outline: none; }
+        .edit-input:focus { border-color: var(--blue); }
+
+        /* Modal */
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; padding: 16px; }
+        .modal-overlay.open { display: flex; }
+        .modal { background: white; border-radius: 14px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 16px; color: var(--gray-900); }
+        .modal-field { margin-bottom: 14px; }
+        .modal-label { display: block; font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; }
+        .modal-input { width: 100%; padding: 9px 12px; border: 1.5px solid var(--gray-200); border-radius: 8px; font-size: 14px; outline: none; }
+        .modal-input:focus { border-color: var(--blue); }
+        .modal-error { font-size: 13px; color: var(--red); margin-top: 6px; }
+        .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+        .btn-danger { background: var(--red-light); color: var(--red); }
+        .btn-danger:hover { background: var(--red); color: white; }
+
+        /* Loading */
+        .loading { display: flex; align-items: center; justify-content: center; min-height: 200px; }
+        .spinner { width: 32px; height: 32px; border: 3px solid var(--gray-200); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%); background: var(--gray-900); color: white; padding: 10px 20px; border-radius: 8px; font-size: 14px; font-weight: 600; z-index: 300; display: none; white-space: nowrap; }
+        .toast.show { display: block; animation: fadeUp 0.3s; }
+        .toast.success { background: var(--green); }
+        .toast.error { background: var(--red); }
+        @keyframes fadeUp { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
+
+        /* Material cost section */
+        .mat-grade-row { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+        .mat-grade-row label { font-size: 11px; color: var(--gray-400); width: 80px; flex-shrink: 0; }
+        .mat-grade-row select { flex: 1; padding: 5px 8px; border: 1.5px solid var(--gray-200); border-radius: 6px; font-size: 13px; background: var(--gray-50); }
+        .mat-grade-row select:focus { border-color: var(--blue); outline: none; }
+        .mat-cost-row { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+        .mat-cost-row label { font-size: 11px; color: var(--gray-400); width: 80px; flex-shrink: 0; }
+        .mat-cost-row input { flex: 1; padding: 5px 8px; border: 1.5px solid var(--gray-200); border-radius: 6px; font-size: 13px; }
+        .mat-cost-row input:focus { border-color: var(--blue); outline: none; }
+        .mat-cost-row .mat-cost-hint { font-size: 11px; color: var(--green); flex-shrink: 0; }
+        .mat-calc-preview { font-size: 12px; color: var(--gray-500); padding: 6px 10px; background: var(--gray-50); border-radius: 6px; margin-bottom: 6px; }
+        .mat-calc-preview .mat-calc-result { color: var(--green); font-weight: 700; }
+        .btn-recalc { padding: 5px 12px; background: var(--blue-light); color: var(--blue); border: none; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; flex-shrink: 0; }
+        .btn-recalc:hover { background: var(--blue); color: white; }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <a id="backBtn" href="/boss/price-cards" class="topbar-back">&#8592; 返回</a>
+    <span class="topbar-title">价格成本卡片</span>
+    <span style="width:60px;"></span>
+</div>
+
+<div class="container" id="mainContent">
+    <div class="loading" id="pageLoading"><div class="spinner"></div></div>
+    <div id="pageContent" style="display:none;"></div>
+</div>
+
+<!-- 编辑成本要素弹窗 -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <div class="modal-title">编辑成本要素</div>
+        <div class="edit-field">
+            <div class="edit-label">材质</div>
+            <input type="text" class="edit-input" id="editMaterialName" placeholder="如 SUS301">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">净重 (g)</div>
+            <input type="number" class="edit-input" id="editNetWeight" placeholder="0" step="0.01">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">毛重 (g)</div>
+            <input type="number" class="edit-input" id="editGrossWeight" placeholder="0" step="0.01">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">材料单价 (元/kg)</div>
+            <input type="number" class="edit-input" id="editMaterialUnitPrice" placeholder="0.0000" step="0.0001">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">废料价 (元/kg)</div>
+            <input type="number" class="edit-input" id="editScrapPrice" placeholder="0.0000" step="0.0001">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">表面处理成本</div>
+            <input type="number" class="edit-input" id="editSurfaceCost" placeholder="0.0000" step="0.0001">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">材料成本 (元/件)</div>
+            <input type="number" class="edit-input" id="editMatCostModal" placeholder="0.0000" step="0.0001">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">成本覆盖值</div>
+            <input type="number" class="edit-input" id="editCostOverride" placeholder="留空则自动计算">
+        </div>
+        <div class="edit-field">
+            <div class="edit-label">备注</div>
+            <input type="text" class="edit-input" id="editRemark" placeholder="如 喷涂">
+        </div>
+        <div class="modal-error" id="editError" style="display:none;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="btnEditCancel">取消</button>
+            <button class="btn btn-primary" id="btnEditSave">保存</button>
+        </div>
+    </div>
+</div>
+
+<!-- 新增年降规则弹窗 -->
+<div class="modal-overlay" id="reductionModal">
+    <div class="modal">
+        <div class="modal-title">新增年降规则</div>
+        <div class="modal-field">
+            <label class="modal-label">年降比例（%）</label>
+            <input type="number" class="modal-input" id="reductionPct" placeholder="如 3 表示年降 3%" step="0.01">
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">起始年份</label>
+            <input type="number" class="modal-input" id="reductionStartYear" placeholder="如 2026">
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">持续年数（0=无限期）</label>
+            <input type="number" class="modal-input" id="reductionDuration" placeholder="0" min="0">
+        </div>
+        <div class="modal-field">
+            <label class="modal-label">原因</label>
+            <input type="text" class="modal-input" id="reductionReason" placeholder="如 年度让利">
+        </div>
+        <div class="modal-error" id="reductionError" style="display:none;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="btnReductionCancel">取消</button>
+            <button class="btn btn-green" id="btnReductionSave">添加</button>
+        </div>
+    </div>
+</div>
+
+<!-- 复制成本卡弹窗 -->
+<div class="modal-overlay" id="cloneModal">
+    <div class="modal">
+        <div class="modal-title">复制成本卡</div>
+        <p style="font-size:13px;color:var(--gray-500);margin-bottom:14px;">
+            将此成本卡的所有参数（含历史记录）克隆到另一个零件号。
+        </p>
+        <div class="modal-field">
+            <label class="modal-label">目标零件号</label>
+            <input type="text" class="modal-input" id="clonePartNumber" placeholder="输入目标零件号" autocomplete="off">
+            <div id="clonePartHint" style="font-size:11px;color:var(--gray-400);margin-top:4px;"></div>
+        </div>
+        <div class="modal-error" id="cloneError" style="display:none;"></div>
+        <div class="modal-actions">
+            <button class="btn btn-outline" id="btnCloneCancel">取消</button>
+            <button class="btn btn-primary" id="btnCloneSave">确认复制</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+var _data = null;
+var _priceId = {{ price_id }};
+var _customerId = {{ customer_id }};
+var _currentYear = new Date().getFullYear();
+var _prevYear = _currentYear - 1;
+var _dirty = false;
+var _pending = {}; // 暂存未保存的修改
+
+// ── Toast ──────────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+    var t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className = 'toast show ' + (type || '');
+    clearTimeout(t._timer);
+    t._timer = setTimeout(function() { t.className = 'toast'; }, 3000);
+}
+
+// ── 加载详情 ─────────────────────────────────────────────────────────────────
+function loadDetail() {
+    fetch('/api/boss/price-cards/detail/' + _priceId)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (data.code !== 200) { showToast(data.message || '加载失败', 'error'); return; }
+            _data = data.data;
+            renderDetail(_data);
+            document.getElementById('pageLoading').style.display = 'none';
+            document.getElementById('pageContent').style.display = 'block';
+        })
+        .catch(function(err) {
+            showToast('加载失败: ' + err, 'error');
+        });
+}
+
+function renderDetail(d) {
+    // 更新返回链接
+    document.getElementById('backBtn').href = '/boss/price-cards/' + _customerId;
+
+    // 计算材料成本
+    var matCost = d.material_cost;
+
+    // 构建页面
+    var html = '';
+
+    // ── 零件信息 ─────────────────────────────────────────────────────────────
+    html += '<div class="card">';
+    html += '<div class="part-header">';
+    if (d.image_url) {
+        html += '<img class="part-img" src="' + escAttr(d.image_url) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
+        html += '<div class="part-img-ph" style="display:none;">📦</div>';
+    } else {
+        html += '<div class="part-img-ph">📦</div>';
+    }
+    html += '<div class="part-info">';
+    html += '<div class="part-name">' + escHtml(d.internal_name || '未命名零件') + '</div>';
+    html += '<div class="part-no">' + escHtml(d.part_number || '') + '</div>';
+    if (d.remark) {
+        html += '<div style="font-size:11px;color:var(--amber);font-weight:600;margin-bottom:2px;">备注：' + escHtml(d.remark) + '</div>';
+    }
+    html += '<div class="part-customer">客户：' + escHtml(d.customer_name || '') + '</div>';
+
+    // 成本汇总（金额 4位，数量 2位）
+    html += '<div class="cost-bar">';
+    html += '<div class="cost-item"><div class="cost-item-label">总成本</div><div class="cost-item-val">¥' + fmtMoney(d.cost_override || (matCost ? matCost + (d.surface_treatment_cost||0) : null)) + '</div></div>';
+    html += '<div class="cost-item"><div class="cost-item-label">材料成本</div><div class="cost-item-val green">¥' + fmtMoney(matCost) + '</div></div>';
+    html += '<div class="cost-item"><div class="cost-item-label">当前价格</div><div class="cost-item-val blue">¥' + fmtMoney(d.current_price) + '</div></div>';
+    html += '</div>';
+    html += '</div></div></div>';
+
+    // ── 成本要素 ─────────────────────────────────────────────────────────────
+    var grades = d.material_grades || [];
+    var curGrade = d.material_name || '';
+    var curMatCost = d.material_cost;
+    var netWeightG = d.net_weight;  // API 返回的是 g
+    var gradeOptions = '<option value="">— 选择材料牌号 —</option>';
+    grades.forEach(function(g) {
+        var sel = (g.material_name === curGrade) ? ' selected' : '';
+        gradeOptions += '<option value="' + escAttr(g.material_name) + '"' + sel
+            + ' data-price="' + g.default_price + '" data-density="' + g.default_density + '">'
+            + escHtml(g.material_name) + ' (' + g.default_price + '元/kg)</option>';
+    });
+
+    html += '<div class="card">';
+    html += '<div class="section-title">成本要素</div>';
+
+    // 牌号选择行
+    html += '<div class="mat-grade-row">';
+    html += '<label>材料牌号</label>';
+    html += '<select id="gradeSelect" onchange="onGradeChange(this)">' + gradeOptions + '</select>';
+    html += '</div>';
+
+    // 重量（kg，用于计算）
+    html += '<div style="display:none;" id="netWeightKg">' + (netWeightG ? (netWeightG / 1000).toFixed(6) : '') + '</div>';
+
+    // 材料成本行（独立存储的元/件）+ 算料预览
+    html += '<div class="mat-cost-row">';
+    html += '<label>材料成本</label>';
+    html += '<input type="number" id="editMatCost" step="0.0001" placeholder="0.0000" value="' + (curMatCost != null ? curMatCost : '') + '">';
+    html += '<span class="mat-cost-hint">元/件</span>';
+    html += '<button class="btn-recalc" onclick="recalcMatCost()">算料</button>';
+    html += '</div>';
+
+    // 算料预览
+    var preview = '';
+    if (netWeightG && curGrade) {
+        var selOpt = grades.find(function(g){ return g.material_name === curGrade; });
+        if (selOpt && selOpt.default_price) {
+            var calcMat = (netWeightG / 1000) * parseFloat(selOpt.default_price);
+            preview = '净重' + netWeightG.toFixed(2) + 'g × ' + parseFloat(selOpt.default_price).toFixed(4) + '元/kg = <span class="mat-calc-result">¥' + calcMat.toFixed(4) + '</span>';
+        }
+    }
+    if (preview) {
+        html += '<div class="mat-calc-preview">' + preview + '</div>';
+    }
+
+    html += '<div class="info-grid" style="margin-top:10px;">';
+    html +=         '<div class="info-item"><div class="info-label">净重 (g)</div><div class="info-value editable" onclick="openEdit(\'net_weight\', \'' + (d.net_weight||'') + '\', \'number\')">' + fmtQty(d.net_weight) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">毛重 (g)</div><div class="info-value editable" onclick="openEdit(\'gross_weight\', \'' + (d.gross_weight||'') + '\', \'number\')">' + fmtQty(d.gross_weight) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">材料单价 (元/kg)</div><div class="info-value editable" onclick="openEdit(\'material_unit_price\', \'' + (d.material_unit_price||'') + '\', \'number\')">' + fmtQty(d.material_unit_price) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">废料比率</div><div class="info-value editable" onclick="openEdit(\'scrap_price\', \'' + (d.scrap_price||'') + '\', \'number\')">' + fmtQty(d.scrap_price) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">表面处理成本</div><div class="info-value editable" onclick="openEdit(\'surface_treatment_cost\', \'' + (d.surface_treatment_cost||'') + '\', \'number\')">¥' + fmtMoney(d.surface_treatment_cost) + '</div></div>';
+    html += '<div class="info-item"><div class="info-label">成本覆盖值</div><div class="info-value editable" onclick="openEdit(\'cost_override\', \'' + (d.cost_override||'') + '\', \'number\')">' + (d.cost_override ? '¥' + fmtMoney(d.cost_override) : '留空（自动计算）') + '</div></div>';
+    html += '<div class="info-item" style="grid-column:1/-1;"><div class="info-label">备注</div><div class="info-value editable" onclick="openEdit(\'remark\', \'' + escAttr(d.remark||'') + '\', \'text\')">' + escHtml(d.remark || '点击填写') + '</div></div>';
+    html += '</div>';
+
+    // 表面处理
+    var stList = d.surface_treatment || [];
+    html += '<div style="margin-top:14px;"><div class="info-label">表面处理</div>';
+    if (stList.length === 0) {
+        html += '<div class="info-value editable" onclick="openEditSurface()">点击添加表面处理</div>';
+    } else {
+        html += '<div class="st-tags">';
+        if (stList.length <= 3) {
+            stList.forEach(function(s) { html += '<span class="st-tag">' + escHtml(s.name||s) + '</span>'; });
+        } else {
+            stList.slice(0, 2).forEach(function(s) { html += '<span class="st-tag">' + escHtml(s.name||s) + '</span>'; });
+            html += '<span class="st-more">+' + (stList.length - 2) + ' 更多<span class="st-tooltip">' + stList.map(function(s){return escHtml(s.name||s);}).join('， ') + '</span></span>';
+        }
+        html += '<span class="st-tag" style="cursor:pointer;color:var(--blue);" onclick="openEditSurface()">编辑</span>';
+        html += '</div>';
+    }
+    html += '</div></div>';
+
+    // ── 复制成本卡按钮 ────────────────────────────────────────────────────────
+    html += '<div style="margin-top:12px; display:flex; gap:8px;">';
+    html += '<button class="btn btn-outline btn-sm" onclick="openCloneModal()" style="flex:1;">复制成本卡到其他件号</button>';
+    html += '</div>';
+
+    // ── 年份价格与销量 ─────────────────────────────────────────────────────────
+    html += '<div class="card">';
+    html += '<div class="section-title">年份价格与销量</div>';
+    html += '<table class="year-table"><thead><tr><th>年份</th><th>单价（元/件）</th><th>年销量（件）</th><th>来源</th></tr></thead><tbody>';
+    var years = d.years_data || [];
+    years.forEach(function(y) {
+        var isCur = y.year == _currentYear;
+        html += '<tr class="' + (isCur ? 'current-year' : '') + '">';
+        html += '<td>' + y.year + (isCur ? ' ★' : '') + '</td>';
+        html += '<td>' + (y.unit_price != null ? '¥' + fmtMoney(y.unit_price) : '—') + '</td>';
+        html += '<td>' + (y.annual_sales != null ? y.annual_sales.toLocaleString() : '—') + '</td>';
+        html += '<td style="font-size:11px;color:var(--gray-400);">录入</td>';
+        html += '</tr>';
+    });
+    // 如果当前年没有录入，显示推算价格
+    var hasCurrent = years.some(function(y){return y.year == _currentYear;});
+    if (!hasCurrent) {
+        html += '<tr class="current-year reduction">';
+        html += '<td>' + _currentYear + ' ★</td>';
+        html += '<td>¥' + (d.current_price ? d.current_price.toFixed(4) : '—') + '</td>';
+        html += '<td>—</td>';
+        html += '<td style="font-size:11px;color:var(--green);">年降推算</td>';
+        html += '</tr>';
+    }
+    html += '</tbody></table></div>';
+
+    // ── 年降规则 ─────────────────────────────────────────────────────────────
+    html += '<div class="card">';
+    html += '<div class="section-title">年降规则</div>';
+    var reductions = d.reductions_data || [];
+    if (reductions.length === 0) {
+        html += '<div style="font-size:13px;color:var(--gray-400);padding:8px 0;">暂无年降规则</div>';
+    } else {
+        reductions.forEach(function(r) {
+            html += '<div class="reduction-item">';
+            html += '<div class="reduction-pct">-' + r.reduction_pct + '%</div>';
+            html += '<div class="reduction-desc">从 <strong>' + r.start_year + '</strong> 年起，持续 <strong>' + (r.duration_years || '无限') + '</strong> 年' + (r.reason ? '（' + escHtml(r.reason) + '）' : '') + '</div>';
+            html += '</div>';
+        });
+    }
+    html += '<button class="btn btn-green btn-sm" style="margin-top:8px;" onclick="openReductionModal()">+ 添加年降规则</button>';
+    html += '</div>';
+
+    // ── 调价历史 ─────────────────────────────────────────────────────────────
+    html += '<div class="card">';
+    html += '<div class="section-title">调价历史</div>';
+    var adjs = d.adjustments_data || [];
+    if (adjs.length === 0) {
+        html += '<div style="font-size:13px;color:var(--gray-400);padding:8px 0;">暂无调价记录</div>';
+    } else {
+        adjs.forEach(function(a) {
+            var dt = new Date(a.adjusted_at);
+            var dateStr = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0');
+            html += '<div class="adj-item">';
+            html += '<div class="adj-date">' + dateStr + '</div>';
+            html += '<div class="adj-content">';
+            html += '<div class="adj-prices"><span class="adj-from">¥' + fmtMoney(a.old_price) + '</span><span class="adj-arrow">→</span>¥' + fmtMoney(a.new_price) + '</div>';
+            if (a.reason) html += '<div class="adj-reason">' + escHtml(a.reason) + '</div>';
+            html += '</div></div>';
+        });
+    }
+    html += '</div>';
+
+    document.getElementById('pageContent').innerHTML = html;
+}
+
+function fmt(v, dp) {
+    if (v === null || v === undefined) return '—';
+    dp = dp !== undefined ? dp : 4;
+    var n = parseFloat(v);
+    if (isNaN(n)) return '—';
+    return n.toFixed(dp);
+}
+
+// 专用格式化
+function fmtMoney(v)  { return fmt(v, 4); }  // 金额：4位小数
+function fmtQty(v)    { return fmt(v, 2); }  // 数量：2位小数
+
+function escHtml(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function escAttr(s) {
+    if (s === null || s === undefined) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// ── 材料牌号 ────────────────────────────────────────────────────────────────
+function onGradeChange(select) {
+    var sel = select.options[select.selectedIndex];
+    if (!sel || !sel.value) return;
+    var price = parseFloat(sel.dataset.price || 0);
+    var name = sel.value;
+    document.getElementById('editMaterialName').value = name;
+    // 如果 material_unit_price 为空，自动填入牌号单价
+    var curMp = parseFloat(document.getElementById('editMaterialUnitPrice').value || 0);
+    if (!curMp || curMp === 0) {
+        document.getElementById('editMaterialUnitPrice').value = price;
+        document.getElementById('editMaterialUnitPrice').dataset.field = 'material_unit_price';
+        document.getElementById('editMaterialUnitPrice').dataset.type = 'number';
+    }
+    // 更新预览
+    var grades = _data && _data.material_grades || [];
+    var netG = parseFloat(document.getElementById('netWeightKg').textContent || 0) * 1000;
+    var selOpt = grades.find(function(g){ return g.material_name === name; });
+    if (netG && selOpt && selOpt.default_price) {
+        var calcMat = (netG / 1000) * parseFloat(selOpt.default_price);
+        var prevEl = document.getElementById('matCalcPreview');
+        if (prevEl) {
+            prevEl.innerHTML = '净重' + netG.toFixed(2) + 'g × ' + parseFloat(selOpt.default_price).toFixed(4)
+                + '元/kg = <span class="mat-calc-result">¥' + calcMat.toFixed(4) + '</span>';
+        }
+    }
+}
+
+function recalcMatCost() {
+    var netG = parseFloat(document.getElementById('netWeightKg').textContent || 0) * 1000;
+    var gradeEl = document.getElementById('gradeSelect');
+    var selOpt = gradeEl && gradeEl.options[gradeEl.selectedIndex];
+    if (!selOpt || !selOpt.value) {
+        showToast('请先选择材料牌号', 'error'); return;
+    }
+    var price = parseFloat(selOpt.dataset.price || 0);
+    if (!netG || !price) {
+        showToast('缺少净重或牌号单价', 'error'); return;
+    }
+    var calcMat = (netG / 1000) * price;
+    document.getElementById('editMatCost').value = calcMat.toFixed(4);
+    // 算完自动保存
+    saveAndReload({'material_cost': calcMat, 'material_name': name});
+}
+
+// ── 编辑弹窗 ─────────────────────────────────────────────────────────────────
+function openEdit(field, value, type) {
+    var modal = document.getElementById('editModal');
+    var idMap = {
+        'material_name': 'editMaterialName',
+        'net_weight': 'editNetWeight',
+        'gross_weight': 'editGrossWeight',
+        'material_unit_price': 'editMaterialUnitPrice',
+        'scrap_price': 'editScrapPrice',
+        'surface_treatment_cost': 'editSurfaceCost',
+        'material_cost': 'editMatCostModal',
+        'remark': 'editRemark',
+        'cost_override': 'editCostOverride',
+    };
+    var el = document.getElementById(idMap[field]);
+    if (el) { el.value = value; el.dataset.field = field; el.dataset.type = type; }
+    document.getElementById('editError').style.display = 'none';
+    modal.classList.add('open');
+}
+
+function openEditSurface() {
+    openEdit('surface_treatment', '', 'text');
+}
+
+document.getElementById('btnEditCancel').onclick = function() { document.getElementById('editModal').classList.remove('open'); };
+document.getElementById('btnEditSave').onclick = submitEdit;
+
+function submitEdit() {
+    // 收集弹窗中所有有值的字段，一次性提交
+    var fieldMap = {
+        'editMaterialName': 'material_name',
+        'editNetWeight': 'net_weight',
+        'editGrossWeight': 'gross_weight',
+        'editMaterialUnitPrice': 'material_unit_price',
+        'editScrapPrice': 'scrap_price',
+        'editSurfaceCost': 'surface_treatment_cost',
+        'editMatCostModal': 'material_cost',
+        'editRemark': 'remark',
+        'editCostOverride': 'cost_override',
+    };
+    var numFields = {'net_weight':1,'gross_weight':1,'material_unit_price':1,'scrap_price':1,'surface_treatment_cost':1,'material_cost':1,'cost_override':1};
+    var payload = {};
+    var hasValue = false;
+    for (var elId in fieldMap) {
+        var el = document.getElementById(elId);
+        if (el && el.value !== undefined && el.value !== '') {
+            var field = fieldMap[elId];
+            payload[field] = numFields[field] ? parseFloat(el.value) : el.value;
+            hasValue = true;
+        }
+    }
+    if (!hasValue) return;
+
+    document.getElementById('editModal').classList.remove('open');
+    saveAndReload(payload);
+}
+
+// 单独保存材料成本（inline 区域）
+function saveMatCost() {
+    var val = document.getElementById('editMatCost').value;
+    if (val === '') return;
+    saveAndReload({'material_cost': parseFloat(val)});
+}
+
+function saveAndReload(payload) {
+    fetch('/api/boss/price-cards/detail/' + _priceId, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+    })
+    .then(function(r){return r.json();})
+    .then(function(data) {
+        if (data.code !== 0) { showToast(data.message || '保存失败', 'error'); return; }
+        showToast('保存成功', 'success');
+        loadDetail();
+    })
+    .catch(function(err){ showToast('保存失败: ' + err, 'error'); });
+}
+
+// ── 年降规则弹窗 ─────────────────────────────────────────────────────────────
+function openReductionModal() {
+    document.getElementById('reductionPct').value = '';
+    document.getElementById('reductionStartYear').value = _currentYear;
+    document.getElementById('reductionDuration').value = '0';
+    document.getElementById('reductionReason').value = '';
+    document.getElementById('reductionError').style.display = 'none';
+    document.getElementById('reductionModal').classList.add('open');
+}
+
+document.getElementById('btnReductionCancel').onclick = function() { document.getElementById('reductionModal').classList.remove('open'); };
+document.getElementById('btnReductionSave').onclick = submitReduction;
+
+function submitReduction() {
+    var pct = parseFloat(document.getElementById('reductionPct').value);
+    var startYear = parseInt(document.getElementById('reductionStartYear').value);
+    var duration = parseInt(document.getElementById('reductionDuration').value) || 0;
+    var reason = document.getElementById('reductionReason').value.trim();
+    var errEl = document.getElementById('reductionError');
+
+    if (!pct || pct <= 0) { errEl.textContent = '请输入有效的年降比例'; errEl.style.display='block'; return; }
+    if (!startYear || startYear < 2000 || startYear > 2100) { errEl.textContent = '请输入有效的起始年份'; errEl.style.display='block'; return; }
+
+    fetch('/api/boss/price-cards/detail/' + _priceId + '/reduction', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({reduction_pct: pct, start_year: startYear, duration_years: duration, reason: reason})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data) {
+        if (data.code !== 0) { errEl.textContent = data.message || '添加失败'; errEl.style.display='block'; return; }
+        document.getElementById('reductionModal').classList.remove('open');
+        showToast('年降规则已添加', 'success');
+        loadDetail();
+    })
+    .catch(function(err){ errEl.textContent = '请求失败: ' + err; errEl.style.display='block'; });
+}
+
+// ── 复制成本卡弹窗 ─────────────────────────────────────────────────────────────
+function openCloneModal() {
+    document.getElementById('clonePartNumber').value = '';
+    document.getElementById('clonePartHint').textContent = '';
+    document.getElementById('cloneError').style.display = 'none';
+    document.getElementById('cloneModal').classList.add('open');
+    document.getElementById('clonePartNumber').focus();
+}
+
+document.getElementById('btnCloneCancel').onclick = function() { document.getElementById('cloneModal').classList.remove('open'); };
+
+document.getElementById('clonePartNumber').addEventListener('input', function() {
+    var pn = this.value.trim();
+    var hint = document.getElementById('clonePartHint');
+    if (!pn) { hint.textContent = ''; return; }
+    hint.textContent = '正在查找零件...';
+    fetch('/api/boss/price-cards/parts')
+        .then(function(r){return r.json();})
+        .then(function(data){
+            var list = data.data || [];
+            var found = list.find(function(p){ return p.part_number === pn; });
+            hint.textContent = found ? '✓ 零件存在：' + (found.internal_name || found.part_number) : '✗ 未找到此零件号';
+            hint.style.color = found ? 'var(--green)' : 'var(--red)';
+        })
+        .catch(function(){ hint.textContent = ''; });
+});
+
+document.getElementById('btnCloneSave').onclick = submitClone;
+
+function submitClone() {
+    var pn = document.getElementById('clonePartNumber').value.trim();
+    var errEl = document.getElementById('cloneError');
+    errEl.style.display = 'none';
+    if (!pn) { errEl.textContent = '请输入目标零件号'; errEl.style.display='block'; return; }
+
+    fetch('/api/boss/price-cards/parts')
+        .then(function(r){return r.json();})
+        .then(function(data){
+            var list = data.data || [];
+            var found = list.find(function(p){ return p.part_number === pn; });
+            if (!found) {
+                errEl.textContent = '未找到此零件号，请先在零件管理中添加'; errEl.style.display='block'; return;
+            }
+            doClone(found.id);
+        })
+        .catch(function(err){ errEl.textContent = '查找零件失败: ' + err; errEl.style.display='block'; });
+}
+
+function doClone(targetPartId) {
+    var errEl = document.getElementById('cloneError');
+    errEl.style.display = 'none';
+    fetch('/api/boss/price-cards/detail/' + _priceId + '/clone', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({target_part_id: targetPartId})
+    })
+    .then(function(r){return r.json();})
+    .then(function(data) {
+        if (data.code !== 0) { errEl.textContent = data.message || '克隆失败'; errEl.style.display='block'; return; }
+        document.getElementById('cloneModal').classList.remove('open');
+        showToast('复制成功！新成本卡 ID=' + data.data.new_price_id, 'success');
+        // 回到列表页
+        setTimeout(function(){
+            window.location.href = '/boss/price-cards/' + _customerId;
+        }, 1500);
+    })
+    .catch(function(err){ errEl.textContent = '克隆失败: ' + err; errEl.style.display='block'; });
+}
+
+// 点击遮罩关闭
+document.querySelectorAll('.modal-overlay').forEach(function(o){ o.addEventListener('click',function(e){ if(e.target===o) o.classList.remove('open'); }); });
+
+loadDetail();
+</script>
+</body>
+</html>

@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <title>报价审批 - 云冲压 ERP</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+        :root {
+            --blue: #1d4ed8; --blue-dark: #1e40af; --blue-light: #dbeafe;
+            --green: #16a34a; --green-dark: #15803d; --green-light: #dcfce7;
+            --amber: #d97706; --amber-light: #fef3c7;
+            --red: #dc2626; --red-light: #fef2f2;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-400: #9ca3af; --gray-500: #6b7280; --gray-600: #4b5563;
+            --gray-800: #1f2937; --gray-900: #111827;
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: #f0f2f5; min-height: 100vh; color: var(--gray-900); }
+
+        /* Top bar */
+        .topbar {
+            background: linear-gradient(135deg, #1e40af, #1d4ed8);
+            color: white;
+            padding: 0 20px; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+            position: sticky; top: 0; z-index: 100;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .topbar-title { font-size: 18px; font-weight: 800; letter-spacing: 0.5px; }
+        .topbar-right { display: flex; align-items: center; gap: 12px; font-size: 13px; }
+        .topbar-badge {
+            background: rgba(255,255,255,0.2); padding: 4px 12px; border-radius: 20px;
+            font-size: 13px; font-weight: 700;
+        }
+
+        /* Container */
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px 16px 80px; }
+
+        /* Stats row */
+        .stats-row {
+            display: flex; gap: 16px; margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .stat-card {
+            flex: 1; min-width: 140px; background: white; border-radius: 14px;
+            padding: 16px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .stat-val { font-size: 28px; font-weight: 900; line-height: 1; margin-bottom: 4px; }
+        .stat-lbl { font-size: 12px; color: var(--gray-500); font-weight: 500; }
+
+        /* Quote cards */
+        .quote-list { display: flex; flex-direction: column; gap: 16px; }
+
+        .quote-card {
+            background: white; border-radius: 16px; padding: 20px 24px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+            border: 2px solid var(--gray-200);
+            transition: border-color 0.2s;
+        }
+        .quote-card:hover { border-color: #c7d2fe; }
+        .quote-card.is-editing { border-color: var(--amber); background: #fffbfe; }
+
+        /* Card header */
+        .card-header {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 16px; gap: 12px;
+        }
+        .card-title { font-size: 16px; font-weight: 900; color: var(--gray-900); }
+        .card-subtitle { font-size: 12px; color: var(--gray-500); margin-top: 2px; }
+        .card-meta { font-size: 11px; color: var(--gray-400); text-align: right; }
+        .card-meta-name { font-size: 12px; color: var(--gray-600); font-weight: 600; }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 11px; font-weight: 700;
+        }
+        .badge-pending { background: #fef3c7; color: #92400e; border: 1px solid #fcd34d; }
+        .badge-approved { background: var(--green-light); color: #065f46; border: 1px solid #6ee7b7; }
+
+        /* Content grid */
+        .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 700px) { .card-body { grid-template-columns: 1fr; } }
+
+        /* Section labels */
+        .section { }
+        .section-title {
+            font-size: 10px; font-weight: 800; color: var(--gray-400);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+
+        /* Param grid */
+        .param-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+            margin-bottom: 12px;
+        }
+        .param-cell {
+            background: var(--gray-50); border-radius: 10px;
+            padding: 10px 8px; text-align: center;
+        }
+        .param-lbl { font-size: 10px; color: var(--gray-400); margin-bottom: 3px; }
+        .param-val { font-size: 17px; font-weight: 900; color: var(--gray-900); }
+
+        /* Price section */
+        .price-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px;
+        }
+        .price-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 6px 0; border-bottom: 1px solid var(--gray-100);
+            font-size: 13px;
+        }
+        .price-row:last-child { border-bottom: none; }
+        .price-lbl { color: var(--gray-500); }
+        .price-val { font-weight: 700; color: var(--gray-800); }
+        .price-val.total { font-size: 22px; font-weight: 900; color: var(--blue-dark); }
+
+        /* Quick edit */
+        .edit-toggle {
+            font-size: 12px; color: var(--blue); cursor: pointer;
+            text-decoration: underline; margin-bottom: 8px; display: inline-block;
+        }
+        .edit-form { display: none; }
+        .edit-form.active { display: flex; }
+        .edit-row {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+        }
+        .edit-lbl { font-size: 12px; color: var(--gray-600); min-width: 80px; }
+        .edit-input {
+            flex: 1; padding: 6px 10px; border: 1.5px solid var(--gray-200);
+            border-radius: 8px; font-size: 13px; outline: none;
+            transition: border-color 0.2s;
+        }
+        .edit-input:focus { border-color: var(--blue); }
+
+        /* Action buttons */
+        .card-actions {
+            display: flex; gap: 10px; margin-top: 16px; padding-top: 14px;
+            border-top: 1.5px solid var(--gray-100);
+            flex-wrap: wrap;
+        }
+        .btn {
+            padding: 9px 20px; border: none; border-radius: 10px;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+            transition: all 0.15s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .btn-approve {
+            background: var(--green); color: white; flex: 1;
+        }
+        .btn-approve:hover:not(:disabled) { background: var(--green-dark); }
+        .btn-reject {
+            background: var(--red); color: white;
+        }
+        .btn-reject:hover:not(:disabled) { background: #b91c1c; }
+        .btn-edit {
+            background: var(--blue); color: white;
+        }
+        .btn-edit:hover:not(:disabled) { background: var(--blue-dark); }
+        .btn-cancel {
+            background: var(--gray-100); color: var(--gray-600);
+        }
+        .btn-cancel:hover { background: var(--gray-200); }
+        .btn-save {
+            background: var(--green); color: white; flex: 1;
+        }
+        .btn-save:hover:not(:disabled) { background: var(--green-dark); }
+
+        /* Reject modal */
+        .modal-overlay {
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+            z-index: 200; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white; border-radius: 16px; padding: 28px 24px;
+            max-width: 400px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+        }
+        .modal-title { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+        .modal textarea {
+            width: 100%; padding: 10px 12px; border: 1.5px solid var(--gray-200);
+            border-radius: 10px; font-size: 13px; resize: vertical; min-height: 80px;
+            font-family: inherit; outline: none;
+        }
+        .modal textarea:focus { border-color: var(--blue); }
+        .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+
+        /* Empty state */
+        .empty-state {
+            background: white; border-radius: 16px; padding: 60px 24px;
+            text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+        }
+        .empty-icon { font-size: 48px; margin-bottom: 12px; }
+        .empty-title { font-size: 16px; font-weight: 700; color: var(--gray-600); }
+        .empty-sub { font-size: 13px; color: var(--gray-400); margin-top: 4px; }
+
+        /* Toast */
+        .toast {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            padding: 12px 24px; border-radius: 12px; font-size: 14px; font-weight: 600;
+            z-index: 9999; opacity: 0; transition: opacity 0.3s;
+            pointer-events: none; white-space: nowrap;
+        }
+        .toast.show { opacity: 1; }
+        .toast.ok { background: #065f46; color: white; }
+        .toast.err { background: var(--red); color: white; }
+    </style>
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="topbar">
+    <div style="display:flex; align-items:center; gap:10px;">
+        <a href="/" style="color:white; text-decoration:none; font-size:18px;">&#8592;</a>
+        <span class="topbar-title">&#x1F4BC; 报价审批</span>
+    </div>
+    <div class="topbar-right">
+        <span class="topbar-badge" id="count-badge">— 条待审批</span>
+    </div>
+</div>
+
+<!-- Main content -->
+<div class="container">
+    <!-- Stats -->
+    <div class="stats-row">
+        <div class="stat-card">
+            <div class="stat-val" style="color: var(--amber);" id="stat-pending">—</div>
+            <div class="stat-lbl">待审批</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" style="color: var(--green);" id="stat-approved">0</div>
+            <div class="stat-lbl">已批准（本次）</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-val" style="color: var(--red);" id="stat-rejected">0</div>
+            <div class="stat-lbl">已驳回（本次）</div>
+        </div>
+    </div>
+
+    <!-- Quote list -->
+    <div class="quote-list" id="quote-list">
+        <div class="empty-state" id="loading-state">
+            <div class="empty-icon">&#8987;</div>
+            <div class="empty-title">加载中...</div>
+        </div>
+    </div>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="rejectModal">
+    <div class="modal">
+        <div class="modal-title">&#x26A0; 驳回报价单</div>
+        <textarea id="rejectReason" placeholder="请输入驳回原因（选填，不填则使用默认原因）" maxlength="200"></textarea>
+        <div class="modal-actions">
+            <button class="btn btn-cancel" style="flex:1;" onclick="closeRejectModal()">取消</button>
+            <button class="btn btn-reject" id="confirmRejectBtn" style="flex:1;">确认驳回</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script src="/static/js/api_config.js"></script>
+<script>
+(function() {
+    var _quotes = [];
+    var _pendingCount = 0;
+    var _approvedCount = 0;
+    var _rejectedCount = 0;
+    var _rejectingId = null;
+
+    // ── Init ──────────────────────────────────────────────────────────────────
+    loadQuotes();
+
+    // ── Load ──────────────────────────────────────────────────────────────────
+    function loadQuotes() {
+        sendApiRequest("boss.quotes_list")
+            .then(function(d) {
+                if (d.code === 200) {
+                    _quotes = d.data || [];
+                    render();
+                } else {
+                    showToast("加载失败: " + (d.message || ""), "err");
+                }
+            })
+            .catch(function(e) {
+                showToast("网络异常: " + e.message, "err");
+                document.getElementById("quote-list").innerHTML =
+                    '<div class="empty-state"><div class="empty-icon">&#9888;</div><div class="empty-title">加载失败</div><div class="empty-sub">请刷新页面重试</div></div>';
+            });
+    }
+
+    // ── Render ───────────────────────────────────────────────────────────────
+    function render() {
+        var list = document.getElementById("quote-list");
+        _pendingCount = _quotes.length;
+
+        document.getElementById("stat-pending").textContent = _pendingCount;
+        document.getElementById("stat-approved").textContent = _approvedCount;
+        document.getElementById("stat-rejected").textContent = _rejectedCount;
+        document.getElementById("count-badge").textContent = _pendingCount + " 条待审批";
+
+        if (_pendingCount === 0) {
+            list.innerHTML = '' +
+                '<div class="empty-state">' +
+                    '<div class="empty-icon">&#x2705;</div>' +
+                    '<div class="empty-title">暂无待审批报价单</div>' +
+                    '<div class="empty-sub">所有报价均已处理完毕</div>' +
+                '</div>';
+            return;
+        }
+
+        list.innerHTML = _quotes.map(function(q) {
+            var cardId = "card-" + q.quote_id;
+            return buildCard(q, cardId);
+        }).join('');
+
+        // Attach inline-edit handlers
+        _quotes.forEach(function(q) {
+            var card = document.getElementById("card-" + q.quote_id);
+            if (!card) return;
+
+            card.querySelectorAll(".edit-input").forEach(function(inp) {
+                inp.addEventListener("input", function() {
+                    card.classList.add("is-editing");
+                });
+            });
+        });
+    }
+
+    function buildCard(q, cardId) {
+        var total = q.final_price_override || q.final_price ||
+            ((q.material_net_cost || 0) + (q.stamping_fee || 0) + (q.inspection_fee || 0) + (q.packaging_fee || 0) + (q.surface_fee || 0) + (q.treatment_fee || 0));
+        var totalStr = fmtNum(total);
+        var unitPrice = q.unit_price_override || (total && q.annual_usage > 0 ? total / q.annual_usage : null);
+        var matCost = fmtNum(q.material_cost_override || q.material_net_cost);
+        var stampFee = fmtNum(q.stamping_fee);
+        var inspectFee = fmtNum(q.inspection_fee);
+        var packFee = fmtNum(q.packaging_fee);
+        var surfFee = fmtNum(q.surface_fee);
+        var treatFee = fmtNum(q.treatment_fee);
+        var profit = (q.profit_margin != null && q.profit_margin !== "") ? parseFloat(q.profit_margin).toFixed(1) + "%" : "—";
+        var moldCost = fmtNum(q.mold_cost);
+        var grossWt = fmtNum(q.gross_weight);
+        var hasOverride = (q.final_price_override != null && q.final_price_override !== "") ||
+                          (q.unit_price_override != null && q.unit_price_override !== "") ||
+                          (q.material_cost_override != null && q.material_cost_override !== "");
+
+        var submittedAt = q.submitted_at ? q.submitted_at.replace("T", " ").substring(0, 16) : "—";
+
+        return '<div class="quote-card" id="' + cardId + '">' +
+
+            // Header
+            '<div class="card-header">' +
+                '<div>' +
+                    '<div class="card-title">' + escHtml(q.part_number || "—") + '</div>' +
+                    '<div class="card-subtitle">' + escHtml(q.internal_name || "—") + ' &nbsp;|&nbsp; ' + escHtml(q.material_name || "—") + '</div>' +
+                '</div>' +
+                '<div style="text-align:right;">' +
+                    '<span class="badge badge-pending">待审批</span>' +
+                    '<div class="card-meta" style="margin-top:6px;">提交于 ' + escHtml(submittedAt) + '</div>' +
+                    '<div class="card-meta-name">' + escHtml(q.submitted_by_name || "—") + '</div>' +
+                '</div>' +
+            '</div>' +
+
+            // Body grid — 左侧物理参数只读 / 右侧价格明细只读
+            '<div class="card-body">' +
+
+                // Left: 物理参数
+                '<div class="section">' +
+                    '<div class="section-title">&#x2699; 物理参数</div>' +
+                    '<div class="param-grid">' +
+                        '<div class="param-cell"><div class="param-lbl">厚度 T</div><div class="param-val">' + fmtNum(q.thickness) + '</div></div>' +
+                        '<div class="param-cell"><div class="param-lbl">宽度 W</div><div class="param-val">' + fmtNum(q.width) + '</div></div>' +
+                        '<div class="param-cell"><div class="param-lbl">冲程 P</div><div class="param-val">' + fmtNum(q.press_stroke) + '</div></div>' +
+                        '<div class="param-cell"><div class="param-lbl">穴数</div><div class="param-val">' + fmtNum(q.cavity_count) + '</div></div>' +
+                    '</div>' +
+                    '<div class="param-grid" style="grid-template-columns: 1fr 1fr;">' +
+                        '<div class="param-cell"><div class="param-lbl">年用量</div><div class="param-val">' + fmtNum(q.annual_usage) + '</div></div>' +
+                        '<div class="param-cell"><div class="param-lbl">废料率</div><div class="param-val">' + (q.scrap_rate ? (parseFloat(q.scrap_rate) * 100).toFixed(0) + '%' : '—') + '</div></div>' +
+                    '</div>' +
+                    '<div class="param-grid" style="grid-template-columns: 1fr 1fr 1fr;">' +
+                        '<div class="param-cell"><div class="param-lbl">机台</div><div class="param-val" style="font-size:13px;">' + escHtml(q.machine_type || '—') + '</div></div>' +
+                        '<div class="param-cell"><div class="param-lbl">材料单价</div><div class="param-val" style="font-size:13px;">¥' + fmtNum(q.snapshot_mat_price) + '</div></div>' +
+                        '<div class="param-cell"><div class="param-lbl">废料价</div><div class="param-val" style="font-size:13px;">¥' + fmtNum(q.snapshot_scrap_price) + '</div></div>' +
+                    '</div>' +
+                '</div>' +
+
+                // Right: 价格明细
+                '<div class="section">' +
+                    '<div class="section-title">&#x1F4B0; 价格明细</div>' +
+                    '<div class="price-grid">' +
+                        '<div class="price-row"><span class="price-lbl">材料净成本</span><span class="price-val">¥ ' + matCost + '</span></div>' +
+                        '<div class="price-row"><span class="price-lbl">模具费</span><span class="price-val">¥ ' + moldCost + '</span></div>' +
+                        '<div class="price-row"><span class="price-lbl">冲压费</span><span class="price-val">¥ ' + stampFee + '</span></div>' +
+                        '<div class="price-row"><span class="price-lbl">全检费</span><span class="price-val">¥ ' + inspectFee + '</span></div>' +
+                        '<div class="price-row"><span class="price-lbl">包装费</span><span class="price-val">¥ ' + packFee + '</span></div>' +
+                        '<div class="price-row"><span class="price-lbl">表面处理</span><span class="price-val">¥ ' + surfFee + '</span></div>' +
+                        '<div class="price-row"><span class="price-lbl">利润率</span><span class="price-val">' + profit + '</span></div>' +
+                    '</div>' +
+                    '<div style="background:#eff6ff; border-radius:12px; padding:12px; text-align:center;">' +
+                        '<div style="font-size:11px; color:#1e40af; font-weight:600; margin-bottom:4px;">最终总价（元/件）' + (hasOverride ? ' &#x270E;' : '') + '</div>' +
+                        '<div style="font-size:30px; font-weight:900; color:#1d4ed8; line-height:1;">¥ ' + totalStr + '</div>' +
+                        '<div style="font-size:12px; color:#6b7280; margin-top:4px;">单价 ¥ ' + fmtNum(unitPrice) + ' × 年用量 ' + fmtNum(q.annual_usage) + ' = ¥ ' + fmtNum(unitPrice && q.annual_usage > 0 ? unitPrice * q.annual_usage : null) + '/年</div>' +
+                    '</div>' +
+                '</div>' +
+
+            '</div>' +
+
+            // 快速修改 — 始终展开，2栏+图纸
+            '<div style="padding:12px; background:#f8fafc; border-top:1px solid var(--gray-100);">' +
+
+                // 左：物理参数编辑  中：费用编辑  右：图纸
+                '<div style="display:grid; grid-template-columns:1fr 1fr 200px; gap:16px; align-items:start;">' +
+
+                    // 左：物理参数
+                    '<div>' +
+                    '<div class="section-title">&#x270F; 物理参数修改</div>' +
+                    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">厚度T</span><input type="number" class="edit-input" id="thickness-' + q.quote_id + '" step="0.001" value="' + escAttr(q.thickness) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">宽度W</span><input type="number" class="edit-input" id="width-' + q.quote_id + '" step="0.01" value="' + escAttr(q.width) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">冲程P</span><input type="number" class="edit-input" id="stroke-' + q.quote_id + '" step="0.01" value="' + escAttr(q.press_stroke) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">穴数</span><input type="number" class="edit-input" id="cavity-' + q.quote_id + '" step="1" value="' + escAttr(q.cavity_count) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">机台</span><input type="text" class="edit-input" id="machine-' + q.quote_id + '" value="' + escAttr(q.machine_type || '') + '" placeholder="如 45T"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">毛重(g)</span><input type="number" class="edit-input" id="grosswt-' + q.quote_id + '" step="0.001" value="' + escAttr(q.gross_weight) + '" placeholder="自动"></div>' +
+                    '</div>' +
+                    '</div>' +
+
+                    // 中：费用编辑
+                    '<div>' +
+                    '<div class="section-title">&#x1F4B0; 费用修改（元/件）</div>' +
+                    '<div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">材料净成本</span><input type="number" class="edit-input" id="mat-' + q.quote_id + '" step="0.001" value="' + escAttr(q.material_cost_override || q.material_net_cost) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">冲压费</span><input type="number" class="edit-input" id="stamp-' + q.quote_id + '" step="0.01" value="' + escAttr(q.stamping_fee) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">包装费</span><input type="number" class="edit-input" id="pack-' + q.quote_id + '" step="0.01" value="' + escAttr(q.packaging_fee) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">全检费</span><input type="number" class="edit-input" id="inspect-' + q.quote_id + '" step="0.01" value="' + escAttr(q.inspection_fee) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">表面处理</span><input type="number" class="edit-input" id="surf-' + q.quote_id + '" step="0.01" value="' + escAttr(q.surface_fee) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">模具费</span><input type="number" class="edit-input" id="mold-' + q.quote_id + '" step="0.01" value="' + escAttr(q.mold_cost) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">利润率(%)</span><input type="number" class="edit-input" id="profit-' + q.quote_id + '" step="0.1" value="' + escAttr(q.profit_margin) + '"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">总价覆盖</span><input type="number" class="edit-input" id="final-' + q.quote_id + '" step="0.001" value="' + escAttr(q.final_price_override || '') + '" placeholder="自动"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">单价覆盖</span><input type="number" class="edit-input" id="unit-' + q.quote_id + '" step="0.0001" value="' + escAttr(q.unit_price_override || '') + '" placeholder="自动"></div>' +
+                        '<div class="edit-row" style="margin-bottom:0;"><span class="edit-lbl">后处理</span><input type="number" class="edit-input" id="treat-' + q.quote_id + '" step="0.01" value="' + escAttr(q.treatment_fee) + '"></div>' +
+                    '</div>' +
+                    '</div>' +
+
+                    // 右：图纸
+                    '<div>' +
+                    '<div class="section-title">&#x1F4C4; 图纸（PDF）</div>' +
+                    '<div id="boss-drawing-' + q.quote_id + '" style="border:2px dashed var(--gray-200); border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--gray-400); font-size:11px; text-align:center; padding:12px; min-height:120px; cursor:pointer;" onclick="document.getElementById(\'boss-drawing-input-\' + ' + q.quote_id + ').click()">' +
+                        '点击上传 PDF<br>或拖拽到此处' +
+                    '</div>' +
+                    '<input type="file" id="boss-drawing-input-' + q.quote_id + '" accept="application/pdf" style="display:none;" onchange="bossOnDrawing(this, ' + q.quote_id + ')">' +
+                    '</div>' +
+
+                '</div>' +
+            '</div>' +
+
+            // Actions
+            '<div class="card-actions">' +
+                '<button class="btn btn-reject" onclick="openRejectModal(' + q.quote_id + ')">&#x2716; 驳回</button>' +
+                '<button class="btn btn-approve" onclick="doApprove(' + q.quote_id + ')">&#x2714; 批准通过</button>' +
+                '<button class="btn btn-save" onclick="saveEdit(' + q.quote_id + ')" style="background:var(--blue); color:white; margin-left:auto;">&#x2714; 保存修改</button>' +
+            '</div>' +
+
+        '</div>';
+    }
+
+    // ── Drawing upload ───────────────────────────────────────────────────────────
+    function bossOnDrawing(input, quoteId) {
+        var file = input.files && input.files[0];
+        if (!file) return;
+        var area = document.getElementById("boss-drawing-" + quoteId);
+        if (area) {
+            area.innerHTML = '<div style="font-size:11px;color:var(--blue);padding:8px;">' + file.name + '<br><span style="color:var(--gray-400);font-size:10px;">已选择，点击可更换</span></div>';
+            area.style.borderColor = "var(--blue)";
+            area.style.color = "var(--blue)";
+        }
+    }
+
+    // ── Save edit ─────────────────────────────────────────────────────────────
+    function saveEdit(quoteId) {
+        var payload = {};
+        var inputs = {
+            "thickness": "thickness-" + quoteId,
+            "width": "width-" + quoteId,
+            "press_stroke": "stroke-" + quoteId,
+            "cavity_count": "cavity-" + quoteId,
+            "machine_type": "machine-" + quoteId,
+            "gross_weight": "grosswt-" + quoteId,
+            "material_cost_override": "mat-" + quoteId,
+            "stamping_fee": "stamp-" + quoteId,
+            "inspection_fee": "inspect-" + quoteId,
+            "packaging_fee": "pack-" + quoteId,
+            "surface_fee": "surf-" + quoteId,
+            "treatment_fee": "treat-" + quoteId,
+            "profit_margin": "profit-" + quoteId,
+            "final_price_override": "final-" + quoteId,
+            "unit_price_override": "unit-" + quoteId,
+            "mold_cost": "mold-" + quoteId,
+        };
+        for (var key in inputs) {
+            var el = document.getElementById(inputs[key]);
+            if (el && el.value && el.value.trim() !== "") {
+                if (key === "machine_type") {
+                    payload[key] = el.value.trim();
+                } else {
+                    payload[key] = parseFloat(el.value);
+                }
+            }
+        }
+
+        var saveBtn = document.getElementById("save-btn-" + quoteId);
+        var orig = saveBtn ? saveBtn.textContent : "";
+        if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = "保存中…"; }
+
+        sendApiRequest("boss.quote_edit", payload, { pathParams: { id: quoteId } })
+            .then(function(d) {
+                if (d.code === 200) {
+                    showToast("修改成功！", "ok");
+                    loadQuotes();
+                } else {
+                    showToast(d.message || "修改失败", "err");
+                }
+            })
+            .catch(function(e) {
+                showToast("网络异常: " + e.message, "err");
+            })
+            .finally(function() {
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = orig; }
+            });
+    }
+
+    // ── Approve ───────────────────────────────────────────────────────────────
+    function doApprove(quoteId) {
+        if (!confirm("确认批准此报价单？\n\n批准后价格将锁定，业务无法再修改。")) return;
+        var btn = document.querySelector("#card-" + quoteId + " .btn-approve");
+        if (btn) { btn.disabled = true; btn.textContent = "批准中…"; }
+
+        sendApiRequest("boss.quote_approve", null, { pathParams: { id: quoteId } })
+            .then(function(d) {
+                if (d.code === 200) {
+                    showToast("批准成功！", "ok");
+                    _approvedCount++;
+                    // Animate out
+                    var card = document.getElementById("card-" + quoteId);
+                    if (card) {
+                        card.style.transition = "opacity 0.5s, transform 0.5s";
+                        card.style.opacity = "0";
+                        card.style.transform = "translateX(30px)";
+                        setTimeout(function() { loadQuotes(); }, 520);
+                    } else {
+                        loadQuotes();
+                    }
+                } else {
+                    showToast(d.message || "批准失败", "err");
+                    if (btn) { btn.disabled = false; btn.textContent = "批准通过"; }
+                }
+            })
+            .catch(function(e) {
+                showToast("网络异常: " + e.message, "err");
+                if (btn) { btn.disabled = false; btn.textContent = "批准通过"; }
+            });
+    }
+
+    // ── Reject modal ─────────────────────────────────────────────────────────
+    function openRejectModal(quoteId) {
+        _rejectingId = quoteId;
+        document.getElementById("rejectReason").value = "";
+        document.getElementById("rejectModal").classList.add("active");
+        document.getElementById("rejectReason").focus();
+    }
+
+    function closeRejectModal() {
+        document.getElementById("rejectModal").classList.remove("active");
+        _rejectingId = null;
+    }
+
+    document.getElementById("confirmRejectBtn").addEventListener("click", function() {
+        if (!_rejectingId) return;
+        var reason = document.getElementById("rejectReason").value.trim();
+        var btn = document.getElementById("confirmRejectBtn");
+        var orig = btn ? btn.textContent : "";
+        if (btn) { btn.disabled = true; btn.textContent = "驳回中…"; }
+
+        sendApiRequest("boss.quote_reject", { reason: reason }, { pathParams: { id: _rejectingId } })
+            .then(function(d) {
+                if (d.code === 200) {
+                    showToast("已驳回", "ok");
+                    _rejectedCount++;
+                    closeRejectModal();
+                    loadQuotes();
+                } else {
+                    showToast(d.message || "驳回失败", "err");
+                }
+            })
+            .catch(function(e) {
+                showToast("网络异常: " + e.message, "err");
+            })
+            .finally(function() {
+                if (btn) { btn.disabled = false; btn.textContent = orig; }
+            });
+    });
+
+    // Close modal on overlay click
+    document.getElementById("rejectModal").addEventListener("click", function(e) {
+        if (e.target === this) closeRejectModal();
+    });
+
+    // ── Utils ─────────────────────────────────────────────────────────────────
+    function fmtNum(v) {
+        if (v == null || v === "" || v === undefined) return "—";
+        var n = parseFloat(v);
+        if (isNaN(n)) return "—";
+        if (Math.round(n) === n) return n.toLocaleString("zh-CN");
+        return n.toLocaleString("zh-CN", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
+    }
+
+    function escHtml(str) {
+        if (str == null || str === undefined) return "";
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;");
+    }
+
+    function escAttr(str) {
+        if (str == null || str === undefined) return "";
+        return String(str).replace(/"/g, "&quot;");
+    }
+
+    function showToast(msg, kind) {
+        var t = document.getElementById("toast");
+        t.textContent = msg;
+        t.className = "toast show " + (kind || "ok");
+        setTimeout(function() { t.className = "toast"; }, 3200);
+    }
+
+    // Expose to window so inline onclick attributes can find them
+    window.toggleEdit       = toggleEdit;
+    window.saveEdit         = saveEdit;
+    window.doApprove        = doApprove;
+    window.openRejectModal   = openRejectModal;
+    window.closeRejectModal  = closeRejectModal;
+})();
+</script>
+</body>
+</html>

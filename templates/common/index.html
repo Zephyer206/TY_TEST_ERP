@@ -37,6 +37,10 @@
         .dept-whse   { --dept-color: #ea580c; --dept-bg: #fff7ed; }
         .dept-qc     { --dept-color: #7c3aed; --dept-bg: #f5f3ff; }
         .dept-pkg    { --dept-color: #0891b2; --dept-bg: #ecfeff; }
+        .dept-tech   { --dept-color: #7c3aed; --dept-bg: #f5f3ff; }
+        .dept-dev-mold   { --dept-color: #7c3aed; --dept-bg: #f5f3ff; }
+        .dept-dev-design  { --dept-color: #7c3aed; --dept-bg: #f5f3ff; }
+        .dept-spraying    { --dept-color: #0891b2; --dept-bg: #ecfeff; }
 
         /* ── 问候卡 ── */
         .greet-card {
@@ -248,6 +252,11 @@
                 <div class="quick-icon">📋</div>
                 <div class="quick-title">生产计划</div>
                 <div class="quick-sub">排产·机台分配</div>
+            </a>
+            <a href="/sales/parts" class="quick-card" style="background:#fff7ed; border:2px solid #fed7aa;">
+                <div class="quick-icon">🔩</div>
+                <div class="quick-title">零件表</div>
+                <div class="quick-sub">查看全部零件</div>
             </a>
             <a href="/operator" class="quick-card" style="background:#eff6ff; border:2px solid #bfdbfe;">
                 <div class="quick-icon">📱</div>
@@ -1259,6 +1268,11 @@
             <div class="quick-title">单价提报</div>
             <div class="quick-sub">报价申请</div>
         </a>
+        <a href="/boss/price-cards" class="quick-card" style="background: #fef3c7; border: 2px solid #fde68a;">
+            <div class="quick-icon">📋</div>
+            <div class="quick-title">价格成本</div>
+            <div class="quick-sub">客户卡片</div>
+        </a>
         <a href="/progress" class="quick-card" style="background: #f0fdf4; border: 2px solid #bbf7d0;">
             <div class="quick-icon">📊</div>
             <div class="quick-title">订单进度</div>
@@ -1281,6 +1295,7 @@
     <!-- 快捷链接 -->
     <div class="quick-links">
         <a href="/tooling" class="quick-link quick-link-blue">🔧 模具台账</a>
+        <a href="/boss/price-cards" class="quick-link quick-link-blue">📋 价格成本卡片</a>
         <a href="/materials" class="quick-link quick-link-blue">🗃 物料台账</a>
     </div>
 
@@ -1324,7 +1339,7 @@
 {% endif %}
 
 <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════ -->
-<!-- 管理部门 (admin) 视图：老板经营看板 (Lv.9)                                                  -->
+<!-- 总经理工作台 (Lv.9)                                                                                    -->
 <!-- ═══════════════════════════════════════════════════════════════════════════════════════════════════════ -->
 {% if user.department == 'admin' %}
 {% if user.role_level >= 9 %}
@@ -1334,7 +1349,7 @@
     <div style="margin: 20px 0 16px; display:flex; justify-content:space-between; align-items:center;">
         <div>
             <div style="font-size:22px; font-weight:900; color:#1e293b;">{{ user.real_name }}</div>
-            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">老板视角 · 全局经营看板</div>
+            <div style="font-size:12px; color:#94a3b8; margin-top:2px;">总经理工作台</div>
         </div>
         <div style="font-size:12px; color:#94a3b8; text-align:right;">
             <div>{{ now().strftime('%Y-%m-%d %H:%M') }}</div>
@@ -1342,49 +1357,68 @@
         </div>
     </div>
 
-    {# 1. 核心概况卡片 #}
-    <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
+    {# 1. 核心概况卡片（5格）#}
+    <div style="display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:12px; margin-bottom:20px;">
         {# 今日良品 #}
-        <div style="background:white; border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
-            <div style="font-size:11px; color:#94a3b8; font-weight:600; margin-bottom:8px; letter-spacing:0.5px;">今日良品</div>
-            <div style="font-size:40px; font-weight:900; color:#16a34a; line-height:1; margin-bottom:4px;">{{ today_output.today }}</div>
-            <div style="font-size:12px; color:#64748b;">
+        <div style="background:white; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-bottom:6px; letter-spacing:0.5px;">今日良品</div>
+            <div style="font-size:34px; font-weight:900; color:#16a34a; line-height:1; margin-bottom:4px;">{{ today_output.today }}</div>
+            <div style="font-size:11px; color:#64748b;">
                 {% if today_output.yoy_pct is not none %}
-                    {% if today_output.yoy_pct >= 0 %}
-                        <span style="color:#16a34a; font-weight:700;">↑ {{ today_output.yoy_pct }}%</span>
-                    {% else %}
-                        <span style="color:#dc2626; font-weight:700;">↓ {{ (today_output.yoy_pct * -1) }}%</span>
-                    {% endif %}较昨日
+                    {% if today_output.yoy_pct >= 0 %}<span style="color:#16a34a; font-weight:700;">↑ {{ today_output.yoy_pct }}%</span>
+                    {% else %}<span style="color:#dc2626; font-weight:700;">↓ {{ (today_output.yoy_pct * -1) }}%</span>{% endif %}较昨日
                 {% else %}无昨日数据{% endif %}
             </div>
         </div>
         {# 全厂开工率 #}
-        <div style="background:white; border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
-            <div style="font-size:11px; color:#94a3b8; font-weight:600; margin-bottom:8px; letter-spacing:0.5px;">全厂开工率</div>
-            <div style="font-size:40px; font-weight:900; color:#1d4ed8; line-height:1; margin-bottom:4px;">{{ utilization.rate }}%</div>
-            <div style="font-size:12px; color:#64748b;">{{ utilization.running }} / {{ utilization.total }} 台运行</div>
+        <div style="background:white; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-bottom:6px; letter-spacing:0.5px;">全厂开工率</div>
+            <div style="font-size:34px; font-weight:900; color:#1d4ed8; line-height:1; margin-bottom:4px;">{{ utilization.rate }}%</div>
+            <div style="font-size:11px; color:#64748b;">{{ utilization.running }} / {{ utilization.total }} 台运行</div>
         </div>
         {# 本月发货 #}
-        <div style="background:white; border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
-            <div style="font-size:11px; color:#94a3b8; font-weight:600; margin-bottom:8px; letter-spacing:0.5px;">本月发货</div>
-            <div style="font-size:40px; font-weight:900; color:#7c3aed; line-height:1; margin-bottom:4px;">{{ period_summary.month_shipped }}</div>
-            <div style="font-size:12px; color:#64748b;">本月累计</div>
+        <div style="background:white; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-bottom:6px; letter-spacing:0.5px;">本月发货</div>
+            <div style="font-size:34px; font-weight:900; color:#7c3aed; line-height:1; margin-bottom:4px;">{{ period_summary.month_shipped }}</div>
+            <div style="font-size:11px; color:#64748b;">本月累计</div>
         </div>
+        {# 本月预估产值 #}
+        {% if boss_kpi is defined %}
+        <div style="background:white; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07);">
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-bottom:6px; letter-spacing:0.5px;">本月预估产值</div>
+            <div style="font-size:26px; font-weight:900; color:#0369a1; line-height:1; margin-bottom:4px;">¥{{ '{:,.0f}'.format(boss_kpi.estimated_output) }}</div>
+            <div style="font-size:11px; color:#64748b;">已审批报价 × 良品数</div>
+        </div>
+        {# 废料损耗率 #}
+        <div style="background:{% if boss_kpi.scrap_alert %}linear-gradient(135deg,#fef2f2,#fff5f5){% else %}white{% endif %}; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07); {% if boss_kpi.scrap_alert %}border:2px solid #fca5a5;{% endif %}">
+            <div style="font-size:10px; color:#94a3b8; font-weight:600; margin-bottom:6px; letter-spacing:0.5px;">废料损耗率</div>
+            <div style="font-size:34px; font-weight:900; color:{% if boss_kpi.scrap_alert %}#dc2626{% else %}#16a34a{% endif %}; line-height:1; margin-bottom:4px;"
+                 title="总耗料 {{ boss_kpi.total_gross_kg }}kg - 良品净重 {{ boss_kpi.total_net_kg }}kg = 废料 {{ boss_kpi.scrap_kg }}kg">
+                {{ boss_kpi.scrap_rate_pct }}%
+            </div>
+            <div style="font-size:11px; color:{% if boss_kpi.scrap_alert %}#dc2626{% else %}#64748b{% endif %}; font-weight:{% if boss_kpi.scrap_alert %}700{% else %}400{% endif %};">
+                {% if boss_kpi.scrap_alert %}⚠ 超阈值（>12%）{% else %}废料 {{ boss_kpi.scrap_kg }}kg{% endif %}
+            </div>
+        </div>
+        {% else %}
+        <div style="background:white; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07);"></div>
+        <div style="background:white; border-radius:16px; padding:18px 14px; box-shadow:0 1px 4px rgba(0,0,0,0.07);"></div>
+        {% endif %}
     </div>
 
-    {# 待办审批卡片（老板必看）#}
+    {# 待办审批卡片（仅展示 PENDING_BOSS 待审核报价单）#}
     {% if pending_quote_count is defined and pending_quote_count > 0 %}
     <div style="background:linear-gradient(135deg,#fef3c7,#fffbeb); border:2px solid #f59e0b; border-radius:16px; padding:18px 20px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:16px; box-shadow:0 4px 12px rgba(245,158,11,0.2);">
         <div style="display:flex; align-items:center; gap:14px;">
             <div style="font-size:32px; line-height:1;">&#x1F4DD;</div>
             <div>
-                <div style="font-size:13px; font-weight:800; color:#92400e; margin-bottom:4px;">&#x26A0; 待办审批</div>
+                <div style="font-size:13px; font-weight:800; color:#92400e; margin-bottom:4px;">&#x26A0; 待审核报价单</div>
                 <div style="font-size:12px; color:#b45309;">
-                    当前有 <strong style="font-size:18px; font-weight:900;">{{ pending_quote_count }}</strong> 条报价单等待您的审核，请及时处理以推进业务流转。
+                    当前有 <strong style="font-size:18px; font-weight:900;">{{ pending_quote_count }}</strong> 条报价单等待审核，请及时处理以推进业务流转。
                 </div>
             </div>
         </div>
-        <a href="/sales/parts?status_filter=PENDING_BOSS"
+        <a href="/boss/quotes"
            style="background:#f59e0b; color:white; font-weight:700; font-size:13px; padding:10px 20px; border-radius:10px; text-decoration:none; white-space:nowrap; box-shadow:0 2px 8px rgba(245,158,11,0.4);">
             &#x2714; 立即处理
         </a>
@@ -1392,7 +1426,7 @@
     {% elif pending_quote_count is defined %}
     <div style="background:#f0fdf4; border:1.5px solid #22c55e; border-radius:16px; padding:14px 20px; margin-bottom:20px; display:flex; align-items:center; gap:12px;">
         <div style="font-size:22px;">&#x2714;&#xFE0F;</div>
-        <div style="font-size:13px; color:#166534; font-weight:600;">暂无待审批报价单，所有报价均已处理完毕</div>
+        <div style="font-size:13px; color:#166534; font-weight:600;">暂无待审核报价单，所有报价均已处理完毕</div>
     </div>
     {% endif %}
 
@@ -1418,37 +1452,38 @@
     </div>
     {% endif %}
 
-    {# 2. 吨位开工率圆环图 #}
+    {# 2. 吨位开工率（按真实吨位 45T/110T/200T 分类）#}
     <div style="background:white; border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:20px;">
         <div style="font-size:14px; font-weight:800; color:#1e293b; margin-bottom:4px;">吨位开工率</div>
-        <div style="font-size:11px; color:#94a3b8; margin-bottom:16px;">点击任意吨位组展开机台详情</div>
+        <div style="font-size:11px; color:#94a3b8; margin-bottom:16px;">按真实吨位分类 · 点击展开机台详情</div>
 
         {% if tonnage_groups %}
-        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:14px; margin-bottom:8px;">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(140px, 1fr)); gap:14px; margin-bottom:8px;">
             {% for tonnage, grp in tonnage_groups.items() %}
-            {% set run_pct = ((grp.running / grp.total * 100) | round | int) if grp.total > 0 else 0 %}
+            {% set run_pct = ((grp.get('running', 0) / grp.get('total', 0) * 100) | round | int) if grp.get('total', 0) > 0 else 0 %}
             {% set donut_id = 'donut-' ~ loop.index %}
             <div style="cursor:pointer;" onclick="toggleTonnage('{{ donut_id }}')">
                 <div style="position:relative; width:90px; height:90px; margin:0 auto 8px;">
                     <svg width="90" height="90" viewBox="0 0 36 36" style="transform:rotate(-90deg);">
                         <circle cx="18" cy="18" r="14" fill="none" stroke="#f1f5f9" stroke-width="3.5"/>
                         <circle cx="18" cy="18" r="14" fill="none"
-                            stroke="{% if grp.running == grp.total and grp.total > 0 %}#10b981{% elif grp.running == 0 %}#9ca3af{% else %}#f97316{% endif %}"
+                            stroke="{% if grp.get('running', 0) == grp.get('total', 0) and grp.get('total', 0) > 0 %}#10b981{% elif grp.get('running', 0) == 0 %}#9ca3af{% else %}#f97316{% endif %}"
                             stroke-width="3.5"
                             stroke-dasharray="{{ run_pct }} {{ 100 - run_pct }}"
                             stroke-dashoffset="0"/>
                     </svg>
                     <div style="position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; line-height:1;">
                         <div style="font-size:14px; font-weight:900; color:#1e293b;">{{ run_pct }}%</div>
-                        <div style="font-size:9px; color:#94a3b8;">{{ grp.running }}/{{ grp.total }}</div>
+                        <div style="font-size:9px; color:#94a3b8;">{{ grp.get('running', 0) }}/{{ grp.get('total', 0) }}</div>
                     </div>
                 </div>
                 <div style="text-align:center;">
                     <div style="font-size:14px; font-weight:800; color:#334155;">{{ tonnage }}T</div>
                     <div style="font-size:10px; color:#94a3b8; margin-top:2px;">
-                        <span style="color:#10b981; font-weight:700;">{{ grp.running }}运行</span>
-                        <span style="color:#f97316; font-weight:700;">{{ grp.offline }}停</span>
-                        <span style="color:#9ca3af;">{{ grp.idle }}闲</span>
+                        <span style="color:#10b981; font-weight:700;">{{ grp.get('running', 0) }}运行</span>
+                        {% if grp.get('repairing', 0) > 0 %}<span style="color:#dc2626; font-weight:700; margin-left:3px;">{{ grp.get('repairing', 0) }}停机</span>{% endif %}
+                        <span style="color:#f97316; font-weight:700; margin-left:3px;">{{ grp.get('offline', 0) }}离线</span>
+                        <span style="color:#9ca3af; margin-left:3px;">{{ grp.get('idle', 0) }}闲</span>
                     </div>
                 </div>
             </div>
@@ -1458,11 +1493,11 @@
         {% for tonnage, grp in tonnage_groups.items() %}
         {% set detail_id = 'donut-' ~ loop.index %}
         <div id="{{ detail_id }}" style="display:none; margin-top:12px; border-top:1.5px solid #f1f5f9; padding-top:12px;">
-            <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">{{ tonnage }}T 机台详情</div>
+            <div style="font-size:12px; font-weight:700; color:#475569; margin-bottom:8px;">{{ tonnage }}T 机台详情（开工率 {{ grp.get('utilization_pct', 0) }}%）</div>
             <div style="display:grid; gap:6px;">
-                {% for m in grp.machines %}
-                <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:#f8fafc; border-radius:10px;">
-                    <div style="width:8px; height:8px; border-radius:50%; flex-shrink:0; background:{% if m.status == 'running' %}#10b981{% elif m.status == 'offline' %}#f97316{% elif m.status == 'requesting' %}#f59e0b{% else %}#cbd5e1{% endif %};"></div>
+                {% for m in grp.get('machines', []) %}
+                <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:{% if m.status == 'repairing' %}#fef2f2{% else %}#f8fafc{% endif %}; border-radius:10px; {% if m.status == 'repairing' %}border-left:3px solid #dc2626;{% endif %}">
+                    <div style="width:8px; height:8px; border-radius:50%; flex-shrink:0; background:{% if m.status == 'running' %}#10b981{% elif m.status == 'repairing' %}#dc2626{% elif m.status == 'offline' %}#f97316{% elif m.status == 'requesting' %}#f59e0b{% else %}#cbd5e1{% endif %};"></div>
                     <div style="flex:0 0 60px;">
                         <div style="font-size:12px; font-weight:700; color:#334155;">{{ m.number }}</div>
                         <div style="font-size:10px; color:#94a3b8;">{{ tonnage }}T</div>
@@ -1477,7 +1512,8 @@
                     <div style="font-size:11px; color:#64748b; flex-shrink:0;">{% if m.operator %}{{ m.operator }}{% else %}—{% endif %}</div>
                     <div style="font-size:11px; font-weight:700; flex-shrink:0;">
                         {% if m.status == 'running' %}<span style="color:#10b981;">运行中</span>
-                        {% elif m.status == 'offline' %}<span style="color:#f97316;">停机</span>
+                        {% elif m.status == 'repairing' %}<span style="color:#dc2626; font-weight:800;">停机维修</span>
+                        {% elif m.status == 'offline' %}<span style="color:#f97316;">离线</span>
                         {% elif m.status == 'requesting' %}<span style="color:#f59e0b;">待料</span>
                         {% else %}<span style="color:#94a3b8;">空闲</span>{% endif %}
                     </div>
@@ -1491,12 +1527,15 @@
         {% endif %}
     </div>
 
-    {# 3. 交付逾期清单 #}
-    <div style="background:white; border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:20px;">
+    {# 3. 交付逾期清单（红色高危卡片）#}
+    <div style="background:{% if overdue_summary %}linear-gradient(135deg,#fef2f2,#fff5f5){% else %}white{% endif %}; border-radius:16px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,0.07); margin-bottom:20px; {% if overdue_summary %}border:2px solid #fca5a5;{% endif %}">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-            <div style="font-size:14px; font-weight:800; color:#1e293b;">交付逾期清单</div>
+            <div style="display:flex; align-items:center; gap:10px;">
+                {% if overdue_summary %}<div style="font-size:20px; line-height:1;">&#x1F6A8;</div>{% endif %}
+                <div style="font-size:14px; font-weight:800; color:{% if overdue_summary %}#dc2626{% else %}#1e293b{% endif %};">交付逾期清单</div>
+            </div>
             {% if overdue_summary %}
-            <span style="background:#fef2f2; color:#dc2626; font-size:11px; font-weight:700; padding:2px 10px; border-radius:9999px;">{{ overdue_summary|length }} 客户逾期</span>
+            <span style="background:#dc2626; color:white; font-size:11px; font-weight:700; padding:3px 12px; border-radius:9999px; box-shadow:0 2px 6px rgba(220,38,38,0.4);">&#x26A0; {{ overdue_summary|length }} 客户逾期</span>
             {% endif %}
         </div>
         <div style="font-size:11px; color:#94a3b8; margin-bottom:16px;">按客户分组 · 逾期零件明细 · 点击展开</div>
@@ -1504,10 +1543,10 @@
         {% if overdue_summary %}
         <div style="display:grid; gap:10px;">
             {% for cust in overdue_summary %}
-            <div style="border:1.5px solid #f1f5f9; border-radius:12px; overflow:hidden;">
-                <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer;" onclick="toggleOverdue('ov-cust-{{ loop.index }}')">
+            <div style="border:2px solid #fca5a5; border-radius:12px; overflow:hidden; background:white;">
+                <div style="display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; background:#fef2f2;" onclick="toggleOverdue('ov-cust-{{ loop.index }}')">
                     <div style="flex:1;">
-                        <div style="font-size:13px; font-weight:800; color:#1e293b;">{{ cust.customer }}</div>
+                        <div style="font-size:13px; font-weight:800; color:#991b1b;">{{ cust.customer }}</div>
                     </div>
                     <div style="text-align:center; min-width:70px;">
                         <div style="font-size:16px; font-weight:800; color:#dc2626;">{{ cust.overdue_part_count }}</div>
@@ -1520,12 +1559,12 @@
                     <div style="font-size:16px; color:#94a3b8; flex-shrink:0;" id="ov-arrow-{{ loop.index }}">&#9660;</div>
                 </div>
 
-                <div id="ov-cust-{{ loop.index }}" style="display:none; border-top:1px solid #f1f5f9;">
-                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:0; padding:8px 14px; background:#f8fafc; font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:0.3px;">
+                <div id="ov-cust-{{ loop.index }}" style="display:none; border-top:1px solid #fca5a5;">
+                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:0; padding:8px 14px; background:#fff5f5; font-size:10px; font-weight:700; color:#94a3b8; letter-spacing:0.3px;">
                         <div>零件图号</div><div style="text-align:center;">订单量</div><div style="text-align:center;">已交</div><div style="text-align:center;">欠货</div><div style="text-align:center;">逾期天数</div>
                     </div>
                     {% for part in cust.parts %}
-                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:0; padding:8px 14px; border-top:1px solid #f1f5f9; font-size:12px; align-items:center;">
+                    <div style="display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:0; padding:8px 14px; border-top:1px solid #fee2e2; font-size:12px; align-items:center;">
                         <div>
                             <div style="font-weight:700; color:#334155;">{{ part.part_number }}</div>
                             <div style="font-size:10px; color:#94a3b8; margin-top:1px;">{{ part.part_name or '—' }}</div>
@@ -1534,7 +1573,7 @@
                         <div style="text-align:center; color:#16a34a; font-weight:700;">{{ part.delivered_qty }}</div>
                         <div style="text-align:center; color:#dc2626; font-weight:700;">{{ part.backorder_qty }}</div>
                         <div style="text-align:center;">
-                            <span style="background:#fee2e2; color:#dc2626; font-size:10px; font-weight:700; padding:1px 6px; border-radius:9999px;">{{ part.overdue_days }}天</span>
+                            <span style="background:#dc2626; color:white; font-size:10px; font-weight:700; padding:2px 7px; border-radius:9999px;">{{ part.overdue_days }}天</span>
                         </div>
                     </div>
                     {% endfor %}
@@ -1654,11 +1693,32 @@
 </div>
 {% endif %}
 
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- 开发部视图（模具工程师/设计工程师）                                  -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+{% if user.department in ['dev-mold', 'dev-design'] %}
+<div class="page-body">
+    <div class="card" style="border-left:4px solid #7c3aed;background:#f5f3ff;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+            <div style="font-size:32px;">🔧</div>
+            <div>
+                <div style="font-size:16px;font-weight:700;color:#7c3aed;">{{ user.position }}</div>
+                <div style="font-size:12px;color:#6b7280;">开发部</div>
+            </div>
+        </div>
+    </div>
+    <div class="quick-links">
+        <a href="/tech/tech-params" class="quick-link" style="background:#fef3c7; color:#92400e; border:1px solid #fde68a;">
+            📋 待填参数
+        </a>
+    </div>
+</div>
+{% endif %}
 
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
 <!-- 兜底分支：调试信息                                                   -->
 <!-- ═══════════════════════════════════════════════════════════════════════ -->
-{% if not user.department in ['prod', 'whse', 'sales', 'admin', 'qc', 'pkg', 'tech'] %}
+{% if not user.department in ['prod', 'whse', 'sales', 'admin', 'qc', 'pkg', 'tech', 'dev-mold', 'dev-design', 'spraying'] %}
 <div class="page-body" style="max-width:480px;margin:0 auto;padding:16px;">
     <div class="card" style="border-left:4px solid #dc2626;background:#fef2f2;">
         <div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:12px;">⚠️ 部门未配置</div>

@@ -1,0 +1,8 @@
+feat: 价格台账克隆/复制功能、模板下载、详情页修复
+
+- 新增 POST /api/boss/price-cards/detail/{id}/clone 克隆接口（复制成本要素+历史）
+- 价格成本核算模板.xlsx 解析器重构（支持18列新模板，自动区分材料成本/总成本）
+- 新增 GET /api/boss/price-cards/template 模板下载接口
+- price_card_detail.html 加「复制成本卡」按钮+弹窗
+- price_card_detail API 修复 Decimal JSON 序列化问题
+- price_cards_choose.html 和 price_cards_list.html 加「下载模板」按钮

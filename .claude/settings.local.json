@@ -16,7 +16,25 @@
       "Bash(node --check \"C:/Users/Administrator/AppData/Local/Temp/check_js.js\")",
       "Bash(where py *)",
       "Bash(taskkill /PID 4620 /F)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(grep -n \"templates\\\\\\\\\")",
+      "Bash(grep -oP \"templates\\\\\\\\\\\\\\\\[^:]+\\\\.html\")",
+      "Bash(sort -k6,7)",
+      "Bash(findstr \":8000\")",
+      "Bash(findstr \"LISTEN\")",
+      "Bash(findstr \":80\")",
+      "Bash(py main.py)",
+      "Read(//tmp/**)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8000/login)",
+      "Bash(curl *)",
+      "Bash(taskkill //F //IM python.exe)",
+      "Bash(sed -n '9242,9260p' \"C:/Users/Administrator/Desktop/Cloud-Stamping/app/services/db_service.py\")",
+      "Bash(sed -n '9975,9990p' \"C:/Users/Administrator/Desktop/Cloud-Stamping/app/services/db_service.py\")",
+      "Bash(pip show *)",
+      "Bash(pip list *)",
+      "Bash(taskkill /PID 6964 /F)",
+      "Bash(taskkill /F /PID 6964)"
     ]
   }
 }

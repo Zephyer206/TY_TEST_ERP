@@ -182,18 +182,19 @@ def tech_manager_page(request: Request):
         return RedirectResponse("/login")
     if not get_tech_manager_permission(user["id"]):
         raise HTTPException(status_code=403, detail="权限不足")
-    radar = get_realtime_radar_data()
+    radar_machines = get_realtime_radar_data() or []
     task_pool = get_tech_task_pool()
     performance = get_tech_performance_stats()
     tech_eff = get_tech_staff_monthly_efficiency()
     return templates.TemplateResponse("tech/tech_manager.html", {
         "request": request,
         "user": user,
-        "summary": radar.get("summary", {}) if radar else {},
-        "radar_data": radar.get("machines", []) if radar else [],
+        "summary": {},
+        "radar_data": radar_machines,
         "task_pool": task_pool,
         "performance": performance,
         "tech_staff_efficiency": tech_eff,
+        "fault_analysis": {"top_5_molds": [], "duration_trend": []},
     })
 
 
@@ -254,17 +255,17 @@ from app.services.db_service import (
     get_all_tooling_customers,
     get_tooling_mold_by_id,
     get_tooling_parts_by_mold,
-    get_all_molds,
-    get_mold_by_id,
+    get_all_dies,
+    get_die_by_id,
     get_all_parts,
-    get_parts_by_mold,
-    add_mold,
-    update_mold,
-    delete_mold,
-    link_mold_part,
-    unlink_mold_part,
+    get_parts_by_die,
+    add_die,
+    update_die,
+    delete_die,
+    link_die_part,
+    unlink_die_part,
     update_cavity_status,
-    update_mold_physical_params,
+    update_die_physical_params,
 )
 
 # ── 独立子路由（无前缀） ──────────────────────────────────────────
@@ -319,7 +320,7 @@ def mold_list_page(request: Request):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login")
-    molds = get_all_molds()
+    molds = get_all_dies()
     return templates.TemplateResponse("tech/molds.html", {
         "request": request, "molds": molds, "user": user,
     })
@@ -349,7 +350,7 @@ def mold_add(request: Request, body: MoldAddBody = None):
     user = get_current_user(request)
     if not user or user["role_level"] < 2:
         raise HTTPException(status_code=403, detail="权限不足")
-    add_mold(body.mold_number, body.mold_name, body.cavity_count, body.press_tonnage, body.remark)
+    add_die(body.mold_number, body.mold_name, body.cavity_count, body.press_tonnage, body.remark)
     return JSONResponse(jsonable_encoder({"code": 200, "message": "新增成功"}))
 
 
@@ -358,10 +359,10 @@ def mold_update(request: Request, mold_id: int, body: MoldUpdateBody = None):
     user = get_current_user(request)
     if not user or user["role_level"] < 2:
         raise HTTPException(status_code=403, detail="权限不足")
-    update_mold(mold_id, mold_name=body.mold_name, cavity_count=body.cavity_count,
+    update_die(mold_id, mold_name=body.mold_name, cavity_count=body.cavity_count,
                  press_tonnage=body.press_tonnage, status=body.status, remark=body.remark)
     if body.thickness_mm is not None or body.width_mm is not None or body.pitch_mm is not None:
-        update_mold_physical_params(mold_id,
+        update_die_physical_params(mold_id,
                                     thickness_mm=body.thickness_mm,
                                     width_mm=body.width_mm,
                                     pitch_mm=body.pitch_mm)
@@ -373,7 +374,7 @@ def mold_delete(request: Request, mold_id: int):
     user = get_current_user(request)
     if not user or user["role_level"] < 2:
         raise HTTPException(status_code=403, detail="权限不足")
-    delete_mold(mold_id)
+    delete_die(mold_id)
     return JSONResponse(jsonable_encoder({"code": 200, "message": "删除成功"}))
 
 
@@ -382,10 +383,10 @@ def mold_link_page(request: Request, mold_id: int):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login")
-    mold = get_mold_by_id(mold_id)
+    mold = get_die_by_id(mold_id)
     if not mold:
         return HTMLResponse("模具不存在", status_code=404)
-    linked_parts = get_parts_by_mold(mold_id)
+    linked_parts = get_parts_by_die(mold_id)
     all_parts = get_all_parts(user["role_level"])
     return templates.TemplateResponse("tech/mold_link.html", {
         "request": request, "mold": mold, "linked_parts": linked_parts,
@@ -399,7 +400,7 @@ def mold_link_part(request: Request, mold_id: int, part_id: int = Form(...),
     user = get_current_user(request)
     if not user or user["role_level"] < 2:
         raise HTTPException(status_code=403, detail="权限不足")
-    link_mold_part(mold_id, part_id, product_number, seq_order)
+    link_die_part(mold_id, part_id, product_number, seq_order)
     return RedirectResponse(f"/molds/{mold_id}/link", 303)
 
 
@@ -408,7 +409,7 @@ def mold_unlink_part(request: Request, mold_id: int, part_id: int = Form(...)):
     user = get_current_user(request)
     if not user or user["role_level"] < 2:
         raise HTTPException(status_code=403, detail="权限不足")
-    unlink_mold_part(mold_id, part_id)
+    unlink_die_part(mold_id, part_id)
     return RedirectResponse(f"/molds/{mold_id}/link", 303)
 
 
