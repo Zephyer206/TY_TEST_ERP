@@ -11,7 +11,7 @@ target_metadata = None
 
 def get_url():
     return (
-        "postgresql://postgres:thehaoshi5DE@localhost:5432/stamping_system"
+        "postgresql://postgres:thehaoshi5DE@124.222.29.229:5432/stamping_system"
     )
 
 def run_migrations_offline() -> None:
