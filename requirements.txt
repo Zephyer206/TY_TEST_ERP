@@ -1,0 +1,33 @@
+# Cloud-Stamping ERP Dependencies
+# Python 3.11+
+
+# Core
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+starlette>=0.27.0
+
+# Database
+psycopg2-binary>=2.9.9
+
+# Templating
+jinja2>=3.1.0
+python-multipart>=0.0.6
+
+# Excel
+openpyxl>=3.1.0
+
+# QR Code
+qrcode[pil]>=7.4.0
+Pillow>=10.0.0
+
+# Tencent Cloud COS
+cos-python-sdk-v5>=1.9.42
+
+# Utils
+python-dateutil>=2.8.0
+
+# Tencent Cloud COS
+cos-python-sdk-v5>=1.9.42
+
+# Development
+black>=23.0.0

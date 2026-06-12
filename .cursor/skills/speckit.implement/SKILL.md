@@ -1,78 +1,80 @@
 ---
 name: speckit.implement
 description: >
-  执行实施计划，处理并完成 tasks.md 中定义的所有任务。
-  当用户说 "/speckit.implement"、想开始编码、说"开始实现"时使用。
+  根据 tasks.md 执行任务，实现代码。当用户说 "/speckit.implement"、想按任务清单实现功能时使用。
 ---
 
-# Speckit Implement — 实施执行
+# Speckit Implement — 任务执行
 
-执行实施计划，处理 `tasks.md` 中的所有任务。
+根据 `tasks.md` 清单执行任务，实现代码。
 
 ## 前置条件
 
-- `specs/<feature>/tasks.md` 必须存在
-- `specs/<feature>/checklists/` 中的所有检查清单应已完成
+- `specs/<feature>/tasks.md`（包含 `- [ ]` 复选框任务列表）
+- `specs/<feature>/plan.md`（技术栈、文件结构）
+- `specs/<feature>/spec.md`（功能需求）
 
 ## 工作流程
 
-### 1. 检查前置脚本
+### 1. 解析任务范围
 
-从仓库根目录运行 `.specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks`。
+解析用户指定的范围：
+- `Phase N`：执行第 N 阶段所有任务
+- `TXXX-TYYY`：执行从 TXXX 到 TYYY 的所有任务
+- `USX`：执行标签为 USX 的所有任务
+- 无参数：执行所有未完成的任务
 
-### 2. 验证检查清单
+### 2. 读取设计文档
 
-检查 `FEATURE_DIR/checklists/`：
-- 扫描所有检查清单的完成状态
-- 如有未完成：停止并询问用户"部分检查清单未完成，是否继续？（是/否）"
-- 全部完成：自动继续
+从 FEATURE_DIR 读取：
+- `tasks.md`（任务清单）
+- `plan.md`（技术栈、文件结构）
+- `spec.md`（功能需求）
 
-### 3. 加载实施上下文
+### 3. 执行任务
 
-按顺序读取：
-- **必须**：`tasks.md`（完整任务列表）、`plan.md`（技术栈、架构）
-- **如存在**：data-model.md、contracts/、research.md、constitution.md、quickstart.md
+按顺序执行任务，遵循：
+- `[P]` 标记的任务可并行执行
+- 无标记的任务必须按顺序执行
+- 每个任务完成后，更新 `tasks.md` 复选框为 `- [x]`
 
-### 4. 项目初始化验证
+### 4. 实现规范
 
-根据技术栈创建/验证忽略文件：
-- `.gitignore`（通过 `git rev-parse --git-dir` 检测）
-- `.dockerignore`、`.eslintignore`、`.prettierignore`（按需）
-- 按技术栈的忽略模式：
-  - **Node.js/TS**：`node_modules/`、`dist/`、`build/`、`*.log`、`.env*`
-  - **Python**：`__pycache__/`、`*.pyc`、`.venv/`、`dist/`
+每个任务的实现必须：
 
-### 5. 分阶段执行
+1. **创建/修改指定文件**
+2. **遵循现有代码风格**（从 Phase 1/2 已实现的代码中学习）
+3. **添加必要的导入和类型标注**
+4. **包含完整的错误处理**
+5. **符合 plan.md 中的技术决策**
 
-按阶段顺序执行任务：
-- **初始化**：创建结构、安装依赖、配置
-- **核心开发**：实现 Models、Services、Endpoints
-- **集成**：数据库连接、中间件、外部服务
-- **收尾**：单元测试、优化、文档
+### 5. 验证
 
-### 6. 进度跟踪
+任务完成后：
+- 检查语法错误
+- 确保文件路径正确
+- 更新 `tasks.md` 复选框
 
-- 每完成一个任务后汇报进度
-- 在 tasks 文件中标记已完成任务为 `[X]`
-- 遇到非并行任务失败时停止
-- 并行任务继续执行成功的，汇报失败者
+## 任务格式
 
-### 7. 完成验证
-
-- 所有必需任务标记 `[X]`
-- 实施结果与规格匹配
-- 测试通过，覆盖率达到要求
+```
+- [x] T022 [P] [US1] 在 backend/src/models/quote.py 中创建报价单模型
+```
 
 ## 完成报告
 
-汇报最终状态和已完成工作的摘要。
+汇报：
+- 已完成任务 ID 列表
+- 创建/修改的文件列表
+- 遇到的任何问题
 
 ## 参考资料
 
-完整 speckit.implement 代理提示：`.github/agents/speckit.implement.agent.md`
+任务清单：`.specify/templates/tasks-template.md`
+实现模板：参考 Phase 1/2 已实现的代码
 
 ## 完成标志
 
-- [ ] tasks.md 中所有任务已完成并标记 `[X]`
-- [ ] 实施结果已通过规格验证
-- [ ] 已向用户汇报完成摘要
+- [ ] 所有指定任务已完成
+- [ ] `tasks.md` 复选框已更新
+- [ ] 已向用户汇报完成情况

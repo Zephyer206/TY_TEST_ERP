@@ -1,0 +1,58 @@
+# Zephyr_test_ERP Backend Dependencies
+# Python 3.11+
+
+## Core Framework
+fastapi==0.109.2
+uvicorn[standard]==0.27.1
+
+## Database
+sqlalchemy[asyncio]==2.0.25
+asyncpg==0.29.0
+alembic==1.13.1
+psycopg2-binary==2.9.9
+
+## Data Validation
+pydantic==2.6.1
+pydantic-settings==2.1.0
+email-validator==2.1.0.post1
+
+## Authentication
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+python-multipart==0.0.9
+
+## Redis
+redis==5.0.1
+
+## QR Code
+qrcode[pil]==7.4.2
+Pillow==10.2.0
+
+## State Machine
+python-statemachine==2.1.3
+
+## HTTP Client
+httpx==0.26.0
+aiofiles==23.2.1
+
+## File Storage (Cloud OSS)
+boto3==1.34.34
+cos-python-sdk-v5==1.9.42  # 腾讯云COS
+
+## Utilities
+python-dateutil==2.8.2
+python-dotenv==1.0.1
+structlog==24.1.0
+
+## Testing
+pytest==8.0.0
+pytest-asyncio==0.23.4
+pytest-cov==4.1.0
+pytest_factoryboy==2.6.0
+httpx==0.26.0
+
+## Development
+black==24.1.1
+isort==5.13.2
+ruff==0.2.1
+mypy==1.8.0
