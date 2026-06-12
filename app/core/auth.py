@@ -45,7 +45,7 @@ def get_current_user(request: Request):
     real_department = request.cookies.get("department") or request.cookies.get("dept") or "prod"
     view_as = request.cookies.get("view_as") or ""
     # is_superadmin 基于真实权限，不受视角切换影响
-    is_superadmin = real_role_level > 9
+    is_superadmin = real_role_level >= 9
 
     # view_as 解析：仅 admin 可使用
     if view_as and is_superadmin and view_as in VIEW_AS_MAP:
@@ -97,7 +97,7 @@ def get_current_user(request: Request):
 
 def is_global_admin(user):
     """判断是否为全局管理员（role_level > 9）"""
-    return user and user.get("real_role_level", 0) > 9
+    return user and user.get("real_role_level", 0) >= 9
 
 
 def can_bypass_dept(user):

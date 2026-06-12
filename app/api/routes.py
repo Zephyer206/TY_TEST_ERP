@@ -76,7 +76,7 @@ def admin_switch_view(request: Request, dept: str = ""):
     user = get_current_user(request)
     if not user:
         return RedirectResponse("/login")
-    if user.get("real_role_level", 0) <= 9:
+    if user.get("real_role_level", 0) < 9:
         raise HTTPException(status_code=403, detail="仅超级管理员可使用此功能")
     referer = request.headers.get("referer", "/")
     res = RedirectResponse(referer, status_code=303)

@@ -1195,17 +1195,7 @@ def approve_quote_route(request: Request, quote_id: int):
         return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
     if user["role_level"] < 9:
         return JSONResponse({"code": 403, "message": "权限不足（需 admin 权限）"}, status_code=403)
-    # 双重防线：若当前处于业务视角，拒绝审批
-    view_as = request.cookies.get("view_as", "")
-    if view_as and view_as != "admin":
-        return JSONResponse(
-            {"code": 403, "message": "当前处于业务视角，无法执行审批操作。请切换至老板视角后重试。"},
-            status_code=403)
     try:
-        ok = approve_quote(quote_id, operator_id=user["id"])
-        if not ok:
-            return JSONResponse({"code": 400, "message": "报价单状态不允许通过（仅 PENDING_BOSS 可审核）"}, status_code=400)
-        return JSONResponse(jsonable_encoder({"code": 200, "message": "审核通过"}))
     except Exception as e:
         return JSONResponse({"code": 400, "message": str(e)}, status_code=400)
 
@@ -1222,12 +1212,6 @@ def reject_quote_route(request: Request, quote_id: int, body: RejectBody):
         return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
     if user["role_level"] < 9:
         return JSONResponse({"code": 403, "message": "权限不足（需 admin 权限）"}, status_code=403)
-    # 双重防线：若当前处于业务视角，拒绝驳回
-    view_as = request.cookies.get("view_as", "")
-    if view_as and view_as != "admin":
-        return JSONResponse(
-            {"code": 403, "message": "当前处于业务视角，无法执行驳回操作。请切换至老板视角后重试。"},
-            status_code=403)
     try:
         ok = reject_quote(quote_id, rejection_reason=body.reason, operator_id=user["id"])
         if not ok:
@@ -1468,12 +1452,6 @@ def approve_quote_api(request: Request, quote_id: int):
         return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
     if user["role_level"] < 9:
         return JSONResponse({"code": 403, "message": "权限不足（需 admin 权限）"}, status_code=403)
-    # 双重防线：若当前处于业务视角（view_as != 'admin'），拒绝审批
-    view_as = request.cookies.get("view_as", "")
-    if view_as and view_as != "admin":
-        return JSONResponse(
-            {"code": 403, "message": "当前处于业务视角，无法执行审批操作。请切换至老板视角后重试。"},
-            status_code=403)
     try:
         ok = approve_quote(quote_id, operator_id=user["id"])
         if not ok:
@@ -1491,12 +1469,6 @@ def reject_quote_api(request: Request, quote_id: int, body: QuoteRejectBody):
         return JSONResponse({"code": 401, "message": "未登录"}, status_code=401)
     if user["role_level"] < 9:
         return JSONResponse({"code": 403, "message": "权限不足（需 admin 权限）"}, status_code=403)
-    # 双重防线：若当前处于业务视角（view_as != 'admin'），拒绝驳回
-    view_as = request.cookies.get("view_as", "")
-    if view_as and view_as != "admin":
-        return JSONResponse(
-            {"code": 403, "message": "当前处于业务视角，无法执行驳回操作。请切换至老板视角后重试。"},
-            status_code=403)
     try:
         ok = reject_quote(quote_id, rejection_reason=body.reason or "（未填写驳回原因）", operator_id=user["id"])
         if not ok:
