@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 from PIL import Image
 
-from app.config import settings
+from src.config import settings
 
 
 class QRCodePrefix(str, Enum):
@@ -43,6 +43,26 @@ def generate_qr_content(prefix: QRCodePrefix, entity_id: int, **extra_data) -> s
 def generate_material_qr(batch_id: int, batch_no: str) -> str:
     """Generate QR content for material batch."""
     return generate_qr_content(QRCodePrefix.MATERIAL, batch_id, batch_no=batch_no)
+
+
+def generate_material_batch_qr(batch_id: int) -> str:
+    """Generate stable QR content for material batch (storeable in DB).
+
+    Format: MAT:{batch_id}:{YYYYMMDD}
+    Content is stable — same batch_id always produces same content.
+    """
+    date_str = datetime.utcnow().strftime("%Y%m%d")
+    return f"MAT:{batch_id}:{date_str}"
+
+
+def generate_material_batch_qr_base64(batch_id: int, size: int = 300) -> str:
+    """Generate QR image as base64 for material batch label printing.
+
+    Returns:
+        data:image/png;base64,{base64}
+    """
+    content = generate_material_batch_qr(batch_id)
+    return generate_qr_base64(content, size=size)
 
 
 def generate_machine_qr(machine_id: int, machine_no: str) -> str:

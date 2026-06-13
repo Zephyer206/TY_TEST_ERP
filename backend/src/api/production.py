@@ -4,18 +4,17 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import select
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.machine import Machine
-from app.models.production import (
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.machine import Machine
+from src.models.production import ProductionPlan, PlanMachineAssignment, PlanStatus, ProcessFlowStatus
+from src.schemas.production import (
     MachineAssignmentResponse,
     MaterialMatchResult,
     PlanStatus,
-    PlanMachineAssignment,
-    ProcessFlowCard,
     ProcessFlowCardResponse,
-    ProductionPlan,
     ProductionPlanCreate,
     ProductionPlanDetailResponse,
     ProductionPlanResponse,
@@ -27,7 +26,7 @@ from app.models.production import (
     SessionStartWithMaterialRequest,
     SessionStatus,
 )
-from app.services import production_service, process_flow_service, session_service
+from src.services import production_service, process_flow_service, session_service
 
 router = APIRouter(prefix="/production", tags=["Production"])
 
@@ -77,7 +76,7 @@ async def create_production_plan(
     require_role(current_user, min_level=3)
 
     # Verify part exists
-    from app.models.part import Part
+    from src.models.part import Part
 
     result = await db.execute(select(Part).where(Part.id == data.part_id))
     part = result.scalar_one_or_none()
@@ -180,9 +179,9 @@ async def update_production_plan(
 async def assign_machine_to_plan(
     plan_id: int,
     machine_id: int,
-    assigned_qty: int = Query(..., ge=1),
     db: DbSession,
     current_user: CurrentUser,
+    assigned_qty: int = Query(..., ge=1),
 ) -> MachineAssignmentResponse:
     """Assign a machine to a production plan."""
     require_role(current_user, min_level=3)
@@ -445,7 +444,7 @@ async def list_process_flow_cards(
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[ProcessFlowCardResponse]:
     """List process flow cards."""
-    from app.models.production import ProcessFlowStatus
+    from src.models.production import ProcessFlowStatus
 
     cards = await process_flow_service.get_process_flow_cards(
         db,
@@ -473,7 +472,273 @@ async def list_process_flow_cards(
             start_time=c.start_time,
             end_time=c.end_time,
             operator_id=c.operator_id,
+            qr_code=c.qr_code,
+            qr_image_base64=None,
             created_at=c.created_at,
         )
         for c in cards
     ]
+
+
+# ── US4: Process Flow Card QR ────────────────────────────────────────────────
+
+class PFCScanResponse(BaseModel):
+    """Schema for process flow card scan response."""
+
+    card_id: int
+    card_no: str
+    part_id: int
+    part_name: Optional[str] = None
+    machine_id: int
+    machine_no: Optional[str] = None
+    tooling_id: Optional[int] = None
+    tooling_no: Optional[str] = None
+    material_batch_no: Optional[str] = None
+    planned_qty: int
+    actual_output: int
+    good_qty: int
+    reject_qty: int
+    status: str
+    start_time: Optional[str] = None
+    end_time: Optional[str] = None
+    operator_id: Optional[int] = None
+    qr_content: str
+    qr_image_base64: str
+    scan_history: list
+
+    class Config:
+        from_attributes = True
+
+
+class PFCReverseTraceResponse(BaseModel):
+    """Schema for reverse trace response."""
+
+    card_id: int
+    card_no: str
+    status: str
+    good_qty: int
+    operator_id: Optional[int] = None
+    material_batch_no: Optional[str] = None
+    material_name: Optional[str] = None
+    supplier_name: Optional[str] = None
+    session_id: Optional[int] = None
+    scan_history: list
+
+    class Config:
+        from_attributes = True
+
+
+@router.get("/process-flow-cards/scan/{card_id}", response_model=PFCScanResponse)
+async def scan_process_flow_card(
+    card_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> PFCScanResponse:
+    """Scan process flow card: get full info, QR image, and scan history.
+
+    Records the scan event in qr_scan_logs.
+    """
+    try:
+        result = await process_flow_service.scan_process_flow_card(
+            db, card_id, operator_id=current_user.id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    card = result["card"]
+
+    scan_history = []
+    for log in result["scan_history"]:
+        scan_history.append({
+            "id": log.id,
+            "operation": log.operation,
+            "operator_id": log.operator_id,
+            "notes": log.notes,
+            "scanned_at": log.scanned_at.isoformat() if log.scanned_at else None,
+        })
+
+    return PFCScanResponse(
+        card_id=card.id,
+        card_no=card.card_no,
+        part_id=card.part_id,
+        part_name=card.part.part_name if card.part else None,
+        machine_id=card.machine_id,
+        machine_no=card.machine.machine_no if card.machine else None,
+        tooling_id=card.tooling_id,
+        tooling_no=card.tooling.name if card.tooling else None,
+        material_batch_no=card.material_batch_no,
+        planned_qty=card.planned_qty,
+        actual_output=card.actual_output,
+        good_qty=card.good_qty,
+        reject_qty=card.reject_qty,
+        status=card.status.value if card.status else None,
+        start_time=card.start_time.isoformat() if card.start_time else None,
+        end_time=card.end_time.isoformat() if card.end_time else None,
+        operator_id=card.operator_id,
+        qr_content=result["qr_content"],
+        qr_image_base64=result["qr_image_base64"],
+        scan_history=scan_history,
+    )
+
+
+@router.get("/process-flow-cards/{card_id}/reverse-trace", response_model=PFCReverseTraceResponse)
+async def reverse_trace_card(
+    card_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> PFCReverseTraceResponse:
+    """Reverse trace: from card -> session -> material batch -> supplier.
+
+    Returns the full provenance chain of a process flow card.
+    """
+    try:
+        result = await process_flow_service.reverse_trace_card(db, card_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    card = result["card"]
+    material_batch = result.get("material_batch")
+
+    scan_history = []
+    for log in result["scan_history"]:
+        scan_history.append({
+            "id": log.id,
+            "operation": log.operation,
+            "operator_id": log.operator_id,
+            "notes": log.notes,
+            "scanned_at": log.scanned_at.isoformat() if log.scanned_at else None,
+        })
+
+    return PFCReverseTraceResponse(
+        card_id=card.id,
+        card_no=card.card_no,
+        status=card.status.value if card.status else None,
+        good_qty=card.good_qty,
+        operator_id=card.operator_id,
+        material_batch_no=card.material_batch_no,
+        material_name=material_batch.material_name if material_batch else None,
+        supplier_name=material_batch.supplier_name if material_batch else None,
+        session_id=card.session_id,
+        scan_history=scan_history,
+    )
+
+
+class PFCInboundRequest(BaseModel):
+    """Schema for process flow card inbound confirmation."""
+
+    notes: Optional[str] = None
+
+
+@router.put("/process-flow-cards/{card_id}/inbound", response_model=PFCReverseTraceResponse)
+async def confirm_pfc_inbound(
+    card_id: int,
+    data: PFCInboundRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> PFCReverseTraceResponse:
+    """Confirm OQC passed and mark process flow card as inbound.
+
+    Records the inbound operation in qr_scan_logs with operation='inbound'.
+    """
+    try:
+        card = await process_flow_service.confirm_inbound(
+            db, card_id,
+            operator_id=current_user.id,
+            notes=data.notes,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    # Get updated scan history
+    from src.models.warehouse import QRScanLog
+    history_result = await db.execute(
+        select(QRScanLog)
+        .where(QRScanLog.scan_type == "PFC", QRScanLog.entity_id == card.id)
+        .order_by(QRScanLog.scanned_at.desc())
+        .limit(20)
+    )
+    scan_history_obj = history_result.scalars().all()
+    scan_history = [
+        {
+            "id": log.id,
+            "operation": log.operation,
+            "operator_id": log.operator_id,
+            "notes": log.notes,
+            "scanned_at": log.scanned_at.isoformat() if log.scanned_at else None,
+        }
+        for log in scan_history_obj
+    ]
+
+    return PFCReverseTraceResponse(
+        card_id=card.id,
+        card_no=card.card_no,
+        status=card.status.value if card.status else None,
+        good_qty=card.good_qty,
+        operator_id=card.operator_id,
+        material_batch_no=card.material_batch_no,
+        material_name=None,
+        supplier_name=None,
+        session_id=card.session_id,
+        scan_history=scan_history,
+    )
+
+
+# ── T027: PFC Reprint QR ───────────────────────────────────────────────────
+
+class PFCReprintResponse(BaseModel):
+    """Schema for process flow card reprint response."""
+
+    card_id: int
+    card_no: str
+    qr_content: str
+    qr_image_base64: str
+
+    class Config:
+        from_attributes = True
+
+
+@router.post("/process-flow-cards/{card_id}/reprint-qr", response_model=PFCReprintResponse)
+async def reprint_pfc_qr(
+    card_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> PFCReprintResponse:
+    """Reprint QR code for a process flow card.
+
+    Returns the card info with qr_content and qr_image_base64.
+    Records the reprint operation in qr_scan_logs.
+    """
+    try:
+        card = await process_flow_service.get_process_flow_card(db, card_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    if not card:
+        raise HTTPException(status_code=404, detail="Process flow card not found")
+
+    if not card.qr_code:
+        raise HTTPException(status_code=400, detail="Card has no QR code")
+
+    from src.services.qr_service import generate_process_flow_qr, generate_qr_base64
+    qr_content = generate_process_flow_qr(card.id, card.card_no)
+    qr_image_base64 = generate_qr_base64(qr_content)
+
+    # Record reprint scan log
+    from src.models.warehouse import QRScanLog
+    log = QRScanLog(
+        scan_type="PFC",
+        entity_id=card.id,
+        entity_no=card.card_no,
+        operator_id=current_user.id,
+        operation="reprint",
+        notes="PFC QR code reprint",
+    )
+    db.add(log)
+    await db.commit()
+
+    return PFCReprintResponse(
+        card_id=card.id,
+        card_no=card.card_no,
+        qr_content=qr_content,
+        qr_image_base64=qr_image_base64,
+    )

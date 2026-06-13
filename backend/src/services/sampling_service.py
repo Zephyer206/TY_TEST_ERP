@@ -7,10 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.part import Part, PartState
-from app.models.sampling import SamplingTask, SamplingTaskState
-from app.models.user import User
-from app.models.customer import Customer
+from src.models.part import Part, PartState
+from src.models.sampling import SamplingTask, SamplingTaskState
+from src.models.user import User
+from src.models.customer import Customer
 
 
 def generate_task_no() -> str:

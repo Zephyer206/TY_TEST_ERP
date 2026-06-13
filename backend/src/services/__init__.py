@@ -1,13 +1,13 @@
 """Business logic services."""
 
-from app.services.part_service import (
+from .part_service import (
     get_part_by_id,
     get_parts_by_customer,
     transition_to_mass_production,
     transition_to_sampling,
     update_part_state,
 )
-from app.services.price_service import (
+from .price_service import (
     add_annual_price_record,
     calculate_current_price,
     compute_current_price_from_records,
@@ -19,13 +19,13 @@ from app.services.price_service import (
     record_price_adjustment,
     update_price_account,
 )
-from app.services.process_flow_service import (
+from .process_flow_service import (
     generate_process_flow_card,
     get_process_flow_card,
     get_process_flow_cards,
     update_card_status,
 )
-from app.services.production_service import (
+from .production_service import (
     assign_machine,
     cancel_plan,
     create_plan,
@@ -35,7 +35,7 @@ from app.services.production_service import (
     update_plan,
     update_plan_completed_qty,
 )
-from app.services.quote_service import (
+from .quote_service import (
     add_surface_treatment,
     boss_approve,
     create_quote,
@@ -48,7 +48,7 @@ from app.services.quote_service import (
     submit_to_boss,
     update_pricing,
 )
-from app.services.sampling_service import (
+from .sampling_service import (
     boss_approve as boss_approve_sampling,
     cancel_task,
     complete_production,
@@ -61,7 +61,7 @@ from app.services.sampling_service import (
     start_production,
     submit_review,
 )
-from app.services.session_service import (
+from .session_service import (
     cancel_session,
     close_session,
     get_active_sessions,
@@ -70,30 +70,35 @@ from app.services.session_service import (
     submit_report,
     verify_material_tooling_match,
 )
-from app.services.material_batch_service import (
+from .material_batch_service import (
     consume_material,
     create_material,
     create_material_batch,
+    create_scan_log,
     create_supplier,
     get_batch_by_id,
     get_batch_by_no,
     get_batch_transactions,
     get_batches,
+    get_child_batch_by_id,
     get_materials,
+    get_parent_batch,
+    get_scan_logs_by_entity,
+    get_sibling_batches,
     get_suppliers,
     perform_iqc,
     scrap_batch,
     split_batch,
     trace_batch,
 )
-from app.services.admin_service import (
+from .admin_service import (
     get_active_context_switch,
     get_context_switch_history,
     get_effective_role,
     switch_back,
     switch_context,
 )
-from app.services.coating_service import (
+from .coating_service import (
     create_coating_record,
     create_recipe,
     get_coating_record,
@@ -102,7 +107,7 @@ from app.services.coating_service import (
     get_recipes,
     update_recipe,
 )
-from app.services.packaging_service import (
+from .packaging_service import (
     adjust_inventory,
     create_packaging_record,
     get_inventories,
@@ -113,9 +118,11 @@ from app.services.packaging_service import (
     get_packaging_records,
     inspect_packaging,
 )
-from app.services.qr_service import (
+from .qr_service import (
     generate_coating_qr,
     generate_machine_qr,
+    generate_material_batch_qr,
+    generate_material_batch_qr_base64,
     generate_material_qr,
     generate_package_qr,
     generate_part_qr,
@@ -128,7 +135,7 @@ from app.services.qr_service import (
     parse_qr_content,
     upload_qr_to_cos,
 )
-from app.services.quality_service import (
+from .quality_service import (
     approve_exemption,
     create_exemption_request,
     create_first_piece_inspection,
@@ -142,7 +149,7 @@ from app.services.quality_service import (
     get_oqc_inspections,
     get_patrol_inspections,
 )
-from app.services.tooling_service import (
+from .tooling_service import (
     complete_maintenance,
     create_tooling,
     first_scan,

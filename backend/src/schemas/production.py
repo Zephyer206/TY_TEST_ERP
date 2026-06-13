@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.production import PlanStatus, ProcessFlowStatus, SessionStatus
+from src.models.production import PlanStatus, ProcessFlowStatus, SessionStatus
 
 
 class ProductionPlanBase(BaseModel):
@@ -184,6 +184,11 @@ class ProcessFlowCardResponse(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     operator_id: Optional[int] = None
+    qr_code: Optional[str] = None
+    qr_image_base64: Optional[str] = None
+    inbound_time: Optional[datetime] = None
+    inbound_operator_id: Optional[int] = None
+    inbound_notes: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

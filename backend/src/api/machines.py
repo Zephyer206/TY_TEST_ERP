@@ -7,9 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.machine import Machine, MachineState
-from app.services import tooling_service
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.machine import Machine, MachineState
+from src.services import tooling_service
+from src.services import machine_service
 
 router = APIRouter(prefix="/machines", tags=["Machines"])
 
@@ -246,3 +247,116 @@ async def dismount_and_repair(
         raise HTTPException(status_code=400, detail=str(e))
 
     return _machine_to_response(machine)
+
+
+# ── US3: Machine QR Code ─────────────────────────────────────────────────────
+
+class MachineQRResponse(BaseModel):
+    """Schema for machine QR code generation response."""
+
+    machine_id: int
+    machine_no: str
+    name: str
+    machine_type: Optional[str] = None
+    tonnage: Optional[float] = None
+    location: Optional[str] = None
+    state: str
+    qr_content: str
+    qr_image_base64: str
+
+    class Config:
+        from_attributes = True
+
+
+class MachineScanResponse(BaseModel):
+    """Schema for machine scan response."""
+
+    machine_id: int
+    machine_no: str
+    name: str
+    machine_type: Optional[str] = None
+    tonnage: Optional[float] = None
+    max_stroke: Optional[float] = None
+    bed_size: Optional[str] = None
+    state: str
+    location: Optional[str] = None
+    current_tooling_id: Optional[int] = None
+    fault_time: Optional[str] = None
+    fault_reason: Optional[str] = None
+    repair_start_time: Optional[str] = None
+    repairer_id: Optional[int] = None
+    qr_content: str
+    qr_image_base64: str
+    scan_history: list
+
+    class Config:
+        from_attributes = True
+
+
+@router.post("/{machine_id}/generate-qr", response_model=MachineQRResponse)
+async def generate_machine_qr(
+    machine_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> MachineQRResponse:
+    """Generate QR code for a machine.
+
+    Returns the machine info plus qr_content and qr_image_base64 for label printing.
+    """
+    try:
+        result = await machine_service.generate_machine_qr(db, machine_id)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    return MachineQRResponse(**result)
+
+
+@router.get("/scan/{machine_id}", response_model=MachineScanResponse)
+async def scan_machine(
+    machine_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> MachineScanResponse:
+    """Scan machine QR code to get full status and scan history.
+
+    Records the scan event in qr_scan_logs. Returns machine info,
+    qr_content, qr_image_base64, and recent scan history.
+    """
+    try:
+        result = await machine_service.get_machine_scan_result(
+            db, machine_id, operator_id=current_user.id
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+    machine = result["machine"]
+
+    scan_history = []
+    for log in result["scan_history"]:
+        scan_history.append({
+            "id": log.id,
+            "operation": log.operation,
+            "operator_id": log.operator_id,
+            "notes": log.notes,
+            "scanned_at": log.scanned_at.isoformat() if log.scanned_at else None,
+        })
+
+    return MachineScanResponse(
+        machine_id=machine.id,
+        machine_no=machine.machine_no,
+        name=machine.name,
+        machine_type=machine.machine_type,
+        tonnage=machine.tonnage,
+        max_stroke=machine.max_stroke,
+        bed_size=machine.bed_size,
+        state=machine.state.value if machine.state else None,
+        location=machine.location,
+        current_tooling_id=machine.current_tooling_id,
+        fault_time=machine.fault_time.isoformat() if machine.fault_time else None,
+        fault_reason=machine.fault_reason,
+        repair_start_time=machine.repair_start_time.isoformat() if machine.repair_start_time else None,
+        repairer_id=machine.repairer_id,
+        qr_content=result["qr_content"],
+        qr_image_base64=result["qr_image_base64"],
+        scan_history=scan_history,
+    )

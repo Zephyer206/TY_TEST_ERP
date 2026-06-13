@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from app.models.production import ProductionSession
-from app.models.warehouse import (
+from src.models.production import ProductionSession
+from src.models.warehouse import (
     BatchStatus,
     BatchTransaction,
     IQCResult,
@@ -21,6 +21,13 @@ from app.models.warehouse import (
 
 def generate_batch_no() -> str:
     """Generate a unique material batch number."""
+    now = datetime.utcnow()
+    prefix = now.strftime("%Y%m%d")
+    return f"MAT-{prefix}-{now.strftime('%H%M%S')}"
+
+
+def generate_qr_uid() -> str:
+    """Generate a unique QR UID (used as the actual unique identifier)."""
     now = datetime.utcnow()
     prefix = now.strftime("%Y%m%d")
     return f"MAT-{prefix}-{now.strftime('%H%M%S')}"
@@ -41,12 +48,15 @@ async def create_material_batch(
     length: Optional[float] = None,
     po_no: Optional[str] = None,
 ) -> MaterialBatch:
-    """Create a new material batch."""
+    """Create a new material batch with auto QR code generation."""
+    from src.services.qr_service import generate_material_batch_qr
+
+    qr_uid = generate_qr_uid()
     batch_no = generate_batch_no()
 
     batch = MaterialBatch(
+        qr_uid=qr_uid,
         batch_no=batch_no,
-        qr_code=f"QR-{batch_no}",
         material_id=material_id,
         supplier_id=supplier_id,
         thickness=thickness,
@@ -60,6 +70,9 @@ async def create_material_batch(
         received_at=datetime.utcnow(),
     )
     db.add(batch)
+    await db.flush()
+
+    batch.qr_code = generate_material_batch_qr(batch.id)
     await db.commit()
     await db.refresh(batch)
     return batch
@@ -171,40 +184,56 @@ async def split_batch(
     batch: MaterialBatch,
     splits: list[dict],
     operator_id: Optional[int] = None,
-) -> list[MaterialBatchChild]:
-    """Split a material batch into child batches."""
+) -> list[MaterialBatch]:
+    """Split a material batch into child batches (single-table design).
+
+    Each child is an independent MaterialBatch with parent_batch_id set.
+    Every child gets its own unique QR code.
+    """
+    from src.services.qr_service import generate_material_batch_qr
+
     if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.PARTIAL):
         raise ValueError(f"Batch not splittable: {batch.status.value}")
 
-    # Validate total weight doesn't exceed current weight
     total_split_weight = sum(s.get("weight", 0) for s in splits)
-    if total_split_weight > batch.current_weight + 0.001:  # Allow tiny floating point error
-        raise ValueError(f"Split weight exceeds current weight: {total_split_weight} > {batch.current_weight}")
+    if total_split_weight > batch.current_weight + 0.001:
+        raise ValueError(
+            f"Split weight exceeds current weight: {total_split_weight} > {batch.current_weight}"
+        )
 
-    children = []
+    children: list[MaterialBatch] = []
     for idx, split in enumerate(splits, start=1):
         child_batch_no = generate_child_batch_no(batch.batch_no, idx)
 
-        child = MaterialBatchChild(
-            parent_batch_id=batch.id,
-            child_batch_no=child_batch_no,
-            child_qr_code=f"QR-{child_batch_no}",
-            width=split.get("width", batch.width),
-            length=split.get("length", batch.length),
+        child = MaterialBatch(
+            batch_no=child_batch_no,
+            qr_code=None,  # 生成后赋值
+            material_id=batch.material_id,
+            supplier_id=batch.supplier_id,
+            thickness=batch.thickness,
+            width=split.get("width") or batch.width,
+            length=split.get("length") or batch.length,
+            gross_weight=split["weight"],
+            net_weight=split["weight"],
             current_weight=split["weight"],
             status=BatchStatus.AVAILABLE,
+            parent_batch_id=batch.id,
+            received_at=datetime.utcnow(),
         )
         db.add(child)
+        await db.flush()
+
+        child.qr_code = generate_material_batch_qr(child.id)
         children.append(child)
 
-    # Update parent batch weight
+    # 更新母卷
     batch.current_weight -= total_split_weight
-    if batch.current_weight <= 0.001:  # Nearly exhausted
+    if batch.current_weight <= 0.001:
         batch.status = BatchStatus.EXHAUSTED
     else:
         batch.status = BatchStatus.PARTIAL
 
-    # Record transaction
+    # 记录分条事务
     await _record_transaction(
         db,
         batch_id=batch.id,
@@ -213,15 +242,26 @@ async def split_batch(
         quantity_change=-total_split_weight,
         weight_after=batch.current_weight,
         reference_type="split",
-        notes=f"Split into {len(children)} child batches",
+        operator_id=operator_id,
+        notes=f"Split into {len(children)} child batches: {[c.batch_no for c in children]}",
     )
 
-    await db.commit()
-
-    # Refresh children
+    # 记录各子卷入库事务
     for child in children:
-        await db.refresh(child)
+        await _record_transaction(
+            db,
+            batch_id=child.id,
+            batch_no=child.batch_no,
+            transaction_type="receive",
+            quantity_change=child.current_weight,
+            weight_after=child.current_weight,
+            reference_type="split",
+            reference_id=batch.id,
+            operator_id=operator_id,
+            notes=f"Split from parent batch {batch.batch_no}",
+        )
 
+    await db.commit()
     return children
 
 
@@ -447,3 +487,110 @@ async def get_materials(
 
     result = await db.execute(query)
     return result.scalars().all()
+
+
+# ── QR Scan Log ─────────────────────────────────────────────────────────────
+
+async def create_scan_log(
+    db: AsyncSession,
+    scan_type: str,
+    entity_id: int,
+    operation: str,
+    entity_no: Optional[str] = None,
+    operator_id: Optional[int] = None,
+    notes: Optional[str] = None,
+):
+    """Record a QR code scan event."""
+    from src.models.warehouse import QRScanLog
+
+    log = QRScanLog(
+        scan_type=scan_type,
+        entity_id=entity_id,
+        entity_no=entity_no,
+        operator_id=operator_id,
+        operation=operation,
+        notes=notes,
+    )
+    db.add(log)
+    await db.flush()
+    return log
+
+
+async def get_scan_logs_by_entity(
+    db: AsyncSession,
+    entity_type: str,
+    entity_id: int,
+    skip: int = 0,
+    limit: int = 50,
+):
+    """Get scan history for a specific entity."""
+    from src.models.warehouse import QRScanLog
+
+    result = await db.execute(
+        select(QRScanLog)
+        .where(QRScanLog.scan_type == entity_type.upper())
+        .where(QRScanLog.entity_id == entity_id)
+        .order_by(QRScanLog.scanned_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return result.scalars().all()
+
+
+# ── Child Batch (Single-Table) ───────────────────────────────────────────────
+
+async def get_child_batch_by_id(
+    db: AsyncSession,
+    child_id: int,
+) -> Optional[MaterialBatch]:
+    """Get a child batch (which is a MaterialBatch with parent_batch_id set)."""
+    result = await db.execute(
+        select(MaterialBatch)
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+            joinedload(MaterialBatch.parent_batch).joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.parent_batch).joinedload(MaterialBatch.supplier),
+        )
+        .where(MaterialBatch.id == child_id, MaterialBatch.is_deleted == False)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_parent_batch(
+    db: AsyncSession,
+    parent_id: int,
+) -> Optional[MaterialBatch]:
+    """Get a parent batch with its children eagerly loaded."""
+    result = await db.execute(
+        select(MaterialBatch)
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+            selectinload(MaterialBatch.children),
+        )
+        .where(MaterialBatch.id == parent_id, MaterialBatch.is_deleted == False)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_sibling_batches(
+    db: AsyncSession,
+    parent_batch_id: int,
+    exclude_id: Optional[int] = None,
+) -> Sequence[MaterialBatch]:
+    """Get all sibling batches (same parent)."""
+    query = (
+        select(MaterialBatch)
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+        )
+        .where(
+            MaterialBatch.parent_batch_id == parent_batch_id,
+            MaterialBatch.is_deleted == False,
+        )
+    )
+    if exclude_id is not None:
+        query = query.where(MaterialBatch.id != exclude_id)
+    return (await db.execute(query)).scalars().all()

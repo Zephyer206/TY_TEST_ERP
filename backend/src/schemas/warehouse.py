@@ -5,18 +5,19 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.warehouse import BatchStatus, IQCResult
+from src.models.warehouse import BatchStatus, IQCResult, ScanOperation, ScanType
+from src.services.qr_service import generate_material_batch_qr_base64
 
 
 class MaterialBatchBase(BaseModel):
     """Base schema for material batch."""
 
-    material_id: int
+    material_id: Optional[int] = None
     supplier_id: Optional[int] = None
     thickness: Optional[float] = None
     width: Optional[float] = None
     length: Optional[float] = None
-    gross_weight: float = Field(gt=0)
+    gross_weight: Optional[float] = Field(default=None, gt=0)
     po_no: Optional[str] = None
 
 
@@ -186,5 +187,69 @@ class MaterialResponse(MaterialBase):
     supplier_name: Optional[str] = None
     is_active: bool
     created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# ── QR Scan Log ─────────────────────────────────────────────────────────────
+
+class QRScanLogCreate(BaseModel):
+    """Schema for creating a QR scan log entry."""
+
+    scan_type: ScanType
+    entity_id: int
+    entity_no: Optional[str] = None
+    operation: ScanOperation
+    notes: Optional[str] = None
+
+
+class QRScanLogResponse(BaseModel):
+    """Schema for QR scan log response."""
+
+    id: int
+    scan_type: ScanType
+    entity_id: int
+    entity_no: Optional[str] = None
+    operator_id: Optional[int] = None
+    operation: ScanOperation
+    notes: Optional[str] = None
+    scanned_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MaterialBatchScanResponse(BaseModel):
+    """Schema for material batch scan result (T012)."""
+
+    id: int
+    batch_no: str
+    qr_code: Optional[str] = None
+    qr_image_base64: Optional[str] = None
+    material_id: Optional[int] = None
+    material_name: Optional[str] = None
+    material_grade: Optional[str] = None
+    supplier_name: Optional[str] = None
+    thickness: Optional[float] = None
+    width: Optional[float] = None
+    length: Optional[float] = None
+    gross_weight: float
+    current_weight: float
+    status: BatchStatus
+    iqc_result: Optional[IQCResult] = None
+    iqc_time: Optional[datetime] = None
+    received_at: Optional[datetime] = None
+    created_at: datetime
+    parent_batch_id: Optional[int] = None
+    parent_batch_no: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class MaterialBatchChildScanResponse(BaseModel):
+    """Schema for child batch scan result (T016)."""
+
+    child_batch: MaterialBatchScanResponse
+    parent_batch: MaterialBatchScanResponse
+    sibling_batches: list["MaterialBatchScanResponse"] = []
 
     model_config = ConfigDict(from_attributes=True)

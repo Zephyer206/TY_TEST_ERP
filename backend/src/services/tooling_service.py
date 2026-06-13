@@ -7,9 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.machine import Machine, MachineState
-from app.models.tooling import Tooling, ToolingMaintenanceLog, ToolingPart, ToolingState
-from app.models.user import User
+from src.models.machine import Machine, MachineState
+from src.models.tooling import Tooling, ToolingMaintenanceLog, ToolingPart, ToolingState
+from src.models.user import User
 
 
 def generate_tooling_no() -> str:

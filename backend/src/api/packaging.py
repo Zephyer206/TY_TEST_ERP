@@ -5,15 +5,15 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.part import Part
-from app.models.packaging import (
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.part import Part
+from src.models.packaging import (
     Inventory,
     InventoryTransaction,
     PackagingRecord,
     PackagingStatus,
 )
-from app.schemas.packaging import (
+from src.schemas.packaging import (
     InventoryAdjustmentRequest,
     InventoryDetailResponse,
     InventoryResponse,
@@ -22,7 +22,7 @@ from app.schemas.packaging import (
     PackagingRecordResponse,
     PackagingScanRequest,
 )
-from app.services import packaging_service
+from src.services import packaging_service
 
 router = APIRouter(prefix="/packaging", tags=["Packaging"])
 

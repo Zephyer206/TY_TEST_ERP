@@ -7,14 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.models.part import Part
-from app.models.packaging import (
+from src.models.part import Part
+from src.models.packaging import (
     Inventory,
     InventoryTransaction,
     PackagingRecord,
     PackagingStatus,
 )
-from app.models.production import ProductionSession
+from src.models.production import ProductionSession
 
 
 def generate_package_no() -> str:

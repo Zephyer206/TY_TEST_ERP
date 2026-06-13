@@ -3,15 +3,16 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession
-from app.models.machine import Machine
-from app.models.part import Part
-from app.models.production import ProcessFlowCard
-from app.models.tooling import Tooling
-from app.schemas.qr import (
+from src.api.deps import CurrentUser, DbSession
+from src.models.machine import Machine
+from src.models.part import Part
+from src.models.production import ProcessFlowCard
+from src.models.tooling import Tooling
+from src.schemas.qr import (
     QRGenerateRequest,
     QRGenerateResponse,
     QRLookupResponse,
@@ -19,29 +20,181 @@ from app.schemas.qr import (
     QRMachineResponse,
     QRProcessFlowResponse,
 )
-from app.services import qr_service
+from src.services import qr_service
 
 router = APIRouter(prefix="/qr", tags=["QR Code"])
 
 
+# ── Manual Lookup (T028) ─────────────────────────────────────────────────────
+
+async def _manual_lookup(
+    db: AsyncSession,
+    entity_type: str,
+    code: str,
+) -> dict:
+    """Manual lookup by entity type and any identifier code.
+
+    T028: Enables manual entry when QR code is damaged.
+    Tries multiple lookup strategies per entity type.
+    """
+    if entity_type == "MAT":
+        # Try: batch_no, then batch_id, then qr_code
+        from src.services import material_batch_service
+        batch = await material_batch_service.get_batch_by_no(db, code)
+        if batch:
+            return _build_material_batch_data(batch)
+        try:
+            batch_id = int(code)
+            batch = await material_batch_service.get_batch_by_id(db, batch_id)
+            if batch:
+                return _build_material_batch_data(batch)
+        except ValueError:
+            pass
+        # Try by qr_code
+        from src.models.warehouse import MaterialBatch
+        result = await db.execute(
+            select(MaterialBatch).where(MaterialBatch.qr_code == code)
+        )
+        batch = result.scalar_one_or_none()
+        if batch:
+            return _build_material_batch_data(batch)
+
+    elif entity_type == "MCN":
+        result = await db.execute(
+            select(Machine).where(Machine.machine_no == code)
+        )
+        machine = result.scalar_one_or_none()
+        if not machine:
+            try:
+                mid = int(code)
+                result = await db.execute(
+                    select(Machine).where(Machine.id == mid)
+                )
+                machine = result.scalar_one_or_none()
+            except ValueError:
+                pass
+        if machine:
+            return {
+                "found": True,
+                "entity_type": "machine",
+                "entity_data": {
+                    "machine_id": machine.id,
+                    "machine_no": machine.machine_no,
+                    "machine_name": machine.name,
+                    "state": machine.state.value if machine.state else None,
+                    "tonnage": machine.tonnage,
+                    "location": machine.location,
+                },
+            }
+
+    elif entity_type == "PFC":
+        result = await db.execute(
+            select(ProcessFlowCard).where(ProcessFlowCard.card_no == code)
+        )
+        card = result.scalar_one_or_none()
+        if not card:
+            try:
+                cid = int(code)
+                result = await db.execute(
+                    select(ProcessFlowCard).where(ProcessFlowCard.id == cid)
+                )
+                card = result.scalar_one_or_none()
+            except ValueError:
+                pass
+        if card:
+            return {
+                "found": True,
+                "entity_type": "process_flow_card",
+                "entity_data": {
+                    "card_id": card.id,
+                    "card_no": card.card_no,
+                    "part_id": card.part_id,
+                    "session_id": card.session_id,
+                    "status": card.status.value if card.status else None,
+                    "good_qty": card.good_qty,
+                },
+            }
+
+    elif entity_type == "PRT":
+        result = await db.execute(select(Part).where(Part.part_number == code))
+        part = result.scalar_one_or_none()
+        if not part:
+            try:
+                pid = int(code)
+                result = await db.execute(select(Part).where(Part.id == pid))
+                part = result.scalar_one_or_none()
+            except ValueError:
+                pass
+        if part:
+            return {
+                "found": True,
+                "entity_type": "part",
+                "entity_data": {
+                    "part_id": part.id,
+                    "part_number": part.part_number,
+                    "internal_name": part.part_name,
+                },
+            }
+
+    elif entity_type == "TLG":
+        result = await db.execute(
+            select(Tooling).where(Tooling.tooling_no == code)
+        )
+        tooling = result.scalar_one_or_none()
+        if not tooling:
+            try:
+                tid = int(code)
+                result = await db.execute(
+                    select(Tooling).where(Tooling.id == tid)
+                )
+                tooling = result.scalar_one_or_none()
+            except ValueError:
+                pass
+        if tooling:
+            return {
+                "found": True,
+                "entity_type": "tooling",
+                "entity_data": {
+                    "tooling_id": tooling.id,
+                    "tooling_no": tooling.tooling_no,
+                    "tooling_name": tooling.name,
+                },
+            }
+
+    return {"found": False, "error": f"Not found: {entity_type}:{code}"}
+
+
+def _build_material_batch_data(batch) -> dict:
+    """Build material batch lookup data."""
+    return {
+        "found": True,
+        "entity_type": "material_batch",
+        "entity_data": {
+            "batch_id": batch.id,
+            "batch_no": batch.batch_no,
+            "qr_code": batch.qr_code,
+            "material_name": batch.material.name if batch.material else None,
+            "supplier_name": (
+                batch.supplier.name if batch.supplier else batch.supplier_name
+            ),
+            "current_weight": (
+                float(batch.current_weight) if batch.current_weight else None
+            ),
+            "status": batch.status.value if batch.status else None,
+        },
+    }
+
+
+# ── Auto Lookup ──────────────────────────────────────────────────────────────
+
 async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
     """Look up entity by prefix and ID."""
     if prefix == "MAT":
-        # Material batch lookup (handled by warehouse service)
-        from app.services.warehouse_service import get_batch_by_id
+        from src.services import material_batch_service
 
-        batch = await get_batch_by_id(db, entity_id)
+        batch = await material_batch_service.get_batch_by_id(db, entity_id)
         if batch:
-            return {
-                "entity_type": "material_batch",
-                "entity_data": {
-                    "batch_id": batch.id,
-                    "batch_no": batch.batch_no,
-                    "material_id": batch.material_id,
-                    "quantity": batch.quantity,
-                    "status": batch.status.value if hasattr(batch, "status") else None,
-                },
-            }
+            return _build_material_batch_data(batch)
 
     elif prefix == "MCN":
         result = await db.execute(
@@ -54,8 +207,8 @@ async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
                 "entity_data": {
                     "machine_id": machine.id,
                     "machine_no": machine.machine_no,
-                    "machine_name": machine.machine_name,
-                    "status": machine.status.value if hasattr(machine, "status") else None,
+                    "machine_name": machine.name,
+                    "state": machine.state.value if machine.state else None,
                 },
             }
 
@@ -71,8 +224,8 @@ async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
                     "card_id": card.id,
                     "card_no": card.card_no,
                     "part_id": card.part_id,
-                    "plan_id": card.plan_id,
-                    "status": card.status.value if hasattr(card, "status") else None,
+                    "session_id": card.session_id,
+                    "status": card.status.value if card.status else None,
                 },
             }
 
@@ -84,9 +237,8 @@ async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
                 "entity_type": "part",
                 "entity_data": {
                     "part_id": part.id,
-                    "part_number": part.part_number,
-                    "internal_name": part.internal_name,
-                    "status": part.status.value if hasattr(part, "status") else None,
+                    "part_no": part.part_number,
+                    "internal_name": part.part_name,
                 },
             }
 
@@ -101,25 +253,47 @@ async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
                 "entity_data": {
                     "tooling_id": tooling.id,
                     "tooling_no": tooling.tooling_no,
-                    "tooling_name": tooling.tooling_name,
-                    "status": tooling.status.value if hasattr(tooling, "status") else None,
+                    "tooling_name": tooling.name,
+                    "status": tooling.state.value if tooling.state else None,
                 },
             }
 
     return {"entity_type": None, "entity_data": None}
 
 
+# ── Endpoints ───────────────────────────────────────────────────────────────
+
 @router.get("/lookup", response_model=QRLookupResponse)
 async def lookup_qr_code(
-    code: str = Query(..., description="QR code content to look up"),
     db: DbSession,
     current_user: CurrentUser,
+    code: str = Query(..., description="QR code content or entity identifier to look up"),
+    manual: bool = Query(default=False, description="Enable manual lookup mode (type+code)"),
+    type: Optional[str] = Query(default=None, description="Entity type for manual lookup: MAT, MCN, PFC, PRT, TLG"),
 ) -> QRLookupResponse:
     """Look up QR code and return entity information.
 
-    Supports MAT-, MCN-, PFC- prefixes for different entity types.
+    Supports two modes:
+    - Auto mode (default): parse QR code string to extract prefix + entity ID
+    - Manual mode (?manual=true): look up by type + code (code can be any identifier)
+
+    T028: Enables manual entry when QR code is damaged.
     """
-    # Parse QR content
+    if manual:
+        if not type:
+            return QRLookupResponse(
+                found=False,
+                error="type parameter required when manual=true",
+            )
+        result = await _manual_lookup(db, type.upper(), code)
+        return QRLookupResponse(
+            found=result.get("found", False),
+            entity_type=result.get("entity_type"),
+            entity_data=result.get("entity_data"),
+            error=result.get("error"),
+        )
+
+    # Auto mode: parse QR content
     parsed = qr_service.parse_qr_content(code)
 
     if not parsed:
@@ -137,7 +311,6 @@ async def lookup_qr_code(
             error="Invalid entity ID in QR code",
         )
 
-    # Validate prefix
     prefix_type = qr_service.get_prefix_type(prefix)
     if not prefix_type:
         return QRLookupResponse(
@@ -146,7 +319,6 @@ async def lookup_qr_code(
             error=f"Unknown QR prefix: {prefix}",
         )
 
-    # Look up entity
     result = await lookup_entity(db, prefix, entity_id)
 
     if result["entity_type"]:
@@ -182,14 +354,9 @@ async def generate_qr_code(
             detail=f"Invalid prefix: {data.prefix}",
         )
 
-    # Generate content
     extra = data.extra_data or {}
     content = qr_service.generate_qr_content(prefix_type, data.entity_id, **extra)
-
-    # Generate image
     image_base64 = qr_service.generate_qr_base64(content)
-
-    # Try to upload to cloud
     filename = f"{data.prefix}_{data.entity_id}"
     url = await qr_service.upload_qr_to_cos(content, filename)
 
@@ -207,9 +374,9 @@ async def get_material_qr(
     current_user: CurrentUser,
 ) -> QRMaterialResponse:
     """Generate QR code for material batch."""
-    from app.services.warehouse_service import get_batch_by_id
+    from src.services import material_batch_service
 
-    batch = await get_batch_by_id(db, batch_id)
+    batch = await material_batch_service.get_batch_by_id(db, batch_id)
     if not batch:
         raise HTTPException(status_code=404, detail="Material batch not found")
 

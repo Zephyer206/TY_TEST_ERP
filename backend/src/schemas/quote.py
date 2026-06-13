@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.quote import FixPath, MoldFeeMode, QuoteState
+from src.models.quote import FixPath, MoldFeeMode, NominationStatus, QuoteState
 
 
 # --- Surface Treatment Schemas ---
@@ -150,7 +150,14 @@ class FixUpdate(BaseModel):
     """Schema for fix confirmation."""
 
     fix_path: FixPath
+    final_price: Optional[Decimal] = Field(default=None, ge=0)
     notes: Optional[str] = Field(default=None, max_length=500)
+
+
+class RevokeNominationUpdate(BaseModel):
+    """Schema for revoking nomination (fix)."""
+
+    revoke_reason: Optional[str] = Field(default=None, max_length=500)
 
 
 class QuoteResponse(QuoteBase):
@@ -179,7 +186,14 @@ class QuoteResponse(QuoteBase):
 
     # Snapshot & path
     price_snapshot: Optional[dict] = None
+    final_price: Optional[Decimal] = None
+    nomination_status: NominationStatus = NominationStatus.UNFIXED
     fix_path: Optional[FixPath] = None
+
+    # Revocation
+    revoked_at: Optional[datetime] = None
+    revoked_by: Optional[int] = None
+    revoke_reason: Optional[str] = None
 
     # Rejection reasons
     reject_reason: Optional[str] = None

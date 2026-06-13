@@ -7,14 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.machine import Machine, MachineState
-from app.models.part import Part
-from app.models.production import (
+from src.models.machine import Machine, MachineState
+from src.models.part import Part
+from src.models.production import (
     ProductionReport,
     ProductionSession,
     SessionStatus,
 )
-from app.models.tooling import Tooling
+from src.models.tooling import Tooling
 
 
 def generate_session_no() -> str:
@@ -35,7 +35,7 @@ async def verify_material_tooling_match(
     Returns:
         dict with is_match, message, tooling_id, etc.
     """
-    from app.models.warehouse import MaterialBatch
+    from src.models.warehouse import MaterialBatch
 
     result = {
         "is_match": True,
@@ -99,8 +99,8 @@ async def start_session(
     Args:
         force_start: If True, skip material matching verification
     """
-    from app.models.production import PlanMachineAssignment, ProductionPlan
-    from app.models.warehouse import MaterialBatch
+    from src.models.production import PlanMachineAssignment, ProductionPlan
+    from src.models.warehouse import MaterialBatch
 
     # Verify machine
     machine_result = await db.execute(
@@ -252,14 +252,14 @@ async def close_session(
     session.closed_at = datetime.utcnow()
 
     # Generate process flow card
-    from app.services.process_flow_service import generate_process_flow_card
+    from src.services.process_flow_service import generate_process_flow_card
 
     flow_card = await generate_process_flow_card(db, session)
     session.process_flow_id = flow_card.id
 
     # Update plan completed quantity
     if session.plan_id:
-        from app.services.production_service import update_plan_completed_qty, get_plan_by_id
+        from src.services.production_service import update_plan_completed_qty, get_plan_by_id
 
         plan = await get_plan_by_id(db, session.plan_id)
         if plan:

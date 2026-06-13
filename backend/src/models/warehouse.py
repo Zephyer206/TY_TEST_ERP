@@ -4,22 +4,13 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.user import User
+    from src.models.user import User
 
 
 class BatchStatus(str, PyEnum):
@@ -39,6 +30,25 @@ class IQCResult(str, PyEnum):
 
     PASSED = "passed"
     FAILED = "failed"
+
+
+class ScanType(str, PyEnum):
+    """QR code scan entity types."""
+
+    MAT = "MAT"  # 原料批次
+    MCN = "MCN"  # 机台
+    PFC = "PFC"  # 工艺流转单
+    PRT = "PRT"  # 零件
+
+
+class ScanOperation(str, PyEnum):
+    """QR code scan operation types."""
+
+    QUERY = "query"  # 查询扫码
+    SPLIT = "split"  # 分条扫码
+    CONSUME = "consume"  # 消耗扫码
+    REPORT = "report"  # 报工扫码
+    INBOUND = "inbound"  # 入库扫码
 
 
 class Supplier(Base):
@@ -102,40 +112,49 @@ class Material(Base):
 
 
 class MaterialBatch(Base):
-    """Material batch for tracking and tracing."""
+    """Material batch for tracking and tracing.
+
+    兼容旧 v5 表结构（qr_uid 主键），扩展新列（batch_no, qr_code, parent_batch_id）。
+    """
 
     __tablename__ = "material_batches"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    batch_no: Mapped[str] = mapped_column(
-        String(100), unique=True, nullable=False, index=True
-    )
-    qr_code: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)  # QR code content
 
-    # Material info
-    material_id: Mapped[int] = mapped_column(
-        ForeignKey("materials.id"), nullable=False, index=True
+    # 主键是 qr_uid（旧），新增 batch_no 作为人类可读编号
+    # batch_no = qr_uid（兼容旧数据），新记录生成独立编号
+    qr_uid: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
+    batch_no: Mapped[Optional[str]] = mapped_column(String(100), unique=True, nullable=True, index=True)
+    qr_code: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    # Material info（旧表用 text，外键由新记录填充）
+    material_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("materials.id"), nullable=True, index=True
     )
-    material: Mapped["Material"] = relationship("Material")
+    material: Mapped[Optional["Material"]] = relationship("Material")
+    material_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
     supplier_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("suppliers.id"), nullable=True, index=True
     )
     supplier: Mapped[Optional["Supplier"]] = relationship("Supplier")
+    supplier_name: Mapped[Optional[str]] = mapped_column(String(150), nullable=True)
 
     # Dimensions
     thickness: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     width: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     length: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    # Weight
-    gross_weight: Mapped[float] = mapped_column(Float, nullable=False)  # kg
-    net_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # kg
-    current_weight: Mapped[float] = mapped_column(Float, nullable=False)  # kg
+    # Weight（旧表用 initial_weight/current_weight）
+    gross_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    net_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    current_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
 
-    # Batch status
-    status: Mapped[BatchStatus] = mapped_column(
-        Enum(BatchStatus), default=BatchStatus.PENDING_IQC, nullable=False, index=True
+    # Batch status（旧表用 lifecycle_status）
+    status: Mapped[Optional[BatchStatus]] = mapped_column(
+        Enum(BatchStatus), nullable=True, index=True
     )
+    lifecycle_status: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
 
     # IQC
     iqc_result: Mapped[Optional[IQCResult]] = mapped_column(
@@ -146,9 +165,7 @@ class MaterialBatch(Base):
     iqc_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Parent for split batches
-    parent_batch_id: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, index=True
-    )
+    parent_batch_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
 
     # Purchase order reference
     po_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -169,7 +186,7 @@ class MaterialBatch(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<MaterialBatch {self.batch_no}>"
+        return f"<MaterialBatch {self.batch_no or self.qr_uid}>"
 
 
 class MaterialBatchChild(Base):
@@ -241,3 +258,27 @@ class BatchTransaction(Base):
 
     def __repr__(self) -> str:
         return f"<BatchTransaction {self.id}>"
+
+
+class QRScanLog(Base):
+    """QR code scan log for full-chain traceability."""
+
+    __tablename__ = "qr_scan_logs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    scan_type: Mapped[ScanType] = mapped_column(
+        Enum(ScanType), nullable=False, index=True
+    )
+    entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    entity_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    operation: Mapped[ScanOperation] = mapped_column(
+        Enum(ScanOperation), nullable=False
+    )
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    scanned_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=False
+    )
+
+    def __repr__(self) -> str:
+        return f"<QRScanLog {self.id}[{self.scan_type.value}:{self.entity_id}]>"

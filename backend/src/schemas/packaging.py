@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.packaging import PackagingStatus
+from src.models.packaging import PackagingStatus
 
 
 class PackagingScanRequest(BaseModel):

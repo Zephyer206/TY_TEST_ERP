@@ -7,10 +7,10 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
-from app.core.security import decode_token
-from app.database import get_db
-from app.models.user import User, UserRole
+from src.core.config import settings
+from src.core.security import decode_token
+from src.database import get_db
+from src.models.user import User, UserRole
 
 # Security scheme
 security = HTTPBearer()
@@ -110,7 +110,7 @@ def require_role(min_level: int):
 
 def require_min_role(min_role: UserRole):
     """Dependency factory for minimum role level check."""
-    from app.core.security import verify_min_role
+    from src.core.security import verify_min_role
 
     async def min_role_checker(
         current_user: Annotated[User, Depends(get_current_user)],

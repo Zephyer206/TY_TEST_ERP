@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.sampling import SamplingTaskState
+from src.models.sampling import SamplingTaskState
 
 
 class SamplingTaskBase(BaseModel):

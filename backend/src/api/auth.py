@@ -8,9 +8,9 @@ from pydantic import BaseModel, EmailStr
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession
-from app.core.security import create_tokens, verify_password
-from app.models.user import User
+from src.api.deps import CurrentUser, DbSession
+from src.core.security import create_tokens, verify_password
+from src.models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -91,7 +91,7 @@ async def refresh_token(
     db: DbSession,
 ) -> TokenResponse:
     """Refresh access token using refresh token."""
-    from app.core.security import decode_token
+    from src.core.security import decode_token
 
     payload = decode_token(request.refresh_token)
 

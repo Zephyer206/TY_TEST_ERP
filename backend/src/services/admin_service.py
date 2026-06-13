@@ -8,9 +8,9 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.models.admin import AdminContextSwitch, ContextSwitchType
-from app.models.user import User
-from app.schemas.admin import DEPT_ROLE_MAPPINGS
+from src.models.admin import AdminContextSwitch, ContextSwitchType
+from src.models.user import User
+from src.schemas.admin import DEPT_ROLE_MAPPINGS
 
 
 SESSION_EXPIRY_SECONDS = 3600  # 1 hour

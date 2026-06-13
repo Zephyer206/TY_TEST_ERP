@@ -8,9 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.sampling import SamplingTask, SamplingTaskState
-from app.schemas.sampling import (
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.sampling import SamplingTask, SamplingTaskState
+from src.schemas.sampling import (
     SamplingKanbanResponse,
     SamplingTaskApprove,
     SamplingTaskCancel,
@@ -20,7 +20,7 @@ from app.schemas.sampling import (
     SamplingTaskReview,
     SamplingTaskUpdate,
 )
-from app.services import sampling_service
+from src.services import sampling_service
 
 router = APIRouter(prefix="/sampling-tasks", tags=["Sampling Tasks"])
 
@@ -64,7 +64,7 @@ async def create_sampling_task(
     """
     require_role(current_user, min_level=5)
 
-    from app.models.part import Part, PartState
+    from src.models.part import Part, PartState
 
     result = await db.execute(select(Part).where(Part.id == data.part_id))
     part = result.scalar_one_or_none()

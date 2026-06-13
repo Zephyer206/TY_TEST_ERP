@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from app.models.admin import ContextSwitchType
+from src.models.admin import ContextSwitchType
 
 
 class SwitchContextRequest(BaseModel):
@@ -81,6 +81,8 @@ class DeptRoleMapping(BaseModel):
 
 
 # Predefined department role mappings
+SESSION_EXPIRY_SECONDS = 3600  # 1 hour
+
 DEPT_ROLE_MAPPINGS = {
     "sales": {"role_level": 5, "role_name": "业务经理"},
     "production": {"role_level": 3, "role_name": "生产主管"},

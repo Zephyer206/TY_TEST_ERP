@@ -7,14 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.machine import Machine, MachineState
-from app.models.part import Part
-from app.models.production import (
+from src.models.machine import Machine, MachineState
+from src.models.part import Part
+from src.models.production import (
     PlanMachineAssignment,
     PlanStatus,
     ProductionPlan,
 )
-from app.models.user import User
+from src.models.user import User
 
 
 def generate_plan_no() -> str:

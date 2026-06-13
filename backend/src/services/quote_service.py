@@ -8,9 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.quote import FixPath, MoldFeeMode, Quote, QuoteItem, QuoteState, SurfaceTreatment
-from app.models.user import User
-from app.schemas.quote import (
+from src.models.quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from src.models.user import User
+from src.schemas.quote import (
     BossApprovalUpdate,
     FixUpdate,
     PricingUpdate,
@@ -117,22 +117,23 @@ async def submit_tech_review(
     data: TechReviewUpdate,
     reviewer: User,
 ) -> Quote:
-    """Process tech review (approve or reject)."""
-    if quote.state != QuoteState.TECH_REVIEW:
+    """Process tech review (approve or reject).
+
+    WAITING_FOR_TECH → TECH_APPROVED (approve) | TECH_REJECTED (reject)
+    TECH_REVIEW → TECH_APPROVED (approve) | TECH_REJECTED (reject)
+    """
+    if quote.state not in (QuoteState.WAITING_FOR_TECH, QuoteState.TECH_REVIEW):
         raise ValueError(f"Not in tech review state: {quote.state.value}")
 
     if data.approved:
-        quote.state = QuoteState.TECH_REVIEW
+        quote.state = QuoteState.TECH_APPROVED
         for field, value in data.model_dump(exclude_unset=True).items():
-            if value is not None:
+            if field not in ("approved", "reject_reason") and value is not None:
                 setattr(quote, field, value)
         quote.tech_reviewed_at = datetime.utcnow()
         quote.tech_reject_reason = None
     else:
-        if quote.state == QuoteState.TECH_REVIEW:
-            quote.state = QuoteState.DRAFT
-        else:
-            quote.state = QuoteState.TECH_REVIEW
+        quote.state = QuoteState.TECH_REJECTED
         quote.tech_reject_reason = data.reject_reason
         quote.tech_reviewed_at = datetime.utcnow()
 
@@ -145,18 +146,49 @@ async def update_pricing(
     db: AsyncSession,
     quote: Quote,
     data: PricingUpdate,
-) -> Quote:
-    """Update pricing fields (stamping, surface treatment, profit)."""
-    if quote.state not in (QuoteState.DRAFT, QuoteState.TECH_REVIEW):
-        raise ValueError(f"Cannot update pricing in state: {quote.state.value}")
+    operator: User,
+) -> tuple[Quote, bool]:
+    """Update pricing fields (stamping, surface treatment, profit).
 
-    for field, value in data.model_dump(exclude_unset=True).items():
-        if value is not None:
-            setattr(quote, field, value)
+    Returns (quote, triggered_reapproval).
+    - APPROVED state: price fields are editable, only final_price change triggers reapproval.
+    - Other states: standard editable states.
+    """
+    if quote.state == QuoteState.APPROVED:
+        current_final = _compute_final_price(quote)
+        triggered = False
+
+        for field, value in data.model_dump(exclude_unset=True).items():
+            if value is not None:
+                setattr(quote, field, value)
+
+        updated_final = _compute_final_price(quote)
+        if current_final != updated_final:
+            triggered = True
+            quote.state = QuoteState.PENDING_BOSS
+            quote.submitted_to_boss_at = datetime.utcnow()
+    elif quote.state in (QuoteState.DRAFT, QuoteState.TECH_APPROVED, QuoteState.REJECTED):
+        for field, value in data.model_dump(exclude_unset=True).items():
+            if value is not None:
+                setattr(quote, field, value)
+    else:
+        raise ValueError(f"Cannot update pricing in state: {quote.state.value}")
 
     await db.commit()
     await db.refresh(quote)
-    return quote
+    return quote, triggered
+
+
+def _compute_final_price(quote: Quote) -> Optional[Decimal]:
+    """Compute current final price from quote fields."""
+    if quote.final_price is not None:
+        return quote.final_price
+    total = Decimal("0")
+    if quote.stamping_fee is not None:
+        total += quote.stamping_fee
+    if quote.surface_treatment_fee is not None:
+        total += quote.surface_treatment_fee
+    return total
 
 
 async def submit_to_boss(
@@ -221,17 +253,21 @@ async def fix_quote(
 ) -> Quote:
     """Fix (confirm) a quote after boss approval.
 
+    Writes final_price from FixUpdate (manual input).
+    Sets nomination_status = FIXED.
     Creates Parts for each QuoteItem based on the fix_path.
     """
     if quote.state != QuoteState.APPROVED:
         raise ValueError(f"Not approved yet: {quote.state.value}")
 
     quote.state = QuoteState.FIXED
+    quote.nomination_status = NominationStatus.FIXED
     quote.fix_path = data.fix_path
     quote.fixed_at = datetime.utcnow()
+    if data.final_price is not None:
+        quote.final_price = data.final_price
 
-    from app.models.part import Part, PartState
-    import secrets
+    from src.models.part import Part, PartState
 
     for item in quote.items:
         part_no = f"PT-{quote.id:06d}-{item.id:04d}"
@@ -252,6 +288,33 @@ async def fix_quote(
             state=PartState.SAMPLING if data.fix_path == FixPath.SAMPLE_FIRST else PartState.DRAFT,
         )
         db.add(part)
+
+    await db.commit()
+    await db.refresh(quote)
+    return quote
+
+
+async def revoke_nomination(
+    db: AsyncSession,
+    quote: Quote,
+    revoke_reason: Optional[str],
+    revoker: User,
+) -> Quote:
+    """Revoke nomination (fix) on a fixed quote.
+
+    Quotes stays at APPROVED, nomination_status → REVOKED.
+    An audit log entry records operator_id + operated_at.
+    """
+    if quote.state != QuoteState.FIXED:
+        raise ValueError(f"Quote is not fixed: {quote.state.value}")
+    if quote.nomination_status != NominationStatus.FIXED:
+        raise ValueError(f"Nomination is not in FIXED state: {quote.nomination_status.value}")
+
+    quote.state = QuoteState.APPROVED
+    quote.nomination_status = NominationStatus.REVOKED
+    quote.revoked_at = datetime.utcnow()
+    quote.revoked_by = revoker.id
+    quote.revoke_reason = revoke_reason
 
     await db.commit()
     await db.refresh(quote)

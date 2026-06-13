@@ -10,6 +10,8 @@
 
 **Purpose**: Project initialization and basic structure
 
+**Total tasks**: 111
+
 - [x] T001 创建项目目录结构：backend/src/、frontend/、miniprogram/、mobile-h5/
 - [x] T002 初始化 Python 后端项目：requirements.txt、.env.example
 - [x] T003 初始化 Vue 3 前端项目：package.json、vite.config.ts
@@ -72,7 +74,7 @@
 
 ### Services
 
-- [x] T024 [US1] 在 backend/src/services/quote_service.py 中实现报价单业务逻辑（创建、技术审核、价格快照、定点确认）
+- [x] T024 [US1] 在 backend/src/services/quote_service.py 中实现报价单业务逻辑（创建、技术审核、价格快照、定点确认，含 nomination_status 定点状态管理；APPROVED 后允许编辑，仅 final_price 变动触发重新审批）
 
 ### Endpoints
 
@@ -80,8 +82,9 @@
 - [x] T026 [P] [US1] 在 backend/src/api/quotes.py 中实现 GET /api/quotes/{id}（获取详情）
 - [x] T027 [US1] 实现 PUT /api/quotes/{id}/tech-review（技术审核，依赖 T019 状态机）
 - [x] T028 [US1] 实现 PUT /api/quotes/{id}/submit-boss（提交老板审批）
-- [x] T029 [US1] 实现 PUT /api/quotes/{id}/boss-approve（老板审批，含价格快照锁定）
-- [x] T030 [US1] 实现 POST /api/quotes/{id}/fix（定点确认，同步更新零件表）
+- [x] T029 [US1] 实现 PUT /api/quotes/{id}/boss-approve（老板审批，含价格快照锁定；APPROVED 后编辑时仅 final_price 变动触发重新审批）
+- [x] T030 [US1] 实现 POST /api/quotes/{id}/fix（定点确认，含手动输入定点价格；仅当 final_price 变动时触发重新审批）
+- [x] T030a [US1] 实现 POST /api/quotes/{id}/revoke-nomination（撤销定点；撤销后 quotes 留在 APPROVED，nomination_status 标记已撤销，审计日志记录 operator_id + operated_at）
 
 ### Integration
 
@@ -367,7 +370,7 @@
 - [x] T107 性能优化：数据库索引验证（确保关键查询走索引）
 - [x] T108 安全加固：输入校验、SQL 注入防护、CORS 配置
 - [x] T109 更新 .github/copilot-instructions.md（反映已实施的技术决策）
-- [ ] T110 运行 quickstart.md 验证场景，确保端到端可工作
+- [x] T110 运行 quickstart.md 验证场景，确保端到端可工作
 
 ---
 
@@ -400,7 +403,7 @@
 | User Story | Phase | Priority | Tasks | Description |
 |------------|-------|----------|-------|-------------|
 | Foundational | 2 | — | T006-T021 | 基础设施（DB、认证、权限、状态机） |
-| US1 | 3 | P1 | T022-T032 | 报价与审批 |
+| US1 | 3 | P1 | T022-T030a | 报价与审批（含撤销定点） |
 | US9 | 4 | P0 | T033-T038 | 价格台账与年降 |
 | US2 | 5 | P1 | T039-T048 | 打样管理与样件跟踪 |
 | US3 | 6 | P1 | T049-T054 | 模具管理与维修 |
@@ -412,7 +415,7 @@
 | US10 | 12 | P3 | T085-T090 | 超级管理员视角切换 |
 | QR System | 13 | — | T091-T098 | 二维码系统（跨用户故事） |
 | Polish | 14 | — | T099-T110 | 收尾与优化 |
-| **Total** | | | **110 tasks** | |
+| **Total** | | | **111 tasks** | |
 
 **Parallel Opportunities**: 标记为 [P] 的任务可并行执行；Phase 3-12 的用户故事在 Foundational 完成后可并行实施。
 

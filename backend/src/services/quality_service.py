@@ -7,9 +7,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from app.models.part import Part
-from app.models.production import ProductionSession
-from app.models.quality import (
+from src.models.part import Part
+from src.models.production import ProductionSession
+from src.models.quality import (
     ExemptionType,
     FirstPieceInspection,
     InspectionResult,
@@ -364,7 +364,7 @@ async def _record_audit(
     details: str,
 ) -> None:
     """Record an audit event for quality operations."""
-    from app.models.audit import AuditLog
+    from src.models.audit import AuditLog
 
     audit = AuditLog(
         action=action,

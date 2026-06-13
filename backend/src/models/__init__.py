@@ -1,12 +1,12 @@
 """SQLAlchemy models."""
 
-from app.models.admin import AdminContextSwitch, ContextSwitchType
-from app.models.audit import AuditLog
-from app.models.customer import Customer
-from app.models.machine import Machine, MachineState, MachineStatusLog
-from app.models.part import Part, PartState
-from app.models.price import AnnualPriceRecord, PriceAccount, PriceAdjustment, PriceAdjustmentType
-from app.models.production import (
+from .admin import AdminContextSwitch, ContextSwitchType
+from .audit import AuditLog
+from .customer import Customer
+from .machine import Machine, MachineState, MachineStatusLog
+from .part import Part, PartState
+from .price import AnnualPriceRecord, PriceAccount, PriceAdjustment, PriceAdjustmentType
+from .production import (
     PlanMachineAssignment,
     PlanStatus,
     ProcessFlowCard,
@@ -16,15 +16,15 @@ from app.models.production import (
     ProductionSession,
     SessionStatus,
 )
-from app.models.coating import CoatingColor, CoatingRecipe, CoatingRecord, CoatingType
-from app.models.packaging import (
+from .coating import CoatingColor, CoatingRecipe, CoatingRecord, CoatingType
+from .packaging import (
     Inventory,
     InventoryTransaction,
     PackagingRecord,
     PackagingStatus,
 )
-from app.models.quote import FixPath, MoldFeeMode, Quote, QuoteItem, QuoteState, SurfaceTreatment
-from app.models.quality import (
+from .quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from .quality import (
     ExemptionType,
     FirstPieceInspection,
     InspectionResult,
@@ -32,16 +32,19 @@ from app.models.quality import (
     QAExemption,
     PatrolInspection,
 )
-from app.models.sampling import SamplingTask, SamplingTaskState
-from app.models.tooling import Tooling, ToolingPart, ToolingMaintenanceLog, ToolingState
-from app.models.user import Department, Position, User
-from app.models.warehouse import (
+from .sampling import SamplingTask, SamplingTaskState
+from .tooling import Tooling, ToolingPart, ToolingMaintenanceLog, ToolingState
+from .user import Department, Position, User
+from .warehouse import (
     BatchStatus,
     BatchTransaction,
     IQCResult,
     Material,
     MaterialBatch,
     MaterialBatchChild,
+    QRScanLog,
+    ScanOperation,
+    ScanType,
     Supplier,
 )
 
@@ -72,6 +75,7 @@ __all__ = [
     "MaterialBatch",
     "MaterialBatchChild",
     "MoldFeeMode",
+    "NominationStatus",
     "OQCInspection",
     "PackagingRecord",
     "PackagingStatus",
@@ -90,11 +94,14 @@ __all__ = [
     "ProductionReport",
     "ProductionSession",
     "QAExemption",
+    "QRScanLog",
     "Quote",
     "QuoteItem",
     "QuoteState",
     "SamplingTask",
     "SamplingTaskState",
+    "ScanOperation",
+    "ScanType",
     "SessionStatus",
     "Supplier",
     "SurfaceTreatment",

@@ -4,25 +4,16 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.machine import Machine
-    from app.models.part import Part
-    from app.models.tooling import Tooling
-    from app.models.user import User
+    from src.models.machine import Machine
+    from src.models.part import Part
+    from src.models.tooling import Tooling
+    from src.models.user import User
 
 
 class PlanStatus(str, PyEnum):
@@ -308,6 +299,14 @@ class ProcessFlowCard(Base):
 
     # Operator
     operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Inbound (QC passed -> finished goods inventory)
+    inbound_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    inbound_operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    inbound_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # QR Code
+    qr_code: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, index=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False

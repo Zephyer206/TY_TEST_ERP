@@ -5,9 +5,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.tooling import Tooling, ToolingState
-from app.schemas.tooling import (
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.tooling import Tooling, ToolingState
+from src.schemas.tooling import (
     MaintenanceComplete,
     ToolingCreate,
     ToolingDetailResponse,
@@ -15,7 +15,7 @@ from app.schemas.tooling import (
     ToolingResponse,
     ToolingUpdate,
 )
-from app.services import tooling_service
+from src.services import tooling_service
 
 router = APIRouter(prefix="/toolings", tags=["Tooling"])
 
@@ -207,7 +207,7 @@ async def mount_tooling(
     if not tooling:
         raise HTTPException(status_code=404, detail="Tooling not found")
 
-    from app.models.machine import Machine
+    from src.models.machine import Machine
 
     result = await db.execute(select(Machine).where(Machine.id == machine_id))
     machine = result.scalar_one_or_none()
@@ -235,7 +235,7 @@ async def unmount_tooling(
     if not tooling:
         raise HTTPException(status_code=404, detail="Tooling not found")
 
-    from app.models.machine import Machine
+    from src.models.machine import Machine
 
     result = await db.execute(
         select(Machine).where(Machine.current_tooling_id == tooling_id)
@@ -255,9 +255,9 @@ async def unmount_tooling(
 @router.post("/{tooling_id}/complete-maintenance", response_model=ToolingResponse)
 async def complete_maintenance(
     tooling_id: int,
-    data: Optional[MaintenanceComplete] = None,
     db: DbSession,
     current_user: CurrentUser,
+    data: Optional[MaintenanceComplete] = None,
 ) -> ToolingResponse:
     """Complete tooling maintenance and return to available state."""
     require_role(current_user, min_level=2)
