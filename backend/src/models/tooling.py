@@ -30,7 +30,7 @@ class ToolingMaintenanceLog(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(
-        ForeignKey("toolings.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("tooling_molds.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Machine that reported the fault
@@ -66,7 +66,7 @@ class ToolingMaintenanceLog(Base):
 class Tooling(Base):
     """Tooling (mold/die) model."""
 
-    __tablename__ = "toolings"
+    __tablename__ = "tooling_molds"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_no: Mapped[str] = mapped_column(
@@ -129,7 +129,7 @@ class ToolingPart(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(
-        ForeignKey("toolings.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("tooling_molds.id", ondelete="CASCADE"), nullable=False, index=True
     )
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id", ondelete="CASCADE"), nullable=False, index=True

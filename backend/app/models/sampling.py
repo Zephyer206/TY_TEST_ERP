@@ -30,7 +30,7 @@ class SamplingTaskState(str, PyEnum):
 class SamplingTask(Base):
     """Sampling task model for managing sample production workflow."""
 
-    __tablename__ = "sampling_tasks"
+    __tablename__ = "sample_tasks"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     task_no: Mapped[str] = mapped_column(

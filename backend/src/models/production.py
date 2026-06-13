@@ -157,7 +157,7 @@ class ProductionSession(Base):
     )
     machine: Mapped["Machine"] = relationship("Machine")
     tooling_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("toolings.id"), nullable=True, index=True
+        ForeignKey("tooling_molds.id"), nullable=True, index=True
     )
     tooling: Mapped[Optional["Tooling"]] = relationship("Tooling")
 
@@ -275,7 +275,7 @@ class ProcessFlowCard(Base):
     machine: Mapped["Machine"] = relationship("Machine")
 
     tooling_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("toolings.id"), nullable=True
+        ForeignKey("tooling_molds.id"), nullable=True
     )
     tooling: Mapped[Optional["Tooling"]] = relationship("Tooling")
 
