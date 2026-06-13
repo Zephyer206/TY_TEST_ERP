@@ -159,18 +159,18 @@
 
 ### Models
 
-- [ ] T049 [P] [US3] 创建 backend/src/models/tooling.py：Tooling、ToolingPart、ToolingMaintenanceLog 模型
+- [x] T049 [P] [US3] 创建 backend/src/models/tooling.py：Tooling、ToolingPart、ToolingMaintenanceLog 模型
 
 ### Services
 
-- [ ] T050 [US3] 在 backend/src/services/tooling_service.py 中实现模具台账管理、两扫制维修逻辑
+- [x] T050 [US3] 在 backend/src/services/tooling_service.py 中实现模具台账管理、两扫制维修逻辑
 
 ### Endpoints
 
-- [ ] T051 [P] [US3] 实现 POST /api/toolings（新建模具档案）
-- [ ] T052 [P] [US3] 实现 GET /api/toolings/{id}（模具详情，含父-子关联查询）
-- [ ] T053 [US3] 实现 PUT /api/machines/{id}/scan（扫码处理：故障上报/第一次扫码维修/第二次扫码操作）
-- [ ] T054 [US3] 实现 GET /api/toolings/maintenance-pool（待修池列表）
+- [x] T051 [P] [US3] 实现 POST /api/toolings（新建模具档案）
+- [x] T052 [P] [US3] 实现 GET /api/toolings/{id}（模具详情，含父-子关联查询）
+- [x] T053 [US3] 实现 PUT /api/machines/{id}/scan（扫码处理：故障上报/第一次扫码维修/第二次扫码操作）
+- [x] T054 [US3] 实现 GET /api/toolings/maintenance-pool（待修池列表）
 
 **Checkpoint**: 模具管理完整链路可用
 
@@ -184,23 +184,23 @@
 
 ### Models
 
-- [ ] T055 [P] [US4] 创建 backend/src/models/machine.py：Machine、MachineStatusLog 模型
-- [ ] T056 [P] [US4] 创建 backend/src/models/production.py：ProductionPlan、PlanMachineAssignment、ProductionReport、ProductionSession 模型
-- [ ] T057 [P] [US4] 创建 backend/src/schemas/production.py：相关 Pydantic schemas
+- [x] T055 [P] [US4] 创建 backend/src/models/machine.py：Machine、MachineStatusLog 模型
+- [x] T056 [P] [US4] 创建 backend/src/models/production.py：ProductionPlan、PlanMachineAssignment、ProductionReport、ProductionSession 模型
+- [x] T057 [P] [US4] 创建 backend/src/schemas/production.py：相关 Pydantic schemas
 
 ### Services
 
-- [ ] T058 [US4] 在 backend/src/services/production_service.py 中实现生产计划管理、机台分配
-- [ ] T059 [US4] 在 backend/src/services/session_service.py 中实现连续模报工会话（开启/多次报工/结账）
-- [ ] T060 [US4] 在 backend/src/services/process_flow_service.py 中实现工艺流转单自动生成
+- [x] T058 [US4] 在 backend/src/services/production_service.py 中实现生产计划管理、机台分配
+- [x] T059 [US4] 在 backend/src/services/session_service.py 中实现连续模报工会话（开启/多次报工/结账）
+- [x] T060 [US4] 在 backend/src/services/process_flow_service.py 中实现工艺流转单自动生成
 
 ### Endpoints
 
-- [ ] T061 [P] [US4] 实现 POST /api/production/plans（创建生产计划）
-- [ ] T062 [P] [US4] 实现 POST /api/production/plans/{id}/assign-machine（分配机台）
-- [ ] T063 [US4] 实现 POST /api/production/sessions/start（开启报工会话，含原材料-模具匹配校验）
-- [ ] T064 [US4] 实现 POST /api/production/reports（提交报工，strokes × cavity_count = 产出）
-- [ ] T065 [US4] 实现 POST /api/production/sessions/{id}/close（结账会话，生成工艺流转单）
+- [x] T061 [P] [US4] 实现 POST /api/production/plans（创建生产计划）
+- [x] T062 [P] [US4] 实现 POST /api/production/plans/{id}/assign-machine（分配机台）
+- [x] T063 [US4] 实现 POST /api/production/sessions/start（开启报工会话，含原材料-模具匹配校验）
+- [x] T064 [US4] 实现 POST /api/production/reports（提交报工，strokes × cavity_count = 产出）
+- [x] T065 [US4] 实现 POST /api/production/sessions/{id}/close（结账会话，生成工艺流转单）
 
 **Checkpoint**: 生产计划与报工完整链路可用
 
@@ -214,18 +214,18 @@
 
 ### Models
 
-- [ ] T066 [P] [US6] 创建 backend/src/models/warehouse.py：Supplier、MaterialBatch、MaterialBatchChild 模型
+- [x] T066 [P] [US6] 创建 backend/src/models/warehouse.py：Supplier、MaterialBatch、MaterialBatchChild 模型
 
 ### Services
 
-- [ ] T067 [US6] 在 backend/src/services/material_batch_service.py 中实现原材料管理、IQC 检验、分条操作（子卷生成）
+- [x] T067 [US6] 在 backend/src/services/material_batch_service.py 中实现原材料管理、IQC 检验、分条操作（子卷生成）
 
 ### Endpoints
 
-- [ ] T068 [P] [US6] 实现 POST /api/warehouse/material-batches（登记原材料，生成批次号）
-- [ ] T069 [P] [US6] 实现 PUT /api/warehouse/material-batches/{id}/iqc（IQC 检验：合格/不合格）
-- [ ] T070 [US6] 实现 POST /api/warehouse/material-batches/{id}/split（分条操作，生成子二维码）
-- [ ] T071 [US6] 实现 GET /api/warehouse/material-batches/{id}/trace（批次流转追溯）
+- [x] T068 [P] [US6] 实现 POST /api/warehouse/material-batches（登记原材料，生成批次号）
+- [x] T069 [P] [US6] 实现 PUT /api/warehouse/material-batches/{id}/iqc（IQC 检验：合格/不合格）
+- [x] T070 [US6] 实现 POST /api/warehouse/material-batches/{id}/split（分条操作，生成子二维码）
+- [x] T071 [US6] 实现 GET /api/warehouse/material-batches/{id}/trace（批次流转追溯）
 
 **Checkpoint**: 原材料与批次管理可用
 
@@ -239,17 +239,17 @@
 
 ### Models
 
-- [ ] T072 [P] [US5] 创建 backend/src/models/quality.py：FirstPieceInspection、OQCInspection、QAExemption、PatrolInspection 模型
+- [x] T072 [P] [US5] 创建 backend/src/models/quality.py：FirstPieceInspection、OQCInspection、QAExemption、PatrolInspection 模型
 
 ### Services
 
-- [ ] T073 [US5] 在 backend/src/services/quality_service.py 中实现首件检验、OQC 检验、强行特赦
+- [x] T073 [US5] 在 backend/src/services/quality_service.py 中实现首件检验、OQC 检验、强行特赦
 
 ### Endpoints
 
-- [ ] T074 [P] [US5] 实现 POST /api/quality/first-piece（首件检验）
-- [ ] T075 [P] [US5] 实现 POST /api/quality/oqc（OQC 出货检验）
-- [ ] T076 [US5] 实现 POST /api/quality/exemption（强行特赦，含 role_level >= 2 校验）
+- [x] T074 [P] [US5] 实现 POST /api/quality/first-piece（首件检验）
+- [x] T075 [P] [US5] 实现 POST /api/quality/oqc（OQC 出货检验）
+- [x] T076 [US5] 实现 POST /api/quality/exemption（强行特赦，含 role_level >= 2 校验）
 
 **Checkpoint**: 质量管控与放行可用
 
@@ -263,16 +263,16 @@
 
 ### Models
 
-- [ ] T077 [P] [US7a] 创建 backend/src/models/packaging.py：PackagingRecord 模型
+- [x] T077 [P] [US7a] 创建 backend/src/models/packaging.py：PackagingRecord 模型
 
 ### Services
 
-- [ ] T078 [US7a] 在 backend/src/services/packaging_service.py 中实现包装扫码、全检入库
+- [x] T078 [US7a] 在 backend/src/services/packaging_service.py 中实现包装扫码、全检入库
 
 ### Endpoints
 
-- [ ] T079 [P] [US7a] 实现 POST /api/packaging/scan（包装扫码录入）
-- [ ] T080 [US7a] 实现 POST /api/packaging/inspect（全检合格入库，更新正品库存）
+- [x] T079 [P] [US7a] 实现 POST /api/packaging/scan（包装扫码录入）
+- [x] T080 [US7a] 实现 POST /api/packaging/inspect（全检合格入库，更新正品库存）
 
 **Checkpoint**: 包装管理可用
 
@@ -286,16 +286,16 @@
 
 ### Models
 
-- [ ] T081 [P] [US8] 创建 backend/src/models/coating.py：CoatingRecipe、CoatingRecord 模型
+- [x] T081 [P] [US8] 创建 backend/src/models/coating.py：CoatingRecipe、CoatingRecord 模型
 
 ### Services
 
-- [ ] T082 [US8] 在 backend/src/services/coating_service.py 中实现喷涂配方管理、喷涂报工
+- [x] T082 [US8] 在 backend/src/services/coating_service.py 中实现喷涂配方管理、喷涂报工
 
 ### Endpoints
 
-- [ ] T083 [P] [US8] 实现 POST /api/coating/recipes（创建喷涂配方）
-- [ ] T084 [US8] 实现 POST /api/coating/records（喷涂报工）
+- [x] T083 [P] [US8] 实现 POST /api/coating/recipes（创建喷涂配方）
+- [x] T084 [US8] 实现 POST /api/coating/records（喷涂报工）
 
 **Checkpoint**: 喷涂表面处理可用
 
@@ -309,21 +309,21 @@
 
 ### Models
 
-- [ ] T085 [P] [US10] 创建 backend/src/models/admin.py：AdminContextSwitch 模型
+- [x] T085 [P] [US10] 创建 backend/src/models/admin.py：AdminContextSwitch 模型
 
 ### Services
 
-- [ ] T086 [US10] 在 backend/src/services/admin_service.py 中实现视角切换（生成受限 token，原始 role_level 存入 Redis）
+- [x] T086 [US10] 在 backend/src/services/admin_service.py 中实现视角切换（生成受限 token，原始 role_level 存入 Redis）
 
 ### Endpoints
 
-- [ ] T087 [P] [US10] 实现 POST /api/admin/switch-context（切换视角，隐藏 role_level >= 9 按钮）
-- [ ] T088 [US10] 实现 POST /api/admin/switch-back（恢复 admin 视角）
+- [x] T087 [P] [US10] 实现 POST /api/admin/switch-context（切换视角，隐藏 role_level >= 9 按钮）
+- [x] T088 [US10] 实现 POST /api/admin/switch-back（恢复 admin 视角）
 
 ### Frontend Integration
 
-- [ ] T089 [US10] 在 frontend/src/stores/permission.ts 中实现动态按钮权限控制
-- [ ] T090 [US10] 在 frontend/src/router/index.ts 中实现路由守卫（切换视角期间拦截老板审批页面）
+- [x] T089 [US10] 在 frontend/src/stores/permission.ts 中实现动态按钮权限控制
+- [x] T090 [US10] 在 frontend/src/router/index.ts 中实现路由守卫（切换视角期间拦截老板审批页面）
 
 **Checkpoint**: 超级管理员视角切换完整可用
 
@@ -335,20 +335,20 @@
 
 ### QR Generation
 
-- [ ] T091 [P] 在 backend/src/services/qr_service.py 中实现 QR 码生成（qrcode + Pillow）
-- [ ] T092 [P] 配置云端 OSS（腾讯云COS/阿里云OSS）上传 QR 图片
+- [x] T091 [P] 在 backend/src/services/qr_service.py 中实现 QR 码生成（qrcode + Pillow）
+- [x] T092 [P] 配置云端 OSS（腾讯云COS/阿里云OSS）上传 QR 图片
 
 ### QR Endpoints
 
-- [ ] T093 实现 GET /api/qr/lookup?code={qr_code}（扫码查询，支持 MAT-/MCN-/PFC- 前缀识别）
-- [ ] T094 实现 GET /api/qr/material/{batch_id}（原料批次 QR）
-- [ ] T095 实现 GET /api/qr/machine/{machine_id}（机台 QR）
-- [ ] T096 实现 GET /api/qr/process-flow/{card_id}（工艺流转单 QR）
+- [x] T093 实现 GET /api/qr/lookup?code={qr_code}（扫码查询，支持 MAT-/MCN-/PFC- 前缀识别）
+- [x] T094 实现 GET /api/qr/material/{batch_id}（原料批次 QR）
+- [x] T095 实现 GET /api/qr/machine/{machine_id}（机台 QR）
+- [x] T096 实现 GET /api/qr/process-flow/{card_id}（工艺流转单 QR）
 
 ### Miniprogram Integration
 
-- [ ] T097 在 miniprogram/services/api.js 中封装后端 API 调用
-- [ ] T098 在 miniprogram/pages/scan/index.js 中实现微信扫码（wx.scanCode）
+- [x] T097 在 miniprogram/services/api.js 中封装后端 API 调用
+- [x] T098 在 miniprogram/pages/scan/index.js 中实现微信扫码（wx.scanCode）
 
 ---
 
@@ -356,17 +356,17 @@
 
 **Purpose**: 全局优化、文档、收尾
 
-- [ ] T099 [P] 创建 scripts/init_admin.py（初始化超级管理员脚本）
-- [ ] T100 [P] 配置前端 Element Plus 主题和国际化（中文）
-- [ ] T101 [P] 实现前端 API 统一错误处理（401 重定向、403 提示）
-- [ ] T102 实现前端报价管理页面（quotes/views/*.vue）
-- [ ] T103 实现前端生产计划页面（production/views/*.vue）
-- [ ] T104 实现前端看板页面（dashboard/views/*.vue）
-- [ ] T105 配置前端权限控制（根据 role_level 动态渲染按钮）
-- [ ] T106 软删除实现审计（FR-085：所有 DELETE 操作改为 is_deleted 标记）
-- [ ] T107 性能优化：数据库索引验证（确保关键查询走索引）
-- [ ] T108 安全加固：输入校验、SQL 注入防护、CORS 配置
-- [ ] T109 更新 .github/copilot-instructions.md（反映已实施的技术决策）
+- [x] T099 [P] 创建 scripts/init_admin.py（初始化超级管理员脚本）
+- [x] T100 [P] 配置前端 Element Plus 主题和国际化（中文）
+- [x] T101 [P] 实现前端 API 统一错误处理（401 重定向、403 提示）
+- [x] T102 实现前端报价管理页面（quotes/views/*.vue）
+- [x] T103 实现前端生产计划页面（production/views/*.vue）
+- [x] T104 实现前端看板页面（dashboard/views/*.vue）
+- [x] T105 配置前端权限控制（根据 role_level 动态渲染按钮）
+- [x] T106 软删除实现审计（FR-085：所有 DELETE 操作改为 is_deleted 标记）
+- [x] T107 性能优化：数据库索引验证（确保关键查询走索引）
+- [x] T108 安全加固：输入校验、SQL 注入防护、CORS 配置
+- [x] T109 更新 .github/copilot-instructions.md（反映已实施的技术决策）
 - [ ] T110 运行 quickstart.md 验证场景，确保端到端可工作
 
 ---
