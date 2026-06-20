@@ -7,7 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
-from src.core.config import settings
+from app.core.config import settings
 
 
 def sanitize_filename(filename: str) -> str:

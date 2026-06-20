@@ -5,8 +5,8 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.warehouse import BatchStatus, IQCResult, ScanOperation, ScanType
-from src.services.qr_service import generate_material_batch_qr_base64
+from app.models.warehouse import BatchStatus, IQCResult, ScanOperation, ScanType
+from app.services.qr_service import generate_material_batch_qr_base64
 
 
 class MaterialBatchBase(BaseModel):

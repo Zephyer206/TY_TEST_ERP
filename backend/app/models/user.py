@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
     pass
@@ -54,6 +54,7 @@ class Department(Base):
         "Department", back_populates="parent"
     )
     users: Mapped[list["User"]] = relationship("User", back_populates="department")
+    positions: Mapped[list["Position"]] = relationship("Position", back_populates="department")
 
 
 class Position(Base):

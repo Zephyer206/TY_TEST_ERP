@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.models.coating import CoatingRecipe, CoatingRecord
-from src.models.part import Part
+from app.models.coating import CoatingRecipe, CoatingRecord
+from app.models.part import Part
 
 
 def generate_recipe_no() -> str:
@@ -44,7 +44,7 @@ async def create_recipe(
     """Create a new coating recipe."""
     recipe_no = generate_recipe_no()
 
-    from src.models.coating import CoatingType, CoatingColor
+    from app.models.coating import CoatingType, CoatingColor
 
     # Convert string to enum
     coating_type_enum = CoatingType(coating_type)
@@ -96,7 +96,7 @@ async def get_recipes(
     query = select(CoatingRecipe)
 
     if coating_type:
-        from src.models.coating import CoatingType
+        from app.models.coating import CoatingType
         query = query.where(CoatingRecipe.coating_type == CoatingType(coating_type))
     if is_active is not None:
         query = query.where(CoatingRecipe.is_active == is_active)
@@ -128,7 +128,7 @@ async def update_recipe(
     is_active: Optional[bool] = None,
 ) -> CoatingRecipe:
     """Update a coating recipe."""
-    from src.models.coating import CoatingType, CoatingColor
+    from app.models.coating import CoatingType, CoatingColor
 
     if name is not None:
         recipe.name = name
@@ -264,7 +264,7 @@ async def _record_audit(
     details: str,
 ) -> None:
     """Record an audit event for coating operations."""
-    from src.models.audit import AuditLog
+    from app.models.audit import AuditLog
 
     audit = AuditLog(
         action=action,

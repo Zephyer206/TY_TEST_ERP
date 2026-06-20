@@ -7,12 +7,12 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (Boolean, DateTime, Enum, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
-    from src.models.customer import Customer
-    from src.models.part import Part
-    from src.models.user import User
+    from app.models.customer import Customer
+    from app.models.part import Part
+    from app.models.user import User
 
 
 class SamplingTaskState(str, PyEnum):
@@ -72,6 +72,11 @@ class SamplingTask(Base):
 
     # Urgent flag
     is_urgent: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Machine assignment (直接挂在打样任务上，不创建独立生产计划 - 澄清 2026-06-20 #4)
+    assigned_machine_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("machines.id"), nullable=True, index=True
+    )
 
     # Review
     review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)

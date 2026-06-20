@@ -44,7 +44,7 @@ Zephyr_test_ERP 是一套面向冲压制造企业的综合性企业资源管理�
 
 ## Constitution Check
 
-*GATE: 项目宪法文件（`.specify/memory/constitution.md`）目前为占位模板，无实质约束。*
+*GATE: 项目宪法已生效 v1.0.0（2026-06-20），包含8条核心原则。*
 
 | Gate | Status | Notes |
 |------|--------|-------|

@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.quality import ExemptionType, InspectionResult
+from app.models.quality import ExemptionType, InspectionResult
 
 
 class FirstPieceInspectionBase(BaseModel):

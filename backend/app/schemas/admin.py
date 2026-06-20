@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from src.models.admin import ContextSwitchType
+from app.models.admin import ContextSwitchType
 
 
 class SwitchContextRequest(BaseModel):

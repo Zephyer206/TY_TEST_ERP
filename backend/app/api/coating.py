@@ -5,17 +5,17 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.coating import CoatingRecipe, CoatingRecord
-from src.models.part import Part
-from src.schemas.coating import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.coating import CoatingRecipe, CoatingRecord
+from app.models.part import Part
+from app.schemas.coating import (
     CoatingRecipeCreate,
     CoatingRecipeResponse,
     CoatingRecipeUpdate,
     CoatingRecordCreate,
     CoatingRecordResponse,
 )
-from src.services import coating_service
+from app.services import coating_service
 
 router = APIRouter(prefix="/coating", tags=["Coating"])
 

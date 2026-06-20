@@ -8,7 +8,7 @@ from typing import Any, Callable, Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.audit import AuditAction, AuditLog
+from app.models.audit import AuditAction, AuditLog
 
 
 class EventBus:

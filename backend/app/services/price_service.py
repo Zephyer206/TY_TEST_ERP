@@ -8,13 +8,13 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models.price import (
+from app.models.price import (
     AnnualPriceRecord,
     PriceAccount,
     PriceAdjustment,
     PriceAdjustmentType,
 )
-from src.models.user import User
+from app.models.user import User
 
 
 def calculate_current_price(

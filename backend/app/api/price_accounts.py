@@ -9,10 +9,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.price import PriceAccount
-from src.models.user import User
-from src.schemas.price import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.price import PriceAccount
+from app.models.user import User
+from app.schemas.price import (
     AnnualPriceRecordCreate,
     AnnualPriceRecordResponse,
     CurrentPriceResponse,
@@ -23,7 +23,7 @@ from src.schemas.price import (
     PriceAdjustmentCreate,
     PriceAdjustmentResponse,
 )
-from src.services import price_service
+from app.services import price_service
 
 router = APIRouter(prefix="/price-accounts", tags=["Price Accounts"])
 

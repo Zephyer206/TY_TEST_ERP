@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.coating import CoatingColor, CoatingType
+from app.models.coating import CoatingColor, CoatingType
 
 
 class CoatingRecipeBase(BaseModel):

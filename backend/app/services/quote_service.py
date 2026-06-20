@@ -8,9 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.models.quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
-from src.models.user import User
-from src.schemas.quote import (
+from app.models.quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from app.models.user import User
+from app.schemas.quote import (
     BossApprovalUpdate,
     FixUpdate,
     PricingUpdate,
@@ -267,7 +267,7 @@ async def fix_quote(
     if data.final_price is not None:
         quote.final_price = data.final_price
 
-    from src.models.part import Part, PartState
+    from app.models.part import Part, PartState
 
     for item in quote.items:
         part_no = f"PT-{quote.id:06d}-{item.id:04d}"

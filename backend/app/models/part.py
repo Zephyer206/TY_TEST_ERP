@@ -8,14 +8,15 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, Numeric, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
-    from src.models.customer import Customer
-    from src.models.price import PriceAccount
-    from src.models.quote import Quote
-    from src.models.sampling import SamplingTask
-    from src.models.user import User
+    from app.models.customer import Customer
+    from app.models.price import PriceAccount
+    from app.models.production import ProductionPlan
+    from app.models.quote import Quote
+    from app.models.sampling import SamplingTask
+    from app.models.user import User
 
 
 class PartState(str, PyEnum):
@@ -48,6 +49,9 @@ class Part(Base):
     )
     sampling_tasks: Mapped[list["SamplingTask"]] = relationship(
         "SamplingTask", back_populates="part"
+    )
+    production_plans: Mapped[list["ProductionPlan"]] = relationship(
+        "ProductionPlan", back_populates="part"
     )
 
     # Quote that created this part

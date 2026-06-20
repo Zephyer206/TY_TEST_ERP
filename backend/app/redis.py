@@ -10,7 +10,7 @@ except ImportError:
     REDIS_AVAILABLE = False
     Redis = object  # type: ignore
 
-from src.core.config import settings
+from app.core.config import settings
 
 
 class RedisClient:

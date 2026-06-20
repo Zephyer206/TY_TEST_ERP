@@ -6,14 +6,14 @@ from typing import Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.machine import Machine
-from src.models.part import Part
-from src.models.production import (
+from app.models.machine import Machine
+from app.models.part import Part
+from app.models.production import (
     ProcessFlowCard,
     ProcessFlowStatus,
     ProductionSession,
 )
-from src.models.tooling import Tooling
+from app.models.tooling import Tooling
 
 
 def generate_card_no() -> str:
@@ -49,7 +49,7 @@ async def generate_process_flow_card(
     # Get material batch number if available
     material_batch_no = None
     if session.material_batch_id:
-        from src.models.warehouse import MaterialBatch
+        from app.models.warehouse import MaterialBatch
 
         batch_result = await db.execute(
             select(MaterialBatch).where(MaterialBatch.id == session.material_batch_id)
@@ -80,7 +80,7 @@ async def generate_process_flow_card(
     await db.flush()
 
     # Generate QR code for the card
-    from src.services.qr_service import generate_process_flow_qr
+    from app.services.qr_service import generate_process_flow_qr
     card.qr_code = generate_process_flow_qr(card.id, card.card_no)
 
     await db.commit()
@@ -147,7 +147,7 @@ async def scan_process_flow_card(
     operator_id: int | None = None,
 ) -> dict:
     """Scan a process flow card: get full info + QR image + scan history."""
-    from src.services.qr_service import generate_process_flow_qr, generate_qr_base64
+    from app.services.qr_service import generate_process_flow_qr, generate_qr_base64
 
     card = await get_process_flow_card(db, card_id)
     if not card:
@@ -157,7 +157,7 @@ async def scan_process_flow_card(
     qr_image_base64 = generate_qr_base64(qr_content)
 
     # Record scan log
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
     log = QRScanLog(
         scan_type="PFC",
         entity_id=card.id,
@@ -191,8 +191,8 @@ async def reverse_trace_card(
     card_id: int,
 ) -> dict:
     """Reverse trace: from card to session -> machine -> material batch -> supplier."""
-    from src.models.warehouse import MaterialBatch, QRScanLog
-    from src.services.session_service import get_session_by_id
+    from app.models.warehouse import MaterialBatch, QRScanLog
+    from app.services.session_service import get_session_by_id
 
     card = await get_process_flow_card(db, card_id)
     if not card:
@@ -237,7 +237,7 @@ async def confirm_inbound(
 
     Records the scan event and updates the card with inbound metadata.
     """
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
 
     card = await get_process_flow_card(db, card_id)
     if not card:

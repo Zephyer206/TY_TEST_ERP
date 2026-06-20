@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.price import PriceAdjustmentType
+from app.models.price import PriceAdjustmentType
 
 
 # --- Annual Price Record Schemas ---

@@ -7,10 +7,10 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.machine import Machine, MachineState
-from src.services import tooling_service
-from src.services import machine_service
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.machine import Machine, MachineState
+from app.services import tooling_service
+from app.services import machine_service
 
 router = APIRouter(prefix="/machines", tags=["Machines"])
 

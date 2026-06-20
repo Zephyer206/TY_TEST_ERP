@@ -7,14 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.part import Part, PartState
-from src.schemas.part import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.part import Part, PartState
+from app.schemas.part import (
     PartImportRow,
     PartResponse,
     PartUpdate,
 )
-from src.services import part_service
+from app.services import part_service
 
 router = APIRouter(prefix="/parts", tags=["Parts"])
 
@@ -229,9 +229,9 @@ async def import_parts_from_excel(
         if not any(row):
             continue
 
-        from src.core.file_service import migrate_drawing, get_drawing_path
-        from src.models.price import PriceAccount
-        from src.services.price_service import create_price_account, get_price_account_by_part_customer
+        from app.core.file_service import migrate_drawing, get_drawing_path
+        from app.models.price import PriceAccount
+        from app.services.price_service import create_price_account, get_price_account_by_part_customer
 
         material = _get_cell(row, column_map.get("material"))
         net_weight = _get_float(row, column_map.get("net_weight_kg"))

@@ -8,7 +8,7 @@ from sqlalchemy import DateTime, Enum, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
     pass

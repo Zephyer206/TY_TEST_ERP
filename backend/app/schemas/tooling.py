@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.tooling import ToolingState
+from app.models.tooling import ToolingState
 
 
 class ToolingBase(BaseModel):

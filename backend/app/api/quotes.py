@@ -7,10 +7,10 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.quote import NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
-from src.models.user import User
-from src.schemas.quote import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.quote import NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from app.models.user import User
+from app.schemas.quote import (
     BossApprovalUpdate,
     FixUpdate,
     NominationStatus,
@@ -24,7 +24,7 @@ from src.schemas.quote import (
     TechApprovalUpdate,
     TechReviewUpdate,
 )
-from src.services import quote_service
+from app.services import quote_service
 
 router = APIRouter(prefix="/quotes", tags=["Quotes"])
 

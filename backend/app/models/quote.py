@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (Boolean, DateTime, Enum, ForeignKey, Integer, JSON, Numeric, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
-    from src.models.customer import Customer
-    from src.models.user import User
+    from app.models.customer import Customer
+    from app.models.user import User
 
 
 class NominationStatus(str, PyEnum):

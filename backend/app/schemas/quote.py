@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.quote import FixPath, MoldFeeMode, NominationStatus, QuoteState
+from app.models.quote import FixPath, MoldFeeMode, NominationStatus, QuoteState
 
 
 # --- Surface Treatment Schemas ---

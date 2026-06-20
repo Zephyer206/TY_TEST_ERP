@@ -7,10 +7,10 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel
 from sqlalchemy import select
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.machine import Machine
-from src.models.production import ProductionPlan, PlanMachineAssignment, PlanStatus, ProcessFlowStatus
-from src.schemas.production import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.machine import Machine
+from app.models.production import ProductionPlan, PlanMachineAssignment, PlanStatus, ProcessFlowStatus
+from app.schemas.production import (
     MachineAssignmentResponse,
     MaterialMatchResult,
     PlanStatus,
@@ -26,7 +26,7 @@ from src.schemas.production import (
     SessionStartWithMaterialRequest,
     SessionStatus,
 )
-from src.services import production_service, process_flow_service, session_service
+from app.services import production_service, process_flow_service, session_service
 
 router = APIRouter(prefix="/production", tags=["Production"])
 
@@ -76,7 +76,7 @@ async def create_production_plan(
     require_role(current_user, min_level=3)
 
     # Verify part exists
-    from src.models.part import Part
+    from app.models.part import Part
 
     result = await db.execute(select(Part).where(Part.id == data.part_id))
     part = result.scalar_one_or_none()
@@ -444,7 +444,7 @@ async def list_process_flow_cards(
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[ProcessFlowCardResponse]:
     """List process flow cards."""
-    from src.models.production import ProcessFlowStatus
+    from app.models.production import ProcessFlowStatus
 
     cards = await process_flow_service.get_process_flow_cards(
         db,
@@ -650,7 +650,7 @@ async def confirm_pfc_inbound(
         raise HTTPException(status_code=400, detail=str(e))
 
     # Get updated scan history
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
     history_result = await db.execute(
         select(QRScanLog)
         .where(QRScanLog.scan_type == "PFC", QRScanLog.entity_id == card.id)
@@ -719,12 +719,12 @@ async def reprint_pfc_qr(
     if not card.qr_code:
         raise HTTPException(status_code=400, detail="Card has no QR code")
 
-    from src.services.qr_service import generate_process_flow_qr, generate_qr_base64
+    from app.services.qr_service import generate_process_flow_qr, generate_qr_base64
     qr_content = generate_process_flow_qr(card.id, card.card_no)
     qr_image_base64 = generate_qr_base64(qr_content)
 
     # Record reprint scan log
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
     log = QRScanLog(
         scan_type="PFC",
         entity_id=card.id,

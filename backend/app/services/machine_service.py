@@ -4,7 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
-from src.models.machine import Machine, MachineState
+from app.models.machine import Machine, MachineState
 
 
 async def get_machine_by_id(
@@ -28,7 +28,7 @@ async def get_machine_by_qr(
 
     QR format: MCN:{machine_id}:{timestamp}:{machine_no}
     """
-    from src.services.qr_service import parse_qr_content, QRCodePrefix
+    from app.services.qr_service import parse_qr_content, QRCodePrefix
 
     parsed = parse_qr_content(qr_content)
     if not parsed or parsed.get("prefix") != QRCodePrefix.MACHINE.value:
@@ -49,8 +49,8 @@ async def generate_machine_qr(
 
     Returns dict with machine info, qr_content, and qr_image_base64.
     """
-    from src.services.qr_service import generate_machine_qr as gen_qr_content
-    from src.services.qr_service import generate_qr_base64
+    from app.services.qr_service import generate_machine_qr as gen_qr_content
+    from app.services.qr_service import generate_qr_base64
 
     machine = await get_machine_by_id(db, machine_id)
     if not machine:
@@ -81,8 +81,8 @@ async def get_machine_scan_result(
 
     Also records the scan event in qr_scan_logs.
     """
-    from src.services.qr_service import generate_machine_qr
-    from src.services.qr_service import generate_qr_base64
+    from app.services.qr_service import generate_machine_qr
+    from app.services.qr_service import generate_qr_base64
 
     machine = await get_machine_by_id(db, machine_id)
     if not machine:
@@ -122,7 +122,7 @@ async def _record_scan_log(
     notes: str | None = None,
 ):
     """Record a QR scan event."""
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
 
     log = QRScanLog(
         scan_type="MCN",
@@ -142,7 +142,7 @@ async def _get_scan_history(
     limit: int = 10,
 ):
     """Get recent scan history for an entity."""
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
 
     result = await db.execute(
         select(QRScanLog)

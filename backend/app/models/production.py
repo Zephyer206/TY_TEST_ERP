@@ -7,23 +7,24 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
-    from src.models.machine import Machine
-    from src.models.part import Part
-    from src.models.tooling import Tooling
-    from src.models.user import User
+    from app.models.machine import Machine
+    from app.models.part import Part
+    from app.models.tooling import Tooling
+    from app.models.user import User
 
 
 class PlanStatus(str, PyEnum):
     """Production plan status."""
 
-    PLANNED = "planned"  # Created, not started
+    PLANNED = "planned"        # Created, not started
+    QUEUED = "queued"          # 机台已占用，等待当前计划完成后激活（澄清 2026-06-20 #13）
     IN_PROGRESS = "in_progress"  # Assigned and running
-    COMPLETED = "completed"  # All quantities produced
-    CANCELLED = "cancelled"  # Cancelled
-    CLOSED = "closed"  # Closed without completion
+    COMPLETED = "completed"    # 正常达标完成
+    CANCELLED = "cancelled"    # Cancelled
+    CLOSED = "closed"          # 组长强制提前关闭（未达目标）
 
 
 class SessionStatus(str, PyEnum):
@@ -184,6 +185,7 @@ class ProductionSession(Base):
     total_output: Mapped[int] = mapped_column(Integer, default=0)  # strokes × cavity_count
     good_qty: Mapped[int] = mapped_column(Integer, default=0)
     reject_qty: Mapped[int] = mapped_column(Integer, default=0)
+    work_hours: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # closed_at - started_at（澄清 #24）
 
     # Process flow
     process_flow_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

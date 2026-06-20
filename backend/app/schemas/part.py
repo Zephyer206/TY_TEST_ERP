@@ -6,7 +6,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.part import PartState
+from app.models.part import PartState
 
 
 class PartBase(BaseModel):

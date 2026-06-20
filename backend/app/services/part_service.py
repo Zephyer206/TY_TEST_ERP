@@ -6,7 +6,7 @@ from typing import Optional, Sequence
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.models.part import Part, PartState
+from app.models.part import Part, PartState
 
 
 async def get_part_by_id(

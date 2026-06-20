@@ -5,9 +5,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.part import Part
-from src.models.quality import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.part import Part
+from app.models.quality import (
     ExemptionType,
     FirstPieceInspection,
     InspectionResult,
@@ -15,7 +15,7 @@ from src.models.quality import (
     QAExemption,
     PatrolInspection,
 )
-from src.schemas.quality import (
+from app.schemas.quality import (
     FirstPieceInspectionCreate,
     FirstPieceInspectionResponse,
     OQCInspectionCreate,
@@ -26,7 +26,7 @@ from src.schemas.quality import (
     PatrolInspectionCreate,
     PatrolInspectionResponse,
 )
-from src.services import quality_service
+from app.services import quality_service
 
 router = APIRouter(prefix="/quality", tags=["Quality"])
 

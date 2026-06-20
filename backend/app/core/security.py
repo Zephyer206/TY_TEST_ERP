@@ -6,8 +6,8 @@ from typing import Any, Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 
-from src.core.config import settings
-from src.models.user import User, UserRole
+from app.core.config import settings
+from app.models.user import User, UserRole
 
 # Password hashing context using bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")

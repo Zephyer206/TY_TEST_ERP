@@ -8,7 +8,7 @@ from typing import Optional, Union
 
 from PIL import Image
 
-from src.config import settings
+from app.config import settings
 
 
 class QRCodePrefix(str, Enum):

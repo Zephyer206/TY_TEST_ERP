@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.production import PlanStatus, ProcessFlowStatus, SessionStatus
+from app.models.production import PlanStatus, ProcessFlowStatus, SessionStatus
 
 
 class ProductionPlanBase(BaseModel):

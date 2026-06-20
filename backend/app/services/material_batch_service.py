@@ -7,8 +7,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
-from src.models.production import ProductionSession
-from src.models.warehouse import (
+from app.models.production import ProductionSession
+from app.models.warehouse import (
     BatchStatus,
     BatchTransaction,
     IQCResult,
@@ -49,7 +49,7 @@ async def create_material_batch(
     po_no: Optional[str] = None,
 ) -> MaterialBatch:
     """Create a new material batch with auto QR code generation."""
-    from src.services.qr_service import generate_material_batch_qr
+    from app.services.qr_service import generate_material_batch_qr
 
     qr_uid = generate_qr_uid()
     batch_no = generate_batch_no()
@@ -190,7 +190,7 @@ async def split_batch(
     Each child is an independent MaterialBatch with parent_batch_id set.
     Every child gets its own unique QR code.
     """
-    from src.services.qr_service import generate_material_batch_qr
+    from app.services.qr_service import generate_material_batch_qr
 
     if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.PARTIAL):
         raise ValueError(f"Batch not splittable: {batch.status.value}")
@@ -501,7 +501,7 @@ async def create_scan_log(
     notes: Optional[str] = None,
 ):
     """Record a QR code scan event."""
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
 
     log = QRScanLog(
         scan_type=scan_type,
@@ -524,7 +524,7 @@ async def get_scan_logs_by_entity(
     limit: int = 50,
 ):
     """Get scan history for a specific entity."""
-    from src.models.warehouse import QRScanLog
+    from app.models.warehouse import QRScanLog
 
     result = await db.execute(
         select(QRScanLog)

@@ -5,8 +5,8 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.warehouse import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.warehouse import (
     BatchStatus,
     BatchTransaction,
     IQCResult,
@@ -18,7 +18,7 @@ from src.models.warehouse import (
     ScanType,
     Supplier,
 )
-from src.schemas.warehouse import (
+from app.schemas.warehouse import (
     BatchConsumeRequest,
     BatchScrapRequest,
     BatchSplitRequest,
@@ -38,7 +38,7 @@ from src.schemas.warehouse import (
     SupplierCreate,
     SupplierResponse,
 )
-from src.services import material_batch_service
+from app.services import material_batch_service
 
 router = APIRouter(prefix="/warehouse", tags=["Warehouse"])
 
@@ -810,7 +810,7 @@ async def reprint_material_batch_qr(
     if not batch.qr_code:
         raise HTTPException(status_code=400, detail="Batch has no QR code")
 
-    from src.services.qr_service import generate_qr_base64
+    from app.services.qr_service import generate_qr_base64
     qr_image_base64 = generate_qr_base64(batch.qr_code)
 
     # Record reprint scan log

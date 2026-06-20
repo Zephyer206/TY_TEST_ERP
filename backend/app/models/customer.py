@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Numeric, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
     pass

@@ -1,1 +1,0 @@
-"""Cloud-Stamping ERP Application."""

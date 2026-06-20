@@ -8,12 +8,12 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, Numeric, String, Text, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
-    from src.models.customer import Customer
-    from src.models.part import Part
-    from src.models.user import User
+    from app.models.customer import Customer
+    from app.models.part import Part
+    from app.models.user import User
 
 
 class PriceAdjustmentType(str, PyEnum):

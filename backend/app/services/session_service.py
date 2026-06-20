@@ -7,14 +7,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload, joinedload
 
-from src.models.machine import Machine, MachineState
-from src.models.part import Part
-from src.models.production import (
+from app.models.machine import Machine, MachineState
+from app.models.part import Part
+from app.models.production import (
     ProductionReport,
     ProductionSession,
     SessionStatus,
 )
-from src.models.tooling import Tooling
+from app.models.tooling import Tooling
 
 
 def generate_session_no() -> str:
@@ -30,57 +30,58 @@ async def verify_material_tooling_match(
     part_id: int,
     material_batch_id: Optional[int] = None,
 ) -> dict:
-    """Verify if material matches the tooling on the machine for the part.
+    """Verify material matches tooling on machine for the part.
 
-    Returns:
-        dict with is_match, message, tooling_id, etc.
+    严格校验四字段：material_type + thickness + width + cavity_count（澄清 2026-06-20 #3）
+    Returns dict with is_match, message, mismatches list.
     """
-    from src.models.warehouse import MaterialBatch
+    from app.models.warehouse import MaterialBatch
 
-    result = {
-        "is_match": True,
-        "message": "Material matches tooling",
-        "tooling_id": None,
-        "tooling_no": None,
-        "expected_material": None,
-        "actual_material": None,
-    }
+    result: dict = {"is_match": True, "message": "OK", "tooling_id": None, "mismatches": []}
 
-    # Get machine and tooling
-    machine_result = await db.execute(
-        select(Machine).where(Machine.id == machine_id)
-    )
+    machine_result = await db.execute(select(Machine).where(Machine.id == machine_id))
     machine = machine_result.scalar_one_or_none()
     if not machine:
-        result["is_match"] = False
-        result["message"] = "Machine not found"
-        return result
-
+        return {**result, "is_match": False, "message": "机台不存在"}
     if not machine.current_tooling_id:
-        result["is_match"] = False
-        result["message"] = "Machine has no tooling mounted"
-        return result
+        return {**result, "is_match": False, "message": "机台未上模"}
 
-    tooling_result = await db.execute(
-        select(Tooling).where(Tooling.id == machine.current_tooling_id)
-    )
+    tooling_result = await db.execute(select(Tooling).where(Tooling.id == machine.current_tooling_id))
     tooling = tooling_result.scalar_one_or_none()
     if not tooling:
-        result["is_match"] = False
-        result["message"] = "Tooling not found"
+        return {**result, "is_match": False, "message": "模具不存在"}
+    result["tooling_id"] = tooling.id
+
+    if not material_batch_id:
         return result
 
-    result["tooling_id"] = tooling.id
-    result["tooling_no"] = tooling.tooling_no
+    part_result = await db.execute(select(Part).where(Part.id == part_id))
+    part = part_result.scalar_one_or_none()
 
-    # Check material if provided
-    if material_batch_id:
-        batch_result = await db.execute(
-            select(MaterialBatch).where(MaterialBatch.id == material_batch_id)
-        )
-        batch = batch_result.scalar_one_or_none()
-        if batch:
-            result["actual_material"] = batch.material_grade
+    batch_result = await db.execute(select(MaterialBatch).where(MaterialBatch.id == material_batch_id))
+    batch = batch_result.scalar_one_or_none()
+    if not batch:
+        return {**result, "is_match": False, "message": "原料批次不存在"}
+
+    mismatches = []
+    if part:
+        # 材质
+        if part.material and batch.material_name and part.material != batch.material_name:
+            mismatches.append(f"材质不符：期望 {part.material}，实际 {batch.material_name}")
+        # 厚度
+        if part.thickness and batch.thickness and abs(part.thickness - batch.thickness) > 0.01:
+            mismatches.append(f"厚度不符：期望 {part.thickness}mm，实际 {batch.thickness}mm")
+        # 宽度
+        if part.width and batch.width and abs(part.width - batch.width) > 0.5:
+            mismatches.append(f"宽度不符：期望 {part.width}mm，实际 {batch.width}mm")
+        # 穴数
+        if part.cavity_count and tooling.cavity_count and part.cavity_count != tooling.cavity_count:
+            mismatches.append(f"穴数不符：期望 {part.cavity_count}，模具 {tooling.cavity_count}")
+
+    if mismatches:
+        result["is_match"] = False
+        result["message"] = "；".join(mismatches)
+        result["mismatches"] = mismatches
 
     return result
 
@@ -99,8 +100,8 @@ async def start_session(
     Args:
         force_start: If True, skip material matching verification
     """
-    from src.models.production import PlanMachineAssignment, ProductionPlan
-    from src.models.warehouse import MaterialBatch
+    from app.models.production import PlanMachineAssignment, ProductionPlan
+    from app.models.warehouse import MaterialBatch
 
     # Verify machine
     machine_result = await db.execute(
@@ -210,7 +211,16 @@ async def submit_report(
     """Submit a production report within a session.
 
     Output = strokes × cavity_count
+    行锁防止并发丢失（澄清 2026-06-20 #22）
     """
+    # Lock the session row for the duration of this transaction
+    locked = await db.execute(
+        select(ProductionSession)
+        .where(ProductionSession.id == session.id)
+        .with_for_update()
+    )
+    session = locked.scalar_one()
+
     if session.status != SessionStatus.ACTIVE:
         raise ValueError(f"Session not active: {session.status.value}")
 
@@ -250,16 +260,17 @@ async def close_session(
 
     session.status = SessionStatus.CLOSED
     session.closed_at = datetime.utcnow()
+    session.work_hours = (session.closed_at - session.started_at).total_seconds() / 3600
 
     # Generate process flow card
-    from src.services.process_flow_service import generate_process_flow_card
+    from app.services.process_flow_service import generate_process_flow_card
 
     flow_card = await generate_process_flow_card(db, session)
     session.process_flow_id = flow_card.id
 
     # Update plan completed quantity
     if session.plan_id:
-        from src.services.production_service import update_plan_completed_qty, get_plan_by_id
+        from app.services.production_service import update_plan_completed_qty, get_plan_by_id
 
         plan = await get_plan_by_id(db, session.plan_id)
         if plan:

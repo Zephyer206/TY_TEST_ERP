@@ -15,8 +15,8 @@ User ─────┬──── Department
 Part ─────┬─── PartCustomerAlias
           ├── Tooling (模具)
           ├── ToolingPart (模具-零件关联)
-          ├── MaterialBatch (原料批次)
-          │       └── MaterialBatchChild (子卷)
+          ├── MaterialBatch (原料批次，单表自引用)
+          │       └── MaterialBatch.parent_batch_id → MaterialBatch (子卷)
           └── ProductionPlan ─── ProductionReport (报工)
 
 Part ───────── ProductionPlan

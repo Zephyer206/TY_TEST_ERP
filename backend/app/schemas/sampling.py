@@ -5,7 +5,7 @@ from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from src.models.sampling import SamplingTaskState
+from app.models.sampling import SamplingTaskState
 
 
 class SamplingTaskBase(BaseModel):
@@ -31,6 +31,7 @@ class SamplingTaskUpdate(BaseModel):
     sample_qty: Optional[int] = Field(default=None, ge=1)
     planned_completion_date: Optional[datetime] = None
     is_urgent: Optional[bool] = None
+    assigned_machine_id: Optional[int] = None
 
 
 class SamplingTaskReview(BaseModel):
@@ -69,6 +70,7 @@ class SamplingTaskResponse(SamplingTaskBase):
     approved_by: Optional[int] = None
     approver_name: Optional[str] = None
     approved_at: Optional[datetime] = None
+    assigned_machine_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 

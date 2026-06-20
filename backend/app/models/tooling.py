@@ -7,10 +7,10 @@ from typing import TYPE_CHECKING, Optional
 from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from src.database import Base
+from app.database import Base
 
 if TYPE_CHECKING:
-    from src.models.machine import Machine
+    from app.models.machine import Machine
 
 
 class ToolingState(str, PyEnum):
@@ -90,10 +90,10 @@ class Tooling(Base):
 
     # Parent-child relationship (for die-sets)
     parent_id: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, index=True
+        ForeignKey("tooling_molds.id"), nullable=True, index=True
     )
     parent: Mapped[Optional["Tooling"]] = relationship(
-        "Tooling", remote_side="Tooling.id", back_populates="children"
+        "Tooling", remote_side=[id], back_populates="children"
     )
     children: Mapped[list["Tooling"]] = relationship(
         "Tooling", back_populates="parent"

@@ -5,9 +5,9 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import select
 
-from src.api.deps import CurrentUser, DbSession
-from src.models.admin import AdminContextSwitch
-from src.schemas.admin import (
+from app.api.deps import CurrentUser, DbSession
+from app.models.admin import AdminContextSwitch
+from app.schemas.admin import (
     AdminContextInfo,
     ContextSwitchRecordResponse,
     DeptRoleMapping,
@@ -16,7 +16,7 @@ from src.schemas.admin import (
     SwitchContextRequest,
     SwitchContextResponse,
 )
-from src.services import admin_service
+from app.services import admin_service
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -133,7 +133,7 @@ async def list_departments() -> list[DeptRoleMapping]:
 
     Returns all departments that can be switched to with their role levels.
     """
-    from src.schemas.admin import DEPT_ROLE_MAPPINGS
+    from app.schemas.admin import DEPT_ROLE_MAPPINGS
 
     return [
         DeptRoleMapping(department=dept, **mapping)

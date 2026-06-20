@@ -8,9 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from src.api.deps import CurrentUser, DbSession, require_role
-from src.models.sampling import SamplingTask, SamplingTaskState
-from src.schemas.sampling import (
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.sampling import SamplingTask, SamplingTaskState
+from app.schemas.sampling import (
     SamplingKanbanResponse,
     SamplingTaskApprove,
     SamplingTaskCancel,
@@ -20,7 +20,7 @@ from src.schemas.sampling import (
     SamplingTaskReview,
     SamplingTaskUpdate,
 )
-from src.services import sampling_service
+from app.services import sampling_service
 
 router = APIRouter(prefix="/sampling-tasks", tags=["Sampling Tasks"])
 
@@ -64,7 +64,7 @@ async def create_sampling_task(
     """
     require_role(current_user, min_level=5)
 
-    from src.models.part import Part, PartState
+    from app.models.part import Part, PartState
 
     result = await db.execute(select(Part).where(Part.id == data.part_id))
     part = result.scalar_one_or_none()
@@ -238,8 +238,9 @@ async def submit_review(
     """Submit review result (passed/failed).
 
     On pass: part transitions from SAMPLING to MASSPRODUCTION.
+    业务经理（role_level >= 5）才能最终批准评审结果（澄清 2026-06-20 #2）。
     """
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=5)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:

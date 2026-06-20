@@ -9,17 +9,17 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.core.config import settings
-from src.core.events import EventBus, audit_event
-from src.database import close_db, engine, init_db
-from src.redis import redis_client
+from app.core.config import settings
+from app.core.events import EventBus, audit_event
+from app.database import close_db, engine, init_db
+from app.redis import redis_client
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup/shutdown."""
     # Startup
-    await init_db()
+    # await init_db()  # 表已存在，跳过创建
     await redis_client.connect()
     yield
     # Shutdown
@@ -96,20 +96,20 @@ async def health_check() -> dict[str, Any]:
 
 
 # Include routers
-from src.api.admin import router as admin_router
-from src.api.auth import router as auth_router
-from src.api.coating import router as coating_router
-from src.api.machines import router as machines_router
-from src.api.packaging import router as packaging_router
-from src.api.parts import router as parts_router
-from src.api.price_accounts import router as price_accounts_router
-from src.api.production import router as production_router
-from src.api.quality import router as quality_router
-from src.api.qr import router as qr_router
-from src.api.quotes import router as quotes_router
-from src.api.sampling_tasks import router as sampling_tasks_router
-from src.api.toolings import router as toolings_router
-from src.api.warehouse import router as warehouse_router
+from app.api.admin import router as admin_router
+from app.api.auth import router as auth_router
+from app.api.coating import router as coating_router
+from app.api.machines import router as machines_router
+from app.api.packaging import router as packaging_router
+from app.api.parts import router as parts_router
+from app.api.price_accounts import router as price_accounts_router
+from app.api.production import router as production_router
+from app.api.quality import router as quality_router
+from app.api.qr import router as qr_router
+from app.api.quotes import router as quotes_router
+from app.api.sampling_tasks import router as sampling_tasks_router
+from app.api.toolings import router as toolings_router
+from app.api.warehouse import router as warehouse_router
 
 app.include_router(admin_router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import AsyncAdaptedQueuePool
 
-from src.core.config import settings
+from app.core.config import settings
 
 # Async engine for PostgreSQL with asyncpg
 engine = create_async_engine(

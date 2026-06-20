@@ -1,10 +1,10 @@
-# 云冲压 ERP 开发准则
+# 云冲压 ERP 开发准则（新架构）
 
 ## 0. AI 助手行为准则
 
 1. **强制中文交流**：所有对话、代码注释、Git 提交记录必须使用中文。
 2. **行动前汇报**：运行命令前，必须先解释：运行什么？为什么？
-3. **代码修改必须重启服务器**：修改 `.py` 或 `api_config.js` 后必须完整重启（`reload=True` 不可靠）。
+3. **代码修改必须重启服务器**：修改 `.py` 后需完整重启（`reload=True` 不可靠）。
 4. **全局视野检索**：修改函数前，必须检索全部被调用方，确认无断链风险。
 5. **禁止频繁杀进程**：只在死锁时允许手动重启。
 6. **禁止修改端口号**：服务端口必须保持 `8000`。
@@ -15,17 +15,42 @@
 
 | 组件 | 技术 | 规范 |
 |------|------|------|
-| 后端 | FastAPI + psycopg2 | 原生SQL，禁止ORM |
-| 数据库 | PostgreSQL | RealDictCursor，`psycopg2.connect(**DB_CONFIG)` |
-| 前端 | Jinja2 + 原生JS | 禁止Vue/React |
+| 后端 | FastAPI + SQLAlchemy async | ORM 模型，禁止裸拼 SQL |
+| 数据库驱动 | asyncpg + PostgreSQL | `create_async_engine`，`AsyncSession` |
+| Schema 验证 | Pydantic v2 | 所有入参/出参必须有 Schema |
+| 认证 | JWT Bearer Token | `core/security.py` + `api/deps.py` |
+| 权限 | `@require_role(min_level)` | `core/permissions.py`，禁止路由内硬编码 |
 | 迁移 | Alembic | 版本在 `alembic/versions/` |
-| 认证 | Session Cookie | `get_current_user(request)` |
+| 前端 | Vue 3 + Element Plus | `frontend/src/`，禁止 Jinja2 新页面 |
 
 ---
 
-## 2. 角色权限（RBAC）
+## 2. 目录结构
 
-### 2.1 主角色
+```
+backend/app/
+  api/          路由（每模块独立 router）
+  models/       SQLAlchemy ORM 模型
+  schemas/      Pydantic Schema（入参/出参）
+  services/     业务逻辑（无 DB session，由 API 层注入）
+  core/         auth, security, permissions, events
+  state_machines/ 状态机
+  database.py   async engine + get_db 依赖
+  main.py       路由注册
+frontend/src/
+  views/        Vue 页面
+  api/          axios 封装
+  stores/       Pinia
+  router/       Vue Router
+main.py         项目入口（sys.path 指向 backend/）
+.env            敏感配置（禁止提交 git）
+```
+
+---
+
+## 3. 角色权限（RBAC）
+
+### 3.1 主角色
 
 | role_level | 角色 | 所属部门 | 核心职责 |
 | --- | --- | --- | --- |
@@ -37,26 +62,17 @@
 | 9 | 老板 | - | 最终审批 |
 | 10 | 超级管理员 | admin | 视角切换 |
 
-### 2.2 补充角色（role_level同上级）
-
-| 角色 | 部门 | 职责 |
-|------|------|------|
-| 发货员 | 全检部 | 发货扫码、物流协调 |
-| 仓库主管 | 原料仓库 | 原材料管理、IQC |
-| 质检主管 | 品管部 | 巡检、OQC |
-| 包装主管 | 全检部 | 包装工艺、发货流程 |
-| 喷涂主管 | 喷涂部 | 喷涂配方、报工 |
-
-### 2.3 关键规则
+### 3.2 关键规则
 
 - 用户表字段：`users.dept`（不是 `department`），`users.is_tech`
 - admin 切换业务视角时，必须隐藏所有 role_level >= 9 按钮
+- 权限检查统一通过 `@require_role`，不得在路由内写 `if current_user.role_level >= X`
 
 ---
 
-## 3. 核心表架构
+## 4. 核心表架构
 
-### 3.1 表职责分离
+### 4.1 表职责分离
 
 | 表名 | 职责 | 禁止存入 |
 |------|------|----------|
@@ -64,31 +80,15 @@
 | `parts` | 零件主档，定点后填充模具基础信息 | T/W/P、cavities、吨位 |
 | `tooling_molds` | 模具台账 | 价格、客户信息 |
 
-### 3.2 数据流向
+### 4.2 核心字段
 
-```
-Quotes (预报价，无模具信息)
-    │
-    ├─ APPROVED + 定点确认
-    │       │
-    │       ├─→ Parts（模具编号/PPAP/车型等）
-    │       │
-    │       └─→ tooling_molds
-```
+**quotes**：`part_id`, `quote_serial`, `approval_status`, `customer_id`, `customer_product_no`, `vehicle_model`, `thickness`, `width`, `press_stroke`, `cavity_count`, `mold_cost`, `mold_discount_mode`, `mold_discount_rate`, `stamping_fee`, `surface_fee`, `treatment_items` (JSONB), `profit_margin`, `gross_weight`, `material_net_cost`, `snapshot_mat_name`, `snapshot_mat_price`, `final_price`, `price_snapshot` (JSONB), `nomination_status`
 
-### 3.3 关键表字段
+**parts**：`part_number`, `internal_name`, `status`, `customer_id`, `mold_number`, `mold_type`, `press_tonnage`, `ppap_no`, `customer_product_no`, `vehicle_model`, `nomination_status`, `price_snapshot`
 
-**quotes 表核心字段**：`part_id`, `quote_serial`, `approval_status`, `customer_id`, `customer_product_no`, `vehicle_model`, `thickness`, `width`, `press_stroke`, `cavity_count`, `mold_cost`, `mold_discount_mode`, `mold_discount_rate`, `stamping_fee`, `surface_fee`, `treatment_items` (JSONB), `profit_margin`, `gross_weight`, `material_net_cost`, `snapshot_mat_name`, `snapshot_mat_price`, `final_price`, `price_snapshot` (JSONB), `nomination_status`
+### 4.3 定点确认写入规则
 
-**parts 表核心字段**：`part_number`, `internal_name`, `status`, `customer_id`, `mold_number`, `mold_type`, `press_tonnage`, `ppap_no`, `customer_product_no`, `vehicle_model`, `nomination_status`, `price_snapshot`
-
-**tooling_molds 表核心字段**：`mold_number`, `customer_id`, `customer_product_no`, `mold_type`, `cavity_count`, `press_tonnage`, `ppap_no`, `vehicle_model`, `mold_status`, `cavity_status`
-
-**treatment_dicts 表**：`name`, `calc_mode` (`manual`/`net_weight`), `rate`, `unit`, `is_active`
-
-### 3.4 定点确认写入规则
-
-`confirm_nomination()` 同步写入 parts：
+`confirm_nomination()` 必须在同一事务内同步写入 `parts`：
 
 | quotes → | parts |
 |----------|-------|
@@ -100,7 +100,7 @@ Quotes (预报价，无模具信息)
 | `ppap_no` | `ppap_no` |
 | `price_snapshot` | `price_snapshot` |
 
-### 3.5 毛重核算公式
+### 4.4 毛重核算公式
 
 ```
 GrossWeight = (T × W × P × Density × cavities) / 1_000_000
@@ -109,9 +109,9 @@ Cost = (GrossWeight - ScrapWeight) × material_price - ScrapWeight × scrap_pric
 
 ---
 
-## 4. 状态机
+## 5. 状态机
 
-### 4.1 quotes.approval_status（7态）
+### 5.1 quotes.approval_status（7态）
 
 ```
 WAITING_FOR_TECH → TECH_APPROVED ──┐
@@ -121,187 +121,117 @@ WAITING_FOR_TECH → TECH_APPROVED ──┐
                                                    → REJECTED
 ```
 
-| 状态 | 说明 |
-|------|------|
-| `WAITING_FOR_TECH` | 等待技术部填写T/W/P |
-| `TECH_APPROVED` | 技术审核通过 |
-| `TECH_REJECTED` | 技术部驳回 |
-| `DRAFT` | 业务填写价格 |
-| `PENDING_BOSS` | 待老板审批 |
-| `APPROVED` | 老板审批通过 |
-| `REJECTED` | 老板驳回 |
+状态变更必须通过 `state_machines/quote_states.py`，禁止直接 UPDATE。
 
-### 4.2 其他状态
+### 5.2 其他状态
 
 | 表 | 状态 |
 |----|------|
 | `parts.status` | `DRAFT → SAMPLING → MASS_PRODUCTION → OBSOLETE` |
-| `machines.status` | `idle / running / fault / pending_check / repairing / offline` |
+| `machines.state` | `idle / running / fault / pending_check / repairing / offline` |
 | `production_plans.status` | `planned → in_progress → completed / cancelled / closed` |
 
 ---
 
-## 5. 数据库操作规范
+## 6. 数据库操作规范
 
-### 5.1 字典安全取值（红线）
+### 6.1 Session 注入（标准写法）
+
+```python
+# API 层
+@router.post("/quotes")
+async def create_quote(body: QuoteCreate, db: AsyncSession = Depends(get_db)):
+    return await quote_service.create(db, body)
+
+# Service 层（接收注入的 session，不自行创建）
+async def create(db: AsyncSession, body: QuoteCreate) -> Quote:
+    quote = Quote(**body.model_dump())
+    db.add(quote)
+    await db.flush()
+    return quote
+```
+
+### 6.2 事务规范
+
+`get_db` 依赖已自动 commit/rollback，service 层只需 `await db.flush()` 获取自增ID。
+多表写入需显式使用 `async with db.begin()` 或确保在同一 session 内。
+
+### 6.3 算力下推（红线）
+
+统计聚合（吨位分组、报废率、逾期判定）**必须在 SQL 中完成**，禁止 Python 循环累加。
 
 ```python
 # ✅ 正确
-row = cur.fetchone()
-tonnage = str(row.get('tonnage') or '未知')
+result = await db.execute(
+    select(func.sum(Part.annual_avg)).where(Part.customer_id == cid)
+)
 
-# ❌ 禁止（RealDictCursor返回dict，无属性访问）
-row.press_tonnage  # AttributeError
+# ❌ 禁止
+parts = await db.execute(select(Part))
+total = sum(p.annual_avg for p in parts.scalars())
 ```
 
-### 5.2 事务规范
+### 6.4 软删除（FR-085，红线）
 
-```python
-try:
-    cur.execute("INSERT ...")
-    conn.commit()
-except Exception:
-    conn.rollback()
-    raise
-finally:
-    conn.close()
-```
-
-### 5.3 算力下推（红线）
-
-统计聚合（吨位分组、报废率、逾期判定）**必须在SQL中完成**，禁止Python循环累加。
-
-### 5.4 两张机台表
-
-| 表名 | 用途 |
-|------|------|
-| `machines` | 生产机台（冲床） |
-| `equipments` | 工装设备 |
+所有 DELETE 改为 `is_deleted = true`，查询默认加 `.where(Model.is_deleted == false())`。
 
 ---
 
-## 6. 图纸文件存储
+## 7. API 规范
 
-### 6.1 路径结构
-
-```
-static/uploads/drawings/
-    └── _unassigned/{part_id}/drawings/      ← 临时
-    └── {客户名}/{零件名称}/{零件号}/drawings/ ← 标准
-```
-
-### 6.2 路径生成函数
-
-- 有客户 → 标准路径
-- 无客户 → `_unassigned/{part_id}/drawings`
-- 必须使用 `_get_drawing_subdir()` 或 `_get_drawing_subdir_by_quote()`
-
-### 6.3 客户分配迁移
-
-更新 `quotes.customer_id` 从 null → 有值时，必须触发 `migrate_drawings_for_quote(quote_id)`
-
----
-
-## 7. 模板序列化规范
-
-传入模板的 `datetime`/`Decimal` 必须预序列化：
-
-```python
-import datetime as _dt
-import decimal as _dec
-
-def _serialize_rows(rows):
-    result = []
-    for row in rows:
-        d = dict(row)
-        for k, v in d.items():
-            if isinstance(v, (_dt.datetime, _dt.date, _dt.time)):
-                d[k] = v.isoformat()
-            elif isinstance(v, _dec.Decimal):
-                d[k] = float(v)
-        result.append(d)
-    return result
-```
-
-- 必须用 `isinstance`，禁止用 `hasattr`
-
----
-
-## 8. API 规范
-
-- 所有前端请求通过 `api_config.js` 的 `sendApiRequest()` 分发
-- fetch 必须有 `try...catch...finally`
-- 新增路由必须同步写入 `API_MAP`
-
-### 8.1 API 前缀
+### 7.1 路由前缀
 
 | 前缀 | 模块 |
 |------|------|
-| `sales.*` | 业务部 |
-| `tech.*` | 技术部 |
-| `prod.*` | 生产部 |
-| `pkg.*` | 包装发货 |
-| `mold.*` / `die.*` | 模具管理 |
-| `qc.*` / `qa.*` | 质检 |
-| `spray.*` | 喷涂 |
-| `whse.*` | 仓库 |
-| `admin.*` | 管理员 |
+| `/api/v1/quotes` | 报价 |
+| `/api/v1/parts` | 零件 |
+| `/api/v1/production` | 生产 |
+| `/api/v1/warehouse` | 仓库/原材料 |
+| `/api/v1/quality` | 质检 |
+| `/api/v1/toolings` | 模具 |
+| `/api/v1/packaging` | 包装 |
+| `/api/v1/coating` | 喷涂 |
+| `/api/v1/qr` | 二维码 |
+| `/api/v1/admin` | 管理员 |
+| `/api/v1/auth` | 认证 |
+
+### 7.2 响应格式
+
+所有端点返回 Pydantic Schema，禁止直接返回 ORM 对象或裸 dict。
 
 ---
 
-## 9. 目录结构
+## 8. 图纸文件存储
 
 ```
-app/api/          路由（APIRouter模块化）
-app/services/     业务逻辑（db_service.py核心）
-app/models/       Pydantic Schema
-templates/        Jinja2模板
-static/js/        前端JS（api_config.js核心）
-alembic/versions/ 数据库迁移
+static/uploads/drawings/
+    _unassigned/{part_id}/drawings/          ← 无客户时临时
+    {客户名}/{零件名称}/{零件号}/drawings/    ← 标准路径
+```
+
+更新 `quotes.customer_id` 从 null → 有值时，必须触发图纸迁移逻辑。
+
+---
+
+## 9. 环境变量
+
+```bash
+# .env（禁止提交 git）
+DATABASE_URL=postgresql+asyncpg://postgres:密码@host:5432/stamping_system
+SECRET_KEY=...
+DEBUG=true
+REDIS_URL=redis://localhost:6379/0
 ```
 
 ---
 
 ## 10. 自检清单
 
-1. 前端JS是否所有Promise都有 `catch` 和 `finally`？
-2. psycopg2结果是否全部用 `.get()` 取值？
-3. 定点写入是否同步写入parts模具字段？
-4. 统计聚合是否用SQL `GROUP BY`？
-5. 多表写入是否包含 `commit()`/`rollback()`？
-6. datetime/Decimal是否已用 `isinstance` 预序列化？
-7. quotes状态是否在7态链内？
-8. 新增路由是否同步写入 `API_MAP`？
-9. 上传图纸是否使用统一路径函数？
-10. 更新 `customer_id` 是否触发 `migrate_drawings_for_quote`？
-
----
-
-## 11. 环境变量规范
-
-数据库密码等敏感信息**禁止硬编码**，必须通过环境变量读取。
-
-### 11.1 本地开发 `.env` 文件
-
-```bash
-DATABASE_URL=postgresql://postgres:密码@localhost:5432/zephyr_erp
-```
-
-位置：`backend/.env`（已在 `.gitignore` 中）
-
-### 11.2 alembic.ini 连接
-
-alembic.ini 中使用环境变量占位：
-
-```ini
-sqlalchemy.url = postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:${DB_PORT}/${DB_NAME}
-```
-
-### 11.3 本地验证脚本
-
-运行数据库脚本时通过环境变量传参：
-
-```bash
-$env:PGPASSWORD="thehaoshi5DE"
-psql -h localhost -p 5432 -U postgres -d zephyr_erp -c "SELECT 1;"
-```
+1. 统计聚合是否用 SQL？
+2. 定点写入是否同步写入 parts 模具字段？
+3. quotes 状态是否在 7 态链内？
+4. 权限检查是否通过 `@require_role`？
+5. 多表写入是否在同一事务内？
+6. 所有 DELETE 是否改为软删除？
+7. 新路由是否注册到 `backend/app/main.py`？
+8. 敏感信息是否通过 `.env` 注入？

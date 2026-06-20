@@ -12,7 +12,7 @@
 
 **Total tasks**: 111
 
-- [x] T001 创建项目目录结构：backend/src/、frontend/、miniprogram/、mobile-h5/
+- [x] T001 创建项目目录结构：backend/app/、frontend/、miniprogram/、mobile-h5/
 - [x] T002 初始化 Python 后端项目：requirements.txt、.env.example
 - [x] T003 初始化 Vue 3 前端项目：package.json、vite.config.ts
 - [x] T004 创建 Docker 配置：Dockerfile、docker-compose.yml
@@ -28,34 +28,34 @@
 
 ### 2.1 Database & Config
 
-- [x] T006 在 backend/src/database.py 中配置 PostgreSQL + asyncpg 连接池
-- [x] T007 在 backend/src/config.py 中实现环境变量配置管理（Pydantic Settings）
-- [x] T008 配置 Redis 连接（backend/src/redis.py）用于会话存储
+- [x] T006 在 backend/app/database.py 中配置 PostgreSQL + asyncpg 连接池
+- [x] T007 在 backend/app/config.py 中实现环境变量配置管理（Pydantic Settings）
+- [x] T008 配置 Redis 连接（backend/app/redis.py）用于会话存储
 
 ### 2.2 Core Models (All User Stories Depend On)
 
-- [x] T009 [P] 创建 backend/src/models/user.py：User + Department 模型
-- [x] T010 [P] 创建 backend/src/models/customer.py：Customer 模型
-- [x] T011 [P] 创建 backend/src/models/audit.py：AuditLog 模型
+- [x] T009 [P] 创建 backend/app/models/user.py：User + Department 模型
+- [x] T010 [P] 创建 backend/app/models/customer.py：Customer 模型
+- [x] T011 [P] 创建 backend/app/models/audit.py：AuditLog 模型
 
 ### 2.3 Authentication & Security
 
-- [x] T012 在 backend/src/core/security.py 中实现 JWT token 生成与验证
-- [x] T013 在 backend/src/core/security.py 中实现密码哈希（bcrypt）
-- [x] T014 在 backend/src/api/deps.py 中实现当前用户依赖注入（get_current_user）
-- [x] T015 在 backend/src/core/permissions.py 中实现角色权限装饰器（@require_role）
-- [x] T016 创建 backend/src/api/auth.py：POST /api/auth/login、GET /api/auth/me
+- [x] T012 在 backend/app/core/security.py 中实现 JWT token 生成与验证
+- [x] T013 在 backend/app/core/security.py 中实现密码哈希（bcrypt）
+- [x] T014 在 backend/app/api/deps.py 中实现当前用户依赖注入（get_current_user）
+- [x] T015 在 backend/app/core/permissions.py 中实现角色权限装饰器（@require_role）
+- [x] T016 创建 backend/app/api/auth.py：POST /api/auth/login、GET /api/auth/me
 
 ### 2.4 API Routing Infrastructure
 
-- [x] T017 在 backend/src/main.py 中配置 FastAPI 应用骨架、中间件、异常处理
-- [x] T018 在 backend/src/core/events.py 中实现审计日志事件总线（写入 audit_logs）
+- [x] T017 在 backend/app/main.py 中配置 FastAPI 应用骨架、中间件、异常处理
+- [x] T018 在 backend/app/core/events.py 中实现审计日志事件总线（写入 audit_logs）
 
 ### 2.5 State Machine Base
 
-- [x] T019 创建 backend/src/state_machines/quote_states.py：报价单状态机
-- [x] T020 创建 backend/src/state_machines/part_states.py：零件状态机
-- [x] T021 创建 backend/src/state_machines/machine_states.py：机台状态机
+- [x] T019 创建 backend/app/state_machines/quote_states.py：报价单状态机
+- [x] T020 创建 backend/app/state_machines/part_states.py：零件状态机
+- [x] T021 创建 backend/app/state_machines/machine_states.py：机台状态机
 
 **Checkpoint**: ✅ Foundation ready — user story implementation can now begin in parallel
 
@@ -69,17 +69,17 @@
 
 ### Models
 
-- [x] T022 [P] [US1] 创建 backend/src/models/quote.py：Quote、QuoteItem 模型
-- [x] T023 [P] [US1] 创建 backend/src/schemas/quote.py：QuoteCreate、QuoteUpdate 等 Pydantic schemas
+- [x] T022 [P] [US1] 创建 backend/app/models/quote.py：Quote、QuoteItem 模型
+- [x] T023 [P] [US1] 创建 backend/app/schemas/quote.py：QuoteCreate、QuoteUpdate 等 Pydantic schemas
 
 ### Services
 
-- [x] T024 [US1] 在 backend/src/services/quote_service.py 中实现报价单业务逻辑（创建、技术审核、价格快照、定点确认，含 nomination_status 定点状态管理；APPROVED 后允许编辑，仅 final_price 变动触发重新审批）
+- [x] T024 [US1] 在 backend/app/services/quote_service.py 中实现报价单业务逻辑（创建、技术审核、价格快照、定点确认，含 nomination_status 定点状态管理；APPROVED 后允许编辑，仅 final_price 变动触发重新审批）
 
 ### Endpoints
 
-- [x] T025 [P] [US1] 在 backend/src/api/quotes.py 中实现 POST /api/quotes（创建报价单）
-- [x] T026 [P] [US1] 在 backend/src/api/quotes.py 中实现 GET /api/quotes/{id}（获取详情）
+- [x] T025 [P] [US1] 在 backend/app/api/quotes.py 中实现 POST /api/quotes（创建报价单）
+- [x] T026 [P] [US1] 在 backend/app/api/quotes.py 中实现 GET /api/quotes/{id}（获取详情）
 - [x] T027 [US1] 实现 PUT /api/quotes/{id}/tech-review（技术审核，依赖 T019 状态机）
 - [x] T028 [US1] 实现 PUT /api/quotes/{id}/submit-boss（提交老板审批）
 - [x] T029 [US1] 实现 PUT /api/quotes/{id}/boss-approve（老板审批，含价格快照锁定；APPROVED 后编辑时仅 final_price 变动触发重新审批）
@@ -88,7 +88,7 @@
 
 ### Integration
 
-- [x] T031 [US1] 在 backend/src/services/part_service.py 中实现零件状态变更（Draft → Sampling/MassProduction）
+- [x] T031 [US1] 在 backend/app/services/part_service.py 中实现零件状态变更（Draft → Sampling/MassProduction）
 - [x] T032 [US1] 集成 surface_treatments 表（多道表面处理计价）
 
 **Checkpoint**: 报价与审批完整链路可用，可作为 MVP 交付
@@ -105,12 +105,12 @@
 
 ### Models
 
-- [x] T033 [P] [US9] 创建 backend/src/models/price.py：PriceAccount、AnnualPriceRecord、PriceAdjustment 模型
+- [x] T033 [P] [US9] 创建 backend/app/models/price.py：PriceAccount、AnnualPriceRecord、PriceAdjustment 模型
 
 ### Services
 
-- [x] T034 [US9] 在 backend/src/services/price_service.py 中实现价格档案管理、年降计算（price = base_price × (1 - reduction_pct)^elapsed_years）
-- [x] T035 [US9] 在 backend/src/services/file_service.py 中实现图纸文件处理（定点后按「零件名+上传日期」归档）
+- [x] T034 [US9] 在 backend/app/services/price_service.py 中实现价格档案管理、年降计算（price = base_price × (1 - reduction_pct)^elapsed_years）
+- [x] T035 [US9] 在 backend/app/services/file_service.py 中实现图纸文件处理（定点后按「零件名+上传日期」归档）
 
 ### Endpoints
 
@@ -130,12 +130,12 @@
 
 ### Models
 
-- [x] T039 [P] [US2] 创建 backend/src/models/sampling.py：SamplingTask 模型
-- [x] T040 [P] [US2] 创建 backend/src/schemas/sampling.py：SamplingTaskCreate 等 Pydantic schemas
+- [x] T039 [P] [US2] 创建 backend/app/models/sampling.py：SamplingTask 模型
+- [x] T040 [P] [US2] 创建 backend/app/schemas/sampling.py：SamplingTaskCreate 等 Pydantic schemas
 
 ### Services
 
-- [x] T041 [US2] 在 backend/src/services/sampling_service.py 中实现打样任务业务逻辑（创建、老板审核、打样开始/完成、评审）
+- [x] T041 [US2] 在 backend/app/services/sampling_service.py 中实现打样任务业务逻辑（创建、老板审核、打样开始/完成、评审）
 
 ### Endpoints
 
@@ -162,11 +162,11 @@
 
 ### Models
 
-- [x] T049 [P] [US3] 创建 backend/src/models/tooling.py：Tooling、ToolingPart、ToolingMaintenanceLog 模型
+- [x] T049 [P] [US3] 创建 backend/app/models/tooling.py：Tooling、ToolingPart、ToolingMaintenanceLog 模型
 
 ### Services
 
-- [x] T050 [US3] 在 backend/src/services/tooling_service.py 中实现模具台账管理、两扫制维修逻辑
+- [x] T050 [US3] 在 backend/app/services/tooling_service.py 中实现模具台账管理、两扫制维修逻辑
 
 ### Endpoints
 
@@ -187,15 +187,15 @@
 
 ### Models
 
-- [x] T055 [P] [US4] 创建 backend/src/models/machine.py：Machine、MachineStatusLog 模型
-- [x] T056 [P] [US4] 创建 backend/src/models/production.py：ProductionPlan、PlanMachineAssignment、ProductionReport、ProductionSession 模型
-- [x] T057 [P] [US4] 创建 backend/src/schemas/production.py：相关 Pydantic schemas
+- [x] T055 [P] [US4] 创建 backend/app/models/machine.py：Machine、MachineStatusLog 模型
+- [x] T056 [P] [US4] 创建 backend/app/models/production.py：ProductionPlan、PlanMachineAssignment、ProductionReport、ProductionSession 模型
+- [x] T057 [P] [US4] 创建 backend/app/schemas/production.py：相关 Pydantic schemas
 
 ### Services
 
-- [x] T058 [US4] 在 backend/src/services/production_service.py 中实现生产计划管理、机台分配
-- [x] T059 [US4] 在 backend/src/services/session_service.py 中实现连续模报工会话（开启/多次报工/结账）
-- [x] T060 [US4] 在 backend/src/services/process_flow_service.py 中实现工艺流转单自动生成
+- [x] T058 [US4] 在 backend/app/services/production_service.py 中实现生产计划管理、机台分配
+- [x] T059 [US4] 在 backend/app/services/session_service.py 中实现连续模报工会话（开启/多次报工/结账）
+- [x] T060 [US4] 在 backend/app/services/process_flow_service.py 中实现工艺流转单自动生成
 
 ### Endpoints
 
@@ -217,11 +217,11 @@
 
 ### Models
 
-- [x] T066 [P] [US6] 创建 backend/src/models/warehouse.py：Supplier、MaterialBatch、MaterialBatchChild 模型
+- [x] T066 [P] [US6] 创建 backend/app/models/warehouse.py：Supplier、MaterialBatch、MaterialBatchChild 模型
 
 ### Services
 
-- [x] T067 [US6] 在 backend/src/services/material_batch_service.py 中实现原材料管理、IQC 检验、分条操作（子卷生成）
+- [x] T067 [US6] 在 backend/app/services/material_batch_service.py 中实现原材料管理、IQC 检验、分条操作（子卷生成）
 
 ### Endpoints
 
@@ -242,11 +242,11 @@
 
 ### Models
 
-- [x] T072 [P] [US5] 创建 backend/src/models/quality.py：FirstPieceInspection、OQCInspection、QAExemption、PatrolInspection 模型
+- [x] T072 [P] [US5] 创建 backend/app/models/quality.py：FirstPieceInspection、OQCInspection、QAExemption、PatrolInspection 模型
 
 ### Services
 
-- [x] T073 [US5] 在 backend/src/services/quality_service.py 中实现首件检验、OQC 检验、强行特赦
+- [x] T073 [US5] 在 backend/app/services/quality_service.py 中实现首件检验、OQC 检验、强行特赦
 
 ### Endpoints
 
@@ -266,11 +266,11 @@
 
 ### Models
 
-- [x] T077 [P] [US7a] 创建 backend/src/models/packaging.py：PackagingRecord 模型
+- [x] T077 [P] [US7a] 创建 backend/app/models/packaging.py：PackagingRecord 模型
 
 ### Services
 
-- [x] T078 [US7a] 在 backend/src/services/packaging_service.py 中实现包装扫码、全检入库
+- [x] T078 [US7a] 在 backend/app/services/packaging_service.py 中实现包装扫码、全检入库
 
 ### Endpoints
 
@@ -289,11 +289,11 @@
 
 ### Models
 
-- [x] T081 [P] [US8] 创建 backend/src/models/coating.py：CoatingRecipe、CoatingRecord 模型
+- [x] T081 [P] [US8] 创建 backend/app/models/coating.py：CoatingRecipe、CoatingRecord 模型
 
 ### Services
 
-- [x] T082 [US8] 在 backend/src/services/coating_service.py 中实现喷涂配方管理、喷涂报工
+- [x] T082 [US8] 在 backend/app/services/coating_service.py 中实现喷涂配方管理、喷涂报工
 
 ### Endpoints
 
@@ -312,11 +312,11 @@
 
 ### Models
 
-- [x] T085 [P] [US10] 创建 backend/src/models/admin.py：AdminContextSwitch 模型
+- [x] T085 [P] [US10] 创建 backend/app/models/admin.py：AdminContextSwitch 模型
 
 ### Services
 
-- [x] T086 [US10] 在 backend/src/services/admin_service.py 中实现视角切换（生成受限 token，原始 role_level 存入 Redis）
+- [x] T086 [US10] 在 backend/app/services/admin_service.py 中实现视角切换（生成受限 token，原始 role_level 存入 Redis）
 
 ### Endpoints
 
@@ -338,7 +338,7 @@
 
 ### QR Generation
 
-- [x] T091 [P] 在 backend/src/services/qr_service.py 中实现 QR 码生成（qrcode + Pillow）
+- [x] T091 [P] 在 backend/app/services/qr_service.py 中实现 QR 码生成（qrcode + Pillow）
 - [x] T092 [P] 配置云端 OSS（腾讯云COS/阿里云OSS）上传 QR 图片
 
 ### QR Endpoints

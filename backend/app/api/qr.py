@@ -7,12 +7,12 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.api.deps import CurrentUser, DbSession
-from src.models.machine import Machine
-from src.models.part import Part
-from src.models.production import ProcessFlowCard
-from src.models.tooling import Tooling
-from src.schemas.qr import (
+from app.api.deps import CurrentUser, DbSession
+from app.models.machine import Machine
+from app.models.part import Part
+from app.models.production import ProcessFlowCard
+from app.models.tooling import Tooling
+from app.schemas.qr import (
     QRGenerateRequest,
     QRGenerateResponse,
     QRLookupResponse,
@@ -20,7 +20,7 @@ from src.schemas.qr import (
     QRMachineResponse,
     QRProcessFlowResponse,
 )
-from src.services import qr_service
+from app.services import qr_service
 
 router = APIRouter(prefix="/qr", tags=["QR Code"])
 
@@ -39,7 +39,7 @@ async def _manual_lookup(
     """
     if entity_type == "MAT":
         # Try: batch_no, then batch_id, then qr_code
-        from src.services import material_batch_service
+        from app.services import material_batch_service
         batch = await material_batch_service.get_batch_by_no(db, code)
         if batch:
             return _build_material_batch_data(batch)
@@ -51,7 +51,7 @@ async def _manual_lookup(
         except ValueError:
             pass
         # Try by qr_code
-        from src.models.warehouse import MaterialBatch
+        from app.models.warehouse import MaterialBatch
         result = await db.execute(
             select(MaterialBatch).where(MaterialBatch.qr_code == code)
         )
@@ -190,7 +190,7 @@ def _build_material_batch_data(batch) -> dict:
 async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
     """Look up entity by prefix and ID."""
     if prefix == "MAT":
-        from src.services import material_batch_service
+        from app.services import material_batch_service
 
         batch = await material_batch_service.get_batch_by_id(db, entity_id)
         if batch:
@@ -374,7 +374,7 @@ async def get_material_qr(
     current_user: CurrentUser,
 ) -> QRMaterialResponse:
     """Generate QR code for material batch."""
-    from src.services import material_batch_service
+    from app.services import material_batch_service
 
     batch = await material_batch_service.get_batch_by_id(db, batch_id)
     if not batch:
