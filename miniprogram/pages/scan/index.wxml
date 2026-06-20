@@ -1,0 +1,93 @@
+<!-- Scan Page WXML -->
+
+<view class="container">
+  <!-- Header -->
+  <view class="header">
+    <text class="title">扫码追溯</text>
+    <text class="subtitle">扫描工件/原料/设备二维码</text>
+  </view>
+
+  <!-- Scan Button Area -->
+  <view class="scan-area" wx:if="{{!hasResult && !hasError}}">
+    <view class="scan-btn-wrapper">
+      <button
+        class="scan-btn"
+        bindtap="startScan"
+        loading="{{scanning}}"
+        disabled="{{scanning}}"
+      >
+        <image class="scan-icon" src="/images/scan.png" mode="aspectFit" />
+        <text>{{scanning ? '扫描中...' : '点击扫码'}}</text>
+      </button>
+    </view>
+    <view class="scan-hint">
+      <text>对准二维码进行扫描</text>
+    </view>
+  </view>
+
+  <!-- Result Area -->
+  <view class="result-area" wx:if="{{hasResult}}">
+    <!-- QR Info -->
+    <view class="result-card">
+      <view class="card-header">
+        <text class="card-title">扫码结果</text>
+        <text class="qr-code">{{scanResult.qr_code}}</text>
+      </view>
+
+      <view class="info-row">
+        <text class="label">类型</text>
+        <text class="value type-badge">{{typeLabels[scanResult.entity_type] || scanResult.entity_type}}</text>
+      </view>
+
+      <view class="info-row">
+        <text class="label">编号</text>
+        <text class="value">{{scanResult.entity_id}}</text>
+      </view>
+
+      <view class="info-row" wx:if="{{scanResult.entity_name}}">
+        <text class="label">名称</text>
+        <text class="value">{{scanResult.entity_name}}</text>
+      </view>
+
+      <view class="info-row">
+        <text class="label">时间</text>
+        <text class="value time">{{scanResult.timestamp}}</text>
+      </view>
+    </view>
+
+    <!-- Actions -->
+    <view class="actions" wx:if="{{actions.length > 0}}">
+      <block wx:for="{{actions}}" wx:key="action">
+        <button
+          class="action-btn"
+          type="primary"
+          data-action="{{item.action}}"
+          bindtap="executeAction"
+        >
+          {{item.label}}
+        </button>
+      </block>
+    </view>
+
+    <!-- Operations -->
+    <view class="operations">
+      <button class="op-btn" bindtap="copyCode">复制编号</button>
+      <button class="op-btn secondary" bindtap="scanAgain">继续扫码</button>
+    </view>
+  </view>
+
+  <!-- Error Area -->
+  <view class="error-area" wx:if="{{hasError}}">
+    <view class="error-icon">!</view>
+    <text class="error-message">{{errorMessage}}</text>
+    <view class="operations">
+      <button class="op-btn" bindtap="startScan">重试扫码</button>
+      <button class="op-btn secondary" bindtap="manualInput">手动输入</button>
+    </view>
+  </view>
+
+  <!-- Manual Input Hint -->
+  <view class="manual-hint" wx:if="{{!hasResult && !hasError}}">
+    <text bindtap="manualInput">无法扫码？点此手动输入</text>
+  </view>
+</view>

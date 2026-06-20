@@ -1,0 +1,225 @@
+/* Scan Page Styles */
+
+.container {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 20rpx;
+}
+
+.header {
+  text-align: center;
+  padding: 40rpx 0;
+}
+
+.title {
+  display: block;
+  font-size: 48rpx;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 10rpx;
+}
+
+.subtitle {
+  display: block;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* Scan Button Area */
+.scan-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 60rpx 0;
+}
+
+.scan-btn-wrapper {
+  width: 300rpx;
+  height: 300rpx;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #409eff, #66b1ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10rpx 40rpx rgba(64, 158, 255, 0.3);
+}
+
+.scan-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 280rpx;
+  height: 280rpx;
+  border-radius: 50%;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 32rpx;
+}
+
+.scan-btn::after {
+  border: none;
+}
+
+.scan-icon {
+  width: 80rpx;
+  height: 80rpx;
+  margin-bottom: 20rpx;
+}
+
+.scan-hint {
+  margin-top: 40rpx;
+  font-size: 28rpx;
+  color: #999;
+}
+
+/* Result Area */
+.result-area {
+  padding: 20rpx 0;
+}
+
+.result-card {
+  background: #fff;
+  border-radius: 16rpx;
+  padding: 30rpx;
+  margin-bottom: 30rpx;
+  box-shadow: 0 4rpx 20rpx rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30rpx;
+  padding-bottom: 20rpx;
+  border-bottom: 1rpx solid #eee;
+}
+
+.card-title {
+  font-size: 32rpx;
+  font-weight: bold;
+  color: #333;
+}
+
+.qr-code {
+  font-size: 24rpx;
+  color: #409eff;
+  background: #ecf5ff;
+  padding: 8rpx 16rpx;
+  border-radius: 8rpx;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16rpx 0;
+}
+
+.label {
+  font-size: 28rpx;
+  color: #666;
+}
+
+.value {
+  font-size: 28rpx;
+  color: #333;
+  font-weight: 500;
+}
+
+.value.time {
+  font-size: 24rpx;
+  color: #999;
+}
+
+.type-badge {
+  background: #409eff;
+  color: #fff;
+  padding: 6rpx 16rpx;
+  border-radius: 6rpx;
+  font-size: 24rpx;
+}
+
+/* Actions */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20rpx;
+  margin-bottom: 30rpx;
+}
+
+.action-btn {
+  flex: 1;
+  min-width: 200rpx;
+  background: #409eff;
+  color: #fff;
+  border: none;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.action-btn::after {
+  border: none;
+}
+
+/* Operations */
+.operations {
+  display: flex;
+  gap: 20rpx;
+  justify-content: center;
+}
+
+.op-btn {
+  flex: 1;
+  background: #fff;
+  color: #333;
+  border: 1rpx solid #ddd;
+  border-radius: 8rpx;
+  font-size: 28rpx;
+}
+
+.op-btn.secondary {
+  background: #f5f5f5;
+  color: #666;
+}
+
+.op-btn::after {
+  border: none;
+}
+
+/* Error Area */
+.error-area {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 100rpx 0;
+}
+
+.error-icon {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 50%;
+  background: #f56c6c;
+  color: #fff;
+  font-size: 80rpx;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30rpx;
+}
+
+.error-message {
+  font-size: 28rpx;
+  color: #f56c6c;
+  margin-bottom: 60rpx;
+}
+
+/* Manual Hint */
+.manual-hint {
+  text-align: center;
+  margin-top: 60rpx;
+  font-size: 26rpx;
+  color: #409eff;
+}

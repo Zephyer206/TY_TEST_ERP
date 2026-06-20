@@ -129,3 +129,13 @@ def require_min_role(min_role: UserRole):
 CurrentUser = Annotated[User, Depends(get_current_user)]
 ActiveUser = Annotated[User, Depends(get_current_active_user)]
 DbSession = Annotated[AsyncSession, Depends(get_db)]
+
+
+def require_admin(current_user: CurrentUser) -> User:
+    """Require admin (role_level = 10) access."""
+    if current_user.role_level != 10:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Super admin access required",
+        )
+    return current_user

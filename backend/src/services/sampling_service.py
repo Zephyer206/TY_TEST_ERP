@@ -136,7 +136,10 @@ async def get_sampling_kanban(
     if part_no:
         query = query.where(Part.part_no.ilike(f"%{part_no}%"))
     if customer_name:
-        query = query.where(SamplingTask.customer_id == customer_id)
+        from app.models.customer import Customer
+        query = query.join(Customer, SamplingTask.customer_id == Customer.id).where(
+            Customer.name.ilike(f"%{customer_name}%")
+        )
     if planned_before:
         query = query.where(SamplingTask.planned_completion_date <= planned_before)
 
