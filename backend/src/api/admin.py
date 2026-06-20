@@ -1,134 +1,162 @@
-"""Admin API endpoints for context switching and audit."""
+"""Admin and context switch management API endpoints."""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Optional
 
-from app.api.deps import CurrentUser, DbSession, require_admin
-from app.schemas.admin import (
-    AdminAuditLogResponse,
-    ContextStatusResponse,
-    ContextSwitchRequest,
-    ContextSwitchResponse,
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
+
+from src.api.deps import CurrentUser, DbSession
+from src.models.admin import AdminContextSwitch
+from src.schemas.admin import (
+    AdminContextInfo,
+    ContextSwitchRecordResponse,
+    DeptRoleMapping,
+    SESSION_EXPIRY_SECONDS,
     SwitchBackResponse,
+    SwitchContextRequest,
+    SwitchContextResponse,
 )
-from app.services import admin_service
+from src.services import admin_service
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
-@router.post("/switch-context", response_model=ContextSwitchResponse)
+def _switch_to_response(
+    context_switch: AdminContextSwitch,
+) -> SwitchContextResponse:
+    """Convert AdminContextSwitch to response."""
+    return SwitchContextResponse(
+        success=True,
+        message=f"Switched to {context_switch.switched_to_dept} perspective",
+        original_role_level=context_switch.original_role_level,
+        original_dept=context_switch.original_dept,
+        switched_to_role_level=context_switch.switched_to_role_level,
+        switched_to_dept=context_switch.switched_to_dept,
+        session_key=context_switch.session_key,
+        expires_in_seconds=SESSION_EXPIRY_SECONDS,
+    )
+
+
+def _history_to_response(
+    context_switch: AdminContextSwitch,
+) -> ContextSwitchRecordResponse:
+    """Convert AdminContextSwitch to history response."""
+    return ContextSwitchRecordResponse(
+        id=context_switch.id,
+        user_id=context_switch.user_id,
+        original_role_level=context_switch.original_role_level,
+        original_dept=context_switch.original_dept,
+        switched_to_role_level=context_switch.switched_to_role_level,
+        switched_to_dept=context_switch.switched_to_dept,
+        switch_type=context_switch.switch_type,
+        is_active=context_switch.is_active,
+        switched_at=context_switch.switched_at,
+        switched_back_at=context_switch.switched_back_at,
+    )
+
+
+@router.post("/switch-context", response_model=SwitchContextResponse)
 async def switch_context(
-    data: ContextSwitchRequest,
-    request: Request,
+    data: SwitchContextRequest,
     db: DbSession,
     current_user: CurrentUser,
-) -> ContextSwitchResponse:
+) -> SwitchContextResponse:
+    """Switch admin context to another department perspective.
+
+    This endpoint allows super admins (role_level >= 10) to temporarily
+    view the system from another department's perspective. When switched,
+    the admin's effective role will be changed to the target department's
+    role level, and boss-only buttons (role_level >= 9) will be hidden.
+
+    The switch expires after 1 hour and must be explicitly switched back.
     """
-    Switch admin context to a target role.
-
-    This allows admin to temporarily assume another role's perspective.
-    - Generates a switch token valid for the specified duration
-    - Logs the switch in admin_audit_logs
-    - Hides boss-only buttons when in switched context
-
-    Requires: role_level = 10 (admin)
-    """
-    require_admin(current_user)
-
-    ip_address = request.client.host if request.client else None
-
     try:
-        switch, token_info = await admin_service.switch_context(
-            db,
-            admin=current_user,
-            target_role=data.target_role,
-            duration_minutes=data.duration_minutes,
-            reason=data.reason,
-            ip_address=ip_address,
+        context_switch, _ = await admin_service.switch_context(
+            db, current_user, data.department
         )
-    except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
-
-    return ContextSwitchResponse(
-        switch_token=token_info["switch_token"],
-        switched_role_level=token_info["switched_role_level"],
-        switched_role_name=token_info["switched_role_name"],
-        original_role_level=token_info["original_role_level"],
-        expires_at=token_info["expires_at"],
-        message=f"已切换至 {token_info['switched_role_name']} 视角",
-    )
+        return _switch_to_response(context_switch)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.post("/switch-back", response_model=SwitchBackResponse)
 async def switch_back(
-    request: Request,
     db: DbSession,
     current_user: CurrentUser,
+    session_key: Optional[str] = None,
 ) -> SwitchBackResponse:
+    """Switch back to admin perspective.
+
+    Restores the admin's original role level and perspective.
     """
-    Switch back to original admin role.
-
-    Requires: role_level = 10 (admin) with active context switch
-    """
-    require_admin(current_user)
-
-    ip_address = request.client.host if request.client else None
-
     try:
-        switch = await admin_service.switch_back(
-            db,
-            admin=current_user,
-            ip_address=ip_address,
+        context_switch = await admin_service.switch_back(
+            db, current_user, session_key
+        )
+        return SwitchBackResponse(
+            success=True,
+            message="Switched back to admin perspective",
+            restored_role_level=context_switch.original_role_level,
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    return SwitchBackResponse(
-        success=True,
-        original_role_level=switch.original_role_level,
-        switched_back_at=switch.switched_back_at,
-        message="已恢复超级管理员视角",
+
+@router.get("/context-info", response_model=AdminContextInfo)
+async def get_context_info(
+    db: DbSession,
+    current_user: CurrentUser,
+) -> AdminContextInfo:
+    """Get current context information.
+
+    Returns the effective role and context switch status for the current user.
+    """
+    context_switch = await admin_service.get_active_context_switch(db, current_user.id)
+    effective = admin_service.get_effective_role(current_user, context_switch)
+
+    return AdminContextInfo(
+        user_id=current_user.id,
+        original_role_level=effective["original_role_level"],
+        original_dept=effective["original_dept"],
+        current_role_level=effective["role_level"],
+        current_dept=effective["dept"],
+        is_switched=effective["is_switched"],
+        switch_type=effective.get("switch_type"),
+        switched_at=effective.get("switched_at"),
+        expires_at=effective.get("expires_at"),
     )
 
 
-@router.get("/context-status", response_model=ContextStatusResponse)
-async def get_context_status(
+@router.get("/departments", response_model=list[DeptRoleMapping])
+async def list_departments() -> list[DeptRoleMapping]:
+    """List available departments for context switching.
+
+    Returns all departments that can be switched to with their role levels.
+    """
+    from src.schemas.admin import DEPT_ROLE_MAPPINGS
+
+    return [
+        DeptRoleMapping(department=dept, **mapping)
+        for dept, mapping in DEPT_ROLE_MAPPINGS.items()
+    ]
+
+
+@router.get("/history", response_model=list[ContextSwitchRecordResponse])
+async def get_context_switch_history(
     db: DbSession,
     current_user: CurrentUser,
-) -> ContextStatusResponse:
-    """
-    Get current context status.
-
-    Returns whether admin is in a switched context and details.
-    """
-    require_admin(current_user)
-
-    status_info = await admin_service.get_context_status(db, current_user)
-    return ContextStatusResponse(**status_info)
-
-
-@router.get("/audit-logs", response_model=list[AdminAuditLogResponse])
-async def list_audit_logs(
-    db: DbSession,
-    current_user: CurrentUser,
-    admin_user_id: int | None = None,
-    operation: str | None = None,
     skip: int = 0,
     limit: int = 50,
-) -> list[AdminAuditLogResponse]:
-    """
-    List admin audit logs.
+) -> list[ContextSwitchRecordResponse]:
+    """Get context switch history for the current admin."""
+    # Only admins can see their own history
+    if current_user.role_level < 10:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only super admin can view context switch history",
+        )
 
-    Requires: role_level = 10 (admin)
-    """
-    require_admin(current_user)
-
-    logs = await admin_service.get_audit_logs(
-        db,
-        admin_user_id=admin_user_id,
-        operation=operation,
-        skip=skip,
-        limit=limit,
+    records = await admin_service.get_context_switch_history(
+        db, user_id=current_user.id, skip=skip, limit=limit
     )
-
-    return [AdminAuditLogResponse.model_validate(log) for log in logs]
+    return [_history_to_response(r) for r in records]

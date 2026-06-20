@@ -1,73 +1,94 @@
-"""Tooling/Mold API endpoints."""
+"""Tooling/Mold management API endpoints."""
 
-from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.tooling import Tooling, ToolingCavityStatus, ToolingState
-from app.schemas.tooling import (
-    MaintenancePoolResponse,
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.tooling import Tooling, ToolingState
+from src.schemas.tooling import (
+    MaintenanceComplete,
     ToolingCreate,
     ToolingDetailResponse,
     ToolingListResponse,
-    ToolingMountUpdate,
-    ToolingPartCreate,
-    ToolingPartResponse,
     ToolingResponse,
-    ToolingScanActionRequest,
-    ToolingScanRequest,
     ToolingUpdate,
 )
-from app.services import tooling_service
+from src.services import tooling_service
 
-router = APIRouter(prefix="/toolings", tags=["Toolings"])
+router = APIRouter(prefix="/toolings", tags=["Tooling"])
 
 
-def _tooling_to_response(tooling: Tooling, include_children: bool = False) -> ToolingResponse:
-    """Convert Tooling model to response."""
-    children_data = []
-    if include_children and tooling.children:
-        children_data = [
-            {
-                "id": c.id,
-                "tooling_no": c.tooling_no,
-                "name": c.name,
-                "tooling_type": c.tooling_type,
-                "cavity_count": c.cavity_count,
-                "state": c.state,
-            }
-            for c in tooling.children
-        ]
-
+def _tooling_to_response(tooling: Tooling) -> ToolingResponse:
+    """Convert Tooling to response."""
     return ToolingResponse(
         id=tooling.id,
         tooling_no=tooling.tooling_no,
         name=tooling.name,
-        tooling_type=tooling.tooling_type,
-        customer_id=tooling.customer_id,
-        customer_name=tooling.customer.name if tooling.customer else None,
-        parent_id=tooling.parent_id,
-        parent_no=tooling.parent.tooling_no if tooling.parent else None,
+        customer_product_no=tooling.customer_product_no,
         cavity_count=tooling.cavity_count,
-        press_tonnage=tooling.press_tonnage,
-        spec_twph=tooling.spec_twph,
+        tonnage=tooling.tonnage,
         ppap_no=tooling.ppap_no,
         vehicle_model=tooling.vehicle_model,
+        spec_data=tooling.spec_data,
+        parent_id=tooling.parent_id,
         state=tooling.state,
-        cavity_status=tooling.cavity_status,
-        mounted_machine_id=tooling.mounted_machine_id,
-        mounted_machine_no=tooling.mounted_machine.machine_no if tooling.mounted_machine else None,
-        designed_by=tooling.designed_by,
-        trial_completed_at=tooling.trial_completed_at,
-        production_started_at=tooling.production_started_at,
         drawing_path=tooling.drawing_path,
-        notes=tooling.notes,
-        children=children_data,
+        sdr_drawing_path=tooling.sdr_drawing_path,
+        active_maintenance_id=tooling.active_maintenance_id,
+        is_deleted=tooling.is_deleted,
         created_at=tooling.created_at,
         updated_at=tooling.updated_at,
+    )
+
+
+def _tooling_detail_to_response(tooling: Tooling) -> ToolingDetailResponse:
+    """Convert Tooling to detail response with parent-child and logs."""
+    children = [_tooling_to_response(c) for c in tooling.children] if tooling.children else []
+    parent = _tooling_to_response(tooling.parent) if tooling.parent else None
+
+    logs = []
+    if tooling.maintenance_logs:
+        for log in tooling.maintenance_logs:
+            logs.append(
+                {
+                    "id": log.id,
+                    "tooling_id": log.tooling_id,
+                    "machine_id": log.machine_id,
+                    "fault_time": log.fault_time,
+                    "fault_reason": log.fault_reason,
+                    "repair_plan": log.repair_plan,
+                    "repair_start_time": log.repair_start_time,
+                    "repair_end_time": log.repair_end_time,
+                    "repair_completed_by": log.repair_completed_by,
+                    "is_active": log.is_active,
+                    "notes": log.notes,
+                    "created_at": log.created_at,
+                }
+            )
+
+    return ToolingDetailResponse(
+        id=tooling.id,
+        tooling_no=tooling.tooling_no,
+        name=tooling.name,
+        customer_product_no=tooling.customer_product_no,
+        cavity_count=tooling.cavity_count,
+        tonnage=tooling.tonnage,
+        ppap_no=tooling.ppap_no,
+        vehicle_model=tooling.vehicle_model,
+        spec_data=tooling.spec_data,
+        parent_id=tooling.parent_id,
+        state=tooling.state,
+        drawing_path=tooling.drawing_path,
+        sdr_drawing_path=tooling.sdr_drawing_path,
+        active_maintenance_id=tooling.active_maintenance_id,
+        is_deleted=tooling.is_deleted,
+        created_at=tooling.created_at,
+        updated_at=tooling.updated_at,
+        children=children,
+        parent=parent,
+        maintenance_logs=logs,
     )
 
 
@@ -77,10 +98,23 @@ async def create_tooling(
     db: DbSession,
     current_user: CurrentUser,
 ) -> ToolingResponse:
-    """Create a new tooling record (requires role_level >= 4)."""
+    """Create a new tooling/mold record.
+
+    Tooling starts in AVAILABLE state.
+    """
     require_role(current_user, min_level=4)
 
-    tooling = await tooling_service.create_tooling(db, data, current_user)
+    tooling = await tooling_service.create_tooling(
+        db,
+        name=data.name,
+        customer_product_no=data.customer_product_no,
+        cavity_count=data.cavity_count,
+        tonnage=data.tonnage,
+        ppap_no=data.ppap_no,
+        vehicle_model=data.vehicle_model,
+        spec_data=data.spec_data,
+        parent_id=data.parent_id,
+    )
     return _tooling_to_response(tooling)
 
 
@@ -90,83 +124,11 @@ async def get_tooling(
     db: DbSession,
     current_user: CurrentUser,
 ) -> ToolingDetailResponse:
-    """Get tooling detail with parts and maintenance logs."""
-    tooling = await tooling_service.get_tooling_by_id(db, tooling_id, include_details=True)
+    """Get tooling details with parent-child relationships and maintenance logs."""
+    tooling = await tooling_service.get_tooling_by_id(db, tooling_id)
     if not tooling:
         raise HTTPException(status_code=404, detail="Tooling not found")
-
-    # Get parts
-    parts_result = await tooling_service.get_tooling_parts(db, tooling_id)
-    parts_data = []
-    for p in parts_result:
-        parts_data.append(ToolingPartResponse(
-            id=p.id,
-            tooling_id=p.tooling_id,
-            part_id=p.part_id,
-            part_no=p.part.part_no if p.part else None,
-            part_name=p.part.part_name if p.part else None,
-            is_primary=p.is_primary,
-            cavity_index=p.cavity_index,
-            notes=p.notes,
-            created_at=p.created_at,
-        ))
-
-    # Get maintenance logs
-    logs = await tooling_service.get_maintenance_logs(db, tooling_id)
-
-    return ToolingDetailResponse(
-        **ToolingResponse(
-            id=tooling.id,
-            tooling_no=tooling.tooling_no,
-            name=tooling.name,
-            tooling_type=tooling.tooling_type,
-            customer_id=tooling.customer_id,
-            customer_name=tooling.customer.name if tooling.customer else None,
-            parent_id=tooling.parent_id,
-            parent_no=tooling.parent.tooling_no if tooling.parent else None,
-            cavity_count=tooling.cavity_count,
-            press_tonnage=tooling.press_tonnage,
-            spec_twph=tooling.spec_twph,
-            ppap_no=tooling.ppap_no,
-            vehicle_model=tooling.vehicle_model,
-            state=tooling.state,
-            cavity_status=tooling.cavity_status,
-            mounted_machine_id=tooling.mounted_machine_id,
-            mounted_machine_no=tooling.mounted_machine.machine_no if tooling.mounted_machine else None,
-            designed_by=tooling.designed_by,
-            trial_completed_at=tooling.trial_completed_at,
-            production_started_at=tooling.production_started_at,
-            drawing_path=tooling.drawing_path,
-            notes=tooling.notes,
-            children=[],
-            created_at=tooling.created_at,
-            updated_at=tooling.updated_at,
-        ).model_dump(),
-        parts=parts_data,
-        maintenance_logs=[
-            {
-                "id": log.id,
-                "tooling_id": log.tooling_id,
-                "machine_id": log.machine_id,
-                "maintenance_type": log.maintenance_type,
-                "first_scan_time": log.first_scan_time,
-                "first_scan_by": log.first_scan_by,
-                "first_scan_notes": log.first_scan_notes,
-                "second_scan_time": log.second_scan_time,
-                "second_scan_by": log.second_scan_by,
-                "second_scan_notes": log.second_scan_notes,
-                "action_taken": log.action_taken,
-                "action_completed_at": log.action_completed_at,
-                "completed_by": log.completed_by,
-                "fault_description": log.fault_description,
-                "repair_result": log.repair_result,
-                "fault_duration_minutes": log.fault_duration_minutes,
-                "status": log.status,
-                "created_at": log.created_at,
-            }
-            for log in logs
-        ],
-    )
+    return _tooling_detail_to_response(tooling)
 
 
 @router.get("", response_model=list[ToolingListResponse])
@@ -174,9 +136,7 @@ async def list_toolings(
     db: DbSession,
     current_user: CurrentUser,
     state: Optional[ToolingState] = Query(default=None),
-    customer_id: Optional[int] = Query(default=None),
-    machine_id: Optional[int] = Query(default=None),
-    cavity_status: Optional[ToolingCavityStatus] = Query(default=None),
+    customer_product_no: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[ToolingListResponse]:
@@ -184,9 +144,7 @@ async def list_toolings(
     toolings = await tooling_service.get_toolings(
         db,
         state=state,
-        customer_id=customer_id,
-        machine_id=machine_id,
-        cavity_status=cavity_status,
+        customer_product_no=customer_product_no,
         skip=skip,
         limit=limit,
     )
@@ -196,14 +154,11 @@ async def list_toolings(
             id=t.id,
             tooling_no=t.tooling_no,
             name=t.name,
-            tooling_type=t.tooling_type,
-            customer_name=t.customer.name if t.customer else None,
-            cavity_count=t.cavity_count,
-            press_tonnage=t.press_tonnage,
+            customer_product_no=t.customer_product_no,
             state=t.state,
-            cavity_status=t.cavity_status,
-            mounted_machine_id=t.mounted_machine_id,
-            mounted_machine_no=t.mounted_machine.machine_no if t.mounted_machine else None,
+            cavity_count=t.cavity_count,
+            tonnage=t.tonnage,
+            parent_id=t.parent_id,
             created_at=t.created_at,
         )
         for t in toolings
@@ -217,99 +172,138 @@ async def update_tooling(
     db: DbSession,
     current_user: CurrentUser,
 ) -> ToolingResponse:
-    """Update tooling fields."""
+    """Update tooling basic info."""
     require_role(current_user, min_level=4)
 
     tooling = await tooling_service.get_tooling_by_id(db, tooling_id)
     if not tooling:
         raise HTTPException(status_code=404, detail="Tooling not found")
 
-    tooling = await tooling_service.update_tooling(db, tooling, data)
-    return _tooling_to_response(tooling, include_children=True)
+    tooling = await tooling_service.update_tooling(
+        db,
+        tooling,
+        name=data.name,
+        customer_product_no=data.customer_product_no,
+        cavity_count=data.cavity_count,
+        tonnage=data.tonnage,
+        ppap_no=data.ppap_no,
+        vehicle_model=data.vehicle_model,
+        spec_data=data.spec_data,
+    )
+    return _tooling_to_response(tooling)
 
 
-@router.post("/{tooling_id}/mount", response_model=ToolingResponse)
+@router.post("/{tooling_id}/mount/{machine_id}", response_model=ToolingResponse)
 async def mount_tooling(
     tooling_id: int,
-    data: ToolingMountUpdate,
+    machine_id: int,
     db: DbSession,
     current_user: CurrentUser,
 ) -> ToolingResponse:
-    """Mount or unmount tooling to/from machine."""
+    """Mount a tooling to a machine."""
     require_role(current_user, min_level=3)
 
     tooling = await tooling_service.get_tooling_by_id(db, tooling_id)
     if not tooling:
         raise HTTPException(status_code=404, detail="Tooling not found")
 
+    from src.models.machine import Machine
+
+    result = await db.execute(select(Machine).where(Machine.id == machine_id))
+    machine = result.scalar_one_or_none()
+    if not machine:
+        raise HTTPException(status_code=404, detail="Machine not found")
+
     try:
-        tooling = await tooling_service.mount_tooling(db, tooling, data, current_user)
+        tooling = await tooling_service.mount_tooling(db, tooling, machine)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
     return _tooling_to_response(tooling)
 
 
-@router.post("/{tooling_id}/parts", response_model=ToolingPartResponse, status_code=status.HTTP_201_CREATED)
-async def associate_part(
+@router.post("/{tooling_id}/unmount", response_model=ToolingResponse)
+async def unmount_tooling(
     tooling_id: int,
-    data: ToolingPartCreate,
     db: DbSession,
     current_user: CurrentUser,
-) -> ToolingPartResponse:
-    """Associate a part with a tooling."""
-    require_role(current_user, min_level=4)
+) -> ToolingResponse:
+    """Unmount tooling from its current machine."""
+    require_role(current_user, min_level=3)
 
     tooling = await tooling_service.get_tooling_by_id(db, tooling_id)
     if not tooling:
         raise HTTPException(status_code=404, detail="Tooling not found")
 
-    part = await tooling_service.associate_part(db, tooling_id, data)
-    return ToolingPartResponse(
-        id=part.id,
-        tooling_id=part.tooling_id,
-        part_id=part.part_id,
-        part_no=None,  # Would need to fetch
-        part_name=None,
-        is_primary=part.is_primary,
-        cavity_index=part.cavity_index,
-        notes=part.notes,
-        created_at=part.created_at,
+    from src.models.machine import Machine
+
+    result = await db.execute(
+        select(Machine).where(Machine.current_tooling_id == tooling_id)
     )
+    machine = result.scalar_one_or_none()
+    if not machine:
+        raise HTTPException(status_code=400, detail="Tooling not mounted on any machine")
+
+    try:
+        machine = await tooling_service.unmount_tooling(db, machine)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return _tooling_to_response(tooling)
 
 
-@router.get("/maintenance-pool", response_model=list[MaintenancePoolResponse])
+@router.post("/{tooling_id}/complete-maintenance", response_model=ToolingResponse)
+async def complete_maintenance(
+    tooling_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+    data: Optional[MaintenanceComplete] = None,
+) -> ToolingResponse:
+    """Complete tooling maintenance and return to available state."""
+    require_role(current_user, min_level=2)
+
+    tooling = await tooling_service.get_tooling_by_id(db, tooling_id)
+    if not tooling:
+        raise HTTPException(status_code=404, detail="Tooling not found")
+
+    notes = data.notes if data else None
+    try:
+        tooling = await tooling_service.complete_maintenance(db, tooling, notes)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return _tooling_to_response(tooling)
+
+
+@router.get("/maintenance-pool/list", response_model=list[ToolingListResponse])
 async def get_maintenance_pool(
     db: DbSession,
     current_user: CurrentUser,
-    status: Optional[str] = Query(default=None),
     tooling_no: Optional[str] = Query(default=None),
+    customer_product_no: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=100, ge=1, le=200),
-) -> list[MaintenancePoolResponse]:
-    """Get maintenance pool (待修池) list."""
-    pool = await tooling_service.get_maintenance_pool(
+) -> list[ToolingListResponse]:
+    """Get toolings in maintenance pool (state = MAINTENANCE)."""
+    toolings = await tooling_service.get_maintenance_pool(
         db,
-        status=status,
         tooling_no=tooling_no,
+        customer_product_no=customer_product_no,
         skip=skip,
         limit=limit,
     )
 
     return [
-        MaintenancePoolResponse(
-            id=item["id"],
-            log_id=item["log_id"],
-            tooling_id=item["tooling_id"],
-            tooling_no=item["tooling_no"],
-            tooling_name=item["tooling_name"],
-            machine_id=item["machine_id"],
-            machine_no=item["machine_no"],
-            maintenance_type=item["maintenance_type"],
-            first_scan_time=item["first_scan_time"],
-            fault_description=item["fault_description"],
-            elapsed_minutes=item["elapsed_minutes"],
-            status=item["status"],
+        ToolingListResponse(
+            id=t.id,
+            tooling_no=t.tooling_no,
+            name=t.name,
+            customer_product_no=t.customer_product_no,
+            state=t.state,
+            cavity_count=t.cavity_count,
+            tonnage=t.tonnage,
+            parent_id=t.parent_id,
+            created_at=t.created_at,
         )
-        for item in pool
+        for t in toolings
     ]

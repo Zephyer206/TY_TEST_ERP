@@ -1,34 +1,27 @@
 <template>
-  <div class="quotes-page">
-    <!-- Header -->
+  <div class="quotes-container">
     <div class="page-header">
       <h2>报价管理</h2>
-      <div class="header-actions">
-        <el-button type="primary" @click="handleCreate">
-          <el-icon><Plus /></el-icon> 新建报价
-        </el-button>
-      </div>
+      <el-button type="primary" @click="handleCreate">
+        <el-icon><Plus /></el-icon>
+        新建报价
+      </el-button>
     </div>
 
-    <!-- Filters -->
-    <el-card class="filter-card" shadow="never">
-      <el-form :inline="true" :model="filters">
+    <!-- 搜索筛选 -->
+    <el-card class="filter-card">
+      <el-form :inline="true" :model="filterForm">
+        <el-form-item label="客户">
+          <el-input v-model="filterForm.customer" placeholder="客户名称" clearable />
+        </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="filters.status" placeholder="全部状态" clearable>
-            <el-option label="等待技术审核" value="WAITING_FOR_TECH" />
-            <el-option label="技术审核通过" value="TECH_APPROVED" />
-            <el-option label="技术审核驳回" value="TECH_REJECTED" />
-            <el-option label="草稿" value="DRAFT" />
+          <el-select v-model="filterForm.status" placeholder="全部" clearable>
+            <el-option label="待技术审核" value="WAITING_FOR_TECH" />
+            <el-option label="技术已审核" value="TECH_APPROVED" />
             <el-option label="待老板审批" value="PENDING_BOSS" />
             <el-option label="已审批" value="APPROVED" />
             <el-option label="已驳回" value="REJECTED" />
           </el-select>
-        </el-form-item>
-        <el-form-item label="零件号">
-          <el-input v-model="filters.partNo" placeholder="零件号" clearable />
-        </el-form-item>
-        <el-form-item label="客户">
-          <el-input v-model="filters.customer" placeholder="客户名称" clearable />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">搜索</el-button>
@@ -37,235 +30,175 @@
       </el-form>
     </el-card>
 
-    <!-- Table -->
-    <el-card class="table-card">
-      <el-table :data="tableData" v-loading="loading" stripe>
-        <el-table-column prop="quote_serial" label="报价单号" width="160" />
-        <el-table-column prop="part_no" label="零件号" width="140" />
-        <el-table-column prop="part_name" label="零件名称" min-width="150" />
-        <el-table-column prop="customer_name" label="客户" width="120" />
-        <el-table-column label="状态" width="130">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.approval_status)">
-              {{ getStatusLabel(row.approval_status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="final_price" label="最终报价" width="110" align="right">
-          <template #default="{ row }">
-            {{ row.final_price ? `¥${row.final_price.toFixed(2)}` : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="submitted_at" label="提交时间" width="160">
-          <template #default="{ row }">
-            {{ row.submitted_at ? formatDate(row.submitted_at) : '-' }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right">
-          <template #default="{ row }">
-            <el-button link type="primary" @click="handleView(row)">查看</el-button>
-            <el-button
-              v-if="canEdit(row)"
-              link
-              type="primary"
-              @click="handleEdit(row)"
-            >
-              编辑
-            </el-button>
-            <el-button
-              v-if="canApprove(row)"
-              link
-              type="success"
-              @click="handleApprove(row)"
-            >
-              审批
-            </el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+    <!-- 报价列表 -->
+    <el-table :data="quotes" v-loading="loading" stripe>
+      <el-table-column prop="quote_no" label="报价单号" width="180" />
+      <el-table-column prop="customer_name" label="客户" min-width="150" />
+      <el-table-column prop="customer_product_no" label="客户品号" width="150" />
+      <el-table-column prop="vehicle_model" label="车型" width="120" />
+      <el-table-column prop="final_price" label="单价" width="100" align="right">
+        <template #default="{ row }">
+          ¥{{ row.final_price }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="approval_status" label="状态" width="120">
+        <template #default="{ row }">
+          <el-tag :type="getStatusType(row.approval_status)">
+            {{ getStatusText(row.approval_status) }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="created_at" label="创建时间" width="160">
+        <template #default="{ row }">
+          {{ formatDate(row.created_at) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" width="200" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="primary" size="small" @click="handleView(row)">
+            查看
+          </el-button>
+          <el-button link type="primary" size="small" @click="handleEdit(row)" v-if="canEdit(row)">
+            编辑
+          </el-button>
+          <el-button link type="success" size="small" @click="handleApprove(row)" v-if="canApprove(row)">
+            审批
+          </el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-      <!-- Pagination -->
-      <div class="pagination-wrapper">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :total="pagination.total"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="handleSizeChange"
-          @current-change="handlePageChange"
-        />
-      </div>
-    </el-card>
+    <!-- 分页 -->
+    <div class="pagination">
+      <el-pagination
+        v-model:current-page="pagination.page"
+        v-model:page-size="pagination.pageSize"
+        :total="pagination.total"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        @size-change="handleSizeChange"
+        @current-change="handlePageChange"
+      />
+    </div>
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, reactive, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { useUserStore } from '@/stores/user'
-import { http } from '@/utils/api-helper'
+import { get } from '@/utils/request'
+import { handleApiError } from '@/utils/errorHandler'
+import { formatDate } from '@/utils/format'
 
-interface Quote {
-  id: number
-  quote_serial: string
-  part_id: number
-  part_no: string
-  part_name: string
-  customer_id: number
-  customer_name: string
-  approval_status: string
-  final_price: number | null
-  submitted_at: string | null
-  created_at: string
-}
-
-const router = useRouter()
-const userStore = useUserStore()
-
-// State
+const quotes = ref([])
 const loading = ref(false)
-const tableData = ref<Quote[]>([])
+const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
 
-// Filters
-const filters = reactive({
-  status: '',
-  partNo: '',
+const filterForm = reactive({
   customer: '',
+  status: '',
 })
 
-// Pagination
 const pagination = reactive({
   page: 1,
   pageSize: 20,
   total: 0,
 })
 
-// Role check
-const roleLevel = computed(() => userStore.userInfo?.role_level || 0)
+// 状态映射
+const statusMap = {
+  WAITING_FOR_TECH: { text: '待技术审核', type: 'warning' },
+  TECH_APPROVED: { text: '技术已审核', type: 'success' },
+  TECH_REJECTED: { text: '技术已驳回', type: 'danger' },
+  DRAFT: { text: '草稿', type: 'info' },
+  PENDING_BOSS: { text: '待老板审批', type: 'warning' },
+  APPROVED: { text: '已审批', type: 'success' },
+  REJECTED: { text: '已驳回', type: 'danger' },
+}
 
-// Methods
-const getStatusType = (status: string) => {
-  const typeMap: Record<string, string> = {
-    WAITING_FOR_TECH: 'warning',
-    TECH_APPROVED: 'success',
-    TECH_REJECTED: 'danger',
-    DRAFT: 'info',
-    PENDING_BOSS: 'primary',
-    APPROVED: 'success',
-    REJECTED: 'danger',
+const getStatusType = (status) => statusMap[status]?.type || 'info'
+const getStatusText = (status) => statusMap[status]?.text || status
+
+// 权限检查
+const canEdit = (row) => {
+  return userInfo.value.role_level >= 5 && row.approval_status === 'DRAFT'
+}
+
+const canApprove = (row) => {
+  if (row.approval_status === 'PENDING_BOSS') {
+    return userInfo.value.role_level >= 9
   }
-  return typeMap[status] || 'info'
-}
-
-const getStatusLabel = (status: string) => {
-  const labelMap: Record<string, string> = {
-    WAITING_FOR_TECH: '等待技术审核',
-    TECH_APPROVED: '技术审核通过',
-    TECH_REJECTED: '技术审核驳回',
-    DRAFT: '草稿',
-    PENDING_BOSS: '待老板审批',
-    APPROVED: '已审批',
-    REJECTED: '已驳回',
-  }
-  return labelMap[status] || status
-}
-
-const formatDate = (dateStr: string) => {
-  if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString('zh-CN')
-}
-
-const canEdit = (row: Quote) => {
-  // Can edit DRAFT or REJECTED quotes
-  return ['DRAFT', 'REJECTED'].includes(row.approval_status) && roleLevel.value >= 4
-}
-
-const canApprove = (row: Quote) => {
-  // Boss can approve PENDING_BOSS quotes
-  if (row.approval_status === 'PENDING_BOSS' && roleLevel.value >= 9) {
-    return true
-  }
-  // Tech can approve WAITING_FOR_TECH quotes
-  if (row.approval_status === 'WAITING_FOR_TECH' && roleLevel.value >= 2) {
-    return true
+  if (row.approval_status === 'WAITING_FOR_TECH') {
+    return userInfo.value.is_tech || userInfo.value.role_level >= 4
   }
   return false
 }
 
-// API calls
-const fetchData = async () => {
+// 获取报价列表
+const fetchQuotes = async () => {
   loading.value = true
   try {
-    const params = new URLSearchParams({
-      page: pagination.page.toString(),
-      page_size: pagination.pageSize.toString(),
-    })
-
-    if (filters.status) params.append('status', filters.status)
-    if (filters.partNo) params.append('part_no', filters.partNo)
-    if (filters.customer) params.append('customer', filters.customer)
-
-    const response = await http.get<{ items: Quote[]; total: number }>(
-      `/api/v1/quotes?${params}`
-    )
-
-    tableData.value = response.items || []
-    pagination.total = response.total || 0
+    const params = {
+      page: pagination.page,
+      page_size: pagination.pageSize,
+      ...(filterForm.customer && { customer: filterForm.customer }),
+      ...(filterForm.status && { status: filterForm.status }),
+    }
+    const data = await get('/quotes', params)
+    quotes.value = data.items || data || []
+    pagination.total = data.total || quotes.value.length
   } catch (error) {
-    ElMessage.error('获取数据失败')
+    handleApiError(error, '获取报价列表失败')
   } finally {
     loading.value = false
   }
 }
 
-// Event handlers
 const handleSearch = () => {
   pagination.page = 1
-  fetchData()
+  fetchQuotes()
 }
 
 const handleReset = () => {
-  filters.status = ''
-  filters.partNo = ''
-  filters.customer = ''
+  filterForm.customer = ''
+  filterForm.status = ''
   handleSearch()
 }
 
 const handleCreate = () => {
-  router.push('/quotes/new')
+  ElMessage.info('新建报价功能开发中')
 }
 
-const handleView = (row: Quote) => {
-  router.push(`/quotes/${row.id}`)
+const handleView = (row) => {
+  ElMessage.info(`查看报价: ${row.quote_no}`)
 }
 
-const handleEdit = (row: Quote) => {
-  router.push(`/quotes/${row.id}/edit`)
+const handleEdit = (row) => {
+  ElMessage.info(`编辑报价: ${row.quote_no}`)
 }
 
-const handleApprove = (row: Quote) => {
-  router.push(`/quotes/${row.id}/approve`)
+const handleApprove = (row) => {
+  ElMessage.info(`审批报价: ${row.quote_no}`)
 }
 
-const handleSizeChange = () => {
-  fetchData()
+const handleSizeChange = (size) => {
+  pagination.pageSize = size
+  fetchQuotes()
 }
 
-const handlePageChange = () => {
-  fetchData()
+const handlePageChange = (page) => {
+  pagination.page = page
+  fetchQuotes()
 }
 
-// Lifecycle
 onMounted(() => {
-  fetchData()
+  fetchQuotes()
 })
 </script>
 
 <style scoped>
-.quotes-page {
+.quotes-container {
   padding: 20px;
 }
 
@@ -278,21 +211,15 @@ onMounted(() => {
 
 .page-header h2 {
   margin: 0;
-  font-size: 20px;
-  font-weight: 600;
 }
 
 .filter-card {
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
-.table-card {
-  margin-bottom: 20px;
-}
-
-.pagination-wrapper {
+.pagination {
   display: flex;
   justify-content: flex-end;
-  margin-top: 20px;
+  margin-top: 16px;
 }
 </style>

@@ -5,35 +5,36 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    ForeignKey,
-    Integer,
-    JSON,
-    Numeric,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, DateTime, Enum, ForeignKey, Integer, JSON, Numeric, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.customer import Customer
-    from app.models.user import User
+    from src.models.customer import Customer
+    from src.models.user import User
+
+
+class NominationStatus(str, PyEnum):
+    """Nomination (fix) status enumeration."""
+
+    UNFIXED = "unfixed"  # Not yet fixed
+    FIXED = "fixed"  # Fixed (confirmed nomination)
+    REVOKED = "revoked"  # Fix revoked by operator
 
 
 class QuoteState(str, PyEnum):
     """Quote status enumeration (mirrors state machine)."""
 
-    DRAFT = "draft"
-    TECH_REVIEW = "tech_review"
-    PENDING_BOSS = "pending_boss"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    FIXED = "fixed"
+    WAITING_FOR_TECH = "waiting_for_tech"  # 等待技术部填写T/W/P
+    TECH_REVIEW = "tech_review"  # 技术审核中（已提交审核）
+    TECH_APPROVED = "tech_approved"  # 技术审核通过，等待业务填写价格
+    TECH_REJECTED = "tech_rejected"  # 技术部驳回
+    DRAFT = "draft"  # 业务填写价格
+    PENDING_BOSS = "pending_boss"  # 待老板审批
+    APPROVED = "approved"  # 老板审批通过
+    REJECTED = "rejected"  # 老板驳回
+    FIXED = "fixed"  # 定点确认
     CANCELLED = "cancelled"
 
 
@@ -110,6 +111,24 @@ class Quote(Base):
 
     # --- Price snapshot (locked after boss approval) ---
     price_snapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
+    # --- Final price (locked after fix) ---
+    final_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
+
+    # --- Nomination (fix) status ---
+    nomination_status: Mapped[NominationStatus] = mapped_column(
+        Enum(NominationStatus), default=NominationStatus.UNFIXED, nullable=False, index=True
+    )
+
+    # --- Fix revocation tracking ---
+    revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    revoked_by: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    revoke_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Revoked by (relationship, placed after revoked_by FK column)
+    revoker: Mapped[Optional["User"]] = relationship("User", foreign_keys=[revoked_by])
 
     # Fixation path
     fix_path: Mapped[Optional[FixPath]] = mapped_column(

@@ -1,10 +1,9 @@
 """Pydantic schemas."""
 
-from app.schemas.auth import *
-from app.schemas.part import *
-from app.schemas.price import *
-from app.schemas.quote import *
-from app.schemas.sampling import *
+from .part import *
+from .price import *
+from .quote import *
+from .sampling import *
 
 __all__ = [
     "AnnualPriceRecordCreate",

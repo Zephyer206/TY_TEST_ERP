@@ -1,118 +1,73 @@
-"""Packaging and shipping models."""
+"""Packaging management models."""
 
 from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    JSON,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.part import Part
-    from app.models.user import User
+    from src.models.part import Part
+    from src.models.production import ProductionSession
 
 
 class PackagingStatus(str, PyEnum):
     """Packaging record status."""
 
-    SCANNED = "scanned"  # Just scanned, pending inspection
-    INSPECTING = "inspecting"  # Under inspection
+    SCANNED = "scanned"  # Package scanned, in WIP
+    INSPECTING = "inspecting"  # Being inspected
     PASSED = "passed"  # Passed inspection, in stock
-    REJECTED = "rejected"  # Failed inspection
-    SHIPPED = "shipped"  # Already shipped
-    RETURNED = "returned"  # Returned
-
-
-class InspectionResult(str, PyEnum):
-    """Visual inspection result."""
-
-    PASS = "pass"
-    FAIL = "fail"
-    CONDITIONAL = "conditional"
+    REJECTED = "rejected"  # Rejected during inspection
+    SHIPPED = "shipped"  # Shipped out
 
 
 class PackagingRecord(Base):
-    """Packaging record for tracking finished goods."""
+    """Packaging scan record model."""
 
     __tablename__ = "packaging_records"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    record_no: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
+    package_no: Mapped[str] = mapped_column(
+        String(100), unique=True, nullable=False, index=True
     )
 
-    # Part reference
+    # Part info
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
     part: Mapped["Part"] = relationship("Part")
 
-    # Product lot info
-    production_batch_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
-    process_flow_no: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    # Source
+    session_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("production_sessions.id"), nullable=True, index=True
+    )
+    session: Mapped[Optional["ProductionSession"]] = relationship("ProductionSession")
 
-    # Packaging details
-    quantity: Mapped[int] = mapped_column(Integer, nullable=False)
-    packaging_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # box, pallet, etc.
-    box_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # Package info
+    package_qty: Mapped[int] = mapped_column(Integer, nullable=False)  # Quantity in this package
+    box_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)  # Box/barcode number
 
-    # Box barcode (scanned)
-    box_barcode: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
-
-    # Weight
-    gross_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    net_weight: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-
-    # Status
+    # Inspection result
     status: Mapped[PackagingStatus] = mapped_column(
         Enum(PackagingStatus), default=PackagingStatus.SCANNED, nullable=False, index=True
     )
 
-    # Visual inspection result
-    visual_inspection_result: Mapped[Optional[InspectionResult]] = mapped_column(
-        Enum(InspectionResult), nullable=True
-    )
-    visual_inspection_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    visual_inspection_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
     # Inspection details
-    inspected_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    passed_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    rejected_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    inspected_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    inspected_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     inspection_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Stock info
-    warehouse_location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    shelf_location: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    stock_qty: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-
-    # Shipping info
-    shipment_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
-    shipped_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    shipped_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Operator
-    scanned_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    scanned_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    # Operator who scanned
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Notes
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    attachments: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    scanned_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
@@ -121,82 +76,76 @@ class PackagingRecord(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<PackagingRecord {self.record_no}>"
+        return f"<PackagingRecord {self.package_no}>"
 
 
-class FinishedGoodsInventory(Base):
-    """Finished goods inventory tracking."""
+class Inventory(Base):
+    """Finished goods inventory model."""
 
     __tablename__ = "finished_goods_inventory"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
-    # Part reference
+    # Part info
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
     part: Mapped["Part"] = relationship("Part")
 
-    # Location
-    warehouse_location: Mapped[str] = mapped_column(String(200), nullable=False)
-    shelf_location: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-
     # Inventory quantity
-    quantity: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    stock_qty: Mapped[int] = mapped_column(Integer, default=0)
 
-    # Batch tracking
-    latest_batch_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
-    latest_production_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # Reserved quantity (for orders not yet shipped)
+    reserved_qty: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Location
+    location: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # Last update
+    last_update_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    last_update_at: Mapped[datetime] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
 
     def __repr__(self) -> str:
-        return f"<FinishedGoodsInventory part={self.part_id} loc={self.warehouse_location}>"
+        return f"<Inventory part={self.part_id} qty={self.stock_qty}>"
 
 
 class InventoryTransaction(Base):
-    """Inventory transaction log."""
+    """Inventory transaction log for traceability."""
 
     __tablename__ = "inventory_transactions"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    transaction_no: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
-    )
 
-    # Reference
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
-    part: Mapped["Part"] = relationship("Part")
 
     # Transaction type
-    transaction_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
-    # Types: STOCK_IN, STOCK_OUT, ADJUSTMENT, TRANSFER
+    transaction_type: Mapped[str] = mapped_column(String(50), nullable=False)
+    # Types: incoming, outgoing, adjustment, reserve, unreserve
 
     # Quantities
-    quantity_before: Mapped[int] = mapped_column(Integer, nullable=False)
-    quantity_change: Mapped[int] = mapped_column(Integer, nullable=False)
-    quantity_after: Mapped[int] = mapped_column(Integer, nullable=False)
+    quantity: Mapped[int] = mapped_column(Integer, nullable=False)  # Positive for in, negative for out
+    stock_before: Mapped[int] = mapped_column(Integer, nullable=False)
+    stock_after: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Reference documents
+    # Reference
     reference_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    # e.g., packaging_record, shipment, adjustment
     reference_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    # Location
-    warehouse_location: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    # Reason
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Operator
-    operated_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Notes
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
@@ -204,4 +153,4 @@ class InventoryTransaction(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<InventoryTransaction {self.transaction_no}>"
+        return f"<InventoryTransaction {self.id} {self.transaction_type} {self.quantity}>"

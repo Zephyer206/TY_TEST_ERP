@@ -5,67 +5,111 @@ from typing import Optional, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from app.models.machine import Machine
-from app.models.part import Part
-from app.models.production import ProcessFlowCard
-from app.models.user import User
+from src.models.machine import Machine
+from src.models.part import Part
+from src.models.production import (
+    ProcessFlowCard,
+    ProcessFlowStatus,
+    ProductionSession,
+)
+from src.models.tooling import Tooling
 
 
-async def get_process_flow_by_no(
+def generate_card_no() -> str:
+    """Generate a unique process flow card number."""
+    now = datetime.utcnow()
+    prefix = now.strftime("%Y%m%d")
+    return f"PFC-{prefix}-{now.strftime('%H%M%S')}"
+
+
+async def generate_process_flow_card(
     db: AsyncSession,
-    card_no: str,
-) -> Optional[ProcessFlowCard]:
-    """Get process flow card by card number."""
-    result = await db.execute(
-        select(ProcessFlowCard)
-        .options(
-            selectinload(ProcessFlowCard.part),
-            selectinload(ProcessFlowCard.machine),
-            selectinload(ProcessFlowCard.session),
-        )
-        .where(ProcessFlowCard.card_no == card_no, ProcessFlowCard.is_deleted == False)
+    session: ProductionSession,
+) -> ProcessFlowCard:
+    """Generate a process flow card from a closed production session."""
+    # Get related entities
+    machine_result = await db.execute(
+        select(Machine).where(Machine.id == session.machine_id)
     )
-    return result.scalar_one_or_none()
+    machine = machine_result.scalar_one_or_none()
+
+    part_result = await db.execute(
+        select(Part).where(Part.id == session.part_id)
+    )
+    part = part_result.scalar_one_or_none()
+
+    tooling = None
+    if session.tooling_id:
+        tooling_result = await db.execute(
+            select(Tooling).where(Tooling.id == session.tooling_id)
+        )
+        tooling = tooling_result.scalar_one_or_none()
+
+    # Get material batch number if available
+    material_batch_no = None
+    if session.material_batch_id:
+        from src.models.warehouse import MaterialBatch
+
+        batch_result = await db.execute(
+            select(MaterialBatch).where(MaterialBatch.id == session.material_batch_id)
+        )
+        batch = batch_result.scalar_one_or_none()
+        if batch:
+            material_batch_no = batch.batch_no
+
+    card_no = generate_card_no()
+
+    card = ProcessFlowCard(
+        card_no=card_no,
+        session_id=session.id,
+        part_id=session.part_id,
+        machine_id=session.machine_id,
+        tooling_id=session.tooling_id,
+        material_batch_no=material_batch_no,
+        planned_qty=session.total_output,
+        actual_output=session.total_output,
+        good_qty=session.good_qty,
+        reject_qty=session.reject_qty,
+        status=ProcessFlowStatus.COMPLETED,
+        start_time=session.started_at,
+        end_time=session.closed_at,
+        operator_id=session.operator_id,
+    )
+    db.add(card)
+    await db.flush()
+
+    # Generate QR code for the card
+    from src.services.qr_service import generate_process_flow_qr
+    card.qr_code = generate_process_flow_qr(card.id, card.card_no)
+
+    await db.commit()
+    await db.refresh(card)
+    return card
 
 
-async def get_process_flow_by_id(
+async def get_process_flow_card(
     db: AsyncSession,
     card_id: int,
 ) -> Optional[ProcessFlowCard]:
-    """Get process flow card by ID."""
+    """Get a process flow card by ID."""
     result = await db.execute(
         select(ProcessFlowCard)
-        .options(
-            selectinload(ProcessFlowCard.part),
-            selectinload(ProcessFlowCard.machine),
-            selectinload(ProcessFlowCard.session),
-        )
-        .where(ProcessFlowCard.id == card_id, ProcessFlowCard.is_deleted == False)
+        .where(ProcessFlowCard.id == card_id)
     )
     return result.scalar_one_or_none()
 
 
-async def get_process_flows(
+async def get_process_flow_cards(
     db: AsyncSession,
     part_id: Optional[int] = None,
     machine_id: Optional[int] = None,
-    status: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    status: Optional[ProcessFlowStatus] = None,
     skip: int = 0,
     limit: int = 50,
 ) -> Sequence[ProcessFlowCard]:
-    """Get process flow cards with filters."""
-    query = (
-        select(ProcessFlowCard)
-        .options(
-            selectinload(ProcessFlowCard.part),
-            selectinload(ProcessFlowCard.machine),
-        )
-        .where(ProcessFlowCard.is_deleted == False)
-    )
+    """Get process flow cards with optional filters."""
+    query = select(ProcessFlowCard).where(ProcessFlowCard.id > 0)
 
     if part_id:
         query = query.where(ProcessFlowCard.part_id == part_id)
@@ -73,87 +117,149 @@ async def get_process_flows(
         query = query.where(ProcessFlowCard.machine_id == machine_id)
     if status:
         query = query.where(ProcessFlowCard.status == status)
-    if start_date:
-        query = query.where(ProcessFlowCard.created_at >= start_date)
-    if end_date:
-        query = query.where(ProcessFlowCard.created_at <= end_date)
 
     query = query.order_by(ProcessFlowCard.created_at.desc()).offset(skip).limit(limit)
+
     result = await db.execute(query)
     return result.scalars().all()
 
 
-async def update_process_flow_status(
+async def update_card_status(
     db: AsyncSession,
     card: ProcessFlowCard,
-    new_status: str,
-    updater: User,
+    status: ProcessFlowStatus,
 ) -> ProcessFlowCard:
     """Update process flow card status."""
-    card.status = new_status
+    card.status = status
+    if status == ProcessFlowStatus.IN_PROGRESS and not card.start_time:
+        card.start_time = datetime.utcnow()
+    elif status == ProcessFlowStatus.COMPLETED and not card.end_time:
+        card.end_time = datetime.utcnow()
+
     await db.commit()
     await db.refresh(card)
     return card
 
 
-async def get_process_flow_summary(
+async def scan_process_flow_card(
     db: AsyncSession,
-    part_id: int,
-    days: int = 30,
+    card_id: int,
+    operator_id: int | None = None,
 ) -> dict:
-    """Get summary statistics for process flow cards."""
-    from datetime import timedelta
-    from sqlalchemy import func
+    """Scan a process flow card: get full info + QR image + scan history."""
+    from src.services.qr_service import generate_process_flow_qr, generate_qr_base64
 
-    start_date = datetime.utcnow() - timedelta(days=days)
+    card = await get_process_flow_card(db, card_id)
+    if not card:
+        raise ValueError(f"Process flow card not found: {card_id}")
 
-    # Get total counts
-    total_result = await db.execute(
-        select(func.count(ProcessFlowCard.id))
-        .where(
-            ProcessFlowCard.part_id == part_id,
-            ProcessFlowCard.created_at >= start_date,
-        )
+    qr_content = generate_process_flow_qr(card.id, card.card_no)
+    qr_image_base64 = generate_qr_base64(qr_content)
+
+    # Record scan log
+    from src.models.warehouse import QRScanLog
+    log = QRScanLog(
+        scan_type="PFC",
+        entity_id=card.id,
+        entity_no=card.card_no,
+        operator_id=operator_id,
+        operation="query",
+        notes=f"Scan PFC: {card.card_no}",
     )
-    total_count = total_result.scalar() or 0
+    db.add(log)
+    await db.commit()
 
-    # Get total output
-    output_result = await db.execute(
-        select(func.sum(ProcessFlowCard.total_output))
-        .where(
-            ProcessFlowCard.part_id == part_id,
-            ProcessFlowCard.created_at >= start_date,
-        )
+    # Get scan history
+    history_result = await db.execute(
+        select(QRScanLog)
+        .where(QRScanLog.scan_type == "PFC", QRScanLog.entity_id == card.id)
+        .order_by(QRScanLog.scanned_at.desc())
+        .limit(20)
     )
-    total_output = output_result.scalar() or 0
-
-    # Get total good quantity
-    good_result = await db.execute(
-        select(func.sum(ProcessFlowCard.good_qty))
-        .where(
-            ProcessFlowCard.part_id == part_id,
-            ProcessFlowCard.created_at >= start_date,
-        )
-    )
-    total_good = good_result.scalar() or 0
-
-    # Get total duration
-    duration_result = await db.execute(
-        select(func.sum(ProcessFlowCard.duration_minutes))
-        .where(
-            ProcessFlowCard.part_id == part_id,
-            ProcessFlowCard.created_at >= start_date,
-        )
-    )
-    total_duration = duration_result.scalar() or 0
+    scan_history = history_result.scalars().all()
 
     return {
-        "part_id": part_id,
-        "period_days": days,
-        "total_cards": total_count,
-        "total_output": total_output,
-        "total_good_qty": total_good,
-        "total_reject_qty": total_output - total_good,
-        "total_duration_minutes": total_duration,
-        "avg_good_rate": round(total_good / total_output * 100, 2) if total_output > 0 else 0,
+        "card": card,
+        "qr_content": qr_content,
+        "qr_image_base64": qr_image_base64,
+        "scan_history": scan_history,
     }
+
+
+async def reverse_trace_card(
+    db: AsyncSession,
+    card_id: int,
+) -> dict:
+    """Reverse trace: from card to session -> machine -> material batch -> supplier."""
+    from src.models.warehouse import MaterialBatch, QRScanLog
+    from src.services.session_service import get_session_by_id
+
+    card = await get_process_flow_card(db, card_id)
+    if not card:
+        raise ValueError(f"Process flow card not found: {card_id}")
+
+    # Get production session
+    session = await get_session_by_id(db, card.session_id)
+
+    # Get material batch info if available
+    material_batch = None
+    if card.material_batch_no:
+        batch_result = await db.execute(
+            select(MaterialBatch)
+            .where(MaterialBatch.batch_no == card.material_batch_no)
+        )
+        material_batch = batch_result.scalar_one_or_none()
+
+    # Get scan history
+    history_result = await db.execute(
+        select(QRScanLog)
+        .where(QRScanLog.scan_type == "PFC", QRScanLog.entity_id == card.id)
+        .order_by(QRScanLog.scanned_at.desc())
+        .limit(20)
+    )
+    scan_history = history_result.scalars().all()
+
+    return {
+        "card": card,
+        "session": session,
+        "material_batch": material_batch,
+        "scan_history": scan_history,
+    }
+
+
+async def confirm_inbound(
+    db: AsyncSession,
+    card_id: int,
+    operator_id: int,
+    notes: str | None = None,
+) -> ProcessFlowCard:
+    """Confirm inbound (OQC passed) for a process flow card.
+
+    Records the scan event and updates the card with inbound metadata.
+    """
+    from src.models.warehouse import QRScanLog
+
+    card = await get_process_flow_card(db, card_id)
+    if not card:
+        raise ValueError(f"Process flow card not found: {card_id}")
+
+    if card.status not in (ProcessFlowStatus.COMPLETED, ProcessFlowStatus.IN_PROGRESS):
+        raise ValueError(f"Card not eligible for inbound: {card.status.value}")
+
+    card.inbound_time = datetime.utcnow()
+    card.inbound_operator_id = operator_id
+    card.inbound_notes = notes
+
+    # Record scan log
+    log = QRScanLog(
+        scan_type="PFC",
+        entity_id=card.id,
+        entity_no=card.card_no,
+        operator_id=operator_id,
+        operation="inbound",
+        notes=notes or "OQC passed, inbound confirmed",
+    )
+    db.add(log)
+    await db.commit()
+    await db.refresh(card)
+    return card

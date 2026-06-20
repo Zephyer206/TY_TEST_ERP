@@ -1,298 +1,223 @@
-"""Business logic for admin operations including context switching."""
+"""Business logic for admin and context switch management."""
 
 import secrets
 from datetime import datetime, timedelta
 from typing import Optional, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import joinedload
 
-from app.models.admin import AdminAuditLog, AdminContextSwitch, SwitchTargetRole
-from app.models.user import User
-
-
-# Role level mapping for switch targets
-ROLE_LEVEL_MAP = {
-    SwitchTargetRole.OPERATOR: (1, "操作工"),
-    SwitchTargetRole.MOLD_ENGINEER: (2, "模具工程师"),
-    SwitchTargetRole.SUPERVISOR: (3, "组长/主管"),
-    SwitchTargetRole.DESIGN_ENGINEER: (4, "设计工程师"),
-    SwitchTargetRole.SALES_MANAGER: (5, "业务经理"),
-}
+from src.models.admin import AdminContextSwitch, ContextSwitchType
+from src.models.user import User
+from src.schemas.admin import DEPT_ROLE_MAPPINGS
 
 
-def generate_switch_token() -> str:
-    """Generate a secure token for context switch."""
-    return secrets.token_urlsafe(32)
+SESSION_EXPIRY_SECONDS = 3600  # 1 hour
 
 
-def generate_log_no() -> str:
-    """Generate a unique log number."""
-    now = datetime.utcnow()
-    suffix = secrets.token_hex(3).upper()[:6]
-    return f"AUD-{now.strftime('%Y%m%d')}-{suffix}"
+def generate_session_key() -> str:
+    """Generate a unique session key for context switch."""
+    return f"ctx_switch_{secrets.token_urlsafe(32)}"
+
+
+def _get_dept_mapping(department: str) -> dict:
+    """Get role mapping for a department."""
+    mapping = DEPT_ROLE_MAPPINGS.get(department.lower())
+    if not mapping:
+        raise ValueError(f"Unknown department: {department}")
+    return mapping
 
 
 async def switch_context(
     db: AsyncSession,
-    admin: User,
-    target_role: SwitchTargetRole,
-    duration_minutes: int,
-    reason: str,
-    ip_address: Optional[str] = None,
-) -> tuple[AdminContextSwitch, dict]:
+    user: User,
+    department: str,
+) -> tuple[AdminContextSwitch, str]:
+    """Switch admin context to another department perspective.
+
+    Args:
+        db: Database session
+        user: Current admin user
+        department: Target department to switch to
+
+    Returns:
+        Tuple of (context switch record, session key)
+
+    Raises:
+        ValueError: If user is not admin or department is invalid
     """
-    Switch admin context to a target role.
+    # Verify user is admin (role_level >= 10)
+    if user.role_level < 10:
+        raise ValueError("Only super admin can switch context")
 
-    Returns the context switch record and token info.
-    """
-    # Validate admin has role_level 10
-    if admin.role_level != 10:
-        raise PermissionError("Only admin (role_level=10) can switch context")
-
-    # Get target role info
-    role_level, role_name = ROLE_LEVEL_MAP[target_role]
-
-    # Deactivate any existing active switches for this admin
-    existing = await db.execute(
-        select(AdminContextSwitch).where(
-            AdminContextSwitch.admin_user_id == admin.id,
-            AdminContextSwitch.is_active == True,
-        )
-    )
-    for old_switch in existing.scalars().all():
-        old_switch.is_active = False
-        old_switch.switched_back_at = datetime.utcnow()
-
-    # Create new switch
-    switch_token = generate_switch_token()
-    expires_at = datetime.utcnow() + timedelta(minutes=duration_minutes)
-
-    switch = AdminContextSwitch(
-        admin_user_id=admin.id,
-        original_role_level=admin.role_level,
-        switched_role_level=role_level,
-        switched_role_name=role_name,
-        switch_token=switch_token,
-        is_active=True,
-        switched_at=datetime.utcnow(),
-        expires_at=expires_at,
-        reason=reason,
-        ip_address=ip_address,
-    )
-    db.add(switch)
-    await db.commit()
-    await db.refresh(switch)
-
-    # Create audit log
-    await _create_audit_log(
-        db,
-        admin_id=admin.id,
-        operation="CONTEXT_SWITCH",
-        details={
-            "target_role_level": role_level,
-            "target_role_name": role_name,
-            "duration_minutes": duration_minutes,
-            "reason": reason,
-        },
-        context_switch_id=switch.id,
-        ip_address=ip_address,
+    # Deactivate any existing active switches for this user
+    await db.execute(
+        update(AdminContextSwitch)
+        .where(AdminContextSwitch.user_id == user.id)
+        .where(AdminContextSwitch.is_active == True)
+        .values(is_active=False, switched_back_at=datetime.utcnow())
     )
 
-    return switch, {
-        "switch_token": switch_token,
-        "switched_role_level": role_level,
-        "switched_role_name": role_name,
-        "original_role_level": admin.role_level,
-        "expires_at": expires_at,
+    # Get role mapping for department
+    mapping = _get_dept_mapping(department)
+
+    # Map department to switch type
+    switch_type_map = {
+        "sales": ContextSwitchType.TO_BUSINESS,
+        "production": ContextSwitchType.TO_PRODUCTION,
+        "quality": ContextSwitchType.TO_QUALITY,
+        "warehouse": ContextSwitchType.TO_WAREHOUSE,
+        "design": ContextSwitchType.TO_DESIGN,
+        "mold": ContextSwitchType.TO_BUSINESS,
+        "packaging": ContextSwitchType.TO_PRODUCTION,
+        "spray": ContextSwitchType.TO_PRODUCTION,
     }
+    switch_type = switch_type_map.get(department.lower(), ContextSwitchType.TO_BUSINESS)
+
+    # Create new context switch record
+    session_key = generate_session_key()
+    expires_at = datetime.utcnow() + timedelta(seconds=SESSION_EXPIRY_SECONDS)
+
+    context_switch = AdminContextSwitch(
+        user_id=user.id,
+        original_role_level=user.role_level,
+        original_dept=user.dept,
+        switched_to_dept=department,
+        switched_to_role_level=mapping["role_level"],
+        switch_type=switch_type,
+        is_active=True,
+        session_key=session_key,
+        expires_at=expires_at,
+    )
+    db.add(context_switch)
+    await db.commit()
+    await db.refresh(context_switch)
+
+    return context_switch, session_key
 
 
 async def switch_back(
     db: AsyncSession,
-    admin: User,
-    ip_address: Optional[str] = None,
+    user: User,
+    session_key: Optional[str] = None,
 ) -> AdminContextSwitch:
-    """Switch back to original admin role."""
-    # Find active switch for this admin
-    result = await db.execute(
-        select(AdminContextSwitch).where(
-            AdminContextSwitch.admin_user_id == admin.id,
-            AdminContextSwitch.is_active == True,
-        )
-    )
-    switch = result.scalar_one_or_none()
+    """Switch back to admin perspective.
 
-    if not switch:
+    Args:
+        db: Database session
+        user: Current user
+        session_key: Optional session key to verify
+
+    Returns:
+        Updated context switch record
+
+    Raises:
+        ValueError: If no active switch found
+    """
+    # Find active context switch
+    query = select(AdminContextSwitch).where(
+        AdminContextSwitch.user_id == user.id,
+        AdminContextSwitch.is_active == True,
+    )
+
+    if session_key:
+        query = query.where(AdminContextSwitch.session_key == session_key)
+
+    result = await db.execute(query)
+    context_switch = result.scalar_one_or_none()
+
+    if not context_switch:
         raise ValueError("No active context switch found")
 
-    # Deactivate switch
-    switch.is_active = False
-    switch.switched_back_at = datetime.utcnow()
+    # Deactivate the switch
+    context_switch.is_active = False
+    context_switch.switched_back_at = datetime.utcnow()
 
     await db.commit()
-    await db.refresh(switch)
+    await db.refresh(context_switch)
 
-    # Create audit log
-    await _create_audit_log(
-        db,
-        admin_id=admin.id,
-        operation="CONTEXT_SWITCH_BACK",
-        details={
-            "original_role_level": switch.original_role_level,
-            "switched_role_level": switch.switched_role_level,
-        },
-        context_switch_id=switch.id,
-        ip_address=ip_address,
-    )
-
-    return switch
+    return context_switch
 
 
-async def get_active_switch(
+async def get_active_context_switch(
     db: AsyncSession,
-    admin_user_id: int,
+    user_id: int,
 ) -> Optional[AdminContextSwitch]:
-    """Get active context switch for an admin."""
+    """Get the active context switch for a user."""
     result = await db.execute(
-        select(AdminContextSwitch).where(
-            AdminContextSwitch.admin_user_id == admin_user_id,
-            AdminContextSwitch.is_active == True,
-        )
+        select(AdminContextSwitch)
+        .where(AdminContextSwitch.user_id == user_id)
+        .where(AdminContextSwitch.is_active == True)
     )
     return result.scalar_one_or_none()
 
 
-async def get_context_status(
+async def get_context_switch_history(
     db: AsyncSession,
-    admin: User,
-) -> dict:
-    """Get current context status for admin."""
-    switch = await get_active_switch(db, admin.id)
-
-    if not switch:
-        return {
-            "is_switched": False,
-            "current_role_level": admin.role_level,
-            "current_role_name": _get_role_name(admin.role_level),
-        }
-
-    remaining = 0
-    if switch.expires_at:
-        delta = switch.expires_at - datetime.utcnow()
-        remaining = max(0, int(delta.total_seconds() / 60))
-
-    return {
-        "is_switched": True,
-        "current_role_level": switch.switched_role_level,
-        "current_role_name": switch.switched_role_name,
-        "original_role_level": switch.original_role_level,
-        "original_role_name": _get_role_name(switch.original_role_level),
-        "switched_at": switch.switched_at,
-        "expires_at": switch.expires_at,
-        "remaining_minutes": remaining,
-    }
-
-
-def get_effective_role(
-    db: AsyncSession,
-    admin: User,
-) -> tuple[int, bool]:
-    """
-    Get effective role level for a user.
-
-    Returns (role_level, is_switched_context).
-    If admin has active switch, returns switched role level.
-    """
-    if admin.role_level != 10:
-        return admin.role_level, False
-
-    # For admin, check if there's an active switch
-    # This is a simplified sync version - in production, use Redis cache
-    # For now, we rely on the token-based approach in the API layer
-    return admin.role_level, False
-
-
-def validate_switch_token(
-    db: AsyncSession,
-    token: str,
-) -> Optional[AdminContextSwitch]:
-    """Validate a switch token and return the context switch if valid."""
-    result = db.execute(
-        select(AdminContextSwitch).where(
-            AdminContextSwitch.switch_token == token,
-            AdminContextSwitch.is_active == True,
-        )
-    )
-    switch = result.scalar_one_or_none()
-
-    if not switch:
-        return None
-
-    # Check if expired
-    if switch.expires_at and switch.expires_at < datetime.utcnow():
-        switch.is_active = False
-        db.commit()
-        return None
-
-    return switch
-
-
-async def _create_audit_log(
-    db: AsyncSession,
-    admin_id: int,
-    operation: str,
-    details: Optional[dict] = None,
-    target_type: Optional[str] = None,
-    target_id: Optional[int] = None,
-    context_switch_id: Optional[int] = None,
-    ip_address: Optional[str] = None,
-) -> AdminAuditLog:
-    """Create an admin audit log entry."""
-    log = AdminAuditLog(
-        log_no=generate_log_no(),
-        admin_user_id=admin_id,
-        operation=operation,
-        target_type=target_type,
-        target_id=target_id,
-        context_switch_id=context_switch_id,
-        details=details,
-        ip_address=ip_address,
-    )
-    db.add(log)
-    await db.commit()
-    return log
-
-
-async def get_audit_logs(
-    db: AsyncSession,
-    admin_user_id: Optional[int] = None,
-    operation: Optional[str] = None,
+    user_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 50,
-) -> Sequence[AdminAuditLog]:
-    """Get admin audit logs with filters."""
-    query = select(AdminAuditLog)
+) -> Sequence[AdminContextSwitch]:
+    """Get context switch history."""
+    query = select(AdminContextSwitch).order_by(
+        AdminContextSwitch.switched_at.desc()
+    )
 
-    if admin_user_id:
-        query = query.where(AdminAuditLog.admin_user_id == admin_user_id)
-    if operation:
-        query = query.where(AdminAuditLog.operation == operation)
+    if user_id:
+        query = query.where(AdminContextSwitch.user_id == user_id)
 
-    query = query.order_by(AdminAuditLog.created_at.desc()).offset(skip).limit(limit)
+    query = query.offset(skip).limit(limit)
+
     result = await db.execute(query)
     return result.scalars().all()
 
 
-def _get_role_name(role_level: int) -> str:
-    """Get role name from role level."""
-    role_names = {
-        1: "操作工",
-        2: "模具工程师",
-        3: "组长/主管",
-        4: "设计工程师",
-        5: "业务经理",
-        9: "老板",
-        10: "超级管理员",
+def get_effective_role(user: User, context_switch: Optional[AdminContextSwitch] = None) -> dict:
+    """Get effective role after considering context switch.
+
+    Args:
+        user: Original user
+        context_switch: Active context switch if any
+
+    Returns:
+        Dict with effective role_level and dept
+    """
+    if context_switch and context_switch.is_active:
+        # Check if switch has expired
+        if context_switch.expires_at and context_switch.expires_at < datetime.utcnow():
+            return {
+                "role_level": user.role_level,
+                "dept": user.dept,
+                "is_switched": False,
+                "original_role_level": user.role_level,
+                "original_dept": user.dept,
+            }
+
+        return {
+            "role_level": context_switch.switched_to_role_level,
+            "dept": context_switch.switched_to_dept,
+            "is_switched": True,
+            "original_role_level": context_switch.original_role_level,
+            "original_dept": context_switch.original_dept,
+            "switch_type": context_switch.switch_type,
+            "switched_at": context_switch.switched_at,
+            "expires_at": context_switch.expires_at,
+        }
+
+    return {
+        "role_level": user.role_level,
+        "dept": user.dept,
+        "is_switched": False,
+        "original_role_level": user.role_level,
+        "original_dept": user.dept,
     }
-    return role_names.get(role_level, f"未知({role_level})")
+
+
+def can_access_boss_button(role_level: int) -> bool:
+    """Check if user can access boss-only buttons.
+
+    Boss buttons (role_level >= 9) should be hidden when admin
+    is switched to another perspective.
+    """
+    return role_level >= 9

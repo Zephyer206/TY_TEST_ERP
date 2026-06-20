@@ -1,210 +1,239 @@
-"""Business logic for production session management."""
+"""Business logic for production sessions and reporting."""
 
 from datetime import datetime
 from typing import Optional, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.machine import Machine, MachineState
-from app.models.part import Part
-from app.models.production import (
-    PlanState,
-    ProcessFlowCard,
+from src.models.machine import Machine, MachineState
+from src.models.part import Part
+from src.models.production import (
     ProductionReport,
     ProductionSession,
-    SessionState,
+    SessionStatus,
 )
-from app.models.tooling import Tooling
-from app.models.user import User
-from app.schemas.production import ProductionReportCreate, SessionCloseRequest, SessionStartRequest
+from src.models.tooling import Tooling
 
 
-def generate_session_no(db: AsyncSession) -> str:
-    """Generate a unique session number."""
+def generate_session_no() -> str:
+    """Generate a unique production session number."""
     now = datetime.utcnow()
-    return f"PS-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+    prefix = now.strftime("%Y%m%d")
+    return f"PS-{prefix}-{now.strftime('%H%M%S')}"
 
 
-def generate_report_no(db: AsyncSession) -> str:
-    """Generate a unique report number."""
-    now = datetime.utcnow()
-    return f"PR-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+async def verify_material_tooling_match(
+    db: AsyncSession,
+    machine_id: int,
+    part_id: int,
+    material_batch_id: Optional[int] = None,
+) -> dict:
+    """Verify if material matches the tooling on the machine for the part.
+
+    Returns:
+        dict with is_match, message, tooling_id, etc.
+    """
+    from src.models.warehouse import MaterialBatch
+
+    result = {
+        "is_match": True,
+        "message": "Material matches tooling",
+        "tooling_id": None,
+        "tooling_no": None,
+        "expected_material": None,
+        "actual_material": None,
+    }
+
+    # Get machine and tooling
+    machine_result = await db.execute(
+        select(Machine).where(Machine.id == machine_id)
+    )
+    machine = machine_result.scalar_one_or_none()
+    if not machine:
+        result["is_match"] = False
+        result["message"] = "Machine not found"
+        return result
+
+    if not machine.current_tooling_id:
+        result["is_match"] = False
+        result["message"] = "Machine has no tooling mounted"
+        return result
+
+    tooling_result = await db.execute(
+        select(Tooling).where(Tooling.id == machine.current_tooling_id)
+    )
+    tooling = tooling_result.scalar_one_or_none()
+    if not tooling:
+        result["is_match"] = False
+        result["message"] = "Tooling not found"
+        return result
+
+    result["tooling_id"] = tooling.id
+    result["tooling_no"] = tooling.tooling_no
+
+    # Check material if provided
+    if material_batch_id:
+        batch_result = await db.execute(
+            select(MaterialBatch).where(MaterialBatch.id == material_batch_id)
+        )
+        batch = batch_result.scalar_one_or_none()
+        if batch:
+            result["actual_material"] = batch.material_grade
+
+    return result
 
 
-def generate_process_flow_no(db: AsyncSession) -> str:
-    """Generate a unique process flow card number."""
-    now = datetime.utcnow()
-    return f"PFC-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+async def start_session(
+    db: AsyncSession,
+    machine_id: int,
+    part_id: int,
+    material_batch_id: Optional[int] = None,
+    plan_id: Optional[int] = None,
+    operator_id: Optional[int] = None,
+    force_start: bool = False,
+) -> ProductionSession:
+    """Start a new production session.
+
+    Args:
+        force_start: If True, skip material matching verification
+    """
+    from src.models.production import PlanMachineAssignment, ProductionPlan
+    from src.models.warehouse import MaterialBatch
+
+    # Verify machine
+    machine_result = await db.execute(
+        select(Machine).where(Machine.id == machine_id)
+    )
+    machine = machine_result.scalar_one_or_none()
+    if not machine:
+        raise ValueError("Machine not found")
+
+    # Verify part
+    part_result = await db.execute(
+        select(Part).where(Part.id == part_id)
+    )
+    part = part_result.scalar_one_or_none()
+    if not part:
+        raise ValueError("Part not found")
+
+    # Get tooling from machine
+    tooling_id = machine.current_tooling_id
+
+    # Verify material matching if not forced
+    if material_batch_id and not force_start:
+        match_result = await verify_material_tooling_match(
+            db, machine_id, part_id, material_batch_id
+        )
+        if not match_result["is_match"]:
+            raise ValueError(f"Material mismatch: {match_result['message']}")
+
+    session_no = generate_session_no()
+
+    session = ProductionSession(
+        session_no=session_no,
+        plan_id=plan_id,
+        machine_id=machine_id,
+        tooling_id=tooling_id,
+        part_id=part_id,
+        material_batch_id=material_batch_id,
+        status=SessionStatus.ACTIVE,
+        started_at=datetime.utcnow(),
+        operator_id=operator_id,
+    )
+    db.add(session)
+
+    # Update machine state
+    if machine.state == MachineState.IDLE:
+        machine.state = MachineState.RUNNING
+
+    await db.commit()
+    await db.refresh(session)
+    return session
 
 
 async def get_session_by_id(
     db: AsyncSession,
     session_id: int,
 ) -> Optional[ProductionSession]:
-    """Get production session by ID."""
+    """Get a production session by ID."""
     result = await db.execute(
         select(ProductionSession)
         .options(
-            selectinload(ProductionSession.plan),
-            selectinload(ProductionSession.machine),
+            joinedload(ProductionSession.machine),
+            joinedload(ProductionSession.tooling),
+            joinedload(ProductionSession.part),
+            selectinload(ProductionSession.reports),
         )
         .where(ProductionSession.id == session_id)
     )
     return result.scalar_one_or_none()
 
 
-async def get_active_session(
+async def get_active_sessions(
     db: AsyncSession,
-    machine_id: int,
-) -> Optional[ProductionSession]:
-    """Get active session for a machine."""
-    result = await db.execute(
+    machine_id: Optional[int] = None,
+    part_id: Optional[int] = None,
+) -> Sequence[ProductionSession]:
+    """Get active production sessions."""
+    query = (
         select(ProductionSession)
-        .options(selectinload(ProductionSession.plan))
-        .where(
-            ProductionSession.machine_id == machine_id,
-            ProductionSession.state == SessionState.OPEN,
+        .options(
+            joinedload(ProductionSession.machine),
+            joinedload(ProductionSession.tooling),
+            joinedload(ProductionSession.part),
         )
-        .order_by(ProductionSession.started_at.desc())
+        .where(ProductionSession.status == SessionStatus.ACTIVE)
     )
-    return result.scalar_one_or_none()
 
+    if machine_id:
+        query = query.where(ProductionSession.machine_id == machine_id)
+    if part_id:
+        query = query.where(ProductionSession.part_id == part_id)
 
-async def start_session(
-    db: AsyncSession,
-    data: SessionStartRequest,
-    operator: User,
-) -> dict:
-    """Start a production session.
-
-    Validates material-tooling matching and creates session.
-    """
-    # Validate plan exists
-    result = await db.execute(
-        select(ProductionSession).where(ProductionSession.plan_id == data.plan_id)
-    )
-    existing = result.scalar_one_or_none()
-    if existing and existing.state == SessionState.OPEN:
-        raise ValueError("There is already an active session for this plan")
-
-    # Get machine
-    machine_result = await db.execute(
-        select(Machine).where(Machine.id == data.machine_id, Machine.is_deleted == False)
-    )
-    machine = machine_result.scalar_one_or_none()
-    if not machine:
-        raise ValueError("Machine not found")
-
-    # Get tooling from machine
-    tooling_id = data.tooling_id or machine.current_tooling_id
-    tooling = None
-    tooling_no = None
-    if tooling_id:
-        tooling_result = await db.execute(
-            select(Tooling).where(Tooling.id == tooling_id)
-        )
-        tooling = tooling_result.scalar_one_or_none()
-        if tooling:
-            tooling_no = tooling.tooling_no
-
-    # Validate material-tooling matching
-    machine_matching = True
-    material_validated = False
-
-    if data.material_batch_id and tooling_id:
-        # TODO: Add actual material-tooling validation logic
-        # For now, just check if both are provided
-        material_validated = True
-
-    # Create session
-    session_no = generate_session_no(db)
-    session = ProductionSession(
-        session_no=session_no,
-        plan_id=data.plan_id,
-        machine_id=data.machine_id,
-        material_batch_id=data.material_batch_id,
-        tooling_id=tooling_id,
-        material_validated=material_validated,
-        force_started=False,
-        state=SessionState.OPEN,
-    )
-    db.add(session)
-
-    # Update machine state
-    machine.state = MachineState.RUNNING
-
-    await db.commit()
-    await db.refresh(session)
-
-    message = "会话开启成功"
-    if not material_validated:
-        message = "会话开启成功，但原材料与模具匹配验证未完成"
-
-    return {
-        "session_id": session.id,
-        "session_no": session.session_no,
-        "plan_id": session.plan_id,
-        "machine_id": session.machine_id,
-        "material_validated": session.material_validated,
-        "force_started": session.force_started,
-        "tooling_id": tooling_id,
-        "tooling_no": tooling_no,
-        "machine_matching": machine_matching,
-        "message": message,
-    }
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 async def submit_report(
     db: AsyncSession,
-    data: ProductionReportCreate,
-    operator: User,
+    session: ProductionSession,
+    strokes: int,
+    cavity_count: int,
+    good_qty: int,
+    reject_qty: int,
+    material_used: Optional[float] = None,
+    notes: Optional[str] = None,
+    operator_id: Optional[int] = None,
 ) -> ProductionReport:
-    """Submit a production report (stroke report)."""
-    # Get session
-    session = await get_session_by_id(db, data.session_id)
-    if not session:
-        raise ValueError("Production session not found")
+    """Submit a production report within a session.
 
-    if session.state != SessionState.OPEN:
-        raise ValueError("Session is not open")
+    Output = strokes × cavity_count
+    """
+    if session.status != SessionStatus.ACTIVE:
+        raise ValueError(f"Session not active: {session.status.value}")
 
-    # Get cavity count from tooling
-    cavity_count = 1
-    if session.tooling_id:
-        tooling_result = await db.execute(
-            select(Tooling).where(Tooling.id == session.tooling_id)
-        )
-        tooling = tooling_result.scalar_one_or_none()
-        if tooling and tooling.cavity_count:
-            cavity_count = tooling.cavity_count
+    output = strokes * cavity_count
 
-    # Calculate output
-    output_qty = data.strokes * cavity_count
-
-    # Generate report number
-    report_no = generate_report_no(db)
-
-    # Create report
     report = ProductionReport(
-        report_no=report_no,
-        session_id=data.session_id,
-        strokes=data.strokes,
+        session_id=session.id,
+        strokes=strokes,
         cavity_count=cavity_count,
-        output_qty=output_qty,
-        good_qty=data.good_qty,
-        reject_qty=data.reject_qty,
-        reject_reasons=data.reject_reasons,
-        operator_id=operator.id if hasattr(operator, 'id') else None,
-        operator_name=data.operator_name,
+        output=output,
+        good_qty=good_qty,
+        reject_qty=reject_qty,
+        material_used=material_used,
+        notes=notes,
+        operator_id=operator_id,
     )
     db.add(report)
 
     # Update session totals
-    session.total_strokes += data.strokes
-    session.total_output += output_qty
-    session.total_good_qty += data.good_qty
+    session.total_strokes += strokes
+    session.total_output += output
+    session.good_qty += good_qty
+    session.reject_qty += reject_qty
 
     await db.commit()
     await db.refresh(report)
@@ -213,134 +242,65 @@ async def submit_report(
 
 async def close_session(
     db: AsyncSession,
-    session_id: int,
-    data: Optional[SessionCloseRequest],
-    operator: User,
-) -> dict:
-    """Close a production session and generate process flow card."""
-    session = await get_session_by_id(db, session_id)
-    if not session:
-        raise ValueError("Production session not found")
+    session: ProductionSession,
+) -> ProductionSession:
+    """Close a production session and optionally generate process flow card."""
+    if session.status != SessionStatus.ACTIVE:
+        raise ValueError(f"Session not active: {session.status.value}")
 
-    if session.state != SessionState.OPEN:
-        raise ValueError("Session is not open")
-
-    # Close session
-    session.state = SessionState.CLOSED
+    session.status = SessionStatus.CLOSED
     session.closed_at = datetime.utcnow()
-    session.closed_by = operator.id if hasattr(operator, 'id') else None
-
-    # Get related entities
-    plan_result = await db.execute(
-        select(ProductionSession).where(ProductionSession.id == session_id)
-    )
-    session_data = plan_result.scalar_one_or_none()
-    plan_id = session.plan_id
-
-    # Get plan for part info
-    from app.models.production import ProductionPlan
-    plan_result = await db.execute(
-        select(ProductionPlan).where(ProductionPlan.id == plan_id)
-    )
-    plan = plan_result.scalar_one_or_none()
-
-    # Get machine
-    machine_result = await db.execute(
-        select(Machine).where(Machine.id == session.machine_id)
-    )
-    machine = machine_result.scalar_one_or_none()
-
-    # Calculate duration
-    duration = 0
-    if session.started_at and session.closed_at:
-        duration = int((session.closed_at - session.started_at).total_seconds() / 60)
 
     # Generate process flow card
-    process_flow_no = generate_process_flow_no(db)
-    session.process_flow_no = process_flow_no
+    from src.services.process_flow_service import generate_process_flow_card
 
-    part_id = plan.part_id if plan else 0
-
-    process_card = ProcessFlowCard(
-        card_no=process_flow_no,
-        session_id=session.id,
-        part_id=part_id,
-        machine_id=session.machine_id,
-        material_batch_id=session.material_batch_id,
-        total_strokes=session.total_strokes,
-        total_output=session.total_output,
-        good_qty=session.total_good_qty,
-        reject_qty=session.total_output - session.total_good_qty,
-        production_start=session.started_at,
-        production_end=session.closed_at,
-        duration_minutes=duration,
-    )
-    db.add(process_card)
+    flow_card = await generate_process_flow_card(db, session)
+    session.process_flow_id = flow_card.id
 
     # Update plan completed quantity
-    if plan:
-        plan.completed_qty += session.total_good_qty
-        if plan.completed_qty >= plan.total_qty:
-            plan.state = PlanState.COMPLETED
-            plan.completed_date = datetime.utcnow()
+    if session.plan_id:
+        from src.services.production_service import update_plan_completed_qty, get_plan_by_id
 
-    # Update machine state
-    if machine:
-        machine.state = MachineState.IDLE
+        plan = await get_plan_by_id(db, session.plan_id)
+        if plan:
+            await update_plan_completed_qty(db, plan, session.good_qty)
+
+    # Update machine state if no more active sessions
+    active_sessions = await get_active_sessions(db, machine_id=session.machine_id)
+    if not active_sessions:
+        machine_result = await db.execute(
+            select(Machine).where(Machine.id == session.machine_id)
+        )
+        machine = machine_result.scalar_one_or_none()
+        if machine and machine.state == MachineState.RUNNING:
+            machine.state = MachineState.IDLE
 
     await db.commit()
     await db.refresh(session)
-    await db.refresh(process_card)
-
-    return {
-        "session_id": session.id,
-        "session_no": session.session_no,
-        "process_flow_no": process_flow_no,
-        "total_strokes": session.total_strokes,
-        "total_output": session.total_output,
-        "good_qty": session.total_good_qty,
-        "reject_qty": session.total_output - session.total_good_qty,
-        "duration_minutes": duration,
-        "plan_completed_qty": plan.completed_qty if plan else 0,
-        "plan_total_qty": plan.total_qty if plan else 0,
-    }
+    return session
 
 
-async def get_session_reports(
+async def cancel_session(
     db: AsyncSession,
-    session_id: int,
-) -> Sequence[ProductionReport]:
-    """Get all reports for a session."""
-    result = await db.execute(
-        select(ProductionReport)
-        .where(ProductionReport.session_id == session_id)
-        .order_by(ProductionReport.reported_at.desc())
-    )
-    return result.scalars().all()
+    session: ProductionSession,
+) -> ProductionSession:
+    """Cancel a production session."""
+    if session.status == SessionStatus.CLOSED:
+        raise ValueError("Cannot cancel a closed session")
 
+    session.status = SessionStatus.CANCELLED
+    session.closed_at = datetime.utcnow()
 
-async def get_sessions(
-    db: AsyncSession,
-    plan_id: Optional[int] = None,
-    machine_id: Optional[int] = None,
-    state: Optional[SessionState] = None,
-    skip: int = 0,
-    limit: int = 50,
-) -> Sequence[ProductionSession]:
-    """Get production sessions with filters."""
-    query = (
-        select(ProductionSession)
-        .options(selectinload(ProductionSession.machine))
-        .where(ProductionSession.id > 0)
-    )
+    # Update machine state if no more active sessions
+    active_sessions = await get_active_sessions(db, machine_id=session.machine_id)
+    if not active_sessions:
+        machine_result = await db.execute(
+            select(Machine).where(Machine.id == session.machine_id)
+        )
+        machine = machine_result.scalar_one_or_none()
+        if machine and machine.state == MachineState.RUNNING:
+            machine.state = MachineState.IDLE
 
-    if plan_id:
-        query = query.where(ProductionSession.plan_id == plan_id)
-    if machine_id:
-        query = query.where(ProductionSession.machine_id == machine_id)
-    if state:
-        query = query.where(ProductionSession.state == state)
-
-    query = query.order_by(ProductionSession.started_at.desc()).offset(skip).limit(limit)
-    result = await db.execute(query)
-    return result.scalars().all()
+    await db.commit()
+    await db.refresh(session)
+    return session

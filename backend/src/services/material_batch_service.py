@@ -1,73 +1,78 @@
-"""Business logic for warehouse and material batch management."""
+"""Business logic for material batch management."""
 
-import secrets
 from datetime import datetime
 from typing import Optional, Sequence
 
-from sqlalchemy import select, or_
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
-from app.models.warehouse import (
+from src.models.production import ProductionSession
+from src.models.warehouse import (
+    BatchStatus,
+    BatchTransaction,
     IQCResult,
+    Material,
     MaterialBatch,
     MaterialBatchChild,
-    MaterialConsumptionLog,
-    MaterialStatus,
     Supplier,
 )
-from app.models.user import User
-from app.schemas.warehouse import (
-    IQCUpdate,
-    MaterialBatchCreate,
-    MaterialBatchUpdate,
-    SplitRequest,
-    SplitSpecItem,
-)
 
 
-def generate_batch_no(db: AsyncSession) -> str:
-    """Generate a unique batch number."""
+def generate_batch_no() -> str:
+    """Generate a unique material batch number."""
     now = datetime.utcnow()
-    suffix = secrets.token_hex(4).upper()[:6]
-    return f"MAT-{now.strftime('%Y%m%d')}-{suffix}"
+    prefix = now.strftime("%Y%m%d")
+    return f"MAT-{prefix}-{now.strftime('%H%M%S')}"
 
 
-def generate_qr_code() -> str:
-    """Generate a unique QR code."""
-    return f"MCN-{secrets.token_hex(8).upper()}"
+def generate_qr_uid() -> str:
+    """Generate a unique QR UID (used as the actual unique identifier)."""
+    now = datetime.utcnow()
+    prefix = now.strftime("%Y%m%d")
+    return f"MAT-{prefix}-{now.strftime('%H%M%S')}"
+
+
+def generate_child_batch_no(parent_batch_no: str, index: int) -> str:
+    """Generate a unique child batch number."""
+    return f"{parent_batch_no}-CH{index:02d}"
 
 
 async def create_material_batch(
     db: AsyncSession,
-    data: MaterialBatchCreate,
-    operator: User,
+    material_id: int,
+    gross_weight: float,
+    supplier_id: Optional[int] = None,
+    thickness: Optional[float] = None,
+    width: Optional[float] = None,
+    length: Optional[float] = None,
+    po_no: Optional[str] = None,
 ) -> MaterialBatch:
-    """Create a new material batch."""
-    batch_no = generate_batch_no(db)
-    qr_code = generate_qr_code()
+    """Create a new material batch with auto QR code generation."""
+    from src.services.qr_service import generate_material_batch_qr
+
+    qr_uid = generate_qr_uid()
+    batch_no = generate_batch_no()
 
     batch = MaterialBatch(
+        qr_uid=qr_uid,
         batch_no=batch_no,
-        qr_code=qr_code,
-        material_grade=data.material_grade,
-        material_type=data.material_type,
-        thickness=data.thickness,
-        width=data.width,
-        weight_kg=data.weight_kg,
-        original_weight_kg=data.weight_kg,
-        supplier_id=data.supplier_id,
-        purchase_order_no=data.purchase_order_no,
-        invoice_no=data.invoice_no,
-        unit_price=data.unit_price,
-        total_amount=data.unit_price * data.weight_kg if data.unit_price else None,
-        warehouse_location=data.warehouse_location,
-        shelf_location=data.shelf_location,
-        notes=data.notes,
-        status=MaterialStatus.PENDING_IQC,
+        material_id=material_id,
+        supplier_id=supplier_id,
+        thickness=thickness,
+        width=width,
+        length=length,
+        gross_weight=gross_weight,
+        net_weight=gross_weight,
+        current_weight=gross_weight,
+        po_no=po_no,
+        status=BatchStatus.PENDING_IQC,
         received_at=datetime.utcnow(),
     )
     db.add(batch)
+    await db.flush()
+
+    batch.qr_code = generate_material_batch_qr(batch.id)
     await db.commit()
     await db.refresh(batch)
     return batch
@@ -77,10 +82,14 @@ async def get_batch_by_id(
     db: AsyncSession,
     batch_id: int,
 ) -> Optional[MaterialBatch]:
-    """Get material batch by ID."""
+    """Get a material batch by ID."""
     result = await db.execute(
         select(MaterialBatch)
-        .options(selectinload(MaterialBatch.supplier))
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+            selectinload(MaterialBatch.children),
+        )
         .where(MaterialBatch.id == batch_id, MaterialBatch.is_deleted == False)
     )
     return result.scalar_one_or_none()
@@ -90,90 +99,80 @@ async def get_batch_by_no(
     db: AsyncSession,
     batch_no: str,
 ) -> Optional[MaterialBatch]:
-    """Get material batch by batch number."""
+    """Get a material batch by batch number."""
     result = await db.execute(
         select(MaterialBatch)
-        .options(selectinload(MaterialBatch.supplier))
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+            selectinload(MaterialBatch.children),
+        )
         .where(MaterialBatch.batch_no == batch_no, MaterialBatch.is_deleted == False)
-    )
-    return result.scalar_one_or_none()
-
-
-async def get_batch_by_qr(
-    db: AsyncSession,
-    qr_code: str,
-) -> Optional[MaterialBatch]:
-    """Get material batch by QR code."""
-    result = await db.execute(
-        select(MaterialBatch)
-        .options(selectinload(MaterialBatch.supplier))
-        .where(MaterialBatch.qr_code == qr_code, MaterialBatch.is_deleted == False)
     )
     return result.scalar_one_or_none()
 
 
 async def get_batches(
     db: AsyncSession,
-    status: Optional[MaterialStatus] = None,
-    material_grade: Optional[str] = None,
-    supplier_id: Optional[int] = None,
+    status: Optional[BatchStatus] = None,
+    material_id: Optional[int] = None,
     skip: int = 0,
     limit: int = 50,
 ) -> Sequence[MaterialBatch]:
     """Get material batches with optional filters."""
     query = (
         select(MaterialBatch)
-        .options(selectinload(MaterialBatch.supplier))
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+        )
         .where(MaterialBatch.is_deleted == False)
     )
 
     if status:
         query = query.where(MaterialBatch.status == status)
-    if material_grade:
-        query = query.where(MaterialBatch.material_grade.ilike(f"%{material_grade}%"))
-    if supplier_id:
-        query = query.where(MaterialBatch.supplier_id == supplier_id)
+    if material_id:
+        query = query.where(MaterialBatch.material_id == material_id)
 
-    query = query.order_by(MaterialBatch.received_at.desc()).offset(skip).limit(limit)
+    query = query.order_by(MaterialBatch.created_at.desc()).offset(skip).limit(limit)
+
     result = await db.execute(query)
     return result.scalars().all()
 
 
-async def update_batch(
+async def perform_iqc(
     db: AsyncSession,
     batch: MaterialBatch,
-    data: MaterialBatchUpdate,
+    result: IQCResult,
+    operator_id: int,
+    notes: Optional[str] = None,
 ) -> MaterialBatch:
-    """Update material batch fields."""
-    update_data = data.model_dump(exclude_unset=True)
+    """Perform IQC inspection on a material batch."""
+    if batch.status != BatchStatus.PENDING_IQC:
+        raise ValueError(f"Batch not pending IQC: {batch.status.value}")
 
-    for field, value in update_data.items():
-        if value is not None and hasattr(batch, field):
-            setattr(batch, field, value)
+    batch.iqc_result = result
+    batch.iqc_time = datetime.utcnow()
+    batch.iqc_by = operator_id
+    batch.iqc_notes = notes
 
-    await db.commit()
-    await db.refresh(batch)
-    return batch
+    if result == IQCResult.PASSED:
+        batch.status = BatchStatus.AVAILABLE
+    else:
+        batch.status = BatchStatus.REJECTED
 
-
-async def process_iqc(
-    db: AsyncSession,
-    batch: MaterialBatch,
-    data: IQCUpdate,
-    inspector: User,
-) -> MaterialBatch:
-    """Process incoming quality check."""
-    batch.iqc_result = data.result
-    batch.iqc_by = inspector.id if hasattr(inspector, 'id') else None
-    batch.iqc_at = datetime.utcnow()
-    batch.iqc_notes = data.notes
-
-    if data.result == IQCResult.PASS:
-        batch.status = MaterialStatus.AVAILABLE
-    elif data.result == IQCResult.FAIL:
-        batch.status = MaterialStatus.REJECTED
-    else:  # CONDITIONAL
-        batch.status = MaterialStatus.AVAILABLE
+    # Record transaction
+    await _record_transaction(
+        db,
+        batch_id=batch.id,
+        batch_no=batch.batch_no,
+        transaction_type="iqc",
+        quantity_change=0,
+        weight_after=batch.current_weight,
+        reference_type="iqc",
+        reference_id=operator_id,
+        notes=f"IQC result: {result.value}",
+    )
 
     await db.commit()
     await db.refresh(batch)
@@ -183,231 +182,239 @@ async def process_iqc(
 async def split_batch(
     db: AsyncSession,
     batch: MaterialBatch,
-    data: SplitRequest,
-    operator: User,
-) -> dict:
-    """Split a material batch into multiple child batches."""
-    if batch.status not in (MaterialStatus.AVAILABLE, MaterialStatus.IN_USE):
-        raise ValueError(f"Cannot split batch in status: {batch.status.value}")
+    splits: list[dict],
+    operator_id: Optional[int] = None,
+) -> list[MaterialBatch]:
+    """Split a material batch into child batches (single-table design).
 
-    total_split_weight = sum(
-        (s.weight_kg or 0) for s in data.split_specs
-    )
+    Each child is an independent MaterialBatch with parent_batch_id set.
+    Every child gets its own unique QR code.
+    """
+    from src.services.qr_service import generate_material_batch_qr
 
-    # Allow small tolerance for weight difference
-    if abs(total_split_weight - batch.weight_kg) > 0.1:
+    if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.PARTIAL):
+        raise ValueError(f"Batch not splittable: {batch.status.value}")
+
+    total_split_weight = sum(s.get("weight", 0) for s in splits)
+    if total_split_weight > batch.current_weight + 0.001:
         raise ValueError(
-            f"Split weight total ({total_split_weight}) does not match batch weight ({batch.weight_kg})"
+            f"Split weight exceeds current weight: {total_split_weight} > {batch.current_weight}"
         )
 
-    # Update parent batch status
-    batch.status = MaterialStatus.SPLIT
-    batch.slit_pieces = len(data.split_specs)
-    batch.slit_width = max(s.width for s in data.split_specs)
+    children: list[MaterialBatch] = []
+    for idx, split in enumerate(splits, start=1):
+        child_batch_no = generate_child_batch_no(batch.batch_no, idx)
 
-    children = []
-    for spec in data.split_specs:
-        child_batch_no = f"{batch.batch_no}-S{spec.position_index + 1:02d}"
-        child_qr_code = generate_qr_code()
-
-        weight = spec.weight_kg or (batch.weight_kg / len(data.split_specs))
-
-        child = MaterialBatchChild(
-            child_batch_no=child_batch_no,
-            qr_code=child_qr_code,
+        child = MaterialBatch(
+            batch_no=child_batch_no,
+            qr_code=None,  # 生成后赋值
+            material_id=batch.material_id,
+            supplier_id=batch.supplier_id,
+            thickness=batch.thickness,
+            width=split.get("width") or batch.width,
+            length=split.get("length") or batch.length,
+            gross_weight=split["weight"],
+            net_weight=split["weight"],
+            current_weight=split["weight"],
+            status=BatchStatus.AVAILABLE,
             parent_batch_id=batch.id,
-            width=spec.width,
-            weight_kg=weight,
-            pieces=spec.pieces,
-            position_index=spec.position_index,
-            status=MaterialStatus.AVAILABLE,
-            warehouse_location=spec.warehouse_location or batch.warehouse_location,
-            shelf_location=spec.shelf_location or batch.shelf_location,
+            received_at=datetime.utcnow(),
         )
         db.add(child)
+        await db.flush()
+
+        child.qr_code = generate_material_batch_qr(child.id)
         children.append(child)
 
-    await db.commit()
+    # 更新母卷
+    batch.current_weight -= total_split_weight
+    if batch.current_weight <= 0.001:
+        batch.status = BatchStatus.EXHAUSTED
+    else:
+        batch.status = BatchStatus.PARTIAL
 
-    # Refresh children
+    # 记录分条事务
+    await _record_transaction(
+        db,
+        batch_id=batch.id,
+        batch_no=batch.batch_no,
+        transaction_type="split",
+        quantity_change=-total_split_weight,
+        weight_after=batch.current_weight,
+        reference_type="split",
+        operator_id=operator_id,
+        notes=f"Split into {len(children)} child batches: {[c.batch_no for c in children]}",
+    )
+
+    # 记录各子卷入库事务
     for child in children:
-        await db.refresh(child)
-
-    return {
-        "parent_batch_id": batch.id,
-        "parent_batch_no": batch.batch_no,
-        "parent_status": batch.status,
-        "children": children,
-    }
-
-
-async def get_batch_children(
-    db: AsyncSession,
-    batch_id: int,
-) -> Sequence[MaterialBatchChild]:
-    """Get all child batches for a parent batch."""
-    result = await db.execute(
-        select(MaterialBatchChild)
-        .where(
-            MaterialBatchChild.parent_batch_id == batch_id,
+        await _record_transaction(
+            db,
+            batch_id=child.id,
+            batch_no=child.batch_no,
+            transaction_type="receive",
+            quantity_change=child.current_weight,
+            weight_after=child.current_weight,
+            reference_type="split",
+            reference_id=batch.id,
+            operator_id=operator_id,
+            notes=f"Split from parent batch {batch.batch_no}",
         )
-        .order_by(MaterialBatchChild.position_index)
-    )
-    return result.scalars().all()
 
-
-async def trace_batch(
-    db: AsyncSession,
-    batch: MaterialBatch,
-) -> dict:
-    """Generate trace history for a material batch."""
-    entries = []
-
-    # 1. Received entry
-    entries.append({
-        "timestamp": batch.received_at,
-        "event_type": "received",
-        "description": f"原材料入库，批次号: {batch.batch_no}",
-        "reference_no": batch.batch_no,
-        "details": {
-            "material_grade": batch.material_grade,
-            "weight_kg": batch.original_weight_kg,
-            "supplier_id": batch.supplier_id,
-        },
-    })
-
-    # 2. IQC entry
-    if batch.iqc_at:
-        entries.append({
-            "timestamp": batch.iqc_at,
-            "event_type": "iqc",
-            "description": f"IQC检验完成，结果: {batch.iqc_result.value if batch.iqc_result else 'N/A'}",
-            "operator_id": batch.iqc_by,
-            "reference_no": batch.batch_no,
-            "details": {
-                "result": batch.iqc_result.value if batch.iqc_result else None,
-                "notes": batch.iqc_notes,
-            },
-        })
-
-    # 3. Split entry (if applicable)
-    if batch.status == MaterialStatus.SPLIT:
-        children = await get_batch_children(db, batch.id)
-        entries.append({
-            "timestamp": datetime.utcnow(),
-            "event_type": "split",
-            "description": f"分条操作，分成 {len(children)} 个子卷",
-            "reference_no": batch.batch_no,
-            "details": {
-                "children": [
-                    {
-                        "child_batch_no": c.child_batch_no,
-                        "width": c.width,
-                        "weight_kg": c.weight_kg,
-                    }
-                    for c in children
-                ],
-            },
-        })
-
-    # 4. Consumption entries
-    result = await db.execute(
-        select(MaterialConsumptionLog)
-        .where(MaterialConsumptionLog.batch_id == batch.id)
-        .order_by(MaterialConsumptionLog.consumed_at)
-    )
-    consumption_logs = result.scalars().all()
-
-    for log in consumption_logs:
-        entries.append({
-            "timestamp": log.consumed_at,
-            "event_type": "consumed",
-            "description": f"消耗 {log.quantity_kg} kg - {log.purpose}",
-            "operator_id": log.consumed_by,
-            "reference_no": f"session_{log.production_session_id}" if log.production_session_id else None,
-            "details": {
-                "quantity_kg": log.quantity_kg,
-                "purpose": log.purpose,
-                "production_session_id": log.production_session_id,
-            },
-        })
-
-    # Sort entries by timestamp
-    entries.sort(key=lambda x: x["timestamp"])
-
-    return {
-        "batch_id": batch.id,
-        "batch_no": batch.batch_no,
-        "qr_code": batch.qr_code,
-        "material_grade": batch.material_grade,
-        "current_status": batch.status,
-        "original_weight_kg": batch.original_weight_kg,
-        "current_weight_kg": batch.weight_kg,
-        "entries": entries,
-    }
+    await db.commit()
+    return children
 
 
 async def consume_material(
     db: AsyncSession,
-    batch_id: Optional[int],
-    child_batch_id: Optional[int],
-    quantity_kg: float,
-    purpose: str,
-    production_session_id: Optional[int] = None,
-    operator: User = None,
+    batch: MaterialBatch,
+    weight: float,
+    reference_type: Optional[str] = None,
+    reference_id: Optional[int] = None,
+    operator_id: Optional[int] = None,
 ) -> MaterialBatch:
-    """Record material consumption."""
-    if batch_id:
-        batch = await get_batch_by_id(db, batch_id)
-    elif child_batch_id:
-        result = await db.execute(
-            select(MaterialBatchChild).where(MaterialBatchChild.id == child_batch_id)
-        )
-        batch = result.scalar_one_or_none()
-        if batch:
-            batch.weight_kg -= quantity_kg
-    else:
-        raise ValueError("Either batch_id or child_batch_id must be provided")
+    """Consume material from a batch."""
+    if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.IN_USE):
+        raise ValueError(f"Batch not available for consumption: {batch.status.value}")
 
-    if not batch:
-        raise ValueError("Batch not found")
+    if weight > batch.current_weight:
+        raise ValueError(f"Consumption weight exceeds current weight: {weight} > {batch.current_weight}")
 
-    if batch.weight_kg < quantity_kg:
-        raise ValueError("Insufficient material quantity")
+    batch.current_weight -= weight
 
-    # Create consumption log
-    log = MaterialConsumptionLog(
-        batch_id=batch_id,
-        child_batch_id=child_batch_id,
-        quantity_kg=quantity_kg,
-        purpose=purpose,
-        production_session_id=production_session_id,
-        consumed_by=operator.id if operator and hasattr(operator, 'id') else None,
+    if batch.current_weight <= 0.001:
+        batch.status = BatchStatus.EXHAUSTED
+    elif batch.status == BatchStatus.AVAILABLE:
+        batch.status = BatchStatus.IN_USE
+
+    # Record transaction
+    await _record_transaction(
+        db,
+        batch_id=batch.id,
+        batch_no=batch.batch_no,
+        transaction_type="consume",
+        quantity_change=-weight,
+        weight_after=batch.current_weight,
+        reference_type=reference_type,
+        reference_id=reference_id,
+        operator_id=operator_id,
     )
-    db.add(log)
-
-    # Update batch weight
-    batch.weight_kg -= quantity_kg
-    batch.consumed_qty += quantity_kg
-
-    # Check if fully consumed
-    if batch.weight_kg <= 0:
-        batch.status = MaterialStatus.CONSUMED
-        batch.weight_kg = 0
 
     await db.commit()
     await db.refresh(batch)
     return batch
 
 
-# Supplier functions
+async def scrap_batch(
+    db: AsyncSession,
+    batch: MaterialBatch,
+    reason: str,
+    operator_id: Optional[int] = None,
+) -> MaterialBatch:
+    """Scrap a material batch."""
+    if batch.status == BatchStatus.EXHAUSTED:
+        raise ValueError("Batch already exhausted")
+
+    remaining_weight = batch.current_weight
+    batch.status = BatchStatus.SCRAPPED
+
+    # Record transaction
+    await _record_transaction(
+        db,
+        batch_id=batch.id,
+        batch_no=batch.batch_no,
+        transaction_type="scrap",
+        quantity_change=-remaining_weight,
+        weight_after=0,
+        operator_id=operator_id,
+        notes=reason,
+    )
+
+    await db.commit()
+    await db.refresh(batch)
+    return batch
+
+
+async def get_batch_transactions(
+    db: AsyncSession,
+    batch_id: int,
+) -> Sequence[BatchTransaction]:
+    """Get all transactions for a batch."""
+    result = await db.execute(
+        select(BatchTransaction)
+        .where(BatchTransaction.batch_id == batch_id)
+        .order_by(BatchTransaction.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+async def trace_batch(
+    db: AsyncSession,
+    batch_id: int,
+) -> dict:
+    """Trace a batch with all its transactions."""
+    batch = await get_batch_by_id(db, batch_id)
+    if not batch:
+        return None
+
+    transactions = await get_batch_transactions(db, batch_id)
+
+    return {
+        "batch": batch,
+        "transactions": transactions,
+    }
+
+
+async def _record_transaction(
+    db: AsyncSession,
+    batch_id: int,
+    batch_no: str,
+    transaction_type: str,
+    quantity_change: float,
+    weight_after: float,
+    reference_type: Optional[str] = None,
+    reference_id: Optional[int] = None,
+    operator_id: Optional[int] = None,
+    notes: Optional[str] = None,
+) -> BatchTransaction:
+    """Record a batch transaction."""
+    transaction = BatchTransaction(
+        batch_id=batch_id,
+        batch_no=batch_no,
+        transaction_type=transaction_type,
+        quantity_change=quantity_change,
+        weight_after=weight_after,
+        reference_type=reference_type,
+        reference_id=reference_id,
+        operator_id=operator_id,
+        notes=notes,
+    )
+    db.add(transaction)
+    return transaction
+
+
+# Supplier operations
 
 async def create_supplier(
     db: AsyncSession,
-    data: dict,
+    name: str,
+    contact_person: Optional[str] = None,
+    contact_phone: Optional[str] = None,
+    address: Optional[str] = None,
+    notes: Optional[str] = None,
 ) -> Supplier:
     """Create a new supplier."""
-    supplier = Supplier(**data)
+    now = datetime.utcnow()
+    supplier_no = f"SUP-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+
+    supplier = Supplier(
+        supplier_no=supplier_no,
+        name=name,
+        contact_person=contact_person,
+        contact_phone=contact_phone,
+        address=address,
+        notes=notes,
+    )
     db.add(supplier)
     await db.commit()
     await db.refresh(supplier)
@@ -417,13 +424,173 @@ async def create_supplier(
 async def get_suppliers(
     db: AsyncSession,
     is_active: Optional[bool] = None,
+    skip: int = 0,
+    limit: int = 50,
 ) -> Sequence[Supplier]:
-    """Get all suppliers."""
+    """Get suppliers with optional filters."""
     query = select(Supplier)
 
     if is_active is not None:
         query = query.where(Supplier.is_active == is_active)
 
-    query = query.order_by(Supplier.code)
+    query = query.order_by(Supplier.name).offset(skip).limit(limit)
+
     result = await db.execute(query)
     return result.scalars().all()
+
+
+# Material operations
+
+async def create_material(
+    db: AsyncSession,
+    name: str,
+    grade: str,
+    thickness: Optional[float] = None,
+    width: Optional[float] = None,
+    weight_per_unit: Optional[float] = None,
+    unit: str = "kg",
+    supplier_id: Optional[int] = None,
+) -> Material:
+    """Create a new material."""
+    now = datetime.utcnow()
+    material_no = f"MAT-{now.strftime('%Y%m%d')}-{now.strftime('%H%M%S')}"
+
+    material = Material(
+        material_no=material_no,
+        name=name,
+        grade=grade,
+        thickness=thickness,
+        width=width,
+        weight_per_unit=weight_per_unit,
+        unit=unit,
+        supplier_id=supplier_id,
+    )
+    db.add(material)
+    await db.commit()
+    await db.refresh(material)
+    return material
+
+
+async def get_materials(
+    db: AsyncSession,
+    grade: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 50,
+) -> Sequence[Material]:
+    """Get materials with optional filters."""
+    query = select(Material).where(Material.is_active == True)
+
+    if grade:
+        query = query.where(Material.grade.ilike(f"%{grade}%"))
+
+    query = query.order_by(Material.grade, Material.name).offset(skip).limit(limit)
+
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+# ── QR Scan Log ─────────────────────────────────────────────────────────────
+
+async def create_scan_log(
+    db: AsyncSession,
+    scan_type: str,
+    entity_id: int,
+    operation: str,
+    entity_no: Optional[str] = None,
+    operator_id: Optional[int] = None,
+    notes: Optional[str] = None,
+):
+    """Record a QR code scan event."""
+    from src.models.warehouse import QRScanLog
+
+    log = QRScanLog(
+        scan_type=scan_type,
+        entity_id=entity_id,
+        entity_no=entity_no,
+        operator_id=operator_id,
+        operation=operation,
+        notes=notes,
+    )
+    db.add(log)
+    await db.flush()
+    return log
+
+
+async def get_scan_logs_by_entity(
+    db: AsyncSession,
+    entity_type: str,
+    entity_id: int,
+    skip: int = 0,
+    limit: int = 50,
+):
+    """Get scan history for a specific entity."""
+    from src.models.warehouse import QRScanLog
+
+    result = await db.execute(
+        select(QRScanLog)
+        .where(QRScanLog.scan_type == entity_type.upper())
+        .where(QRScanLog.entity_id == entity_id)
+        .order_by(QRScanLog.scanned_at.desc())
+        .offset(skip)
+        .limit(limit)
+    )
+    return result.scalars().all()
+
+
+# ── Child Batch (Single-Table) ───────────────────────────────────────────────
+
+async def get_child_batch_by_id(
+    db: AsyncSession,
+    child_id: int,
+) -> Optional[MaterialBatch]:
+    """Get a child batch (which is a MaterialBatch with parent_batch_id set)."""
+    result = await db.execute(
+        select(MaterialBatch)
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+            joinedload(MaterialBatch.parent_batch).joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.parent_batch).joinedload(MaterialBatch.supplier),
+        )
+        .where(MaterialBatch.id == child_id, MaterialBatch.is_deleted == False)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_parent_batch(
+    db: AsyncSession,
+    parent_id: int,
+) -> Optional[MaterialBatch]:
+    """Get a parent batch with its children eagerly loaded."""
+    result = await db.execute(
+        select(MaterialBatch)
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+            selectinload(MaterialBatch.children),
+        )
+        .where(MaterialBatch.id == parent_id, MaterialBatch.is_deleted == False)
+    )
+    return result.scalar_one_or_none()
+
+
+async def get_sibling_batches(
+    db: AsyncSession,
+    parent_batch_id: int,
+    exclude_id: Optional[int] = None,
+) -> Sequence[MaterialBatch]:
+    """Get all sibling batches (same parent)."""
+    query = (
+        select(MaterialBatch)
+        .options(
+            joinedload(MaterialBatch.material),
+            joinedload(MaterialBatch.supplier),
+        )
+        .where(
+            MaterialBatch.parent_batch_id == parent_batch_id,
+            MaterialBatch.is_deleted == False,
+        )
+    )
+    if exclude_id is not None:
+        query = query.where(MaterialBatch.id != exclude_id)
+    return (await db.execute(query)).scalars().all()

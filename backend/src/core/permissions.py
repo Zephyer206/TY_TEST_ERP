@@ -5,7 +5,7 @@ from typing import Any, Callable, TypeVar
 
 from fastapi import HTTPException, status
 
-from app.models.user import User, UserRole
+from src.models.user import User, UserRole
 
 F = TypeVar("F", bound=Callable[..., Any])
 
@@ -52,7 +52,7 @@ def require_min_role(min_role: UserRole):
     def decorator(func: F) -> F:
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            from app.core.security import verify_min_role
+            from src.core.security import verify_min_role
 
             current_user: User = kwargs.get("current_user")
             if current_user is None:

@@ -1,18 +1,19 @@
 """Business logic for sampling task management."""
 
 from datetime import datetime
-from typing import Optional, Sequence
+from typing import AsyncIterator, Optional, Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import selectinload, joinedload
 
-from app.models.part import Part, PartState
-from app.models.sampling import SamplingTask, SamplingTaskState
-from app.models.user import User
+from src.models.part import Part, PartState
+from src.models.sampling import SamplingTask, SamplingTaskState
+from src.models.user import User
+from src.models.customer import Customer
 
 
-def generate_task_no(db: AsyncSession) -> str:
+def generate_task_no() -> str:
     """Generate a unique task number."""
     now = datetime.utcnow()
     prefix = now.strftime("%Y%m%d")
@@ -32,7 +33,7 @@ async def create_sampling_task(
 
     Task starts in PENDING_APPROVAL state, waiting for boss confirmation.
     """
-    task_no = generate_task_no(db)
+    task_no = generate_task_no()
 
     task = SamplingTask(
         task_no=task_no,
@@ -118,16 +119,16 @@ async def get_sampling_kanban(
 
     Shows all parts in SAMPLING state for tracking.
     """
-    from app.models.part import Part
-
     query = (
         select(SamplingTask)
         .options(
             selectinload(SamplingTask.part),
             selectinload(SamplingTask.reviewer),
             selectinload(SamplingTask.approver),
+            joinedload(SamplingTask.customer),
         )
         .join(Part, SamplingTask.part_id == Part.id)
+        .join(Customer, SamplingTask.customer_id == Customer.id)
         .where(SamplingTask.is_deleted == False)
     )
 
@@ -136,10 +137,7 @@ async def get_sampling_kanban(
     if part_no:
         query = query.where(Part.part_no.ilike(f"%{part_no}%"))
     if customer_name:
-        from app.models.customer import Customer
-        query = query.join(Customer, SamplingTask.customer_id == Customer.id).where(
-            Customer.name.ilike(f"%{customer_name}%")
-        )
+        query = query.where(Customer.name.ilike(f"%{customer_name}%"))
     if planned_before:
         query = query.where(SamplingTask.planned_completion_date <= planned_before)
 

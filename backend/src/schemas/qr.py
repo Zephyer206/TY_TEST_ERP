@@ -1,62 +1,61 @@
 """Pydantic schemas for QR code operations."""
 
-from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 from pydantic import BaseModel, ConfigDict
 
-from app.services.qr_service import QRType
 
+class QRLookupResponse(BaseModel):
+    """Schema for QR lookup response."""
 
-class QRCodeResponse(BaseModel):
-    """Schema for QR code generation response."""
-
-    qr_code: str  # e.g., "MAT-12345"
-    content: str  # Full URL encoded in QR
-    image_base64: str  # Data URI
+    found: bool
+    prefix: Optional[str] = None
+    entity_id: Optional[int] = None
+    entity_type: Optional[str] = None
+    entity_data: Optional[dict[str, Any]] = None
+    error: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class QRCodeLookupResponse(BaseModel):
-    """Schema for QR code lookup response."""
+class QRGenerateRequest(BaseModel):
+    """Schema for QR generation request."""
 
-    qr_code: str
-    qr_type: QRType
-    entity_id: str
-    entity_name: Optional[str] = None
-    entity_type: Optional[str] = None
-    details: Optional[dict] = None
-    timestamp: datetime
+    prefix: str  # MAT, MCN, PFC, PRT, TLG, PKG, COT
+    entity_id: int
+    extra_data: Optional[dict[str, str]] = None
 
 
-class MaterialQRInfo(BaseModel):
-    """Schema for material batch QR info."""
+class QRGenerateResponse(BaseModel):
+    """Schema for QR generation response."""
 
-    batch_id: str
-    material_name: str
-    supplier_name: Optional[str] = None
-    quantity: float
-    unit: str
-    received_at: Optional[datetime] = None
-    status: str
+    content: str  # Raw QR content
+    image_base64: str  # Base64 encoded image
+    url: Optional[str] = None  # Cloud URL if uploaded
 
 
-class MachineQRInfo(BaseModel):
-    """Schema for machine QR info."""
+class QRMaterialResponse(BaseModel):
+    """Schema for material batch QR response."""
+
+    batch_id: int
+    batch_no: str
+    qr_content: str
+    image_base64: str
+
+
+class QRMachineResponse(BaseModel):
+    """Schema for machine QR response."""
 
     machine_id: int
-    machine_number: str
-    press_tonnage: float
-    location: Optional[str] = None
-    status: str
+    machine_no: str
+    qr_content: str
+    image_base64: str
 
 
-class ProcessFlowQRInfo(BaseModel):
-    """Schema for process flow card QR info."""
+class QRProcessFlowResponse(BaseModel):
+    """Schema for process flow QR response."""
 
     card_id: int
     card_no: str
-    part_name: str
-    process_step: str
-    status: str
+    qr_content: str
+    image_base64: str

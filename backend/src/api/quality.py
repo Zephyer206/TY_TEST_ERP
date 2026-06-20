@@ -1,13 +1,21 @@
-"""Quality control API endpoints."""
+"""Quality inspection and release management API endpoints."""
 
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.quality import FirstPieceStatus, OQCResult
-from app.schemas.quality import (
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.part import Part
+from src.models.quality import (
+    ExemptionType,
+    FirstPieceInspection,
+    InspectionResult,
+    OQCInspection,
+    QAExemption,
+    PatrolInspection,
+)
+from src.schemas.quality import (
     FirstPieceInspectionCreate,
     FirstPieceInspectionResponse,
     OQCInspectionCreate,
@@ -18,12 +26,96 @@ from app.schemas.quality import (
     PatrolInspectionCreate,
     PatrolInspectionResponse,
 )
-from app.services import quality_service
+from src.services import quality_service
 
 router = APIRouter(prefix="/quality", tags=["Quality"])
 
 
-# First Piece Inspection
+def _fpi_to_response(inspection: FirstPieceInspection) -> FirstPieceInspectionResponse:
+    """Convert FirstPieceInspection to response."""
+    return FirstPieceInspectionResponse(
+        id=inspection.id,
+        inspection_no=inspection.inspection_no,
+        part_id=inspection.part_id,
+        session_id=inspection.session_id,
+        inspected_qty=inspection.inspected_qty,
+        inspected_by=inspection.inspected_by,
+        dimension_ok=inspection.dimension_ok,
+        dimension_notes=inspection.dimension_notes,
+        appearance_ok=inspection.appearance_ok,
+        appearance_notes=inspection.appearance_notes,
+        function_ok=inspection.function_ok,
+        function_notes=inspection.function_notes,
+        result=inspection.result,
+        notes=inspection.notes,
+        inspected_at=inspection.inspected_at,
+        created_at=inspection.created_at,
+    )
+
+
+def _oqc_to_response(inspection: OQCInspection) -> OQCInspectionResponse:
+    """Convert OQCInspection to response."""
+    return OQCInspectionResponse(
+        id=inspection.id,
+        inspection_no=inspection.inspection_no,
+        part_id=inspection.part_id,
+        shipment_qty=inspection.shipment_qty,
+        order_no=inspection.order_no,
+        sample_size=inspection.sample_size,
+        inspected_by=inspection.inspected_by,
+        aql_level=inspection.aql_level,
+        major_defects=inspection.major_defects,
+        minor_defects=inspection.minor_defects,
+        critical_defects=inspection.critical_defects,
+        result=inspection.result,
+        notes=inspection.notes,
+        inspected_at=inspection.inspected_at,
+        created_at=inspection.created_at,
+    )
+
+
+def _exemption_to_response(exemption: QAExemption) -> QAExemptionResponse:
+    """Convert QAExemption to response."""
+    return QAExemptionResponse(
+        id=exemption.id,
+        exemption_no=exemption.exemption_no,
+        part_id=exemption.part_id,
+        exemption_type=exemption.exemption_type,
+        issue_description=exemption.issue_description,
+        affected_qty=exemption.affected_qty,
+        approved_by=exemption.approved_by,
+        approved_at=exemption.approved_at,
+        exemption_reason=exemption.exemption_reason,
+        is_approved=exemption.is_approved,
+        is_active=exemption.is_active,
+        notes=exemption.notes,
+        created_at=exemption.created_at,
+    )
+
+
+def _patrol_to_response(inspection: PatrolInspection) -> PatrolInspectionResponse:
+    """Convert PatrolInspection to response."""
+    return PatrolInspectionResponse(
+        id=inspection.id,
+        inspection_no=inspection.inspection_no,
+        machine_id=inspection.machine_id,
+        session_id=inspection.session_id,
+        inspected_by=inspection.inspected_by,
+        dimension_check=inspection.dimension_check,
+        appearance_check=inspection.appearance_check,
+        process_parameter_check=inspection.process_parameter_check,
+        sample_size=inspection.sample_size,
+        defect_count=inspection.defect_count,
+        result=inspection.result,
+        notes=inspection.notes,
+        corrective_action=inspection.corrective_action,
+        action_taken_by=inspection.action_taken_by,
+        inspected_at=inspection.inspected_at,
+        created_at=inspection.created_at,
+    )
+
+
+# First Piece Inspection endpoints
 
 @router.post("/first-piece", response_model=FirstPieceInspectionResponse, status_code=status.HTTP_201_CREATED)
 async def create_first_piece_inspection(
@@ -31,16 +123,34 @@ async def create_first_piece_inspection(
     db: DbSession,
     current_user: CurrentUser,
 ) -> FirstPieceInspectionResponse:
-    """Create a first piece inspection (requires role_level >= 2)."""
-    require_role(current_user, min_level=2)
+    """Create a first piece inspection record.
 
-    try:
-        inspection = await quality_service.create_first_piece_inspection(
-            db, data.model_dump(), current_user
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    Used by quality personnel or production supervisors to inspect the first piece
+    before mass production starts.
+    """
+    require_role(current_user, min_level=3)
 
+    # Verify part exists
+    result = await db.execute(select(Part).where(Part.id == data.part_id))
+    part = result.scalar_one_or_none()
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
+    inspection = await quality_service.create_first_piece_inspection(
+        db,
+        part_id=data.part_id,
+        inspected_qty=data.inspected_qty,
+        result=data.result,
+        session_id=data.session_id,
+        dimension_ok=data.dimension_ok,
+        dimension_notes=data.dimension_notes,
+        appearance_ok=data.appearance_ok,
+        appearance_notes=data.appearance_notes,
+        function_ok=data.function_ok,
+        function_notes=data.function_notes,
+        notes=data.notes,
+        inspected_by=current_user.id,
+    )
     return _fpi_to_response(inspection)
 
 
@@ -49,13 +159,12 @@ async def list_first_piece_inspections(
     db: DbSession,
     current_user: CurrentUser,
     part_id: Optional[int] = Query(default=None),
-    result: Optional[FirstPieceStatus] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[FirstPieceInspectionResponse]:
-    """List first piece inspections."""
+    """List first piece inspection records."""
     inspections = await quality_service.get_first_piece_inspections(
-        db, part_id=part_id, result=result, skip=skip, limit=limit
+        db, part_id=part_id, skip=skip, limit=limit
     )
     return [_fpi_to_response(i) for i in inspections]
 
@@ -66,27 +175,14 @@ async def get_first_piece_inspection(
     db: DbSession,
     current_user: CurrentUser,
 ) -> FirstPieceInspectionResponse:
-    """Get first piece inspection by ID."""
-    inspection = await quality_service.get_first_piece_by_id(db, inspection_id)
+    """Get a first piece inspection by ID."""
+    inspection = await quality_service.get_first_piece_inspection(db, inspection_id)
     if not inspection:
-        raise HTTPException(status_code=404, detail="Inspection not found")
+        raise HTTPException(status_code=404, detail="First piece inspection not found")
     return _fpi_to_response(inspection)
 
 
-@router.get("/first-piece/lookup/{inspection_no}", response_model=FirstPieceInspectionResponse)
-async def lookup_first_piece_inspection(
-    inspection_no: str,
-    db: DbSession,
-    current_user: CurrentUser,
-) -> FirstPieceInspectionResponse:
-    """Lookup first piece inspection by number."""
-    inspection = await quality_service.get_first_piece_by_no(db, inspection_no)
-    if not inspection:
-        raise HTTPException(status_code=404, detail="Inspection not found")
-    return _fpi_to_response(inspection)
-
-
-# OQC Inspection
+# OQC Inspection endpoints
 
 @router.post("/oqc", response_model=OQCInspectionResponse, status_code=status.HTTP_201_CREATED)
 async def create_oqc_inspection(
@@ -94,16 +190,32 @@ async def create_oqc_inspection(
     db: DbSession,
     current_user: CurrentUser,
 ) -> OQCInspectionResponse:
-    """Create an OQC (Outgoing Quality Control) inspection (requires role_level >= 2)."""
-    require_role(current_user, min_level=2)
+    """Create an OQC (Outgoing Quality Control) inspection record.
 
-    try:
-        inspection = await quality_service.create_oqc_inspection(
-            db, data.model_dump(), current_user
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    Used by quality personnel to inspect products before shipment.
+    """
+    require_role(current_user, min_level=3)
 
+    # Verify part exists
+    result = await db.execute(select(Part).where(Part.id == data.part_id))
+    part = result.scalar_one_or_none()
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
+    inspection = await quality_service.create_oqc_inspection(
+        db,
+        part_id=data.part_id,
+        shipment_qty=data.shipment_qty,
+        sample_size=data.sample_size,
+        result=data.result,
+        order_no=data.order_no,
+        aql_level=data.aql_level,
+        major_defects=data.major_defects,
+        minor_defects=data.minor_defects,
+        critical_defects=data.critical_defects,
+        notes=data.notes,
+        inspected_by=current_user.id,
+    )
     return _oqc_to_response(inspection)
 
 
@@ -112,13 +224,12 @@ async def list_oqc_inspections(
     db: DbSession,
     current_user: CurrentUser,
     part_id: Optional[int] = Query(default=None),
-    result: Optional[OQCResult] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[OQCInspectionResponse]:
-    """List OQC inspections."""
+    """List OQC inspection records."""
     inspections = await quality_service.get_oqc_inspections(
-        db, part_id=part_id, result=result, skip=skip, limit=limit
+        db, part_id=part_id, skip=skip, limit=limit
     )
     return [_oqc_to_response(i) for i in inspections]
 
@@ -129,14 +240,14 @@ async def get_oqc_inspection(
     db: DbSession,
     current_user: CurrentUser,
 ) -> OQCInspectionResponse:
-    """Get OQC inspection by ID."""
-    inspection = await quality_service.get_oqc_by_id(db, inspection_id)
+    """Get an OQC inspection by ID."""
+    inspection = await quality_service.get_oqc_inspection(db, inspection_id)
     if not inspection:
-        raise HTTPException(status_code=404, detail="Inspection not found")
+        raise HTTPException(status_code=404, detail="OQC inspection not found")
     return _oqc_to_response(inspection)
 
 
-# QA Exemption
+# QA Exemption endpoints
 
 @router.post("/exemption", response_model=QAExemptionResponse, status_code=status.HTTP_201_CREATED)
 async def create_exemption_request(
@@ -144,12 +255,51 @@ async def create_exemption_request(
     db: DbSession,
     current_user: CurrentUser,
 ) -> QAExemptionResponse:
-    """Create a QA exemption request (requires role_level >= 2)."""
+    """Create a QA exemption request.
+
+    Used by authorized personnel to request emergency release when quality
+    does not meet standards.
+    """
     require_role(current_user, min_level=2)
 
+    # Verify part exists
+    result = await db.execute(select(Part).where(Part.id == data.part_id))
+    part = result.scalar_one_or_none()
+    if not part:
+        raise HTTPException(status_code=404, detail="Part not found")
+
+    exemption = await quality_service.create_exemption_request(
+        db,
+        part_id=data.part_id,
+        exemption_type=data.exemption_type,
+        issue_description=data.issue_description,
+        affected_qty=data.affected_qty,
+        notes=data.notes,
+        requested_by=current_user.id,
+    )
+    return _exemption_to_response(exemption)
+
+
+@router.post("/exemption/{exemption_id}/approve", response_model=QAExemptionResponse)
+async def approve_exemption(
+    exemption_id: int,
+    data: QAExemptionApprove,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> QAExemptionResponse:
+    """Approve a QA exemption request.
+
+    Requires role_level >= 2.
+    """
+    require_role(current_user, min_level=2)
+
+    exemption = await quality_service.get_exemption(db, exemption_id)
+    if not exemption:
+        raise HTTPException(status_code=404, detail="QA exemption not found")
+
     try:
-        exemption = await quality_service.create_exemption_request(
-            db, data.model_dump(), current_user
+        exemption = await quality_service.approve_exemption(
+            db, exemption, data.exemption_reason, current_user.id
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -162,13 +312,13 @@ async def list_exemptions(
     db: DbSession,
     current_user: CurrentUser,
     part_id: Optional[int] = Query(default=None),
-    status: Optional[str] = Query(default=None),
+    is_approved: Optional[bool] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[QAExemptionResponse]:
-    """List QA exemptions."""
+    """List QA exemption requests."""
     exemptions = await quality_service.get_exemptions(
-        db, part_id=part_id, status=status, skip=skip, limit=limit
+        db, part_id=part_id, is_approved=is_approved, skip=skip, limit=limit
     )
     return [_exemption_to_response(e) for e in exemptions]
 
@@ -179,39 +329,14 @@ async def get_exemption(
     db: DbSession,
     current_user: CurrentUser,
 ) -> QAExemptionResponse:
-    """Get QA exemption by ID."""
-    exemption = await quality_service.get_exemption_by_id(db, exemption_id)
+    """Get a QA exemption by ID."""
+    exemption = await quality_service.get_exemption(db, exemption_id)
     if not exemption:
-        raise HTTPException(status_code=404, detail="Exemption not found")
+        raise HTTPException(status_code=404, detail="QA exemption not found")
     return _exemption_to_response(exemption)
 
 
-@router.post("/exemption/{exemption_id}/approve")
-async def approve_exemption(
-    exemption_id: int,
-    data: QAExemptionApprove,
-    db: DbSession,
-    current_user: CurrentUser,
-) -> QAExemptionResponse:
-    """Approve or reject a QA exemption (requires role_level >= 2)."""
-    require_role(current_user, min_level=2)
-
-    exemption = await quality_service.get_exemption_by_id(db, exemption_id)
-    if not exemption:
-        raise HTTPException(status_code=404, detail="Exemption not found")
-
-    try:
-        exemption = await quality_service.approve_exemption(
-            db, exemption, data.approved, current_user,
-            notes=data.notes, expires_at=data.expires_at
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-    return _exemption_to_response(exemption)
-
-
-# Patrol Inspection
+# Patrol Inspection endpoints
 
 @router.post("/patrol", response_model=PatrolInspectionResponse, status_code=status.HTTP_201_CREATED)
 async def create_patrol_inspection(
@@ -219,11 +344,25 @@ async def create_patrol_inspection(
     db: DbSession,
     current_user: CurrentUser,
 ) -> PatrolInspectionResponse:
-    """Create a patrol inspection (requires role_level >= 2)."""
-    require_role(current_user, min_level=2)
+    """Create a patrol inspection record.
+
+    Used by quality personnel to perform regular inspections during production.
+    """
+    require_role(current_user, min_level=3)
 
     inspection = await quality_service.create_patrol_inspection(
-        db, data.model_dump(), current_user
+        db,
+        result=data.result,
+        session_id=data.session_id,
+        machine_id=data.machine_id,
+        dimension_check=data.dimension_check,
+        appearance_check=data.appearance_check,
+        process_parameter_check=data.process_parameter_check,
+        sample_size=data.sample_size,
+        defect_count=data.defect_count,
+        notes=data.notes,
+        corrective_action=data.corrective_action,
+        inspected_by=current_user.id,
     )
     return _patrol_to_response(inspection)
 
@@ -232,114 +371,13 @@ async def create_patrol_inspection(
 async def list_patrol_inspections(
     db: DbSession,
     current_user: CurrentUser,
-    machine_id: Optional[int] = Query(default=None),
     session_id: Optional[int] = Query(default=None),
+    machine_id: Optional[int] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[PatrolInspectionResponse]:
-    """List patrol inspections."""
+    """List patrol inspection records."""
     inspections = await quality_service.get_patrol_inspections(
-        db, machine_id=machine_id, session_id=session_id, skip=skip, limit=limit
+        db, session_id=session_id, machine_id=machine_id, skip=skip, limit=limit
     )
     return [_patrol_to_response(i) for i in inspections]
-
-
-# Helper functions
-
-def _fpi_to_response(inspection) -> FirstPieceInspectionResponse:
-    """Convert FirstPieceInspection to response."""
-    return FirstPieceInspectionResponse(
-        id=inspection.id,
-        inspection_no=inspection.inspection_no,
-        part_id=inspection.part_id,
-        part_no=inspection.part.part_no if inspection.part else None,
-        part_name=inspection.part.part_name if inspection.part else None,
-        process_flow_id=inspection.process_flow_id,
-        dimension_check=inspection.dimension_check,
-        surface_check=inspection.surface_check,
-        material_check=inspection.material_check,
-        result=inspection.result,
-        reject_reasons=inspection.reject_reasons,
-        rework_required=inspection.rework_required,
-        inspector_id=inspection.inspector_id,
-        inspected_at=inspection.inspected_at,
-        notes=inspection.notes,
-        attachment_paths=inspection.attachment_paths,
-        batch_size=inspection.batch_size,
-        sample_size=inspection.sample_size,
-        created_at=inspection.created_at,
-    )
-
-
-def _oqc_to_response(inspection) -> OQCInspectionResponse:
-    """Convert OQCInspection to response."""
-    return OQCInspectionResponse(
-        id=inspection.id,
-        inspection_no=inspection.inspection_no,
-        part_id=inspection.part_id,
-        part_no=inspection.part.part_no if inspection.part else None,
-        part_name=inspection.part.part_name if inspection.part else None,
-        shipment_id=inspection.shipment_id,
-        inspected_qty=inspection.inspected_qty,
-        passed_qty=inspection.passed_qty,
-        failed_qty=inspection.failed_qty,
-        defect_types=inspection.defect_types,
-        defect_positions=inspection.defect_positions,
-        result=inspection.result,
-        inspector_id=inspection.inspector_id,
-        inspected_at=inspection.inspected_at,
-        sample_size=inspection.sample_size,
-        sampling_plan=inspection.sampling_plan,
-        notes=inspection.notes,
-        attachment_paths=inspection.attachment_paths,
-        created_at=inspection.created_at,
-    )
-
-
-def _exemption_to_response(exemption) -> QAExemptionResponse:
-    """Convert QAExemption to response."""
-    return QAExemptionResponse(
-        id=exemption.id,
-        exemption_no=exemption.exemption_no,
-        part_id=exemption.part_id,
-        part_no=exemption.part.part_no if exemption.part else None,
-        part_name=exemption.part.part_name if exemption.part else None,
-        related_inspection_id=exemption.related_inspection_id,
-        related_inspection_type=exemption.related_inspection_type,
-        defect_description=exemption.defect_description,
-        quantity_affected=exemption.quantity_affected,
-        reason=exemption.reason,
-        impact_assessment=exemption.impact_assessment,
-        customer_notification_required=exemption.customer_notification_required,
-        status=exemption.status,
-        requested_by=exemption.requested_by,
-        requested_at=exemption.requested_at,
-        request_notes=exemption.request_notes,
-        approved_by=exemption.approved_by,
-        approved_at=exemption.approved_at,
-        approval_notes=exemption.approval_notes,
-        expires_at=exemption.expires_at,
-        batch_no=exemption.batch_no,
-        created_at=exemption.created_at,
-    )
-
-
-def _patrol_to_response(inspection) -> PatrolInspectionResponse:
-    """Convert PatrolInspection to response."""
-    return PatrolInspectionResponse(
-        id=inspection.id,
-        inspection_no=inspection.inspection_no,
-        machine_id=inspection.machine_id,
-        production_session_id=inspection.production_session_id,
-        check_points=inspection.check_points,
-        check_results=inspection.check_results,
-        result=inspection.result,
-        issues_found=inspection.issues_found,
-        severity=inspection.severity,
-        corrective_action=inspection.corrective_action,
-        action_required=inspection.action_required,
-        inspector_id=inspection.inspector_id,
-        inspected_at=inspection.inspected_at,
-        notes=inspection.notes,
-        created_at=inspection.created_at,
-    )

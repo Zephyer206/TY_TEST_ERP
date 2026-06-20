@@ -1,112 +1,70 @@
-"""Admin context switching models for role impersonation."""
+"""Admin and superuser management models."""
 
 from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Integer,
-    String,
-    Text,
-)
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.user import User
+    from src.models.user import User
 
 
-class SwitchTargetRole(str, PyEnum):
-    """Target role when admin switches context."""
+class ContextSwitchType(str, PyEnum):
+    """Context switch type."""
 
-    OPERATOR = "operator"  # 操作工 (role_level=1)
-    MOLD_ENGINEER = "mold_engineer"  # 模具工程师 (role_level=2)
-    SUPERVISOR = "supervisor"  # 组长/主管 (role_level=3)
-    DESIGN_ENGINEER = "design_engineer"  # 设计工程师 (role_level=4)
-    SALES_MANAGER = "sales_manager"  # 业务经理 (role_level=5)
+    TO_BUSINESS = "to_business"  # Switch to business perspective
+    TO_PRODUCTION = "to_production"  # Switch to production perspective
+    TO_QUALITY = "to_quality"  # Switch to quality perspective
+    TO_WAREHOUSE = "to_warehouse"  # Switch to warehouse perspective
+    TO_DESIGN = "to_design"  # Switch to design perspective
+    TO_ADMIN = "to_admin"  # Switch back to admin
 
 
 class AdminContextSwitch(Base):
-    """Admin context switch tracking for audit and session management."""
+    """Admin context switch record model.
+
+    Records when super admins temporarily switch their view to another department's perspective.
+    """
 
     __tablename__ = "admin_context_switches"
 
     id: Mapped[int] = mapped_column(primary_key=True)
 
     # Admin user who performed the switch
-    admin_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id"), nullable=False, index=True
+    )
+    user: Mapped["User"] = relationship("User")
 
-    # Original role (always 10 for admin)
+    # Original role (stored for audit and restoration)
     original_role_level: Mapped[int] = mapped_column(Integer, nullable=False)
+    original_dept: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
-    # Switched role
-    switched_role_level: Mapped[int] = mapped_column(Integer, nullable=False)
-    switched_role_name: Mapped[str] = mapped_column(String(50), nullable=False)
+    # Switched to
+    switched_to_dept: Mapped[str] = mapped_column(String(50), nullable=False)
+    switched_to_role_level: Mapped[int] = mapped_column(Integer, nullable=False)
 
-    # Session token for the switched context
-    switch_token: Mapped[str] = mapped_column(
-        String(200), unique=True, nullable=False, index=True
+    # Switch type
+    switch_type: Mapped[ContextSwitchType] = mapped_column(
+        Enum(ContextSwitchType), nullable=False
     )
 
-    # Validity
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    switched_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+    # Status
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+
+    # Session reference (for linking with Redis session)
+    session_key: Mapped[Optional[str]] = mapped_column(
+        String(200), unique=True, nullable=True, index=True
     )
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Timestamps
+    switched_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     switched_back_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    # Reason
-    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    # IP for security tracking
-    ip_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     def __repr__(self) -> str:
-        return (
-            f"<AdminContextSwitch admin={self.admin_user_id} "
-            f"role={self.original_role_level}->{self.switched_role_level}>"
-        )
-
-
-class AdminAuditLog(Base):
-    """Admin operation audit log for security compliance."""
-
-    __tablename__ = "admin_audit_logs"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    log_no: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
-    )
-
-    # Admin user
-    admin_user_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-
-    # Operation type
-    operation: Mapped[str] = mapped_column(String(100), nullable=False, index=True)
-
-    # Target entity
-    target_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    target_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Context switch info (if applicable)
-    context_switch_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Details
-    details: Mapped[Optional[dict]] = mapped_column(nullable=True)
-
-    # IP for security
-    ip_address: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
-
-    # Timestamp
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False, index=True
-    )
-
-    def __repr__(self) -> str:
-        return f"<AdminAuditLog {self.log_no} {self.operation}>"
+        return f"<AdminContextSwitch user={self.user_id} dept={self.switched_to_dept}>"

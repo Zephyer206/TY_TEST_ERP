@@ -4,49 +4,48 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    JSON,
-    Numeric,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.machine import Machine
-    from app.models.part import Part
-    from app.models.tooling import Tooling
-    from app.models.user import User
+    from src.models.machine import Machine
+    from src.models.part import Part
+    from src.models.tooling import Tooling
+    from src.models.user import User
 
 
-class PlanState(str, PyEnum):
+class PlanStatus(str, PyEnum):
     """Production plan status."""
 
     PLANNED = "planned"  # Created, not started
-    IN_PROGRESS = "in_progress"  # Started, machine assigned
-    COMPLETED = "completed"  # All quantity produced
+    IN_PROGRESS = "in_progress"  # Assigned and running
+    COMPLETED = "completed"  # All quantities produced
     CANCELLED = "cancelled"  # Cancelled
-    CLOSED = "closed"  # Closed after completion
+    CLOSED = "closed"  # Closed without completion
 
 
-class SessionState(str, PyEnum):
+class SessionStatus(str, PyEnum):
     """Production session status."""
 
-    OPEN = "open"  # Active, accepting reports
-    CLOSED = "closed"  # Ended
-    CANCELLED = "cancelled"  # Forcefully cancelled
+    PENDING = "pending"  # Waiting for material scan
+    ACTIVE = "active"  # Session in progress
+    CLOSED = "closed"  # Session ended
+    CANCELLED = "cancelled"  # Session cancelled
+
+
+class ProcessFlowStatus(str, PyEnum):
+    """Process flow card status."""
+
+    PENDING = "pending"  # Created, not started
+    IN_PROGRESS = "in_progress"  # Being processed
+    COMPLETED = "completed"  # All steps completed
+    CANCELLED = "cancelled"  # Cancelled
 
 
 class ProductionPlan(Base):
-    """Production plan for part manufacturing."""
+    """Production plan model."""
 
     __tablename__ = "production_plans"
 
@@ -55,25 +54,26 @@ class ProductionPlan(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Part reference
+    # Part and customer
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
-    part: Mapped["Part"] = relationship("Part")
+    part: Mapped["Part"] = relationship("Part", back_populates="production_plans")
 
-    # Planning details
+    # Plan details
     total_qty: Mapped[int] = mapped_column(Integer, nullable=False)
-    completed_qty: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    priority: Mapped[int] = mapped_column(Integer, default=1)  # 1=normal, 2=urgent, 3=critical
+    completed_qty: Mapped[int] = mapped_column(Integer, default=0)
 
-    # Dates
-    due_date: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    start_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    completed_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    # Scheduling
+    planned_start_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    planned_end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Priority
+    priority: Mapped[int] = mapped_column(Integer, default=0)  # 0=normal, 1=urgent
 
     # Status
-    state: Mapped[PlanState] = mapped_column(
-        Enum(PlanState), default=PlanState.PLANNED, nullable=False, index=True
+    status: Mapped[PlanStatus] = mapped_column(
+        Enum(PlanStatus), default=PlanStatus.PLANNED, nullable=False, index=True
     )
 
     # Notes
@@ -91,12 +91,17 @@ class ProductionPlan(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
+    # Relationships
+    assignments: Mapped[list["PlanMachineAssignment"]] = relationship(
+        "PlanMachineAssignment", back_populates="plan", cascade="all, delete-orphan"
+    )
+
     def __repr__(self) -> str:
         return f"<ProductionPlan {self.plan_no}>"
 
 
 class PlanMachineAssignment(Base):
-    """Assignment of machines to production plan."""
+    """Assignment of a machine to a production plan."""
 
     __tablename__ = "plan_machine_assignments"
 
@@ -104,34 +109,32 @@ class PlanMachineAssignment(Base):
     plan_id: Mapped[int] = mapped_column(
         ForeignKey("production_plans.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    plan: Mapped["ProductionPlan"] = relationship("ProductionPlan")
+    plan: Mapped["ProductionPlan"] = relationship("ProductionPlan", back_populates="assignments")
 
     machine_id: Mapped[int] = mapped_column(
         ForeignKey("machines.id"), nullable=False, index=True
     )
     machine: Mapped["Machine"] = relationship("Machine")
 
-    # Assignment details
-    assigned_qty: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    is_primary: Mapped[bool] = mapped_column(Boolean, default=False)
+    assigned_qty: Mapped[int] = mapped_column(Integer, nullable=False)  # Quantity assigned to this machine
+    completed_qty: Mapped[int] = mapped_column(Integer, default=0)
 
-    # Assignment time
-    assigned_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    # Status
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
     assigned_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    assigned_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+
+    def __repr__(self) -> str:
+        return f"<PlanMachineAssignment {self.id}>"
 
 
 class ProductionSession(Base):
-    """Active production session for a machine-plan combination."""
+    """Production session for continuous stamping."""
 
     __tablename__ = "production_sessions"
 
@@ -140,48 +143,64 @@ class ProductionSession(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Plan and machine
-    plan_id: Mapped[int] = mapped_column(
-        ForeignKey("production_plans.id"), nullable=False, index=True
+    # Plan and assignment
+    plan_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("production_plans.id"), nullable=True, index=True
     )
-    plan: Mapped["ProductionPlan"] = relationship("ProductionPlan")
+    assignment_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("plan_machine_assignments.id"), nullable=True, index=True
+    )
 
+    # Machine and tooling
     machine_id: Mapped[int] = mapped_column(
         ForeignKey("machines.id"), nullable=False, index=True
     )
     machine: Mapped["Machine"] = relationship("Machine")
+    tooling_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("tooling_molds.id"), nullable=True, index=True
+    )
+    tooling: Mapped[Optional["Tooling"]] = relationship("Tooling")
 
-    # Material validation
-    material_batch_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
-    tooling_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
-    material_validated: Mapped[bool] = mapped_column(Boolean, default=False)
-    force_started: Mapped[bool] = mapped_column(Boolean, default=False)  # Forced by supervisor
+    # Part
+    part_id: Mapped[int] = mapped_column(
+        ForeignKey("parts.id"), nullable=False, index=True
+    )
+    part: Mapped["Part"] = relationship("Part")
 
-    # Session status
-    state: Mapped[SessionState] = mapped_column(
-        Enum(SessionState), default=SessionState.OPEN, nullable=False, index=True
+    # Material batch used
+    material_batch_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Status
+    status: Mapped[SessionStatus] = mapped_column(
+        Enum(SessionStatus), default=SessionStatus.PENDING, nullable=False, index=True
     )
 
-    # Output tracking
-    total_strokes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    total_output: Mapped[int] = mapped_column(Integer, default=0, nullable=False)  # strokes * cavities
-    total_good_qty: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-
-    # Timestamps
-    started_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    # Session tracking
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     closed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    closed_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    # Process flow card
-    process_flow_no: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    # Summary (filled on close)
+    total_strokes: Mapped[int] = mapped_column(Integer, default=0)
+    total_output: Mapped[int] = mapped_column(Integer, default=0)  # strokes × cavity_count
+    good_qty: Mapped[int] = mapped_column(Integer, default=0)
+    reject_qty: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Process flow
+    process_flow_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Operator
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    )
+
+    # Reports
+    reports: Mapped[list["ProductionReport"]] = relationship(
+        "ProductionReport", back_populates="session", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -189,52 +208,47 @@ class ProductionSession(Base):
 
 
 class ProductionReport(Base):
-    """Individual production report (stroke report)."""
+    """Production report within a session."""
 
     __tablename__ = "production_reports"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    report_no: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
-    )
-
-    # Session reference
     session_id: Mapped[int] = mapped_column(
-        ForeignKey("production_sessions.id"), nullable=False, index=True
+        ForeignKey("production_sessions.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    session: Mapped["ProductionSession"] = relationship("ProductionSession")
+    session: Mapped["ProductionSession"] = relationship("ProductionSession", back_populates="reports")
 
-    # Report details
+    # Strokes and output
     strokes: Mapped[int] = mapped_column(Integer, nullable=False)
-    cavity_count: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    output_qty: Mapped[int] = mapped_column(Integer, nullable=False)  # strokes * cavity_count
-    good_qty: Mapped[int] = mapped_column(Integer, nullable=False)
-    reject_qty: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    cavity_count: Mapped[int] = mapped_column(Integer, default=1)  # Part cavities
+    output: Mapped[int] = mapped_column(Integer, nullable=False)  # strokes × cavity_count
 
-    # Reject reasons (JSON)
-    reject_reasons: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # Quality
+    good_qty: Mapped[int] = mapped_column(Integer, default=0)
+    reject_qty: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Material consumption
+    material_used: Mapped[Optional[float]] = mapped_column(Float, nullable=True)  # kg
+
+    # Timestamps
+    report_time: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 
     # Operator
     operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    operator_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Timestamps
-    reported_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
+    # Notes
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
 
     def __repr__(self) -> str:
-        return f"<ProductionReport {self.report_no}>"
+        return f"<ProductionReport {self.id}>"
 
 
 class ProcessFlowCard(Base):
-    """Process flow card generated after session closure."""
+    """Process flow card for tracking production steps."""
 
     __tablename__ = "process_flow_cards"
 
@@ -243,47 +257,57 @@ class ProcessFlowCard(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Session reference
+    # Session that generated this card
     session_id: Mapped[int] = mapped_column(
         ForeignKey("production_sessions.id"), nullable=False, index=True
     )
-    session: Mapped["ProductionSession"] = relationship("ProductionSession")
 
-    # Part info
+    # Part and customer
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
     part: Mapped["Part"] = relationship("Part")
 
-    # Machine info
+    # Machine and tooling
     machine_id: Mapped[int] = mapped_column(
         ForeignKey("machines.id"), nullable=False, index=True
     )
     machine: Mapped["Machine"] = relationship("Machine")
 
-    # Material info
-    material_batch_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    material_lot_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    tooling_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("tooling_molds.id"), nullable=True
+    )
+    tooling: Mapped[Optional["Tooling"]] = relationship("Tooling")
 
-    # Production summary
-    total_strokes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    total_output: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    good_qty: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
-    reject_qty: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Material
+    material_batch_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Time tracking
-    production_start: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    production_end: Mapped[datetime] = mapped_column(DateTime, nullable=False)
-    duration_minutes: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    # Quantities
+    planned_qty: Mapped[int] = mapped_column(Integer, nullable=False)
+    actual_output: Mapped[int] = mapped_column(Integer, default=0)
+    good_qty: Mapped[int] = mapped_column(Integer, default=0)
+    reject_qty: Mapped[int] = mapped_column(Integer, default=0)
 
     # Status
-    status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)
-
-    # QR code path
-    qr_code_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[ProcessFlowStatus] = mapped_column(
+        Enum(ProcessFlowStatus), default=ProcessFlowStatus.PENDING, nullable=False, index=True
+    )
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    start_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    end_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Operator
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Inbound (QC passed -> finished goods inventory)
+    inbound_time: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    inbound_operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    inbound_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # QR Code
+    qr_code: Mapped[Optional[str]] = mapped_column(String(200), nullable=True, index=True)
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )

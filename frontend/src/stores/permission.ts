@@ -1,178 +1,156 @@
-/**
- * Permission store for dynamic button and route access control.
- * Handles admin context switching to hide boss-only buttons.
- */
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { sendApiRequest } from '../api'
 
-export interface ContextStatus {
-  is_switched: boolean
+interface ContextSwitch {
+  user_id: number
+  original_role_level: number
+  original_dept: string | null
   current_role_level: number
-  current_role_name: string
-  original_role_level?: number
-  original_role_name?: string
-  switched_at?: string
-  expires_at?: string
-  remaining_minutes?: number
+  current_dept: string
+  is_switched: boolean
+  switch_type: string | null
+  switched_at: string | null
+  expires_at: string | null
 }
 
-const SWITCH_TOKEN_KEY = 'switch_token'
-const SWITCH_CONTEXT_KEY = 'switch_context'
+interface DeptRoleMapping {
+  department: string
+  role_level: number
+  role_name: string
+}
 
 export const usePermissionStore = defineStore('permission', () => {
-  // Admin context switch state
-  const switchToken = ref<string | null>(localStorage.getItem(SWITCH_TOKEN_KEY) || null)
-  const contextStatus = ref<ContextStatus | null>(
-    JSON.parse(localStorage.getItem(SWITCH_CONTEXT_KEY) || 'null')
-  )
+  // Context switch state
+  const contextSwitch = ref<ContextSwitch | null>(null)
+  const availableDepartments = ref<DeptRoleMapping[]>([])
 
-  // Computed: effective role level (switched or original)
+  // Computed: effective role after context switch
   const effectiveRoleLevel = computed(() => {
-    if (contextStatus.value?.is_switched) {
-      return contextStatus.value.current_role_level
-    }
-    // Fall back to user store (will be set by auth)
-    const stored = localStorage.getItem('user_role_level')
-    return stored ? parseInt(stored) : 10
+    return contextSwitch.value?.current_role_level ?? 0
   })
 
-  // Computed: whether in switched context
-  const isSwitched = computed(() => contextStatus.value?.is_switched ?? false)
-
-  // Computed: whether admin (role_level >= 9 for boss审批权限)
-  const isAdmin = computed(() => effectiveRoleLevel.value === 10)
-
-  // Computed: whether can see boss-only buttons
-  // Admin in switched context should NOT see boss buttons
-  const canSeeBossButtons = computed(() => {
-    // If switched, hide boss buttons
-    if (isSwitched.value) {
-      return false
-    }
-    // Otherwise use original role level check
-    return effectiveRoleLevel.value >= 9
+  const effectiveDept = computed(() => {
+    return contextSwitch.value?.current_dept ?? ''
   })
 
-  // Computed: whether can access boss pages (quotes approval, etc.)
-  const canAccessBossPages = computed(() => {
-    // If switched, block access
-    if (isSwitched.value) {
-      return false
-    }
-    return effectiveRoleLevel.value >= 9
+  const isSwitched = computed(() => {
+    return contextSwitch.value?.is_switched ?? false
   })
 
-  // Permission check helpers
-  const canAccess = (minLevel: number): boolean => {
+  // Check if current user can access boss buttons
+  // Boss buttons should be hidden when admin is in context-switched mode
+  const canAccessBossButtons = computed(() => {
+    if (!contextSwitch.value) {
+      // No switch, use original role from user store
+      return true
+    }
+    // When switched, boss buttons should be hidden (role < 9)
+    return contextSwitch.value.current_role_level >= 9
+  })
+
+  // Fetch current context info
+  const fetchContextInfo = async () => {
+    try {
+      const data = await sendApiRequest('GET', '/api/admin/context-info')
+      contextSwitch.value = data
+      return data
+    } catch (error) {
+      console.error('Failed to fetch context info:', error)
+      return null
+    }
+  }
+
+  // Fetch available departments
+  const fetchDepartments = async () => {
+    try {
+      const data = await sendApiRequest('GET', '/api/admin/departments')
+      availableDepartments.value = data
+      return data
+    } catch (error) {
+      console.error('Failed to fetch departments:', error)
+      return []
+    }
+  }
+
+  // Switch context to a department
+  const switchContext = async (department: string) => {
+    try {
+      const data = await sendApiRequest('POST', '/api/admin/switch-context', { department })
+      await fetchContextInfo()
+      return data
+    } catch (error) {
+      console.error('Failed to switch context:', error)
+      throw error
+    }
+  }
+
+  // Switch back to admin
+  const switchBack = async () => {
+    try {
+      const data = await sendApiRequest('POST', '/api/admin/switch-back')
+      contextSwitch.value = null
+      return data
+    } catch (error) {
+      console.error('Failed to switch back:', error)
+      throw error
+    }
+  }
+
+  // Check if user has minimum role level
+  const hasRoleLevel = (minLevel: number): boolean => {
     return effectiveRoleLevel.value >= minLevel
   }
 
-  const canAccessDept = (dept: string): boolean => {
-    if (effectiveRoleLevel.value === 10 && !isSwitched.value) {
-      return true // Admin can access all
+  // Check if user can perform action (requires specific role)
+  const canPerformAction = (requiredLevel: number): boolean => {
+    return effectiveRoleLevel.value >= requiredLevel
+  }
+
+  // Check if route should be accessible
+  const canAccessRoute = (routeName: string, requiredRoleLevel: number = 1): boolean => {
+    // When switched, certain admin routes should be blocked
+    if (isSwitched.value && routeName.startsWith('admin-')) {
+      return false
     }
-    // Check department match (simplified)
-    const stored = localStorage.getItem('user_dept')
-    if (!stored) return true
-    return stored === dept
+    return hasRoleLevel(requiredRoleLevel)
   }
 
-  // Context switch operations
-  const setSwitchContext = (token: string, status: ContextStatus) => {
-    switchToken.value = token
-    contextStatus.value = status
-    localStorage.setItem(SWITCH_TOKEN_KEY, token)
-    localStorage.setItem(SWITCH_CONTEXT_KEY, JSON.stringify(status))
-  }
-
-  const clearSwitchContext = () => {
-    switchToken.value = null
-    contextStatus.value = null
-    localStorage.removeItem(SWITCH_TOKEN_KEY)
-    localStorage.removeItem(SWITCH_CONTEXT_KEY)
-  }
-
-  // Fetch current context status from server
-  const fetchContextStatus = async () => {
-    if (!switchToken.value) {
-      contextStatus.value = null
-      return null
+  // Check if button should be visible based on role
+  const isButtonVisible = (buttonRoleLevel: number): boolean => {
+    // When switched, hide buttons requiring role >= 9
+    if (isSwitched.value && buttonRoleLevel >= 9) {
+      return false
     }
-
-    try {
-      const response = await fetch('/api/v1/admin/context-status', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.is_switched) {
-          contextStatus.value = data
-          localStorage.setItem(SWITCH_CONTEXT_KEY, JSON.stringify(data))
-        } else {
-          clearSwitchContext()
-        }
-        return data
-      } else {
-        clearSwitchContext()
-        return null
-      }
-    } catch {
-      clearSwitchContext()
-      return null
-    }
+    return effectiveRoleLevel.value >= buttonRoleLevel
   }
 
-  // Get switch token for API calls
-  const getSwitchToken = (): string | null => {
-    return switchToken.value
+  // Reset context (e.g., on logout)
+  const resetContext = () => {
+    contextSwitch.value = null
+    availableDepartments.value = []
   }
 
   return {
     // State
-    switchToken,
-    contextStatus,
+    contextSwitch,
+    availableDepartments,
 
     // Computed
     effectiveRoleLevel,
+    effectiveDept,
     isSwitched,
-    isAdmin,
-    canSeeBossButtons,
-    canAccessBossPages,
+    canAccessBossButtons,
 
-    // Helpers
-    canAccess,
-    canAccessDept,
-
-    // Context operations
-    setSwitchContext,
-    clearSwitchContext,
-    fetchContextStatus,
-    getSwitchToken,
+    // Actions
+    fetchContextInfo,
+    fetchDepartments,
+    switchContext,
+    switchBack,
+    hasRoleLevel,
+    canPerformAction,
+    canAccessRoute,
+    isButtonVisible,
+    resetContext,
   }
 })
-
-// Role level constants
-export const ROLE_LEVELS = {
-  OPERATOR: 1,
-  MOLD_ENGINEER: 2,
-  SUPERVISOR: 3,
-  DESIGN_ENGINEER: 4,
-  SALES_MANAGER: 5,
-  BOSS: 9,
-  ADMIN: 10,
-} as const
-
-// Role name mapping
-export const ROLE_NAMES: Record<number, string> = {
-  1: '操作工',
-  2: '模具工程师',
-  3: '组长/主管',
-  4: '设计工程师',
-  5: '业务经理',
-  9: '老板',
-  10: '超级管理员',
-}

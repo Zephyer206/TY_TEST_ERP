@@ -1,288 +1,328 @@
-"""
-QR Code generation and management service.
-
-Provides QR code generation with customizable content for:
-- Material batches (MAT-{batch_id})
-- Machine codes (MCN-{machine_id})
-- Process flow cards (PFC-{card_id})
-- Parts (PRT-{part_id})
-- Packaging records (PKG-{record_id})
-"""
+"""QR Code generation and lookup service."""
 
 import base64
 import io
 from datetime import datetime
 from enum import Enum
-from typing import Optional
+from typing import Optional, Union
 
-try:
-    import qrcode
-    from PIL import Image, ImageDraw, ImageFont
-    QRCODE_AVAILABLE = True
-except ImportError:
-    QRCODE_AVAILABLE = False
+from PIL import Image
 
-from app.core.config import settings
+from src.config import settings
 
 
-class QRType(str, Enum):
-    """QR code types based on prefix."""
+class QRCodePrefix(str, Enum):
+    """QR code prefix types for different entities."""
 
     MATERIAL = "MAT"  # 原料批次
     MACHINE = "MCN"  # 机台
     PROCESS_FLOW = "PFC"  # 工艺流转单
     PART = "PRT"  # 零件
-    PACKAGING = "PKG"  # 包装记录
-    COATING = "COA"  # 喷涂记录
+    TOOLING = "TLG"  # 模具工装
+    PACKAGE = "PKG"  # 包装
+    COATING = "COT"  # 喷涂
 
 
-# QR Code content structure
-QR_CONTENT_TEMPLATE = {
-    QRType.MATERIAL: "https://{domain}/qr/material/{id}",
-    QRType.MACHINE: "https://{domain}/qr/machine/{id}",
-    QRType.PROCESS_FLOW: "https://{domain}/qr/process-flow/{id}",
-    QRType.PART: "https://{domain}/qr/part/{id}",
-    QRType.PACKAGING: "https://{domain}/qr/packaging/{id}",
-    QRType.COATING: "https://{domain}/qr/coating/{id}",
-}
-
-
-def get_qr_type(code: str) -> Optional[QRType]:
-    """Parse QR code and determine its type."""
-    if not code:
-        return None
-
-    prefix = code.split("-")[0] if "-" in code else code[:3]
-
-    type_map = {
-        "MAT": QRType.MATERIAL,
-        "MCN": QRType.MACHINE,
-        "PFC": QRType.PROCESS_FLOW,
-        "PRT": QRType.PART,
-        "PKG": QRType.PACKAGING,
-        "COA": QRType.COATING,
-    }
-
-    return type_map.get(prefix.upper())
-
-
-def parse_qr_code(code: str) -> Optional[dict]:
-    """
-    Parse QR code string and extract type and ID.
-
-    Format: {PREFIX}-{ID}
-    Example: MAT-12345, MCN-001, PFC-00001
-    """
-    if not code:
-        return None
-
-    parts = code.split("-")
-    if len(parts) < 2:
-        return None
-
-    prefix = parts[0].upper()
-    qr_id = "-".join(parts[1:])  # Handle IDs with dashes
-
-    qr_type = get_qr_type(code)
-    if not qr_type:
-        return None
-
-    try:
-        return {
-            "type": qr_type,
-            "prefix": prefix,
-            "id": qr_id,
-            "original_code": code,
-        }
-    except (ValueError, TypeError):
-        return None
-
-
-def generate_qr_content(qr_type: QRType, entity_id: str | int) -> str:
-    """Generate QR code content URL for given type and ID."""
-    domain = getattr(settings, 'QR_DOMAIN', 'erp.example.com')
-    content = QR_CONTENT_TEMPLATE[qr_type]
-    return content.format(domain=domain, id=entity_id)
-
-
-def generate_qr_code(
-    content: str,
-    box_size: int = 10,
-    border: int = 4,
-    error_correction: int = 2,  # M (15%)
-    fit: bool = True,
-) -> bytes:
-    """
-    Generate QR code image as PNG bytes.
+def generate_qr_content(prefix: QRCodePrefix, entity_id: int, **extra_data) -> str:
+    """Generate QR code content string.
 
     Args:
-        content: URL or text to encode
-        box_size: Size of each QR module
-        border: Width of border (modules)
-        error_correction: 0=L, 1=M, 2=Q, 3=H
-        fit: Fit to content
+        prefix: The QR code prefix type
+        entity_id: The entity ID
+        **extra_data: Additional data to include
+
+    Returns:
+        JSON-like string format: {prefix}:{id}:{timestamp}:{extra}
+    """
+    timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    extras = ":".join(f"{k}={v}" for k, v in extra_data.items()) if extra_data else ""
+    base = f"{prefix.value}:{entity_id}:{timestamp}"
+    return f"{base}:{extras}" if extras else base
+
+
+def generate_material_qr(batch_id: int, batch_no: str) -> str:
+    """Generate QR content for material batch."""
+    return generate_qr_content(QRCodePrefix.MATERIAL, batch_id, batch_no=batch_no)
+
+
+def generate_material_batch_qr(batch_id: int) -> str:
+    """Generate stable QR content for material batch (storeable in DB).
+
+    Format: MAT:{batch_id}:{YYYYMMDD}
+    Content is stable — same batch_id always produces same content.
+    """
+    date_str = datetime.utcnow().strftime("%Y%m%d")
+    return f"MAT:{batch_id}:{date_str}"
+
+
+def generate_material_batch_qr_base64(batch_id: int, size: int = 300) -> str:
+    """Generate QR image as base64 for material batch label printing.
+
+    Returns:
+        data:image/png;base64,{base64}
+    """
+    content = generate_material_batch_qr(batch_id)
+    return generate_qr_base64(content, size=size)
+
+
+def generate_machine_qr(machine_id: int, machine_no: str) -> str:
+    """Generate QR content for machine."""
+    return generate_qr_content(QRCodePrefix.MACHINE, machine_id, machine_no=machine_no)
+
+
+def generate_process_flow_qr(card_id: int, card_no: str) -> str:
+    """Generate QR content for process flow card."""
+    return generate_qr_content(QRCodePrefix.PROCESS_FLOW, card_id, card_no=card_no)
+
+
+def generate_part_qr(part_id: int, part_no: str) -> str:
+    """Generate QR content for part."""
+    return generate_qr_content(QRCodePrefix.PART, part_id, part_no=part_no)
+
+
+def generate_tooling_qr(tooling_id: int, tooling_no: str) -> str:
+    """Generate QR content for tooling."""
+    return generate_qr_content(QRCodePrefix.TOOLING, tooling_id, tooling_no=tooling_no)
+
+
+def generate_package_qr(package_id: int, package_no: str) -> str:
+    """Generate QR content for package."""
+    return generate_qr_content(QRCodePrefix.PACKAGE, package_id, package_no=package_no)
+
+
+def generate_coating_qr(record_id: int, record_no: str) -> str:
+    """Generate QR content for coating record."""
+    return generate_qr_content(QRCodePrefix.COATING, record_id, record_no=record_no)
+
+
+def parse_qr_content(content: str) -> Optional[dict]:
+    """Parse QR code content.
+
+    Args:
+        content: The QR code content string
+
+    Returns:
+        Parsed data dict with prefix, entity_id, timestamp, and extra data
+    """
+    parts = content.split(":")
+    if len(parts) < 3:
+        return None
+
+    prefix = parts[0]
+    entity_id = parts[1]
+    timestamp = parts[2]
+
+    extra = {}
+    for part in parts[3:]:
+        if "=" in part:
+            k, v = part.split("=", 1)
+            extra[k] = v
+
+    return {
+        "prefix": prefix,
+        "entity_id": int(entity_id) if entity_id.isdigit() else entity_id,
+        "timestamp": timestamp,
+        "extra": extra,
+    }
+
+
+def get_prefix_type(prefix: str) -> Optional[QRCodePrefix]:
+    """Get QRCodePrefix enum from string prefix."""
+    try:
+        return QRCodePrefix(prefix.upper())
+    except ValueError:
+        return None
+
+
+def generate_qr_image(
+    content: str,
+    size: int = 300,
+    border: int = 2,
+    fill_color: str = "black",
+    back_color: str = "white",
+) -> bytes:
+    """Generate QR code image as bytes.
+
+    Args:
+        content: The content to encode in the QR code
+        size: The size of the QR code image in pixels
+        border: The border size (modules)
+        fill_color: The foreground color
+        back_color: The background color
 
     Returns:
         PNG image bytes
     """
-    if not QRCODE_AVAILABLE:
-        raise ImportError("qrcode and PIL libraries required. Install: pip install qrcode[pil] pillow")
-
-    # QR error correction levels
-    ec_level_map = {
-        0: qrcode.constants.ERROR_CORRECT_L,  # 7%
-        1: qrcode.constants.ERROR_CORRECT_M,     # 15%
-        2: qrcode.constants.ERROR_CORRECT_Q,     # 25%
-        3: qrcode.constants.ERROR_CORRECT_H,     # 30%
-    }
+    import qrcode
 
     qr = qrcode.QRCode(
-        version=None,
-        error_correction=ec_level_map.get(error_correction, qrcode.constants.ERROR_CORRECT_M),
-        box_size=box_size,
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
         border=border,
-        image_factory=None,
-        mask_pattern=None,
     )
-
     qr.add_data(content)
-    qr.make(fit=fit)
+    qr.make(fit=True)
 
-    img = qr.make_image(fill_color="black", back_color="white")
-    img_buffer = io.BytesIO()
-    img.save(img_buffer, format="PNG")
-    return img_buffer.getvalue()
+    img = qr.make_image(fill_color=fill_color, back_color=back_color)
+    img = img.resize((size, size), Image.Resampling.LANCZOS)
 
-
-def generate_qr_with_logo(
-    content: str,
-    logo_path: Optional[str] = None,
-    logo_size: int = 80,
-    box_size: int = 10,
-) -> bytes:
-    """
-    Generate QR code with logo in center.
-
-    Args:
-        content: URL or text to encode
-        logo_path: Path to logo image file
-        logo_size: Size of logo in pixels
-        box_size: Size of each QR module
-
-    Returns:
-        PNG image bytes
-    """
-    if not QRCODE_AVAILABLE:
-        raise ImportError("qrcode and PIL libraries required. Install: pip install qrcode[pil] pillow")
-
-    # Generate base QR code
-    qr_bytes = generate_qr_code(content, box_size=box_size)
-    qr_img = Image.open(io.BytesIO(qr_bytes))
-
-    # Add logo if provided
-    if logo_path:
-        try:
-            logo = Image.open(logo_path)
-            logo_size_px = min(logo_size, qr_img.size[0] // 5)
-
-            # Calculate logo position (center)
-            logo = logo.convert("RGBA")
-            logo.thumbnail((logo_size_px, logo_size_px), Image.LANCZOS)
-
-            # Create white background for logo
-            logo_bg = Image.new("RGBA", logo.size, (255, 255, 255, 255))
-            logo_bg.paste(logo, mask=logo)
-
-            # Calculate position
-            x = (qr_img.size[0] - logo.size[0]) // 2
-            y = (qr_img.size[1] - logo.size[1]) // 2
-
-            # Paste logo on QR code
-            qr_img.paste(logo_bg, (x, y), mask=logo_bg)
-        except Exception:
-            pass  # Skip logo if error
-
-    # Save to bytes
-    img_buffer = io.BytesIO()
-    qr_img.save(img_buffer, format="PNG")
-    return img_buffer.getvalue()
+    buffer = io.BytesIO()
+    img.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer.getvalue()
 
 
 def generate_qr_base64(
     content: str,
-    box_size: int = 10,
+    size: int = 300,
+    border: int = 2,
+    fill_color: str = "black",
+    back_color: str = "white",
 ) -> str:
-    """
-    Generate QR code as base64 string (data URI).
+    """Generate QR code as base64 encoded string.
 
     Returns:
-        Base64 data URI: data:image/png;base64,{base64_string}
+        Base64 string with data URI prefix: data:image/png;base64,{base64}
     """
-    qr_bytes = generate_qr_code(content, box_size=box_size)
-    base64_str = base64.b64encode(qr_bytes).decode("utf-8")
+    img_bytes = generate_qr_image(content, size, border, fill_color, back_color)
+    base64_str = base64.b64encode(img_bytes).decode("utf-8")
     return f"data:image/png;base64,{base64_str}"
 
 
-def generate_material_qr(batch_id: str | int) -> tuple[bytes, str]:
-    """
-    Generate QR code for material batch.
+async def upload_qr_to_cos(
+    content: str,
+    filename: str,
+    size: int = 300,
+) -> Optional[str]:
+    """Upload QR code image to cloud storage (COS/S3).
+
+    Args:
+        content: The QR code content
+        filename: The filename for the uploaded image
+        size: The QR code size
 
     Returns:
-        (PNG bytes, QR code string MAT-{id})
+        The URL of the uploaded image, or None if upload fails
     """
-    qr_code = f"MAT-{batch_id}"
-    content = generate_qr_content(QRType.MATERIAL, batch_id)
-    qr_bytes = generate_qr_code(content)
-    return qr_bytes, qr_code
+    img_bytes = generate_qr_image(content, size)
+
+    # Check if COS is configured
+    if not settings.COS_SECRET_ID or not settings.COS_BUCKET:
+        # Return local storage path if COS not configured
+        return await _save_qr_locally(img_bytes, filename)
+
+    try:
+        return await _upload_to_cos(img_bytes, filename)
+    except Exception as e:
+        # Fallback to local storage
+        print(f"COS upload failed: {e}, falling back to local storage")
+        return await _save_qr_locally(img_bytes, filename)
 
 
-def generate_machine_qr(machine_id: str | int) -> tuple[bytes, str]:
-    """
-    Generate QR code for machine.
+async def _upload_to_cos(img_bytes: bytes, filename: str) -> str:
+    """Upload image to Tencent COS or compatible S3 storage."""
+    try:
+        # Try Tencent COS first
+        from qcloud_cos import CosConfig, CosS3Client
 
-    Returns:
-        (PNG bytes, QR code string MCN-{id})
-    """
-    qr_code = f"MCN-{machine_id}"
-    content = generate_qr_content(QRType.MACHINE, machine_id)
-    qr_bytes = generate_qr_code(content)
-    return qr_bytes, qr_code
+        config = CosConfig(
+            Region=settings.COS_REGION,
+            SecretId=settings.COS_SECRET_ID,
+            SecretKey=settings.COS_SECRET_KEY,
+            Endpoint=settings.COS_ENDPOINT or None,
+        )
+        client = CosS3Client(config)
+
+        bucket = settings.COS_BUCKET
+        key = f"qrcodes/{filename}"
+
+        client.put_object(
+            Bucket=bucket,
+            Body=img_bytes,
+            Key=key,
+            ContentType="image/png",
+        )
+
+        # Construct URL
+        if settings.COS_ENDPOINT:
+            url = f"https://{bucket}.cos.{settings.COS_REGION}.myqcloud.com/{key}"
+        else:
+            url = f"https://{bucket}.cos.{settings.COS_REGION}.myqcloud.com/{key}"
+
+        return url
+    except ImportError:
+        # Try阿里云OSS
+        try:
+            import oss2
+
+            auth = oss2.Auth(settings.COS_SECRET_ID, settings.COS_SECRET_KEY)
+            bucket = oss2.Bucket(
+                auth,
+                settings.COS_ENDPOINT or f"https://oss-{settings.COS_REGION}.aliyuncs.com",
+                settings.COS_BUCKET,
+            )
+
+            key = f"qrcodes/{filename}"
+            bucket.put_object(key, img_bytes)
+
+            return f"https://{settings.COS_BUCKET}.oss-{settings.COS_REGION}.aliyuncs.com/{key}"
+        except ImportError:
+            raise ImportError(
+                "Neither qcloud_cos nor oss2 is installed. "
+                "Please install one of them for cloud storage."
+            )
 
 
-def generate_process_flow_qr(card_id: str | int) -> tuple[bytes, str]:
-    """
-    Generate QR code for process flow card.
+async def _save_qr_locally(img_bytes: bytes, filename: str) -> str:
+    """Save QR code image to local storage."""
+    import os
+    import uuid
 
-    Returns:
-        (PNG bytes, QR code string PFC-{id})
-    """
-    qr_code = f"PFC-{card_id}"
-    content = generate_qr_content(QRType.PROCESS_FLOW, card_id)
-    qr_bytes = generate_qr_code(content)
-    return qr_bytes, qr_code
+    upload_dir = settings.UPLOAD_DIR
+    qr_dir = os.path.join(upload_dir, "qrcodes")
 
+    # Create directory if not exists
+    os.makedirs(qr_dir, exist_ok=True)
 
-def generate_part_qr(part_id: str | int) -> tuple[bytes, str]:
-    """
-    Generate QR code for part.
+    # Generate unique filename
+    if not filename.endswith(".png"):
+        filename = f"{filename}.png"
 
-    Returns:
-        (PNG bytes, QR code string PRT-{id})
-    """
-    qr_code = f"PRT-{part_id}"
-    content = generate_qr_content(QRType.PART, part_id)
-    qr_bytes = generate_qr_code(content)
-    return qr_bytes, qr_code
+    filepath = os.path.join(qr_dir, filename)
+
+    with open(filepath, "wb") as f:
+        f.write(img_bytes)
+
+    # Return relative URL
+    return f"/static/uploads/qrcodes/{filename}"
 
 
-def generate_packaging_qr(record_id: str | int) -> tuple[bytes, str]:
-    """
-    Generate QR code for packaging record.
+class QRLookupResult:
+    """Result of QR code lookup."""
 
-    Returns:
-        (PNG bytes, QR code string PKG-{id})
-    """
-    qr_code = f"PKG-{record_id}"
-    content = generate_qr_content(QRType.PACKAGING, record_id)
-    qr_bytes = generate_qr_code(content)
-    return qr_bytes, qr_code
+    def __init__(
+        self,
+        found: bool,
+        prefix: Optional[str] = None,
+        entity_id: Optional[int] = None,
+        entity_type: Optional[str] = None,
+        entity_data: Optional[dict] = None,
+        error: Optional[str] = None,
+    ):
+        self.found = found
+        self.prefix = prefix
+        self.entity_id = entity_id
+        self.entity_type = entity_type
+        self.entity_data = entity_data
+        self.error = error
+
+    def to_dict(self) -> dict:
+        return {
+            "found": self.found,
+            "prefix": self.prefix,
+            "entity_id": self.entity_id,
+            "entity_type": self.entity_type,
+            "entity_data": self.entity_data,
+            "error": self.error,
+        }

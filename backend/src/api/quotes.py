@@ -7,22 +7,24 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.quote import Quote, QuoteItem, QuoteState, SurfaceTreatment
-from app.models.user import User
-from app.schemas.quote import (
+from src.api.deps import CurrentUser, DbSession, require_role
+from src.models.quote import NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from src.models.user import User
+from src.schemas.quote import (
     BossApprovalUpdate,
     FixUpdate,
+    NominationStatus,
     PricingUpdate,
     QuoteCreate,
     QuoteListResponse,
     QuoteResponse,
     QuoteUpdate,
+    RevokeNominationUpdate,
     SurfaceTreatmentCreate,
     TechApprovalUpdate,
     TechReviewUpdate,
 )
-from app.services import quote_service
+from src.services import quote_service
 
 router = APIRouter(prefix="/quotes", tags=["Quotes"])
 
@@ -51,9 +53,15 @@ def _quote_to_response(quote: Quote) -> QuoteResponse:
         "stamping_fee": quote.stamping_fee,
         "surface_treatment_fee": quote.surface_treatment_fee,
         "profit_margin": quote.profit_margin,
-        # Snapshot & path
+        # Snapshot, final price & nomination
         "price_snapshot": quote.price_snapshot,
+        "final_price": quote.final_price,
+        "nomination_status": quote.nomination_status,
         "fix_path": quote.fix_path,
+        # Revocation
+        "revoked_at": quote.revoked_at,
+        "revoked_by": quote.revoked_by,
+        "revoke_reason": quote.revoke_reason,
         # Rejection
         "reject_reason": quote.reject_reason,
         "tech_reject_reason": quote.tech_reject_reason,
@@ -179,7 +187,15 @@ async def update_quote(
     quote = await quote_service.get_quote_by_id(db, quote_id)
     if not quote:
         raise HTTPException(status_code=404, detail="Quote not found")
-    if quote.state not in (QuoteState.DRAFT, QuoteState.TECH_REVIEW, QuoteState.REJECTED):
+    if quote.state not in (
+        QuoteState.DRAFT,
+        QuoteState.WAITING_FOR_TECH,
+        QuoteState.TECH_REVIEW,
+        QuoteState.TECH_APPROVED,
+        QuoteState.TECH_REJECTED,
+        QuoteState.REJECTED,
+        QuoteState.APPROVED,
+    ):
         raise HTTPException(status_code=400, detail="Quote cannot be modified in current state")
 
     for field, value in data.model_dump(exclude_unset=True).items():
@@ -218,7 +234,11 @@ async def update_pricing(
     db: DbSession,
     current_user: CurrentUser,
 ) -> QuoteResponse:
-    """Update pricing fields (stamping, surface treatment, profit)."""
+    """Update pricing fields (stamping, surface treatment, profit).
+
+    When quote is in APPROVED state, price fields are editable.
+    If final_price changes, triggers reapproval (state → PENDING_BOSS).
+    """
     require_role(current_user, min_level=5)
 
     quote = await quote_service.get_quote_by_id(db, quote_id)
@@ -226,7 +246,7 @@ async def update_pricing(
         raise HTTPException(status_code=404, detail="Quote not found")
 
     try:
-        quote = await quote_service.update_pricing(db, quote, data)
+        quote, triggered = await quote_service.update_pricing(db, quote, data, current_user)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 
@@ -314,6 +334,35 @@ async def fix_quote(
 
     try:
         quote = await quote_service.fix_quote(db, quote, data, current_user)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return _quote_to_response(quote)
+
+
+@router.post("/{quote_id}/revoke-nomination", response_model=QuoteResponse)
+async def revoke_nomination(
+    quote_id: int,
+    data: RevokeNominationUpdate,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> QuoteResponse:
+    """Revoke nomination (fix) on a fixed quote.
+
+    Quote stays at APPROVED, nomination_status → REVOKED.
+    Audit log records operator_id + operated_at.
+    Requires role_level >= 5 (sales manager).
+    """
+    require_role(current_user, min_level=5)
+
+    quote = await quote_service.get_quote_by_id(db, quote_id)
+    if not quote:
+        raise HTTPException(status_code=404, detail="Quote not found")
+
+    try:
+        quote = await quote_service.revoke_nomination(
+            db, quote, data.revoke_reason, current_user
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
 

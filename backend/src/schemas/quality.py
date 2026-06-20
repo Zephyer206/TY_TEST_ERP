@@ -1,45 +1,32 @@
-"""Pydantic schemas for quality control management."""
+"""Pydantic schemas for quality inspection and release management."""
 
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.quality import (
-    FirstPieceStatus,
-    InspectionResult,
-    OQCResult,
-)
+from src.models.quality import ExemptionType, InspectionResult
 
 
-class FirstPieceInspectionCreate(BaseModel):
-    """Schema for creating a first piece inspection."""
+class FirstPieceInspectionBase(BaseModel):
+    """Base schema for first piece inspection."""
 
     part_id: int
-    process_flow_id: Optional[int] = None
-    dimension_check: Optional[dict] = None
-    surface_check: Optional[dict] = None
-    material_check: Optional[dict] = None
-    result: FirstPieceStatus
-    reject_reasons: Optional[str] = None
-    rework_required: bool = False
+    session_id: Optional[int] = None
+    inspected_qty: int = Field(ge=1)
+    dimension_ok: bool = False
+    dimension_notes: Optional[str] = None
+    appearance_ok: bool = False
+    appearance_notes: Optional[str] = None
+    function_ok: bool = False
+    function_notes: Optional[str] = None
     notes: Optional[str] = None
-    attachment_paths: Optional[dict] = None
-    batch_size: Optional[int] = None
-    sample_size: Optional[int] = None
 
 
-class FirstPieceInspectionUpdate(BaseModel):
-    """Schema for updating a first piece inspection."""
+class FirstPieceInspectionCreate(FirstPieceInspectionBase):
+    """Schema for creating first piece inspection."""
 
-    dimension_check: Optional[dict] = None
-    surface_check: Optional[dict] = None
-    material_check: Optional[dict] = None
-    result: Optional[FirstPieceStatus] = None
-    reject_reasons: Optional[str] = None
-    rework_required: Optional[bool] = None
-    notes: Optional[str] = None
-    attachment_paths: Optional[dict] = None
+    result: InspectionResult
 
 
 class FirstPieceInspectionResponse(BaseModel):
@@ -48,41 +35,41 @@ class FirstPieceInspectionResponse(BaseModel):
     id: int
     inspection_no: str
     part_id: int
-    part_no: Optional[str] = None
-    part_name: Optional[str] = None
-    process_flow_id: Optional[int] = None
-    dimension_check: Optional[dict] = None
-    surface_check: Optional[dict] = None
-    material_check: Optional[dict] = None
-    result: FirstPieceStatus
-    reject_reasons: Optional[str] = None
-    rework_required: bool
-    inspector_id: Optional[int] = None
-    inspected_at: Optional[datetime] = None
+    session_id: Optional[int] = None
+    inspected_qty: int
+    inspected_by: Optional[int] = None
+    dimension_ok: bool
+    dimension_notes: Optional[str] = None
+    appearance_ok: bool
+    appearance_notes: Optional[str] = None
+    function_ok: bool
+    function_notes: Optional[str] = None
+    result: InspectionResult
     notes: Optional[str] = None
-    attachment_paths: Optional[dict] = None
-    batch_size: Optional[int] = None
-    sample_size: Optional[int] = None
+    inspected_at: datetime
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class OQCInspectionCreate(BaseModel):
-    """Schema for creating an OQC inspection."""
+class OQCInspectionBase(BaseModel):
+    """Base schema for OQC inspection."""
 
     part_id: int
-    shipment_id: Optional[int] = None
-    inspected_qty: int = Field(ge=1)
-    passed_qty: int = Field(ge=0)
-    failed_qty: int = Field(ge=0)
-    defect_types: Optional[dict] = None
-    defect_positions: Optional[dict] = None
-    result: OQCResult
-    sample_size: Optional[int] = None
-    sampling_plan: Optional[str] = None
+    shipment_qty: int = Field(ge=1)
+    order_no: Optional[str] = None
+    sample_size: int = Field(ge=1)
+    aql_level: Optional[str] = None
+    major_defects: int = Field(default=0, ge=0)
+    minor_defects: int = Field(default=0, ge=0)
+    critical_defects: int = Field(default=0, ge=0)
     notes: Optional[str] = None
-    attachment_paths: Optional[dict] = None
+
+
+class OQCInspectionCreate(OQCInspectionBase):
+    """Schema for creating OQC inspection."""
+
+    result: InspectionResult
 
 
 class OQCInspectionResponse(BaseModel):
@@ -91,46 +78,42 @@ class OQCInspectionResponse(BaseModel):
     id: int
     inspection_no: str
     part_id: int
-    part_no: Optional[str] = None
-    part_name: Optional[str] = None
-    shipment_id: Optional[int] = None
-    inspected_qty: int
-    passed_qty: int
-    failed_qty: int
-    defect_types: Optional[dict] = None
-    defect_positions: Optional[dict] = None
-    result: OQCResult
-    inspector_id: Optional[int] = None
-    inspected_at: Optional[datetime] = None
-    sample_size: Optional[int] = None
-    sampling_plan: Optional[str] = None
+    shipment_qty: int
+    order_no: Optional[str] = None
+    sample_size: int
+    inspected_by: Optional[int] = None
+    aql_level: Optional[str] = None
+    major_defects: int
+    minor_defects: int
+    critical_defects: int
+    result: InspectionResult
     notes: Optional[str] = None
-    attachment_paths: Optional[dict] = None
+    inspected_at: datetime
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class QAExemptionCreate(BaseModel):
-    """Schema for creating a QA exemption request."""
+class QAExemptionBase(BaseModel):
+    """Base schema for QA exemption."""
 
     part_id: int
-    related_inspection_id: Optional[int] = None
-    related_inspection_type: Optional[str] = None
-    defect_description: str
-    quantity_affected: int = Field(ge=1)
-    reason: str
-    impact_assessment: Optional[str] = None
-    customer_notification_required: bool = False
-    batch_no: Optional[str] = None
+    exemption_type: ExemptionType
+    issue_description: str
+    affected_qty: int = Field(ge=1)
+    notes: Optional[str] = None
+
+
+class QAExemptionCreate(QAExemptionBase):
+    """Schema for creating QA exemption."""
+
+    pass
 
 
 class QAExemptionApprove(BaseModel):
-    """Schema for approving/rejecting a QA exemption."""
+    """Schema for approving a QA exemption."""
 
-    approved: bool
-    notes: Optional[str] = Field(default=None, max_length=500)
-    expires_at: Optional[datetime] = None
+    exemption_reason: str = Field(max_length=500)
 
 
 class QAExemptionResponse(BaseModel):
@@ -139,42 +122,38 @@ class QAExemptionResponse(BaseModel):
     id: int
     exemption_no: str
     part_id: int
-    part_no: Optional[str] = None
-    part_name: Optional[str] = None
-    related_inspection_id: Optional[int] = None
-    related_inspection_type: Optional[str] = None
-    defect_description: str
-    quantity_affected: int
-    reason: str
-    impact_assessment: Optional[str] = None
-    customer_notification_required: bool
-    status: str
-    requested_by: Optional[int] = None
-    requested_at: Optional[datetime] = None
-    request_notes: Optional[str] = None
+    exemption_type: ExemptionType
+    issue_description: str
+    affected_qty: int
     approved_by: Optional[int] = None
     approved_at: Optional[datetime] = None
-    approval_notes: Optional[str] = None
-    expires_at: Optional[datetime] = None
-    batch_no: Optional[str] = None
+    exemption_reason: Optional[str] = None
+    is_approved: bool
+    is_active: bool
+    notes: Optional[str] = None
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
 
-class PatrolInspectionCreate(BaseModel):
-    """Schema for creating a patrol inspection."""
+class PatrolInspectionBase(BaseModel):
+    """Base schema for patrol inspection."""
 
     machine_id: Optional[int] = None
-    production_session_id: Optional[int] = None
-    check_points: Optional[dict] = None
-    check_results: Optional[dict] = None
-    result: InspectionResult
-    issues_found: Optional[dict] = None
-    severity: Optional[str] = None
-    corrective_action: Optional[str] = None
-    action_required: bool = False
+    session_id: Optional[int] = None
+    dimension_check: bool = False
+    appearance_check: bool = False
+    process_parameter_check: bool = False
+    sample_size: int = Field(default=0, ge=0)
+    defect_count: int = Field(default=0, ge=0)
     notes: Optional[str] = None
+    corrective_action: Optional[str] = None
+
+
+class PatrolInspectionCreate(PatrolInspectionBase):
+    """Schema for creating patrol inspection."""
+
+    result: InspectionResult
 
 
 class PatrolInspectionResponse(BaseModel):
@@ -183,17 +162,18 @@ class PatrolInspectionResponse(BaseModel):
     id: int
     inspection_no: str
     machine_id: Optional[int] = None
-    production_session_id: Optional[int] = None
-    check_points: Optional[dict] = None
-    check_results: Optional[dict] = None
+    session_id: Optional[int] = None
+    inspected_by: Optional[int] = None
+    dimension_check: bool
+    appearance_check: bool
+    process_parameter_check: bool
+    sample_size: int
+    defect_count: int
     result: InspectionResult
-    issues_found: Optional[dict] = None
-    severity: Optional[str] = None
-    corrective_action: Optional[str] = None
-    action_required: bool
-    inspector_id: Optional[int] = None
-    inspected_at: Optional[datetime] = None
     notes: Optional[str] = None
+    corrective_action: Optional[str] = None
+    action_taken_by: Optional[int] = None
+    inspected_at: datetime
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

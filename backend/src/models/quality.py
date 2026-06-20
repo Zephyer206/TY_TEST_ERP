@@ -1,57 +1,38 @@
-"""Quality control models for inspection and release management."""
+"""Quality inspection and release management models."""
 
 from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (
-    Boolean,
-    DateTime,
-    Enum,
-    Float,
-    ForeignKey,
-    Integer,
-    JSON,
-    String,
-    Text,
-)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from app.database import Base
+from src.database import Base
 
 if TYPE_CHECKING:
-    from app.models.part import Part
-    from app.models.production import ProcessFlowCard
-    from app.models.user import User
+    from src.models.part import Part
+    from src.models.production import ProductionSession
 
 
 class InspectionResult(str, PyEnum):
-    """Inspection result enumeration."""
+    """Inspection result."""
 
-    PASS = "pass"  # Passed inspection
-    FAIL = "fail"  # Failed inspection
-    CONDITIONAL = "conditional"  # Conditionally accepted
-    PENDING = "pending"  # Awaiting decision
-
-
-class FirstPieceStatus(str, PyEnum):
-    """First piece inspection status."""
-
-    PENDING = "pending"  # Awaiting inspection
-    APPROVED = "approved"  # Approved for production
-    REJECTED = "rejected"  # Rejected
-    CONDITIONAL = "conditional"  # Conditionally approved
+    PASSED = "passed"
+    FAILED = "failed"
+    CONDITIONAL = "conditional"  # Passed with conditions
 
 
-class OQCResult(str, PyEnum):
-    """OQC (Outgoing Quality Control) result."""
+class ExemptionType(str, PyEnum):
+    """QA exemption type."""
 
-    PASS = "pass"  # Passed OQC
-    FAIL = "fail"  # Failed OQC
+    EMERGENCY = "emergency"  # Emergency release
+    CUSTOMER = "customer"  # Customer approved deviation
+    ENGINEERING = "engineering"  # Engineering deviation
+    OTHER = "other"
 
 
 class FirstPieceInspection(Base):
-    """First piece inspection model for production start validation."""
+    """First piece inspection model."""
 
     __tablename__ = "first_piece_inspections"
 
@@ -60,45 +41,40 @@ class FirstPieceInspection(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Part reference
+    # Part and production
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
     part: Mapped["Part"] = relationship("Part")
-
-    # Process flow card reference
-    process_flow_id: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, index=True
+    session_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("production_sessions.id"), nullable=True, index=True
     )
+    session: Mapped[Optional["ProductionSession"]] = relationship("ProductionSession")
 
-    # Inspection criteria results (JSON)
-    dimension_check: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    surface_check: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    material_check: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    # Inspection details
+    inspected_qty: Mapped[int] = mapped_column(Integer, nullable=False)
+    inspected_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    # Overall result
-    result: Mapped[FirstPieceStatus] = mapped_column(
-        Enum(FirstPieceStatus), default=FirstPieceStatus.PENDING, nullable=False
+    # Dimensions
+    dimension_ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    dimension_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Appearance
+    appearance_ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    appearance_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Function
+    function_ok: Mapped[bool] = mapped_column(Boolean, default=False)
+    function_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Result
+    result: Mapped[InspectionResult] = mapped_column(
+        Enum(InspectionResult), nullable=False
     )
-
-    # Reject details
-    reject_reasons: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    rework_required: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    # Inspector
-    inspector_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    inspected_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    # Notes and attachments
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    attachment_paths: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-
-    # Batch info
-    batch_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    sample_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    inspected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
@@ -111,7 +87,7 @@ class FirstPieceInspection(Base):
 
 
 class OQCInspection(Base):
-    """OQC (Outgoing Quality Control) inspection model for shipment validation."""
+    """Outgoing Quality Control inspection model."""
 
     __tablename__ = "oqc_inspections"
 
@@ -120,43 +96,34 @@ class OQCInspection(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Part reference
+    # Part and shipment
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
     part: Mapped["Part"] = relationship("Part")
 
-    # Shipment reference
-    shipment_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    # Shipment info
+    shipment_qty: Mapped[int] = mapped_column(Integer, nullable=False)
+    order_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Inspection quantities
-    inspected_qty: Mapped[int] = mapped_column(Integer, nullable=False)
-    passed_qty: Mapped[int] = mapped_column(Integer, nullable=False)
-    failed_qty: Mapped[int] = mapped_column(Integer, nullable=False)
+    # Inspection details
+    sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    inspected_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
-    # Defect details
-    defect_types: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # {"type1": count, ...}
-    defect_positions: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # defect location map
+    # AQL results
+    aql_level: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)  # e.g., "II"
+    major_defects: Mapped[int] = mapped_column(Integer, default=0)
+    minor_defects: Mapped[int] = mapped_column(Integer, default=0)
+    critical_defects: Mapped[int] = mapped_column(Integer, default=0)
 
     # Result
-    result: Mapped[OQCResult] = mapped_column(
-        Enum(OQCResult), nullable=False
+    result: Mapped[InspectionResult] = mapped_column(
+        Enum(InspectionResult), nullable=False
     )
-
-    # Inspector
-    inspector_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    inspected_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    # Sampling info
-    sample_size: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    sampling_plan: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-
-    # Notes
     notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    attachment_paths: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    inspected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
@@ -178,44 +145,38 @@ class QAExemption(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Part reference
+    # Part
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
     part: Mapped["Part"] = relationship("Part")
 
-    # Related inspection
-    related_inspection_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    related_inspection_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-
     # Exemption details
-    defect_description: Mapped[str] = mapped_column(Text, nullable=False)
-    quantity_affected: Mapped[int] = mapped_column(Integer, nullable=False)
+    exemption_type: Mapped[ExemptionType] = mapped_column(
+        Enum(ExemptionType), nullable=False
+    )
 
-    # Justification
-    reason: Mapped[str] = mapped_column(Text, nullable=False)
-    impact_assessment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    customer_notification_required: Mapped[bool] = mapped_column(Boolean, default=False)
+    # Issue description
+    issue_description: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Quantities affected
+    affected_qty: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Approval
-    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)
-
-    # Requester
-    requested_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    requested_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    request_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-
-    # Approver
     approved_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    approval_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # Expiry
-    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    batch_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    # Exemption reason (required for granting)
+    exemption_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    # Status
+    is_approved: Mapped[bool] = mapped_column(Boolean, default=False)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+
+    # Notes
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
@@ -228,7 +189,7 @@ class QAExemption(Base):
 
 
 class PatrolInspection(Base):
-    """Patrol inspection model for in-process quality checks."""
+    """Patrol inspection (巡检) model."""
 
     __tablename__ = "patrol_inspections"
 
@@ -237,36 +198,37 @@ class PatrolInspection(Base):
         String(50), unique=True, nullable=False, index=True
     )
 
-    # Machine/Line reference
+    # Machine and production
     machine_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
-    production_session_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
-
-    # Inspection content
-    check_points: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # inspection criteria
-    check_results: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)  # actual results
-
-    # Overall result
-    result: Mapped[InspectionResult] = mapped_column(
-        Enum(InspectionResult), default=InspectionResult.PENDING, nullable=False
+    session_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("production_sessions.id"), nullable=True, index=True
     )
+    session: Mapped[Optional["ProductionSession"]] = relationship("ProductionSession")
 
-    # Issues found
-    issues_found: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
-    severity: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # critical/major/minor
+    # Inspection details
+    inspected_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Quality checks
+    dimension_check: Mapped[bool] = mapped_column(Boolean, default=False)
+    appearance_check: Mapped[bool] = mapped_column(Boolean, default=False)
+    process_parameter_check: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    # Sample info
+    sample_size: Mapped[int] = mapped_column(Integer, default=0)
+    defect_count: Mapped[int] = mapped_column(Integer, default=0)
+
+    # Result
+    result: Mapped[InspectionResult] = mapped_column(
+        Enum(InspectionResult), nullable=False
+    )
+    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Corrective action
     corrective_action: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    action_required: Mapped[bool] = mapped_column(Boolean, default=False)
-
-    # Inspector
-    inspector_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    inspected_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-
-    # Notes
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    action_taken_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
+    inspected_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False
     )
