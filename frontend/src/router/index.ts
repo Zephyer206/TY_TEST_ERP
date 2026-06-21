@@ -71,6 +71,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/sampling/review.vue'),
         meta: { roleLevel: 5 },
       },
+      {
+        path: 'tooling',
+        name: 'Tooling',
+        component: () => import('@/views/tooling/index.vue'),
+        meta: { roleLevel: 3 },
+      },
+      {
+        path: 'tooling/detail/:id',
+        name: 'ToolingDetail',
+        component: () => import('@/views/tooling/detail.vue'),
+        meta: { roleLevel: 3 },
+      },
+      {
+        path: 'tooling/maintenance/:id',
+        name: 'ToolingMaintenance',
+        component: () => import('@/views/tooling/maintenance.vue'),
+        meta: { roleLevel: 3 },
+      },
     ],
   },
 ]
