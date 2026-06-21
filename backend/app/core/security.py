@@ -14,8 +14,15 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify a password against a hash using bcrypt directly."""
+    import bcrypt
+    try:
+        return bcrypt.checkpw(
+            plain_password.encode('utf-8'),
+            hashed_password.encode('utf-8')
+        )
+    except Exception:
+        return False
 
 
 def get_password_hash(password: str) -> str:
@@ -81,11 +88,16 @@ def decode_token(token: str) -> Optional[dict[str, Any]]:
 
 
 def create_tokens(user: User) -> dict[str, str]:
-    """Create access and refresh tokens for a user."""
+    """Create access and refresh tokens for a user.
+
+    注意：使用数据库实际存在的字段
+    """
     token_data = {
         "sub": str(user.id),
         "username": user.username,
-        "role": user.role.value,
+        "role_level": user.role_level,  # 使用 role_level 而不是 role.value
+        "dept": user.dept,  # 部门代码字符串
+        "is_superadmin": bool(user.is_superadmin) if user.is_superadmin else False,
     }
 
     access_token = create_access_token(token_data)

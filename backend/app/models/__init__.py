@@ -34,7 +34,7 @@ from .quality import (
 )
 from .sampling import SamplingTask, SamplingTaskState
 from .tooling import Tooling, ToolingPart, ToolingMaintenanceLog, ToolingState
-from .user import Department, Position, User
+from .user import User  # Department 和 Position 已移除，因为与数据库不匹配
 from .warehouse import (
     BatchStatus,
     BatchTransaction,
@@ -60,7 +60,7 @@ __all__ = [
     "CoatingType",
     "ContextSwitchType",
     "Customer",
-    "Department",
+    # "Department",  # 已移除，与数据库不匹配
     "ExemptionType",
     "FirstPieceInspection",
     "FixPath",
@@ -84,7 +84,7 @@ __all__ = [
     "PatrolInspection",
     "PlanMachineAssignment",
     "PlanStatus",
-    "Position",
+    # "Position",  # 已移除，与数据库不匹配
     "PriceAccount",
     "PriceAdjustment",
     "PriceAdjustmentType",
