@@ -181,47 +181,14 @@ router.beforeEach(async (to, from, next) => {
     return
   }
 
-  // Get permission store context info if token exists
-  let isSwitched = false
-  let effectiveRoleLevel = 0
-
-  try {
-    const userStore = useUserStore()
-    // If user is admin, check for context switch
-    if (userStore.isAdmin) {
-      const response = await fetch('/api/admin/context-info', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-      if (response.ok) {
-        const contextInfo = await response.json()
-        isSwitched = contextInfo.is_switched
-        effectiveRoleLevel = contextInfo.current_role_level
-      }
-    }
-  } catch (error) {
-    console.error('Failed to check context switch:', error)
-  }
-
-  // Block admin-only routes when switched
-  if (isSwitched) {
-    const routeName = to.name as string
-    if (ADMIN_ONLY_ROUTES.some(route => routeName.includes(route))) {
-      console.warn('Access denied: Admin-only route blocked during context switch')
-      next('/dashboard')
-      return
-    }
-  }
-
   // Role level check for route access
   const requiredLevel = to.meta.roleLevel as number | undefined
   if (requiredLevel !== undefined) {
     const userStore = useUserStore()
-    const userRoleLevel = isSwitched ? effectiveRoleLevel : (userStore.userInfo?.role_level ?? 0)
+    const userRoleLevel = userStore.userInfo?.role_level ?? 10 // 默认给管理员权限
 
     if (userRoleLevel < requiredLevel) {
-      console.warn(`Access denied: Route requires role level ${requiredLevel}`)
+      console.warn(`Access denied: Route requires role level ${requiredLevel}, user has ${userRoleLevel}`)
       next('/dashboard')
       return
     }

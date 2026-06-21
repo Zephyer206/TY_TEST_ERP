@@ -11,7 +11,19 @@ interface User {
 
 export const useUserStore = defineStore('user', () => {
   const token = ref(localStorage.getItem('token') || '')
-  const userInfo = ref<User | null>(null)
+
+  // 从 localStorage 恢复用户信息
+  let savedUserInfo = null
+  try {
+    const saved = localStorage.getItem('userInfo')
+    if (saved) {
+      savedUserInfo = JSON.parse(saved)
+    }
+  } catch (e) {
+    console.error('Failed to parse user info:', e)
+  }
+
+  const userInfo = ref<User | null>(savedUserInfo)
 
   const isLoggedIn = computed(() => !!token.value)
   const isAdmin = computed(() => userInfo.value?.role_level === 10)
@@ -26,12 +38,15 @@ export const useUserStore = defineStore('user', () => {
 
   const setUserInfo = (info: User) => {
     userInfo.value = info
+    // 同时保存到 localStorage 以便刷新后恢复
+    localStorage.setItem('userInfo', JSON.stringify(info))
   }
 
   const logout = () => {
     token.value = ''
     userInfo.value = null
     localStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
   }
 
   return {

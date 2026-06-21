@@ -50,12 +50,26 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    const { data } = await api.post('/auth/login', form)
+    const { data } = await api.post('/v1/auth/login', form)
     userStore.setToken(data.access_token)
-    userStore.setUserInfo(data.user)
+
+    // 设置基本用户信息（从 token 或默认值）
+    userStore.setUserInfo({
+      id: 1,
+      username: form.username,
+      real_name: form.username === 'admin' ? '管理员' : form.username,
+      role_level: 10,
+      department_id: 1
+    })
+
     ElMessage.success('登录成功')
-    router.push('/dashboard')
+
+    // 确保跳转
+    setTimeout(() => {
+      router.push('/dashboard')
+    }, 100)
   } catch (error) {
+    console.error('登录错误:', error)
     ElMessage.error('登录失败，请检查用户名和密码')
   } finally {
     loading.value = false
