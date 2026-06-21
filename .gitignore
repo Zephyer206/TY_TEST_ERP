@@ -21,3 +21,11 @@ uploads/
 *.xlsx
 *.pdf
 .mcp.json
+
+# Node
+node_modules/
+frontend/node_modules/
+
+# Backend logs
+backend/*.log
+backend/restart_backend.sh
