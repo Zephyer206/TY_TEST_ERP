@@ -137,6 +137,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/packaging/inspect.vue'),
         meta: { roleLevel: 5 },
       },
+      {
+        path: 'coating/recipes',
+        name: 'CoatingRecipes',
+        component: () => import('@/views/coating/recipes.vue'),
+        meta: { roleLevel: 3 },
+      },
+      {
+        path: 'coating/records',
+        name: 'CoatingRecords',
+        component: () => import('@/views/coating/records.vue'),
+        meta: { roleLevel: 3 },
+      },
+      {
+        path: 'coating/colors',
+        name: 'CoatingColors',
+        component: () => import('@/views/coating/colors.vue'),
+        meta: { roleLevel: 3 },
+      },
     ],
   },
 ]
