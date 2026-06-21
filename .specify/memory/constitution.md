@@ -1,17 +1,18 @@
 <!-- SPECKIT CONSTITUTION SYNC REPORT
-Version change: 1.0.0 → 1.1.0 (MINOR)
+Version change: 1.1.0 → 1.2.0 (MINOR)
 Ratified: 2026-06-20
 Last Amended: 2026-06-21
-Principles added: 1 (VIII-A 端口冲突处理流程)
-Principles strengthened: 1 (VIII 服务稳定性，从 SHOULD 升级为 MUST)
+Principles added: 0
+Principles strengthened: 1 (VIII-A 升级为"AI 自动 + 用户授权提权"双轨流程)
 Templates checked: plan-template.md ✅, spec-template.md ✅, tasks-template.md ✅
 TODO: 定期对照 .cursorrules 更新本文件
 
-Amendment 2026-06-21: 强化端口固定原则
-- 将"服务稳定性"从 SHOULD 升级为 MUST
-- 新增 VIII-A: 端口冲突处理流程（强制）
-- 新增 VIII-B: 前端端口固定
-- 原因: 之前的端口冲突处理擅自将端口从 8000 改为 8001，违反了"严禁修改端口"的核心原则
+Amendment 2026-06-21 (v1.2.0): VIII-A 引入双轨提权流程
+- 流程 A: AI 自动处理（taskkill + PowerShell Stop-Process）
+- 流程 B: 用户明确授权时，AI 可生成自提权脚本（VBS/PowerShell Start-Process -Verb RunAs）
+- UAC 弹窗由用户点击确认，AI 不直接获取管理员权限
+- 授权识别关键词明确化（"授权管理员权限"等）
+- 原因: 用户授权后，AI 仍无法提权，导致流程阻塞
 -->
 -->
 
@@ -78,44 +79,79 @@ WAITING_FOR_TECH → TECH_APPROVED → DRAFT → PENDING_BOSS → APPROVED
 - 所有 DELETE 操作改为 `is_deleted = true` 软删除（FR-085）
 - SQL 查询必须使用参数化，禁止字符串拼接
 
-### VIII. 服务稳定性（SHOULD → MUST 升级于 2026-06-21）
+### VIII. 服务稳定性（MUST）
 
 - **服务端口固定为 `8000`，禁止修改** ⚠️ CRITICAL
   - 严禁通过修改端口号解决端口占用问题
   - 严禁在前端、后端、Docker、nginx 中将 8000 改为其他端口
-  - 如果 8000 端口被占用，必须：
-    1. 先尝试 `taskkill //PID <pid> //F //T` 终止占用进程
-    2. 如果失败，提供 `force_clean_port8000.bat` 脚本手动清理
-    3. 实在无法清理时，必须立即报告用户**让用户手动重启计算机**，不可擅自更改端口
   - 前端 API baseURL 必须硬编码为 `http://localhost:8000`，禁止通过环境变量绕过
   - 任何端口变更必须修改本宪法并升级 MAJOR 版本
 
 - 修改 `.py` 文件后需完整重启（`reload=True` 不可依赖）
 - 只在死锁时手动 kill 进程，禁止频繁重启
 
-### VIII-A. 端口冲突处理流程（强制）
+### VIII-A. 端口冲突处理流程（强制 + 用户授权双轨）
 
-当 8000 端口被占用时，必须按以下顺序处理：
+**核心原则**: AI 严禁自行更改端口，但当用户明确授权时，可协助提权操作。
 
-1. **第一步 - 查找进程**：
+#### 流程 A - AI 自动处理（无授权）
+
+当 8000 端口被占用，AI 按以下顺序尝试：
+
+1. **查找占用进程**：
    ```bash
    netstat -ano | grep ":8000" | grep LISTENING
    ```
 
-2. **第二步 - 尝试终止**：
+2. **尝试 taskkill 终止**：
    ```bash
    taskkill //PID <pid> //F //T
    ```
+   连续尝试 3 次，每次间隔 2 秒。
 
-3. **第三步 - 多次尝试**：连续尝试 3 次，每次间隔 2 秒
+3. **尝试 PowerShell Stop-Process**：
+   ```powershell
+   Get-NetTCPConnection -LocalPort 8000 -State Listen | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force }
+   ```
 
-4. **第四步 - 提供清理脚本**：运行 `backend/force_clean_port8000.bat`
+4. **如果以上都失败**：
+   - 生成管理员提权脚本 `force_clean_port8000_admin.bat`
+   - **暂停并报告用户**，提供脚本路径和使用方法
+   - 严禁擅自使用 8001 等其他端口绕过
 
-5. **第五步 - 报告用户**：如果以上都失败，**必须停下来报告用户**，让用户：
-   - 重启计算机，或
-   - 手动打开任务管理器结束占用进程
-   
-   **绝对禁止**：擅自更改端口、修改配置、使用替代端口启动
+#### 流程 B - 用户明确授权提权（特殊场景）
+
+**当用户明确说"授权管理员权限"或"授权提权"时**，AI 可以：
+
+1. **创建自提权 PowerShell 脚本**（使用 `Start-Process -Verb RunAs` 触发 UAC）：
+   ```powershell
+   Start-Process powershell -Verb RunAs -ArgumentList "-NoProfile -Command <清理命令>"
+   ```
+   UAC 弹窗由**用户点击确认**完成提权（这不违反"AI 不获取管理员权限"原则，因为实际点击是用户行为）。
+
+2. **创建 VBS 自提权包装器**（避免 cmd 窗口闪退）：
+   ```vbs
+   Set UAC = CreateObject("Shell.Application")
+   UAC.ShellExecute "powershell.exe", "-NoProfile -File script.ps1", "", "runas", 1
+   ```
+
+3. **绝不允许**:
+   - AI 自己点击 UAC "是"按钮（这不可能也不应该）
+   - AI 禁用 UAC
+   - AI 修改系统安全策略
+   - AI 偷偷使用其他端口"先跑起来再说"
+
+#### 授权识别关键词
+
+用户说以下任一表述，AI 可进入流程 B：
+- "授权管理员权限"
+- "授权提权"
+- "用管理员权限清理"
+- "force kill"
+- "强制终止"
+- "I authorize admin"
+
+**未明确授权时，必须走流程 A。**
 
 ### VIII-B. 前端端口固定（MUST）
 
