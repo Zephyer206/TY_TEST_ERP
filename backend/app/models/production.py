@@ -57,9 +57,8 @@ class ProductionPlan(Base):
 
     # Part and customer
     part_id: Mapped[int] = mapped_column(
-        ForeignKey("parts.id"), nullable=False, index=True
+        Integer, nullable=False, index=True
     )
-    part: Mapped["Part"] = relationship("Part", back_populates="production_plans")
 
     # Plan details
     total_qty: Mapped[int] = mapped_column(Integer, nullable=False)
@@ -164,9 +163,8 @@ class ProductionSession(Base):
 
     # Part
     part_id: Mapped[int] = mapped_column(
-        ForeignKey("parts.id"), nullable=False, index=True
+        Integer, nullable=False, index=True
     )
-    part: Mapped["Part"] = relationship("Part")
 
     # Material batch used
     material_batch_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)

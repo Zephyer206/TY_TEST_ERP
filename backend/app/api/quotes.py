@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, DbSession, require_role
-from app.models.quote import NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from app.models.quote import NominationStatus, Quote, QuoteState, SurfaceTreatment
+# QuoteItem 暂时移除，云端数据库暂无此表
 from app.models.user import User
 from app.schemas.quote import (
     BossApprovalUpdate,
@@ -33,21 +34,21 @@ def _quote_to_response(quote: Quote) -> QuoteResponse:
     """Convert Quote model to response schema."""
     data = {
         "id": quote.id,
-        "quote_no": quote.quote_no,
-        "title": quote.title,
+        "quote_no": quote.quote_serial or f"Q-{quote.id}",  # 使用 quote_serial，兼容旧字段名
+        "title": getattr(quote, 'title', '') or f"报价 {quote.quote_serial or quote.id}",
         "customer_id": quote.customer_id,
-        "creator_id": quote.creator_id,
-        "state": quote.state,
+        "creator_id": getattr(quote, 'creator_id', None) or quote.submitted_by,
+        "state": quote.state or "draft",
         "annual_usage": quote.annual_usage,
-        "annual_avg_usage": quote.annual_avg_usage,
+        "annual_avg_usage": quote.annual_avg,
         # Technical
-        "thickness_t": quote.thickness_t,
-        "width_w": quote.width_w,
-        "press_p": quote.press_p,
-        "cavity_count": quote.cavity_count,
-        "tonnage": quote.tonnage,
-        "mold_fee": quote.mold_fee,
-        "mold_fee_mode": quote.mold_fee_mode,
+        "thickness_t": float(quote.thickness) if quote.thickness else None,
+        "width_w": float(quote.width) if quote.width else None,
+        "press_p": quote.press_count,
+        "cavity_count": getattr(quote, 'cavity_count', None),
+        "tonnage": quote.press_tonnage,
+        "mold_fee": float(quote.mold_cost) if quote.mold_cost else None,
+        "mold_fee_mode": quote.mold_discount_mode or "direct",
         "mold_fee_discount": quote.mold_fee_discount,
         # Pricing
         "stamping_fee": quote.stamping_fee,

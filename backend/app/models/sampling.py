@@ -39,14 +39,12 @@ class SamplingTask(Base):
 
     # Part and customer
     part_id: Mapped[int] = mapped_column(
-        ForeignKey("parts.id"), nullable=False, index=True
+        Integer, nullable=False, index=True
     )
-    part: Mapped["Part"] = relationship("Part", back_populates="sampling_tasks")
 
     customer_id: Mapped[int] = mapped_column(
-        ForeignKey("customers.id"), nullable=False, index=True
+        Integer, nullable=False, index=True
     )
-    customer: Mapped["Customer"] = relationship("Customer")
 
     # Quote reference (optional, for context)
     quote_id: Mapped[Optional[int]] = mapped_column(

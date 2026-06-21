@@ -8,7 +8,8 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.models.quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from app.models.quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteState, SurfaceTreatment
+# QuoteItem 暂时移除，云端数据库暂无此表
 from app.models.user import User
 from app.schemas.quote import (
     BossApprovalUpdate,

@@ -34,77 +34,73 @@ class Part(Base):
     __tablename__ = "parts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    part_no: Mapped[str] = mapped_column(
+    part_number: Mapped[str] = mapped_column(
         String(50), unique=True, nullable=False, index=True
     )
-    part_name: Mapped[str] = mapped_column(String(200), nullable=False)
+    internal_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Customer relationship
-    customer_id: Mapped[int] = mapped_column(
-        ForeignKey("customers.id"), nullable=False, index=True
-    )
-    customer: Mapped["Customer"] = relationship("Customer", back_populates="parts")
-    price_accounts: Mapped[list["PriceAccount"]] = relationship(
-        "PriceAccount", back_populates="part"
-    )
-    sampling_tasks: Mapped[list["SamplingTask"]] = relationship(
-        "SamplingTask", back_populates="part"
-    )
-    production_plans: Mapped[list["ProductionPlan"]] = relationship(
-        "ProductionPlan", back_populates="part"
+    customer_id: Mapped[Optional[int]] = mapped_column(
+        Integer, nullable=True, index=True
     )
 
-    # Quote that created this part
-    quote_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("quotes.id"), nullable=True, index=True
-    )
-    quote: Mapped[Optional["Quote"]] = relationship("Quote")
+    # Drawing and spec
+    drawing_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    spec_info: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # State
-    state: Mapped[PartState] = mapped_column(
-        Enum(PartState), default=PartState.DRAFT, nullable=False, index=True
+    status: Mapped[str] = mapped_column(
+        String(50), default='待开发', nullable=True, index=True
     )
+    part_status: Mapped[str] = mapped_column(
+        String(50), default='DRAFT', nullable=False
+    )
+    is_urgent: Mapped[bool] = mapped_column(Boolean, default=False, nullable=True)
+    target_count: Mapped[int] = mapped_column(Integer, default=0, nullable=True)
+
+    # Spray status
+    spray_status: Mapped[str] = mapped_column(String(50), default='pending', nullable=False)
+    spray_stamped_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Part identity
-    customer_part_no: Mapped[Optional[str]] = mapped_column(
+    customer_product_no: Mapped[Optional[str]] = mapped_column(
         String(100), nullable=True, index=True
     )
     vehicle_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    drawing_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Technical specs
-    material: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    thickness: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    width: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    weight_kg: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True)
-    net_weight_kg: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    gross_weight_kg: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
-    cavity_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    tonnage: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    # Material
+    material_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
-    # Mold info (filled at fix)
-    mold_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    mold_no: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    mold_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    ppap_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-
-    # Pricing snapshot (locked at fix)
+    # Nomination
+    nomination_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    nomination_attachment: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     price_snapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+    nomination_confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    nomination_confirmed_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # Sample judgment
+    sample_judgment_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+
+    # Version
+    version: Mapped[str] = mapped_column(String(50), default='V1.0', nullable=False)
 
     # Stock
     stock_pcs: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    remark: Mapped[Optional[str]] = mapped_column(String(500), default='', nullable=True)
 
-    # Drawing path
-    drawing_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # Mold info
+    mold_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    mold_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    press_tonnage: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    ppap_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, default=datetime.utcnow, nullable=True
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=True
     )
 
     def __repr__(self) -> str:
-        return f"<Part {self.part_no}>"
+        return f"<Part {self.part_number}>"

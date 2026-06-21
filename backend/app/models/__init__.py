@@ -3,6 +3,7 @@
 from .admin import AdminContextSwitch, ContextSwitchType
 from .audit import AuditLog
 from .customer import Customer
+from .die import Die
 from .machine import Machine, MachineState, MachineStatusLog
 from .part import Part, PartState
 from .price import AnnualPriceRecord, PriceAccount, PriceAdjustment, PriceAdjustmentType
@@ -23,7 +24,9 @@ from .packaging import (
     PackagingRecord,
     PackagingStatus,
 )
-from .quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteItem, QuoteState, SurfaceTreatment
+from .quote import FixPath, MoldFeeMode, NominationStatus, Quote, QuoteState, SurfaceTreatment
+# QuoteItem 暂时注释，云端数据库暂无此表
+# from .quote import QuoteItem
 from .quality import (
     ExemptionType,
     FirstPieceInspection,
@@ -60,6 +63,7 @@ __all__ = [
     "CoatingType",
     "ContextSwitchType",
     "Customer",
+    "Die",
     # "Department",  # 已移除，与数据库不匹配
     "ExemptionType",
     "FirstPieceInspection",
@@ -96,7 +100,7 @@ __all__ = [
     "QAExemption",
     "QRScanLog",
     "Quote",
-    "QuoteItem",
+    # "QuoteItem",  # 暂时注释，云端数据库暂无此表
     "QuoteState",
     "SamplingTask",
     "SamplingTaskState",
