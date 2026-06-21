@@ -1,18 +1,28 @@
 <!-- SPECKIT CONSTITUTION SYNC REPORT
-Version change: 1.1.0 → 1.2.0 (MINOR)
+Version change: 1.2.0 → 1.3.0 (MINOR)
 Ratified: 2026-06-20
 Last Amended: 2026-06-21
 Principles added: 0
-Principles strengthened: 1 (VIII-A 升级为"AI 自动 + 用户授权提权"双轨流程)
+Principles strengthened: 0
 Templates checked: plan-template.md ✅, spec-template.md ✅, tasks-template.md ✅
 TODO: 定期对照 .cursorrules 更新本文件
 
 Amendment 2026-06-21 (v1.2.0): VIII-A 引入双轨提权流程
-- 流程 A: AI 自动处理（taskkill + PowerShell Stop-Process）
-- 流程 B: 用户明确授权时，AI 可生成自提权脚本（VBS/PowerShell Start-Process -Verb RunAs）
-- UAC 弹窗由用户点击确认，AI 不直接获取管理员权限
-- 授权识别关键词明确化（"授权管理员权限"等）
-- 原因: 用户授权后，AI 仍无法提权，导致流程阻塞
+- 流程 A: AI 自动处理
+- 流程 B: 用户明确授权时 VBS UAC 触发
+- UAC 弹窗由用户点击确认
+
+Amendment 2026-06-21 (v1.3.0): 紧急端口授权记录 ⚠️
+- 用户于 2026-06-21 17:55 临时授权使用 8001 端口
+- 原因: 8000 端口被顽固进程占用（PID 4940/26504/6724），
+  所有清理方式（taskkill / Stop-Process / VBS 自提权）均失败
+- 授权范围: 临时、一次性、不可延续
+- 解除条件: 8000 端口释放后必须立即切回 8000
+- 后续动作:
+  1. 必须在宪法中明确登记此次授权
+  2. 在 8001 端口运行时，必须在 README/控制台醒目位置标注
+  3. 一旦 8000 端口可用，立即重启并切回 8000
+  4. 此次授权不构成"端口可变更"的前例
 -->
 -->
 
@@ -160,6 +170,34 @@ WAITING_FOR_TECH → TECH_APPROVED → DRAFT → PENDING_BOSS → APPROVED
 - 禁止通过环境变量或配置文件绕过端口设置
 - 禁止在 CI/CD、容器化部署中修改这些端口
 
+### VIII-C. 紧急端口临时授权（特殊条款）
+
+**适用范围**：仅当 8000 端口在经过所有清理手段（流程 A + 流程 B）后仍被占用时。
+
+**授权流程**：
+1. 用户必须**明确说出** "授权 8001" / "临时使用 8001" / "授权使用其他端口"
+2. AI 必须在宪法中登记授权（版本号 + 日期 + 原因 + 解除条件）
+3. 临时端口仅限：`8001`（不开放其他端口）
+4. **后端启动参数**：`uvicorn app.main:app --port 8001`
+5. **前端 baseURL 必须同步修改**：从 `8000` 改为 `8001`
+
+**约束条件**（缺一不可）：
+- ✅ 必须在 README.md 中显著标注"⚠️ 临时使用 8001 端口"
+- ✅ 必须在启动日志第一行打印"⚠️ TEMPORARY PORT 8001 - 8000 OCCUPIED"
+- ✅ 一旦 8000 端口可用，**必须立即切回 8000**
+- ✅ 临时端口不进入 CLAUDE.md / README 长期文档
+- ✅ Git commit 信息必须包含 "TEMP-PORT-8001" 标识
+
+**截止条件**：
+- 8000 端口释放（用户清理后、或下次重启计算机后）
+- AI 检测到 8000 可用时，立即提示用户切换
+
+**首次授权记录**（v1.3.0，2026-06-21）：
+- 用户授权时间：17:55
+- 原因：PID 4940/26504/6724 顽固占用 8000，所有清理手段失败
+- 持续时长：≤ 24 小时（超时后必须重新授权）
+- 解除：8000 释放后立即重启后端回 8000
+
 ## 业务数据规则
 
 ### 毛重核算公式（唯一真相源）
@@ -207,4 +245,4 @@ static/uploads/drawings/
 - 新 spec 的 `/speckit.analyze` 必须对照本文件检查 CRITICAL 冲突
 - 技术栈变更需 MAJOR 版本递增
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-20 | **Last Amended**: 2026-06-21
+**Version**: 1.3.0 | **Ratified**: 2026-06-20 | **Last Amended**: 2026-06-21
