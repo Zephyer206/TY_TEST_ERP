@@ -1,0 +1,286 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - menubar [ref=e6]:
+        - menuitem "工作台" [ref=e7] [cursor=pointer]:
+          - img [ref=e9]
+          - generic [ref=e13]: 工作台
+        - menuitem "报价管理" [ref=e14] [cursor=pointer]:
+          - img [ref=e16]
+          - generic [ref=e18]: 报价管理
+        - menuitem "零件管理" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e25]: 零件管理
+        - menuitem "生产计划" [ref=e26] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e30]: 生产计划
+        - menuitem "机台管理" [ref=e31] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: 机台管理
+        - menuitem "打样管理" [ref=e37] [cursor=pointer]:
+          - img [ref=e39]
+          - generic [ref=e42]: 打样管理
+        - menuitem "模具管理" [ref=e43] [cursor=pointer]:
+          - img [ref=e45]
+          - generic [ref=e47]: 模具管理
+        - menuitem "仓库" [ref=e48] [cursor=pointer]:
+          - img [ref=e50]
+          - generic [ref=e52]: 仓库
+        - menuitem "原材料管理" [ref=e53] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e57]: 原材料管理
+        - menuitem "包装管理" [ref=e58] [cursor=pointer]:
+          - img [ref=e60]
+          - generic [ref=e62]: 包装管理
+        - menuitem "质量管控" [ref=e63] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e68]: 质量管控
+        - menuitem "喷涂管理" [ref=e69] [cursor=pointer]:
+          - img [ref=e71]
+          - generic [ref=e73]: 喷涂管理
+        - menuitem "视角切换" [ref=e74] [cursor=pointer]:
+          - img [ref=e76]
+          - generic [ref=e79]: 视角切换
+    - generic [ref=e80]:
+      - generic [ref=e82]:
+        - heading "Zephyr ERP" [level=3] [ref=e83]
+        - button "管理员" [ref=e85] [cursor=pointer]:
+          - text: 管理员
+          - img [ref=e87]
+      - main [ref=e89]:
+        - generic [ref=e90]:
+          - generic [ref=e91]:
+            - heading "报价管理" [level=2] [ref=e92]
+            - button "新建报价" [ref=e93] [cursor=pointer]:
+              - generic [ref=e94]:
+                - img [ref=e96]
+                - text: 新建报价
+          - generic [ref=e100]:
+            - generic [ref=e101]:
+              - generic [ref=e102]: 状态
+              - generic [ref=e105] [cursor=pointer]:
+                - generic:
+                  - combobox "状态" [ref=e107]
+                  - generic [ref=e108]: 全部
+                - img [ref=e111]
+            - generic [ref=e114]:
+              - button "搜索" [ref=e115] [cursor=pointer]:
+                - generic [ref=e116]: 搜索
+              - button "重置" [ref=e117] [cursor=pointer]:
+                - generic [ref=e118]: 重置
+          - generic [ref=e120]:
+            - table [ref=e122]:
+              - rowgroup [ref=e134]:
+                - row "报价单号 零件名称 零件号 客户 客户品号 车型 单价 状态 创建时间 操作" [ref=e135]:
+                  - columnheader "报价单号" [ref=e136]:
+                    - generic [ref=e137]: 报价单号
+                  - columnheader "零件名称" [ref=e138]:
+                    - generic [ref=e139]: 零件名称
+                  - columnheader "零件号" [ref=e140]:
+                    - generic [ref=e141]: 零件号
+                  - columnheader "客户" [ref=e142]:
+                    - generic [ref=e143]: 客户
+                  - columnheader "客户品号" [ref=e144]:
+                    - generic [ref=e145]: 客户品号
+                  - columnheader "车型" [ref=e146]:
+                    - generic [ref=e147]: 车型
+                  - columnheader "单价" [ref=e148]:
+                    - generic [ref=e149]: 单价
+                  - columnheader "状态" [ref=e150]:
+                    - generic [ref=e151]: 状态
+                  - columnheader "创建时间" [ref=e152]:
+                    - generic [ref=e153]: 创建时间
+                  - columnheader "操作" [ref=e154]:
+                    - generic [ref=e155]: 操作
+            - table [ref=e160]:
+              - rowgroup [ref=e172]:
+                - row "Q-13-202605-0001 报警器 13 未定价 已审批 2026-05-23 20:26:45 查看 定价 定点" [ref=e173]:
+                  - cell "Q-13-202605-0001" [ref=e174]:
+                    - generic [ref=e175]: Q-13-202605-0001
+                  - cell "报警器" [ref=e176]:
+                    - generic [ref=e177]: 报警器
+                  - cell "13" [ref=e178]:
+                    - generic [ref=e179]: "13"
+                  - cell [ref=e180]
+                  - cell [ref=e181]
+                  - cell [ref=e182]
+                  - cell "未定价" [ref=e183]:
+                    - generic [ref=e184]: 未定价
+                  - cell "已审批" [ref=e185]:
+                    - generic [ref=e188]: 已审批
+                  - cell "2026-05-23 20:26:45" [ref=e189]:
+                    - generic [ref=e190]: 2026-05-23 20:26:45
+                  - cell "查看 定价 定点" [ref=e191]:
+                    - generic [ref=e192]:
+                      - button "查看" [ref=e193] [cursor=pointer]:
+                        - generic [ref=e194]: 查看
+                      - button "定价" [ref=e195] [cursor=pointer]:
+                        - generic [ref=e196]: 定价
+                      - button "定点" [ref=e197] [cursor=pointer]:
+                        - generic [ref=e198]: 定点
+                - row "Q-12-202605-0001 弹簧片 12 未定价 待老板审批 2026-05-23 17:45:15 查看 审批" [ref=e199]:
+                  - cell "Q-12-202605-0001" [ref=e200]:
+                    - generic [ref=e201]: Q-12-202605-0001
+                  - cell "弹簧片" [ref=e202]:
+                    - generic [ref=e203]: 弹簧片
+                  - cell "12" [ref=e204]:
+                    - generic [ref=e205]: "12"
+                  - cell [ref=e206]
+                  - cell [ref=e207]
+                  - cell [ref=e208]
+                  - cell "未定价" [ref=e209]:
+                    - generic [ref=e210]: 未定价
+                  - cell "待老板审批" [ref=e211]:
+                    - generic [ref=e214]: 待老板审批
+                  - cell "2026-05-23 17:45:15" [ref=e215]:
+                    - generic [ref=e216]: 2026-05-23 17:45:15
+                  - cell "查看 审批" [ref=e217]:
+                    - generic [ref=e218]:
+                      - button "查看" [ref=e219] [cursor=pointer]:
+                        - generic [ref=e220]: 查看
+                      - button "审批" [ref=e221] [cursor=pointer]:
+                        - generic [ref=e222]: 审批
+          - generic [ref=e224]:
+            - generic [ref=e225]: 共 2 条
+            - generic [ref=e228] [cursor=pointer]:
+              - generic:
+                - combobox [ref=e230]
+                - generic [ref=e231]: 20条/页
+              - img [ref=e234]
+            - button "上一页" [disabled] [ref=e236]:
+              - generic:
+                - img
+            - list [ref=e237]:
+              - listitem "第 1 页" [ref=e238]: "1"
+            - button "下一页" [disabled] [ref=e239]:
+              - generic:
+                - img
+          - dialog "新建报价" [ref=e241]:
+            - generic [ref=e242]:
+              - generic [ref=e243]:
+                - heading "新建报价" [level=2] [ref=e244]
+                - button "关闭此对话框" [ref=e245] [cursor=pointer]:
+                  - img [ref=e247]
+              - generic [ref=e250]:
+                - generic [ref=e251]:
+                  - generic [ref=e252]: "* 零件"
+                  - generic [ref=e256]:
+                    - combobox "* 零件" [ref=e258]
+                    - generic [ref=e259]: 搜索零件名称/编号
+                - generic [ref=e260]:
+                  - generic [ref=e261]: 客户
+                  - generic [ref=e264]:
+                    - generic [ref=e265]:
+                      - combobox "客户" [expanded] [active] [ref=e267]
+                      - generic [ref=e268]: 选择客户
+                    - img [ref=e271] [cursor=pointer]
+                - generic [ref=e273]:
+                  - generic [ref=e274]: 客户品号
+                  - textbox "客户品号" [ref=e278]
+                - generic [ref=e279]:
+                  - generic [ref=e280]: 车型
+                  - textbox "车型" [ref=e284]
+                - generic [ref=e285]:
+                  - generic [ref=e286]: 年用量
+                  - generic [ref=e288]:
+                    - button "减少数值" [ref=e289]:
+                      - img [ref=e291]
+                    - button "增加数值" [ref=e293] [cursor=pointer]:
+                      - img [ref=e295]
+                    - spinbutton "年用量" [ref=e299]: "0"
+              - generic [ref=e300]:
+                - button "取消" [ref=e301] [cursor=pointer]:
+                  - generic [ref=e302]: 取消
+                - button "创建" [ref=e303] [cursor=pointer]:
+                  - generic [ref=e304]: 创建
+  - tooltip [ref=e305]:
+    - listbox [ref=e309]:
+      - option "A-G沃富润" [ref=e310] [cursor=pointer]
+      - option "A-H泰明顿" [ref=e311] [cursor=pointer]
+      - option "A-K 一汽东机工减振器有限公司" [ref=e312] [cursor=pointer]
+      - option "A-L 浙江亚太机电股份有限公司" [ref=e313] [cursor=pointer]
+      - option "A-M 宁波双林" [ref=e314] [cursor=pointer]
+      - option "A-N 京西重工" [ref=e315] [cursor=pointer]
+      - option "A-O 南方天合" [ref=e316] [cursor=pointer]
+      - option "A-P IBI" [ref=e317] [cursor=pointer]
+      - option "A-Q江苏恒义汽配制造有限公司" [ref=e318] [cursor=pointer]
+      - option "A-R莆田荣兴机械有限公司" [ref=e319] [cursor=pointer]
+      - option "A-S江西江铃集团博亚制动系统有限公司" [ref=e320] [cursor=pointer]
+      - option "A-T浙江万向系统有限公司" [ref=e321] [cursor=pointer]
+      - option "A-V精诚工科汽车系统有限公司" [ref=e322] [cursor=pointer]
+      - option "A-W大工科技" [ref=e323] [cursor=pointer]
+      - option "A-X泛博" [ref=e324] [cursor=pointer]
+      - option "A-Y瑞立" [ref=e325] [cursor=pointer]
+      - option "A-Z柳州五菱" [ref=e326] [cursor=pointer]
+      - option "B-C武汉万向汽车制动器有限公司" [ref=e327] [cursor=pointer]
+      - option "B-D东营信义汽车配件有限公司" [ref=e328] [cursor=pointer]
+      - option "B-E坤泰" [ref=e329] [cursor=pointer]
+      - option "B-F上海汇众汽车制造有限公司" [ref=e330] [cursor=pointer]
+      - option "B-G芜湖伯特利" [ref=e331] [cursor=pointer]
+      - option "B-H杭州吉成" [ref=e332] [cursor=pointer]
+      - option "B-I江苏恒力" [ref=e333] [cursor=pointer]
+      - option "B-J兰溪捷克" [ref=e334] [cursor=pointer]
+      - option "B-K万都" [ref=e335] [cursor=pointer]
+      - option "B-L山东双连" [ref=e336] [cursor=pointer]
+      - option "B-M布雷博" [ref=e337] [cursor=pointer]
+      - option "B-N 上海拿森" [ref=e338] [cursor=pointer]
+      - option "B-O炯熠电子科技（苏州）有限公司" [ref=e339] [cursor=pointer]
+      - option "B-P致森" [ref=e340] [cursor=pointer]
+      - option "B-Q爱德克斯" [ref=e341] [cursor=pointer]
+      - option "B-R格陆博科技" [ref=e342] [cursor=pointer]
+      - option "B-S上海同驭" [ref=e343] [cursor=pointer]
+      - option "B-T湖北华阳" [ref=e344] [cursor=pointer]
+      - option "B-U ITT" [ref=e345] [cursor=pointer]
+      - option "B-V 上海龙感" [ref=e346] [cursor=pointer]
+      - option "B-W 珠海格莱利" [ref=e347] [cursor=pointer]
+      - option "B-X 坐标系智能" [ref=e348] [cursor=pointer]
+      - option "B-Y 浙江杭摩欧亿" [ref=e349] [cursor=pointer]
+      - option "B-Z 天津垠石)" [ref=e350] [cursor=pointer]
+      - option "GBC浙江隆中" [ref=e351] [cursor=pointer]
+      - option "test" [ref=e352] [cursor=pointer]
+      - option "ZF" [ref=e353] [cursor=pointer]
+      - option "爱得利A-B" [ref=e354] [cursor=pointer]
+      - option "安徽万安汽车零部件有限公司" [ref=e355] [cursor=pointer]
+      - option "比亚迪" [ref=e356] [cursor=pointer]
+      - option "常州泰山弹簧有限公司（Z）" [ref=e357] [cursor=pointer]
+      - option "大陆集团" [ref=e358] [cursor=pointer]
+      - option "丰铃公司Q" [ref=e359] [cursor=pointer]
+      - option "福州新信制动系统有限公司" [ref=e360] [cursor=pointer]
+      - option "广东中博汽车零部件有限公司" [ref=e361] [cursor=pointer]
+      - option "广州曙光制动系统有限公司" [ref=e362] [cursor=pointer]
+      - option "亨国(厦门)精机工业有限公司" [ref=e363] [cursor=pointer]
+      - option "湖北航特科技有限责任公司" [ref=e364] [cursor=pointer]
+      - option "湖北悦达科技有限公司" [ref=e365] [cursor=pointer]
+      - option "湖南运达机械制造有限公司" [ref=e366] [cursor=pointer]
+      - option "辉门摩擦产品有限公司" [ref=e367] [cursor=pointer]
+      - option "嘉默传感技术" [ref=e368] [cursor=pointer]
+      - option "领联（上海）" [ref=e369] [cursor=pointer]
+      - option "柳州三立" [ref=e370] [cursor=pointer]
+      - option "龙港工艺品厂" [ref=e371] [cursor=pointer]
+      - option "谋行科技" [ref=e372] [cursor=pointer]
+      - option "耐世特" [ref=e373] [cursor=pointer]
+      - option "汽车部件苏州有限公司(东机工)" [ref=e374] [cursor=pointer]
+      - option "日立高新" [ref=e375] [cursor=pointer]
+      - option "厦门安思通制动系统有限公司" [ref=e376] [cursor=pointer]
+      - option "厦门和利多卫浴科技有限公司（X）" [ref=e377] [cursor=pointer]
+      - option "厦门亨东制动系统有限公司" [ref=e378] [cursor=pointer]
+      - option "厦门永裕机械工业有限公司" [ref=e379] [cursor=pointer]
+      - option "山东日信" [ref=e380] [cursor=pointer]
+      - option "上海万向钱潮A-A" [ref=e381] [cursor=pointer]
+      - option "石家庄泰明顿摩擦材料有限公司" [ref=e382] [cursor=pointer]
+      - option "台湾贺安贸易有限公司" [ref=e383] [cursor=pointer]
+      - option "天越五金" [ref=e384] [cursor=pointer]
+      - option "温州力邦企业有限公司" [ref=e385] [cursor=pointer]
+      - option "武汉元丰" [ref=e386] [cursor=pointer]
+      - option "烟台海纳" [ref=e387] [cursor=pointer]
+      - option "扬州敦煌" [ref=e388] [cursor=pointer]
+      - option "英创" [ref=e389] [cursor=pointer]
+      - option "玉环万建机械有限公司" [ref=e390] [cursor=pointer]
+      - option "展翔A-C" [ref=e391] [cursor=pointer]
+      - option "浙江盖博汽车零部件公司" [ref=e392] [cursor=pointer]
+      - option "浙江精科汽车零件部件有限公司" [ref=e393] [cursor=pointer]
+      - option "浙江钱江摩托股份有限公司" [ref=e394] [cursor=pointer]
+      - option "浙江万安科技股份有限公司" [ref=e395] [cursor=pointer]
+      - option "浙江万宝机械有限公司" [ref=e396] [cursor=pointer]
+      - option "正凌制动器有限公司" [ref=e397] [cursor=pointer]
+      - option "重庆三友" [ref=e398] [cursor=pointer]

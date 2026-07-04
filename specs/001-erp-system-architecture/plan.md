@@ -49,10 +49,11 @@ Zephyr_test_ERP 是一套面向冲压制造企业的综合性企业资源管理�
 | Gate | Status | Notes |
 |------|--------|-------|
 | 软删除策略（FR-085） | ✓ PASS | 所有实体含 `is_deleted` 字段，DELETE → UPDATE |
-| 权限验证 100%（FR-080） | ✓ PASS | JWT 每次请求验证 role_level |
+| 权限验证 100%（FR-080） | ✓ PASS | JWT 每次请求验证 role_level（1-4级权限体系） |
 | 审计日志（FR-052/084） | ✓ PASS | `audit_logs` 表记录所有关键操作 |
 | 图纸路径安全（FR-083） | ✓ PASS | `FileService.generate_path()` 统一生成，禁止硬编码 |
-| 超级管理员视角隔离（FR-079） | ✓ PASS | 视角切换隐藏 role_level >= 9 按钮 |
+| 超级管理员视角隔离（FR-079） | ✓ PASS | 视角切换隐藏 role_level >= 3 按钮 |
+| 报价单数据权限隔离 | ✓ PASS | 基于 role_level + department 的字段级权限控制 |
 
 ---
 
@@ -194,10 +195,21 @@ mobile-h5/                    # H5 扫码终端（兼容方案）
 
 ### 2. 权限系统
 
-基于 `role_level` 的 RBAC：
-- 每个 API endpoint 装饰 `@require_role(min_level=3)`
+基于 `role_level` 的 RBAC（4级权限体系）：
+- **role_level = 1**（普通员工）：操作工、仓库管理员、质检员、喷涂工、设备维护员
+- **role_level = 2**（管理人员及业务）：班组长、技术人员、业务人员、部门主管、会计、人事、设备主管
+- **role_level = 3**（老板）：最终审批、全局数据查看
+- **role_level = 4**（超级管理员）：系统管理、视角切换
+
+每个 API endpoint 装饰 `@require_role(min_level=N)`
 - JWT payload 包含 `role_level`、`department`、`user_id`
 - 超级管理员切换视角：生成临时受限 token（原始 role_level 存入 Redis）
+
+**数据权限隔离**（以报价单为例）：
+- 业务部 + 老板 + 超管：完整查看所有报价单
+- 开发部：仅通过"待审核队列"查看，能看模具费和技术参数，不能看其他价格
+- 会计部：仅查看已定点报价单，能看总价/模具费/模摊费用，不能看技术参数
+- 生产相关部门（生产部/原料仓库/品管部/喷涂部/设备部）：仅查看已定点报价单，能看技术参数，不能看价格
 
 ### 3. QR 码策略
 

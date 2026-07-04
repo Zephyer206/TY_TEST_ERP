@@ -46,19 +46,32 @@ AuditLog (审计日志)
 
 ```
 Table: users
-├── id              UUID PRIMARY KEY
-├── username        VARCHAR(50) UNIQUE NOT NULL
-├── password_hash   VARCHAR(255) NOT NULL
-├── real_name       VARCHAR(100) NOT NULL
-├── role_level      INTEGER NOT NULL DEFAULT 1  -- 1~10
-├── department_id   UUID REFERENCES departments(id)
-├── is_deleted      BOOLEAN DEFAULT FALSE
-├── created_at      TIMESTAMP DEFAULT NOW()
-└── updated_at      TIMESTAMP DEFAULT NOW()
+├── id                      UUID PRIMARY KEY
+├── username                VARCHAR(50) UNIQUE NOT NULL
+├── password_hash           VARCHAR(255) NOT NULL
+├── real_name               VARCHAR(100) NOT NULL
+├── role_level              INTEGER NOT NULL DEFAULT 1  -- 1=普通员工, 2=管理人员及业务, 3=老板, 4=超级管理员
+├── department_id           UUID REFERENCES departments(id)
+├── special_permissions     JSONB NULL  -- 特殊权限代码数组，引用 special_permissions_dict.permission_code
+├── is_active               BOOLEAN DEFAULT TRUE  -- 账户是否启用
+├── last_login_at           TIMESTAMP NULL  -- 最后登录时间
+├── is_deleted              BOOLEAN DEFAULT FALSE
+├── created_at              TIMESTAMP DEFAULT NOW()
+└── updated_at              TIMESTAMP DEFAULT NOW()
+
+Table: special_permissions_dict  -- 特殊权限字典
+├── id                      UUID PRIMARY KEY
+├── permission_code         VARCHAR(50) UNIQUE NOT NULL  -- 权限代码（如 'quote_review'）
+├── permission_name         VARCHAR(100) NOT NULL        -- 权限名称（如 '报价技术审核权限'）
+├── description             TEXT NULL                    -- 权限说明
+├── required_role_level     INTEGER NULL                 -- 要求的最低 role_level
+├── required_department     VARCHAR(50) NULL             -- 要求的部门
+├── is_active               BOOLEAN DEFAULT TRUE
+└── created_at              TIMESTAMP DEFAULT NOW()
 
 Table: departments
 ├── id              UUID PRIMARY KEY
-├── name            VARCHAR(50) NOT NULL  -- 业务部/生产部/开发部/原料仓库/品管部/全检部/喷涂部/admin
+├── name            VARCHAR(50) NOT NULL  -- 业务部/生产部/开发部/原料仓库/品管部/全检部/喷涂部/会计部/人事部/设备部/admin
 ├── is_deleted      BOOLEAN DEFAULT FALSE
 └── created_at      TIMESTAMP DEFAULT NOW()
 
@@ -106,6 +119,8 @@ Table: quote_items
 ├── tooling_fee               DECIMAL(12,2) NULL  -- 模具费
 ├── tooling_fee_mode          VARCHAR(20) NULL  -- direct / amortized
 ├── tooling_fee_discount      DECIMAL(5,4) DEFAULT 0  -- 模具费折扣率 0.0~1.0
+├── tooling_amortization_amount   DECIMAL(12,4) NULL  -- 单件模摊费用（模具费/模摊数量）
+├── tooling_amortization_quantity INTEGER NULL  -- 模摊数量
 ├── stamping_fee              DECIMAL(12,2) NULL  -- 冲压费
 ├── total_price               DECIMAL(14,2) NULL  -- 总价
 ├── notes                     TEXT NULL
@@ -159,6 +174,21 @@ Table: parts
 ├── is_deleted                BOOLEAN DEFAULT FALSE
 ├── created_at                TIMESTAMP DEFAULT NOW()
 └── updated_at                TIMESTAMP DEFAULT NOW()
+
+Table: part_name_dict  -- 零件名称字典（三级分类系统）
+├── id                        INTEGER PRIMARY KEY AUTOINCREMENT
+├── primary_category          VARCHAR(100) NOT NULL  -- 一级分类（必填）- 零件主名称
+├── secondary_category        VARCHAR(100) NULL  -- 二级分类（可选）
+├── customer_part_name        VARCHAR(200) NULL  -- 三级分类（可选）- 客户零件名称
+├── remark                    TEXT NULL  -- 备注说明
+├── name                      VARCHAR(200) NULL  -- [已废弃] 零件名称
+├── category                  VARCHAR(100) NULL  -- [已废弃] 旧分类字段
+├── usage_count               INTEGER DEFAULT 0  -- 使用次数（统计用）
+├── is_active                 BOOLEAN DEFAULT TRUE  -- 是否启用
+├── sort_order                INTEGER DEFAULT 0  -- 排序
+├── created_at                TIMESTAMP DEFAULT NOW()
+├── updated_at                TIMESTAMP DEFAULT NOW()
+└── created_by                INTEGER NULL REFERENCES users(id)
 
 Table: part_customer_aliases
 ├── id                        UUID PRIMARY KEY
@@ -530,6 +560,15 @@ Table: qr_scan_logs  -- 二维码扫码日志
 Critical indexes for performance:
 
 ```sql
+-- 用户查询
+CREATE INDEX idx_users_department ON users(department_id) WHERE is_deleted = FALSE;
+CREATE INDEX idx_users_active ON users(is_active) WHERE is_deleted = FALSE;
+CREATE INDEX idx_users_special_perms ON users USING GIN(special_permissions) WHERE special_permissions IS NOT NULL;
+
+-- 特殊权限字典
+CREATE INDEX idx_special_perms_code ON special_permissions_dict(permission_code) WHERE is_active = TRUE;
+CREATE INDEX idx_special_perms_dept ON special_permissions_dict(required_department) WHERE required_department IS NOT NULL;
+
 -- 报价单查询
 CREATE INDEX idx_quotes_status ON quotes(status) WHERE is_deleted = FALSE;
 CREATE INDEX idx_quotes_submitted_by ON quotes(submitted_by);
@@ -568,6 +607,11 @@ CREATE INDEX idx_audit_time ON audit_logs(operated_at);
 
 -- 价格档案
 CREATE INDEX idx_price_part_customer ON price_accounts(part_id, customer_id) WHERE is_deleted = FALSE;
+
+-- 零件名称字典
+CREATE INDEX idx_part_name_dict_primary ON part_name_dict(primary_category) WHERE is_active = TRUE;
+CREATE INDEX idx_part_name_dict_secondary ON part_name_dict(secondary_category) WHERE is_active = TRUE AND secondary_category IS NOT NULL;
+CREATE INDEX idx_part_name_dict_active ON part_name_dict(is_active);
 ```
 
 ---
@@ -608,17 +652,169 @@ pending_review → pending_production → sampling → pending_review
 
 ---
 
-## 5. Validation Rules
+## 6. Data Access Control (数据权限控制)
+
+### 6.1 报价单数据权限隔离
+
+**核心原则**：
+- 业务部 + 老板 + 超管：完整查看所有报价单
+- 开发部：仅通过"待审核队列"查看，能看模具费和技术参数，不能看其他价格
+- 会计部：仅查看已定点报价单，能看总价/模具费/模摊费用，不能看技术参数和其他价格
+- 生产相关部门：仅查看已定点报价单，能看技术参数，不能看任何价格
+
+### 6.2 报价单字段权限矩阵
+
+| 字段类型 | 业务部 | 开发部 | 会计部 | 生产部 | 原料仓库 | 品管部 | 喷涂部 | 设备部 | 老板 | 超管 |
+|---------|-------|-------|-------|-------|---------|-------|-------|-------|------|------|
+| **基础信息** |
+| 报价单号、客户名称、零件名称 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 年用量 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| **价格字段** |
+| 总价 (total_price) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 模具费 (tooling_fee) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 模摊费用 (tooling_amortization_amount) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 模摊数量 (tooling_amortization_quantity) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 冲压费 (stamping_fee) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| 表面处理费 (treatment_fee) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
+| **技术参数** |
+| T 厚度 (t_parameter) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| W 宽度 (w_parameter) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| P 冲次 (p_parameter) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 穴数 (cavity_count) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 吨位 (press_tonnage) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 材料类型 (material_type) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 模具编号 (tooling_number) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| 表面处理类型 (surface_treatment_type) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### 6.3 数据查询范围
+
+| 部门 | 报价单查询范围 | 过滤条件 |
+|------|--------------|---------|
+| 业务部 | 所有报价单 | 无过滤 |
+| 开发部 | 待审核队列 | `status = 'waiting_tech_review'` |
+| 会计部 | 仅已定点 | `is_fixed = true` |
+| 生产部 | 仅已定点 | `is_fixed = true` |
+| 原料仓库 | 仅已定点 | `is_fixed = true` |
+| 品管部 | 仅已定点 | `is_fixed = true` |
+| 全检部 | 仅已定点 | `is_fixed = true` |
+| 喷涂部 | 仅已定点 | `is_fixed = true` |
+| 设备部 | 仅已定点 | `is_fixed = true` |
+| 人事部 | 不可访问 | - |
+| 老板 | 所有报价单 | 无过滤 |
+| 超级管理员 | 所有报价单 | 无过滤 |
+
+### 6.4 权限实现方式
+
+**实现层次**：代码层字段过滤（API 响应层）
+
+**核心逻辑**：
+1. 查询时根据 `role_level` + `department` 应用过滤条件
+2. 响应时根据权限矩阵动态隐藏字段（设置为 `null` 或移除）
+3. 开发部通过专用端点 `GET /api/quotes/pending-tech-review` 访问待审核队列
+
+**权限判断示例**：
+```python
+def can_view_quote(user: User, quote: Quote) -> bool:
+    # 老板、超管、业务部：查看所有
+    if user.role_level >= 3 or user.department.name == "业务部":
+        return True
+    
+    # 开发部：仅通过待审核队列访问（专用端点）
+    if user.department.name == "开发部":
+        return quote.status == "waiting_tech_review"
+    
+    # 会计部、生产相关部门：仅已定点
+    if user.department.name in ["会计部", "生产部", "原料仓库", "品管部", "全检部", "喷涂部", "设备部"]:
+        return quote.is_fixed == True
+    
+    # 其他部门：无权限
+    return False
+```
+
+### 6.5 特殊权限系统
+
+**设计原则**：基础角色（role_level + department）+ 特殊权限（special_permissions）双重验证
+
+**典型场景**：报价技术审核权限
+- 基础条件：role_level >= 2（管理人员及业务）且 department = '开发部'
+- 特殊权限：拥有 'quote_review' 权限
+
+**权限检查逻辑**：
+```python
+async def has_special_permission(
+    db: AsyncSession,
+    user: User,
+    permission_code: str
+) -> bool:
+    """检查用户是否拥有特殊权限"""
+    
+    # 1. 查询权限定义
+    perm_def = await db.execute(
+        select(SpecialPermissionsDict).where(
+            SpecialPermissionsDict.permission_code == permission_code,
+            SpecialPermissionsDict.is_active == True
+        )
+    )
+    perm = perm_def.scalar_one_or_none()
+    if not perm:
+        return False
+    
+    # 2. 检查基础条件
+    if user.role_level < perm.required_role_level:
+        return False
+    if perm.required_department and user.department.name != perm.required_department:
+        return False
+    
+    # 3. 检查特殊权限
+    if not user.special_permissions:
+        return False
+    return permission_code in user.special_permissions
+```
+
+**初始权限定义**：
+```sql
+INSERT INTO special_permissions_dict (
+    permission_code, 
+    permission_name, 
+    description, 
+    required_role_level, 
+    required_department
+) VALUES (
+    'quote_review',
+    '报价技术审核权限',
+    '审核报价单技术参数，填写 T/W/P/穴数/吨位/模具费',
+    2,
+    '开发部'
+);
+```
+
+**超管授权/撤销 API**：
+- `POST /api/admin/users/{user_id}/special-permissions` - 授予特殊权限
+- `DELETE /api/admin/users/{user_id}/special-permissions/{permission_code}` - 撤销特殊权限
+
+**授权验证规则**：
+1. 用户必须满足权限的基础条件（required_role_level + required_department）
+2. 权限代码必须在 special_permissions_dict 中存在且 is_active = true
+3. 仅超级管理员（role_level = 4）可以授予/撤销特殊权限
+
+---
+
+## 7. Validation Rules
 
 | Field | Rule |
 |-------|------|
-| `users.role_level` | 1 ≤ role_level ≤ 10 |
+| `users.role_level` | 1 ≤ role_level ≤ 4 (1=普通员工, 2=管理人员及业务, 3=老板, 4=超级管理员) |
+| `users.special_permissions` | JSONB 数组，每个元素必须是有效的 permission_code（存在于 special_permissions_dict 且 is_active=true） |
+| `special_permissions_dict.permission_code` | 唯一且非空，最大 50 字符 |
+| `special_permissions_dict.required_role_level` | 1 ≤ value ≤ 4（若设置） |
 | `quote_items.t_parameter`, `w_parameter`, `p_parameter` | > 0 |
 | `quote_items.tooling_fee_discount` | 0.0 ≤ value ≤ 1.0 |
 | `production_reports.strokes` | ≥ 0 |
 | `production_reports.qualified_quantity` | ≤ output_quantity |
 | `material_batches.weight` | ≥ 0 |
 | `price_accounts` | UNIQUE(part_id, customer_id) |
+| `part_name_dict.primary_category` | NOT NULL, max 100 chars |
+| `part_name_dict` | UNIQUE(primary_category, secondary_category, customer_part_name) |
 
 ---
 

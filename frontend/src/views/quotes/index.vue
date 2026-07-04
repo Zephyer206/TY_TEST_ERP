@@ -2,224 +2,739 @@
   <div class="quotes-container">
     <div class="page-header">
       <h2>报价管理</h2>
-      <el-button type="primary" @click="handleCreate">
-        <el-icon><Plus /></el-icon>
-        新建报价
+      <el-button type="primary" @click="openCreateDialog" v-if="userStore.isManager">
+        <el-icon><Plus /></el-icon>新建报价
       </el-button>
     </div>
 
-    <!-- 搜索筛选 -->
+    <!-- 筛选 -->
     <el-card class="filter-card">
-      <el-form :inline="true" :model="filterForm">
-        <el-form-item label="客户">
-          <el-input v-model="filterForm.customer" placeholder="客户名称" clearable />
-        </el-form-item>
+      <el-form :inline="true" :model="filter">
         <el-form-item label="状态">
-          <el-select v-model="filterForm.status" placeholder="全部" clearable>
-            <el-option label="待技术审核" value="WAITING_FOR_TECH" />
-            <el-option label="技术已审核" value="TECH_APPROVED" />
-            <el-option label="待老板审批" value="PENDING_BOSS" />
-            <el-option label="已审批" value="APPROVED" />
-            <el-option label="已驳回" value="REJECTED" />
+          <el-select v-model="filter.approval_status" placeholder="全部" clearable style="width:160px">
+            <el-option v-for="s in STATUS_LIST" :key="s.value" :label="s.label" :value="s.value" />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button type="primary" @click="fetchQuotes">搜索</el-button>
+          <el-button @click="resetFilter">重置</el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
-    <!-- 报价列表 -->
+    <!-- 列表 -->
     <el-table :data="quotes" v-loading="loading" stripe>
       <el-table-column prop="quote_no" label="报价单号" width="180" />
-      <el-table-column prop="customer_name" label="客户" min-width="150" />
-      <el-table-column prop="customer_product_no" label="客户品号" width="150" />
-      <el-table-column prop="vehicle_model" label="车型" width="120" />
-      <el-table-column prop="final_price" label="单价" width="100" align="right">
+      <el-table-column prop="part_name" label="零件名称" min-width="140" />
+      <el-table-column prop="part_number" label="零件号" width="120" />
+      <el-table-column prop="customer_name" label="客户" min-width="120" />
+      <el-table-column prop="customer_product_no" label="客户件号" width="120" />
+      <el-table-column prop="vehicle_model" label="车型" width="100" />
+      <el-table-column label="单价" width="100" align="right">
         <template #default="{ row }">
-          ¥{{ row.final_price }}
+          <span v-if="row.final_price">¥{{ row.final_price }}</span>
+          <span v-else class="text-gray">未定价</span>
         </template>
       </el-table-column>
-      <el-table-column prop="approval_status" label="状态" width="120">
+      <el-table-column label="状态" width="130">
         <template #default="{ row }">
-          <el-tag :type="getStatusType(row.approval_status)">
-            {{ getStatusText(row.approval_status) }}
+          <el-tag :type="statusType(row.approval_status)" size="small">
+            {{ statusLabel(row.approval_status) }}
           </el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="created_at" label="创建时间" width="160">
-        <template #default="{ row }">
-          {{ formatDate(row.created_at) }}
-        </template>
+        <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
       </el-table-column>
-      <el-table-column label="操作" width="200" fixed="right">
+      <el-table-column label="操作" width="260" fixed="right">
         <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="handleView(row)">
-            查看
-          </el-button>
-          <el-button link type="primary" size="small" @click="handleEdit(row)" v-if="canEdit(row)">
-            编辑
-          </el-button>
-          <el-button link type="success" size="small" @click="handleApprove(row)" v-if="canApprove(row)">
-            审批
-          </el-button>
+          <el-button link type="primary" size="small" @click="openDetail(row)">查看</el-button>
+          <el-button link type="primary" size="small" @click="openEditPricing(row)"
+            v-if="canEditPricing(row)">定价</el-button>
+          <el-button link type="warning" size="small" @click="submitReview(row)"
+            v-if="row.approval_status === 'DRAFT' && userStore.isManager">提交技审</el-button>
+          <el-button link type="success" size="small" @click="submitBoss(row)"
+            v-if="canSubmitBoss(row)">提交审批</el-button>
+          <el-button link type="success" size="small" @click="openBossApprove(row)"
+            v-if="row.approval_status === 'PENDING_BOSS' && userStore.isBoss">审批</el-button>
+          <el-button link type="primary" size="small" @click="openFix(row)"
+            v-if="row.approval_status === 'APPROVED' && userStore.isManager">定点</el-button>
+          <el-button link type="danger" size="small" @click="openRevoke(row)"
+            v-if="row.approval_status === 'FIXED' && userStore.isManager">撤销定点</el-button>
         </template>
       </el-table-column>
     </el-table>
 
-    <!-- 分页 -->
     <div class="pagination">
       <el-pagination
-        v-model:current-page="pagination.page"
-        v-model:page-size="pagination.pageSize"
-        :total="pagination.total"
-        :page-sizes="[10, 20, 50, 100]"
-        layout="total, sizes, prev, pager, next, jumper"
-        @size-change="handleSizeChange"
-        @current-change="handlePageChange"
+        v-model:current-page="page.current"
+        v-model:page-size="page.size"
+        :total="page.total"
+        :page-sizes="[20, 50, 100]"
+        layout="total, sizes, prev, pager, next"
+        @size-change="fetchQuotes"
+        @current-change="fetchQuotes"
       />
     </div>
+
+    <!-- ===== 新建报价 ===== -->
+    <el-dialog v-model="createVisible" title="新建报价" width="520px">
+      <el-form :model="createForm" label-width="100px" :rules="createRules" ref="createRef">
+        <el-form-item label="零件名称">
+          <div style="display: flex; gap: 8px;">
+            <el-cascader
+              v-model="createForm.part_name_id"
+              :options="partNameCascaderOptions"
+              :props="{ value: 'id', label: 'label', children: 'children', emitPath: false }"
+              placeholder="选择零件名称"
+              filterable
+              style="flex: 1"
+              clearable
+            />
+            <el-button @click="openQuickAddPartName" v-if="userStore.userInfo?.role_level >= 4">
+              <el-icon><Plus /></el-icon>
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="客户" prop="customer_id">
+          <div style="display: flex; gap: 8px;">
+            <el-select v-model="createForm.customer_id" filterable clearable placeholder="选择客户" style="flex: 1">
+              <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.name" />
+            </el-select>
+            <el-button @click="openQuickAddCustomer" v-if="userStore.userInfo?.role_level >= 4">
+              <el-icon><Plus /></el-icon>
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="客户件号" prop="customer_product_no">
+          <el-input v-model="createForm.customer_product_no" />
+        </el-form-item>
+        <el-form-item label="车型">
+          <el-input v-model="createForm.vehicle_model" />
+        </el-form-item>
+        <el-form-item label="年用量">
+          <el-input-number v-model="createForm.annual_usage" :min="0" style="width:100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="createVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doCreate">创建</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 快捷新增零件名称 ===== -->
+    <el-dialog v-model="quickAddPartNameVisible" title="快捷新增零件名称" width="480px">
+      <el-form :model="quickPartNameForm" label-width="110px" :rules="quickPartNameRules" ref="quickPartNameRef">
+        <el-form-item label="一级分类" prop="primary_category">
+          <el-select v-model="quickPartNameForm.primary_category" filterable allow-create placeholder="选择或输入新分类" style="width: 100%">
+            <el-option v-for="cat in primaryCategories" :key="cat" :value="cat" :label="cat" />
+          </el-select>
+          <div style="color: #909399; font-size: 12px; margin-top: 4px;">
+            * 必填。例如：弹簧片、报警器
+          </div>
+        </el-form-item>
+        <el-form-item label="二级分类">
+          <el-input v-model="quickPartNameForm.secondary_category" placeholder="选填。例如：标准型、加强型" />
+        </el-form-item>
+        <el-form-item label="客户零件名称">
+          <el-input v-model="quickPartNameForm.customer_part_name" placeholder="选填。客户定制的零件名称" />
+        </el-form-item>
+        <el-form-item label="备注">
+          <el-input v-model="quickPartNameForm.remark" type="textarea" :rows="2" placeholder="选填" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="quickAddPartNameVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doQuickAddPartName">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 快捷新增零件 ===== -->
+    <el-dialog v-model="quickAddPartVisible" title="快捷新增零件" width="480px">
+      <el-form :model="quickPartForm" label-width="90px" :rules="{ part_number: [{ required: true, message: '请输入零件编号', trigger: 'blur' }] }" ref="quickPartRef">
+        <el-form-item label="零件编号" prop="part_number">
+          <el-input v-model="quickPartForm.part_number" placeholder="唯一零件编号" />
+        </el-form-item>
+        <el-form-item label="零件名称">
+          <el-input v-model="quickPartForm.internal_name" />
+        </el-form-item>
+        <el-form-item label="客户">
+          <el-select v-model="quickPartForm.customer_id" clearable filterable placeholder="选择客户" style="width:100%">
+            <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.name" />
+          </el-select>
+        </el-form-item>
+        <el-form-item label="客户件号">
+          <el-input v-model="quickPartForm.customer_product_no" />
+        </el-form-item>
+        <el-form-item label="车型">
+          <el-input v-model="quickPartForm.vehicle_model" />
+        </el-form-item>
+        <el-form-item label="材质">
+          <el-input v-model="quickPartForm.material_name" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="quickAddPartVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doQuickAddPart">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 快捷新增客户 ===== -->
+    <el-dialog v-model="quickAddCustomerVisible" title="快捷新增客户" width="420px">
+      <el-form :model="quickCustomerForm" label-width="90px" :rules="{ name: [{ required: true, message: '请输入客户名称', trigger: 'blur' }] }" ref="quickCustomerRef">
+        <el-form-item label="客户名称" prop="name">
+          <el-input v-model="quickCustomerForm.name" placeholder="请输入客户名称" />
+        </el-form-item>
+        <el-form-item label="Sheet Key">
+          <el-input v-model="quickCustomerForm.sheet_key" placeholder="选填" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="quickAddCustomerVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doQuickAddCustomer">保存</el-button>
+      </template>
+    </el-dialog>
+
+
+    <!-- ===== 定价 ===== -->
+    <el-dialog v-model="pricingVisible" title="定价" width="480px">
+      <el-form :model="pricingForm" label-width="110px">
+        <el-form-item label="冲压费">
+          <el-input-number v-model="pricingForm.stamping_fee" :precision="4" :min="0" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="表面处理费">
+          <el-input-number v-model="pricingForm.surface_fee" :precision="4" :min="0" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="其他处理费">
+          <el-input-number v-model="pricingForm.treatment_fee" :precision="4" :min="0" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="利润率(%)">
+          <el-input-number v-model="pricingForm.profit_margin" :precision="2" :min="0" :max="100" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="最终单价">
+          <el-input-number v-model="pricingForm.final_price" :precision="4" :min="0" style="width:100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="pricingVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="savePricing">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 老板审批 ===== -->
+    <el-dialog v-model="approveVisible" title="老板审批" width="440px">
+      <el-form :model="approveForm" label-width="90px">
+        <el-form-item label="审批结果">
+          <el-radio-group v-model="approveForm.approved">
+            <el-radio :value="true">通过</el-radio>
+            <el-radio :value="false">驳回</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="驳回原因" v-if="!approveForm.approved">
+          <el-input v-model="approveForm.reject_reason" type="textarea" rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="approveVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doBossApprove">确认</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 定点确认 ===== -->
+    <el-dialog v-model="fixVisible" title="定点确认" width="480px">
+      <el-form :model="fixForm" label-width="110px">
+        <el-form-item label="定点路径">
+          <el-radio-group v-model="fixForm.fix_path">
+            <el-radio value="direct_production">直接量产</el-radio>
+            <el-radio value="sample_first">先做样件</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="成交单价">
+          <el-input-number v-model="fixForm.final_price" :precision="4" :min="0" style="width:100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="fixVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="doFix">确认定点</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 撤销定点 ===== -->
+    <el-dialog v-model="revokeVisible" title="撤销定点" width="440px">
+      <el-form :model="revokeForm" label-width="90px">
+        <el-form-item label="撤销原因">
+          <el-input v-model="revokeForm.revoke_reason" type="textarea" rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="revokeVisible = false">取消</el-button>
+        <el-button type="danger" :loading="saving" @click="doRevoke">确认撤销</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- ===== 详情抽屉 ===== -->
+    <el-drawer v-model="detailVisible" title="报价详情" size="500px">
+      <el-descriptions :column="1" border v-if="currentQuote">
+        <el-descriptions-item label="报价单号">{{ currentQuote.quote_no }}</el-descriptions-item>
+        <el-descriptions-item label="零件名称">{{ currentQuote.part_name }}</el-descriptions-item>
+        <el-descriptions-item label="零件号">{{ currentQuote.part_number }}</el-descriptions-item>
+        <el-descriptions-item label="客户">{{ currentQuote.customer_name || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="客户件号">{{ currentQuote.customer_product_no || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="车型">{{ currentQuote.vehicle_model || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="年用量">{{ currentQuote.annual_usage }}</el-descriptions-item>
+        <el-descriptions-item label="状态">
+          <el-tag :type="statusType(currentQuote.approval_status)" size="small">
+            {{ statusLabel(currentQuote.approval_status) }}
+          </el-tag>
+        </el-descriptions-item>
+        <el-descriptions-item label="厚度T(mm)">{{ currentQuote.thickness || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="宽度W(mm)">{{ currentQuote.width || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="穴数">{{ currentQuote.cavity_count }}</el-descriptions-item>
+        <el-descriptions-item label="吨位">{{ currentQuote.press_tonnage || '-' }}</el-descriptions-item>
+        <el-descriptions-item label="模具费">{{ currentQuote.mold_cost ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="冲压费">{{ currentQuote.stamping_fee ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="表面处理费">{{ currentQuote.surface_fee ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="利润率(%)">{{ currentQuote.profit_margin ?? '-' }}</el-descriptions-item>
+        <el-descriptions-item label="最终单价">
+          <strong v-if="currentQuote.final_price">¥{{ currentQuote.final_price }}</strong>
+          <span v-else>未定价</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="驳回原因" v-if="currentQuote.rejection_reason">
+          <span class="text-danger">{{ currentQuote.rejection_reason }}</span>
+        </el-descriptions-item>
+        <el-descriptions-item label="创建时间">{{ formatDate(currentQuote.created_at) }}</el-descriptions-item>
+      </el-descriptions>
+    </el-drawer>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
-import { get } from '@/utils/request'
-import { handleApiError } from '@/utils/errorHandler'
+import { get, post } from '@/utils/request'
 import { formatDate } from '@/utils/format'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
+
+// ---- state ----
 const quotes = ref([])
 const loading = ref(false)
-const userInfo = ref(JSON.parse(localStorage.getItem('userInfo') || '{}'))
+const saving = ref(false)
+const partOptions = ref([])
+const partLoading = ref(false)
+const customers = ref([])
+const partNames = ref([])
+const partNameCascaderOptions = ref([])
+const primaryCategories = ref([])
+const currentQuote = ref(null)
+const activeId = ref(null)
 
-const filterForm = reactive({
-  customer: '',
-  status: '',
-})
+const filter = reactive({ approval_status: '' })
+const page = reactive({ current: 1, size: 20, total: 0 })
 
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  total: 0,
-})
+// dialogs
+const createVisible = ref(false)
+const pricingVisible = ref(false)
+const approveVisible = ref(false)
+const fixVisible = ref(false)
+const revokeVisible = ref(false)
+const detailVisible = ref(false)
+const createRef = ref(null)
 
-// 状态映射
+const createForm = reactive({ part_name_id: null, customer_id: null, customer_product_no: '', vehicle_model: '', annual_usage: 0 })
+const pricingForm = reactive({ stamping_fee: 0, surface_fee: 0, treatment_fee: 0, profit_margin: 0, final_price: null })
+const approveForm = reactive({ approved: true, reject_reason: '' })
+const fixForm = reactive({ fix_path: 'direct_production', final_price: null })
+const revokeForm = reactive({ revoke_reason: '' })
+
+const createRules = {
+  customer_id: [{ required: true, message: '请选择客户', trigger: 'change' }],
+  customer_product_no: [{ required: true, message: '请输入客户件号', trigger: 'blur' }]
+}
+
+// ---- status ----
+const STATUS_LIST = [
+  { value: 'DRAFT', label: '草稿' },
+  { value: 'WAITING_FOR_TECH', label: '待技术审核' },
+  { value: 'TECH_APPROVED', label: '技术已审核' },
+  { value: 'TECH_REJECTED', label: '技术已驳回' },
+  { value: 'PENDING_BOSS', label: '待老板审批' },
+  { value: 'APPROVED', label: '已审批' },
+  { value: 'REJECTED', label: '已驳回' },
+  { value: 'FIXED', label: '已定点' },
+]
 const statusMap = {
-  WAITING_FOR_TECH: { text: '待技术审核', type: 'warning' },
-  TECH_APPROVED: { text: '技术已审核', type: 'success' },
-  TECH_REJECTED: { text: '技术已驳回', type: 'danger' },
-  DRAFT: { text: '草稿', type: 'info' },
-  PENDING_BOSS: { text: '待老板审批', type: 'warning' },
-  APPROVED: { text: '已审批', type: 'success' },
-  REJECTED: { text: '已驳回', type: 'danger' },
+  DRAFT: { label: '草稿', type: 'info' },
+  WAITING_FOR_TECH: { label: '待技术审核', type: 'warning' },
+  TECH_REVIEW: { label: '技术审核中', type: 'warning' },
+  TECH_APPROVED: { label: '技术已审核', type: 'success' },
+  TECH_REJECTED: { label: '技术已驳回', type: 'danger' },
+  PENDING_BOSS: { label: '待老板审批', type: 'warning' },
+  APPROVED: { label: '已审批', type: 'success' },
+  REJECTED: { label: '已驳回', type: 'danger' },
+  FIXED: { label: '已定点', type: 'success' },
 }
+const statusLabel = (s) => statusMap[s]?.label || s
+const statusType = (s) => statusMap[s]?.type || 'info'
 
-const getStatusType = (status) => statusMap[status]?.type || 'info'
-const getStatusText = (status) => statusMap[status]?.text || status
+// ---- permissions ----
+const canEditPricing = (row) =>
+  userStore.isManager &&
+  ['DRAFT', 'TECH_APPROVED', 'TECH_REJECTED', 'APPROVED', 'REJECTED'].includes(row.approval_status)
 
-// 权限检查
-const canEdit = (row) => {
-  return userInfo.value.role_level >= 5 && row.approval_status === 'DRAFT'
-}
+const canSubmitBoss = (row) =>
+  userStore.isManager &&
+  ['DRAFT', 'TECH_APPROVED'].includes(row.approval_status)
 
-const canApprove = (row) => {
-  if (row.approval_status === 'PENDING_BOSS') {
-    return userInfo.value.role_level >= 9
-  }
-  if (row.approval_status === 'WAITING_FOR_TECH') {
-    return userInfo.value.is_tech || userInfo.value.role_level >= 4
-  }
-  return false
-}
-
-// 获取报价列表
+// ---- API ----
 const fetchQuotes = async () => {
   loading.value = true
   try {
     const params = {
-      page: pagination.page,
-      page_size: pagination.pageSize,
-      ...(filterForm.customer && { customer: filterForm.customer }),
-      ...(filterForm.status && { status: filterForm.status }),
+      skip: (page.current - 1) * page.size,
+      limit: page.size,
+      ...(filter.approval_status && { approval_status: filter.approval_status }),
     }
     const data = await get('/quotes', params)
-    quotes.value = data.items || data || []
-    pagination.total = data.total || quotes.value.length
-  } catch (error) {
-    handleApiError(error, '获取报价列表失败')
+    quotes.value = Array.isArray(data) ? data : (data.items || [])
+    page.total = data.total || quotes.value.length
+  } catch (e) {
+    ElMessage.error(e.message || '获取列表失败')
   } finally {
     loading.value = false
   }
 }
 
-const handleSearch = () => {
-  pagination.page = 1
-  fetchQuotes()
+const fetchCustomers = async () => {
+  try {
+    const data = await get('/customers')
+    customers.value = Array.isArray(data) ? data : (data.items || [])
+  } catch { /* silent */ }
 }
 
-const handleReset = () => {
-  filterForm.customer = ''
-  filterForm.status = ''
-  handleSearch()
+const fetchPartNames = async () => {
+  try {
+    const data = await get('/part-names', { limit: 500 })
+    partNames.value = Array.isArray(data) ? data : (data.items || [])
+
+    // 提取一级分类列表
+    const categories = new Set()
+    partNames.value.forEach(part => {
+      if (part.primary_category) {
+        categories.add(part.primary_category)
+      }
+    })
+    primaryCategories.value = Array.from(categories).sort()
+
+    // 构建三级级联选择器数据结构
+    buildPartNameCascader()
+  } catch { /* silent */ }
 }
 
-const handleCreate = () => {
-  ElMessage.info('新建报价功能开发中')
+const buildPartNameCascader = () => {
+  // 三级结构: 一级分类 -> 二级分类 -> 客户零件名称
+  const primaryMap = new Map()
+
+  partNames.value.forEach(part => {
+    const primary = part.primary_category
+    if (!primary) return
+
+    if (!primaryMap.has(primary)) {
+      primaryMap.set(primary, new Map())
+    }
+
+    const secondaryMap = primaryMap.get(primary)
+    const secondary = part.secondary_category || '直接选择'
+
+    if (!secondaryMap.has(secondary)) {
+      secondaryMap.set(secondary, [])
+    }
+
+    // 第三级：客户零件名称或标准件
+    const label = part.customer_part_name || '标准件'
+    secondaryMap.get(secondary).push({
+      id: part.id,
+      label: label,
+      value: part.id,
+      remark: part.remark
+    })
+  })
+
+  // 转换为级联选择器格式
+  partNameCascaderOptions.value = Array.from(primaryMap.entries()).map(([primary, secondaryMap]) => ({
+    label: primary,  // 第一列：弹簧片、报警器
+    value: primary,
+    children: Array.from(secondaryMap.entries()).map(([secondary, items]) => ({
+      label: secondary,  // 第二列：弹簧片、直接选择
+      value: `${primary}-${secondary}`,
+      children: items    // 第三列：摩擦片保持、标准件
+    }))
+  }))
 }
 
-const handleView = (row) => {
-  ElMessage.info(`查看报价: ${row.quote_no}`)
+const searchParts = async (query) => {
+  if (!query) return
+  partLoading.value = true
+  try {
+    const data = await get('/parts', { search: query, limit: 30 })
+    partOptions.value = Array.isArray(data) ? data : (data.items || [])
+  } catch { /* silent */ } finally {
+    partLoading.value = false
+  }
 }
 
-const handleEdit = (row) => {
-  ElMessage.info(`编辑报价: ${row.quote_no}`)
+const loadDetail = async (id) => {
+  try {
+    return await get(`/quotes/${id}`)
+  } catch (e) {
+    ElMessage.error(e.message)
+    return null
+  }
 }
 
-const handleApprove = (row) => {
-  ElMessage.info(`审批报价: ${row.quote_no}`)
+// ---- handlers ----
+const resetFilter = () => { filter.approval_status = ''; page.current = 1; fetchQuotes() }
+
+const openCreateDialog = () => {
+  Object.assign(createForm, { part_name_id: null, customer_id: null, customer_product_no: '', vehicle_model: '', annual_usage: 0 })
+  partOptions.value = []
+  createVisible.value = true
 }
 
-const handleSizeChange = (size) => {
-  pagination.pageSize = size
-  fetchQuotes()
+const doCreate = async () => {
+  await createRef.value?.validate()
+  saving.value = true
+  try {
+    await post('/quotes', createForm)
+    ElMessage.success('报价创建成功')
+    createVisible.value = false
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
 }
 
-const handlePageChange = (page) => {
-  pagination.page = page
-  fetchQuotes()
+const openDetail = async (row) => {
+  currentQuote.value = await loadDetail(row.id)
+  detailVisible.value = true
 }
 
-onMounted(() => {
-  fetchQuotes()
+const openEditPricing = async (row) => {
+  const q = await loadDetail(row.id)
+  if (!q) return
+  activeId.value = row.id
+  Object.assign(pricingForm, {
+    stamping_fee: parseFloat(q.stamping_fee) || 0,
+    surface_fee: parseFloat(q.surface_fee) || 0,
+    treatment_fee: parseFloat(q.treatment_fee) || 0,
+    profit_margin: parseFloat(q.profit_margin) || 0,
+    final_price: q.final_price ? parseFloat(q.final_price) : null,
+  })
+  pricingVisible.value = true
+}
+
+const savePricing = async () => {
+  saving.value = true
+  try {
+    await post(`/quotes/${activeId.value}/pricing`, pricingForm)
+    ElMessage.success('定价已保存')
+    pricingVisible.value = false
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+const submitReview = async (row) => {
+  await ElMessageBox.confirm('提交技术审核？', '确认', { type: 'warning' })
+  try {
+    await post(`/quotes/${row.id}/submit-review`)
+    ElMessage.success('已提交技术审核')
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  }
+}
+
+const submitBoss = async (row) => {
+  await ElMessageBox.confirm('提交老板审批？', '确认', { type: 'warning' })
+  try {
+    await post(`/quotes/${row.id}/submit-boss`)
+    ElMessage.success('已提交老板审批')
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  }
+}
+
+const openBossApprove = (row) => {
+  activeId.value = row.id
+  approveForm.approved = true
+  approveForm.reject_reason = ''
+  approveVisible.value = true
+}
+
+const doBossApprove = async () => {
+  saving.value = true
+  try {
+    await post(`/quotes/${activeId.value}/boss-approve`, approveForm)
+    ElMessage.success(approveForm.approved ? '审批通过' : '已驳回')
+    approveVisible.value = false
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+const openFix = (row) => {
+  activeId.value = row.id
+  fixForm.fix_path = 'direct_production'
+  fixForm.final_price = null
+  fixVisible.value = true
+}
+
+const doFix = async () => {
+  saving.value = true
+  try {
+    await post(`/quotes/${activeId.value}/fix`, fixForm)
+    ElMessage.success('定点完成')
+    fixVisible.value = false
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+const openRevoke = (row) => {
+  activeId.value = row.id
+  revokeForm.revoke_reason = ''
+  revokeVisible.value = true
+}
+
+const doRevoke = async () => {
+  saving.value = true
+  try {
+    await post(`/quotes/${activeId.value}/revoke-nomination`, revokeForm)
+    ElMessage.success('定点已撤销')
+    revokeVisible.value = false
+    fetchQuotes()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---- Quick add part name ----
+const quickAddPartNameVisible = ref(false)
+const quickPartNameForm = reactive({
+  primary_category: '',
+  secondary_category: '',
+  customer_part_name: '',
+  remark: ''
 })
+const quickPartNameRef = ref(null)
+const quickPartNameRules = {
+  primary_category: [{ required: true, message: '请输入一级分类', trigger: 'blur' }]
+}
+
+const openQuickAddPartName = () => {
+  Object.assign(quickPartNameForm, {
+    primary_category: '',
+    secondary_category: '',
+    customer_part_name: '',
+    remark: ''
+  })
+  quickAddPartNameVisible.value = true
+}
+
+const doQuickAddPartName = async () => {
+  await quickPartNameRef.value?.validate()
+  saving.value = true
+  try {
+    const newPartName = await post('/part-names', quickPartNameForm)
+    ElMessage.success('零件名称已添加')
+    quickAddPartNameVisible.value = false
+    createForm.part_name_id = newPartName.id
+    await fetchPartNames()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---- Quick add part ----
+const quickAddPartVisible = ref(false)
+const quickPartForm = reactive({ part_number: '', internal_name: '', customer_id: null, customer_product_no: '', vehicle_model: '', material_name: '' })
+const quickPartRef = ref(null)
+
+const openQuickAddPart = () => {
+  Object.assign(quickPartForm, { part_number: '', internal_name: '', customer_id: null, customer_product_no: '', vehicle_model: '', material_name: '' })
+  quickAddPartVisible.value = true
+}
+
+const doQuickAddPart = async () => {
+  await quickPartRef.value?.validate()
+  saving.value = true
+  try {
+    const newPart = await post('/parts', quickPartForm)
+    ElMessage.success('零件已创建')
+    quickAddPartVisible.value = false
+    createForm.part_id = newPart.id
+    partOptions.value = [newPart]
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+// ---- Quick add customer ----
+const quickAddCustomerVisible = ref(false)
+const quickCustomerForm = reactive({ name: '', sheet_key: '' })
+const quickCustomerRef = ref(null)
+
+const openQuickAddCustomer = () => {
+  Object.assign(quickCustomerForm, { name: '', sheet_key: '' })
+  quickAddCustomerVisible.value = true
+}
+
+const doQuickAddCustomer = async () => {
+  await quickCustomerRef.value?.validate()
+  saving.value = true
+  try {
+    const newCustomer = await post('/customers', quickCustomerForm)
+    ElMessage.success('客户已创建')
+    quickAddCustomerVisible.value = false
+    createForm.customer_id = newCustomer.id
+    await fetchCustomers()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+onMounted(() => { fetchQuotes(); fetchCustomers(); fetchPartNames() })
 </script>
 
 <style scoped>
-.quotes-container {
-  padding: 20px;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-}
-
-.page-header h2 {
-  margin: 0;
-}
-
-.filter-card {
-  margin-bottom: 16px;
-}
-
-.pagination {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: 16px;
-}
+.quotes-container { padding: 20px; }
+.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.page-header h2 { margin: 0; }
+.filter-card { margin-bottom: 16px; }
+.pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
+.text-gray { color: #999; }
+.text-danger { color: #f56c6c; }
 </style>

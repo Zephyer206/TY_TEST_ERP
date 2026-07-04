@@ -36,13 +36,11 @@ from .production_service import (
     update_plan_completed_qty,
 )
 from .quote_service import (
-    add_surface_treatment,
     boss_approve,
     create_quote,
     fix_quote,
-    generate_quote_no,
     get_quote_by_id,
-    get_quote_no,
+    revoke_nomination,
     submit_for_tech_review,
     submit_tech_review,
     submit_to_boss,

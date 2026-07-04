@@ -45,7 +45,105 @@
 
 ---
 
-### 1.2 Quotes
+### 1.2 Part Name Dictionary (零件名称字典)
+
+#### GET /api/v1/part-names
+
+**Auth**: role >= 1
+
+**Query Parameters**:
+- `search` (optional): 搜索关键词（匹配一级、二级、三级分类）
+- `primary_category` (optional): 按一级分类过滤
+- `secondary_category` (optional): 按二级分类过滤
+- `is_active` (optional): 按启用状态过滤
+- `skip` (optional, default: 0): 分页偏移
+- `limit` (optional, default: 100): 每页数量
+
+**Response** (200):
+```json
+[
+  {
+    "id": 1,
+    "primary_category": "支架",
+    "secondary_category": "A型",
+    "customer_part_name": "前门支架",
+    "remark": "适用于XX车型",
+    "usage_count": 15,
+    "is_active": true,
+    "sort_order": 0,
+    "created_at": "2026-06-22T10:00:00Z",
+    "updated_at": "2026-06-22T10:00:00Z"
+  }
+]
+```
+
+#### POST /api/v1/part-names
+
+**Auth**: role >= 4
+
+**Request**:
+```json
+{
+  "primary_category": "支架",
+  "secondary_category": "A型",
+  "customer_part_name": "前门支架",
+  "remark": "适用于XX车型"
+}
+```
+
+**Response** (201):
+```json
+{
+  "id": 1,
+  "primary_category": "支架",
+  "secondary_category": "A型",
+  "customer_part_name": "前门支架",
+  "remark": "适用于XX车型",
+  "usage_count": 0,
+  "is_active": true,
+  "sort_order": 0,
+  "created_at": "2026-06-22T10:00:00Z",
+  "updated_at": "2026-06-22T10:00:00Z"
+}
+```
+
+**Errors**:
+- `400`: 相同的零件名称组合已存在 (UNIQUE constraint on primary_category + secondary_category + customer_part_name)
+
+#### PATCH /api/v1/part-names/{id}
+
+**Auth**: role >= 4
+
+**Request**:
+```json
+{
+  "primary_category": "支架",
+  "secondary_category": "B型",
+  "customer_part_name": "后门支架",
+  "remark": "更新备注",
+  "is_active": false
+}
+```
+
+**Response** (200): Same as POST response
+
+**Errors**:
+- `404`: 零件名称不存在
+- `400`: 相同的零件名称组合已存在
+
+#### DELETE /api/v1/part-names/{id}
+
+**Auth**: role >= 4
+
+**Response** (204): No content
+
+**Errors**:
+- `404`: 零件名称不存在
+- `400`: 该零件名称正在被 N 条记录使用，无法删除 (usage_count > 0)
+
+---
+
+### 1.3 Quotes
 
 #### POST /api/quotes
 
@@ -129,7 +227,7 @@
 
 ---
 
-### 1.3 Production
+### 1.4 Production
 
 #### POST /api/production/sessions/start
 
@@ -185,7 +283,7 @@
 
 ---
 
-### 1.4 Warehouse
+### 1.5 Warehouse
 
 #### POST /api/warehouse/material-batches
 
@@ -228,7 +326,7 @@
 
 ---
 
-### 1.5 QR Code Response Contract
+### 1.6 QR Code Response Contract
 
 #### GET /api/qr/lookup?code={qr_code}
 

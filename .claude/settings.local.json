@@ -34,7 +34,14 @@
       "Bash(pip show *)",
       "Bash(pip list *)",
       "Bash(taskkill /PID 6964 /F)",
-      "Bash(taskkill /F /PID 6964)"
+      "Bash(taskkill /F /PID 6964)",
+      "Bash(cat > *)",
+      "Bash(mv *.png docs/screenshots/ 2>/dev/null; echo \"Screenshots moved\")",
+      "Bash(awk '{print $NF}')"
+    ],
+    "additionalDirectories": [
+      "\\tmp",
+      "C:\\Users\\WIT_User\\Desktop\\Zephyr_test_Erp"
     ]
   }
 }

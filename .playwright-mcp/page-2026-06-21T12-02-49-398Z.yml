@@ -1,0 +1,143 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - complementary [ref=e5]:
+      - menubar [ref=e6]:
+        - menuitem "工作台" [ref=e7] [cursor=pointer]:
+          - img [ref=e9]
+          - generic [ref=e13]: 工作台
+        - menuitem "报价管理" [ref=e14] [cursor=pointer]:
+          - img [ref=e16]
+          - generic [ref=e18]: 报价管理
+        - menuitem "零件管理" [ref=e19] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e25]: 零件管理
+        - menuitem "生产计划" [ref=e26] [cursor=pointer]:
+          - img [ref=e28]
+          - generic [ref=e30]: 生产计划
+        - menuitem "机台管理" [ref=e31] [cursor=pointer]:
+          - img [ref=e33]
+          - generic [ref=e36]: 机台管理
+        - menuitem "打样管理" [ref=e37] [cursor=pointer]:
+          - img [ref=e39]
+          - generic [ref=e42]: 打样管理
+        - menuitem "模具管理" [ref=e43] [cursor=pointer]:
+          - img [ref=e45]
+          - generic [ref=e47]: 模具管理
+        - menuitem "仓库" [ref=e48] [cursor=pointer]:
+          - img [ref=e50]
+          - generic [ref=e52]: 仓库
+        - menuitem "原材料管理" [ref=e53] [cursor=pointer]:
+          - img [ref=e55]
+          - generic [ref=e57]: 原材料管理
+        - menuitem "包装管理" [ref=e58] [cursor=pointer]:
+          - img [ref=e60]
+          - generic [ref=e62]: 包装管理
+        - menuitem "质量管控" [ref=e63] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e68]: 质量管控
+        - menuitem "喷涂管理" [ref=e69] [cursor=pointer]:
+          - img [ref=e71]
+          - generic [ref=e73]: 喷涂管理
+    - generic [ref=e74]:
+      - generic [ref=e76]:
+        - heading "Zephyr ERP" [level=3] [ref=e77]
+        - button "管理员" [expanded] [ref=e79] [cursor=pointer]:
+          - text: 管理员
+          - img [ref=e81]
+      - main [ref=e83]:
+        - generic [ref=e84]:
+          - generic [ref=e85]:
+            - heading "欢迎回来，管理员" [level=1] [ref=e86]
+            - paragraph [ref=e87]: 2026年6月21日星期日 20:02
+          - generic [ref=e88]:
+            - generic [ref=e90]:
+              - img [ref=e93]
+              - generic [ref=e95]:
+                - generic [ref=e96]: "0"
+                - generic [ref=e97]: 待审批报价
+            - generic [ref=e99]:
+              - img [ref=e102]
+              - generic [ref=e104]:
+                - generic [ref=e105]: "0"
+                - generic [ref=e106]: 进行中计划
+            - generic [ref=e108]:
+              - img [ref=e111]
+              - generic [ref=e114]:
+                - generic [ref=e115]: "0"
+                - generic [ref=e116]: 今日检验
+            - generic [ref=e118]:
+              - img [ref=e121]
+              - generic [ref=e125]:
+                - generic [ref=e126]: "0"
+                - generic [ref=e127]: 库存预警
+          - generic [ref=e128]:
+            - generic [ref=e130]:
+              - generic [ref=e132]:
+                - generic [ref=e133]: 待办事项
+                - superscript [ref=e135]: "3"
+              - generic [ref=e140]:
+                - generic [ref=e141]:
+                  - generic [ref=e142] [cursor=pointer]:
+                    - generic [ref=e143]:
+                      - checkbox "审批报价单 Q-20250613-001"
+                    - generic [ref=e145]: 审批报价单 Q-20250613-001
+                  - generic [ref=e147]: 紧急
+                - generic [ref=e148]:
+                  - generic [ref=e149] [cursor=pointer]:
+                    - generic [ref=e150]:
+                      - checkbox "完成零件首件检验"
+                    - generic [ref=e152]: 完成零件首件检验
+                  - generic [ref=e154]: 普通
+                - generic [ref=e155]:
+                  - generic [ref=e156] [cursor=pointer]:
+                    - generic [ref=e157]:
+                      - checkbox "更新生产计划" [checked]
+                    - generic [ref=e159]: 更新生产计划
+                  - generic [ref=e161]: 低
+            - generic [ref=e163]:
+              - generic [ref=e166]: 最新动态
+              - list [ref=e171]:
+                - listitem [ref=e172]:
+                  - generic [ref=e175]:
+                    - generic [ref=e176]: 10:30
+                    - generic [ref=e179]:
+                      - heading "报价单已审批" [level=4] [ref=e180]
+                      - paragraph [ref=e181]: 报价单 Q-20250612-001 已通过老板审批
+                - listitem [ref=e182]:
+                  - generic [ref=e185]:
+                    - generic [ref=e186]: 09:15
+                    - generic [ref=e189]:
+                      - heading "生产计划已开始" [level=4] [ref=e190]
+                      - paragraph [ref=e191]: 零件 PRT-001 开始生产
+                - listitem [ref=e192]:
+                  - generic [ref=e194]:
+                    - generic [ref=e195]: 08:45
+                    - generic [ref=e198]:
+                      - heading "来料检验完成" [level=4] [ref=e199]
+                      - paragraph [ref=e200]: 批次 B-20250612-001 检验合格
+          - generic [ref=e201]:
+            - generic [ref=e203]:
+              - generic [ref=e204]: 机台状态概览
+              - button "查看详情" [ref=e205] [cursor=pointer]:
+                - generic [ref=e206]: 查看详情
+            - generic [ref=e208]:
+              - generic [ref=e210]:
+                - generic [ref=e211]: "5"
+                - generic [ref=e212]: 运行中
+              - generic [ref=e214]:
+                - generic [ref=e215]: "2"
+                - generic [ref=e216]: 空闲
+              - generic [ref=e218]:
+                - generic [ref=e219]: "1"
+                - generic [ref=e220]: 故障
+              - generic [ref=e222]:
+                - generic [ref=e223]: "1"
+                - generic [ref=e224]: 维修中
+              - generic [ref=e226]:
+                - generic [ref=e227]: "0"
+                - generic [ref=e228]: 离线
+  - menu "管理员" [active] [ref=e233]:
+    - menuitem "个人中心" [ref=e234] [cursor=pointer]
+    - menuitem "视角切换" [ref=e235] [cursor=pointer]
+    - separator [ref=e236]
+    - menuitem "退出登录" [ref=e237] [cursor=pointer]

@@ -50,6 +50,11 @@ from .warehouse import (
     ScanType,
     Supplier,
 )
+# Dictionary tables
+from .part_name_dict import PartNameDict
+from .material_dict import MaterialDict
+from .machine_tonnage_dict import MachineTonnageDict
+from .mold_type_dict import MoldTypeDict
 
 __all__ = [
     "AdminContextSwitch",
@@ -75,15 +80,19 @@ __all__ = [
     "Machine",
     "MachineState",
     "MachineStatusLog",
+    "MachineTonnageDict",
     "Material",
     "MaterialBatch",
     "MaterialBatchChild",
+    "MaterialDict",
     "MoldFeeMode",
+    "MoldTypeDict",
     "NominationStatus",
     "OQCInspection",
     "PackagingRecord",
     "PackagingStatus",
     "Part",
+    "PartNameDict",
     "PartState",
     "PatrolInspection",
     "PlanMachineAssignment",

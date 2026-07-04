@@ -15,7 +15,7 @@ async def get_part_by_id(
 ) -> Optional[Part]:
     """Get a part by ID."""
     result = await db.execute(
-        select(Part).where(Part.id == part_id, Part.is_deleted == False)
+        select(Part).where(Part.id == part_id)
     )
     return result.scalar_one_or_none()
 
@@ -28,7 +28,6 @@ async def get_parts_by_customer(
     result = await db.execute(
         select(Part).where(
             Part.customer_id == customer_id,
-            Part.is_deleted == False,
         ).order_by(Part.created_at.desc())
     )
     return result.scalars().all()
@@ -40,7 +39,7 @@ async def update_part_state(
     new_state: PartState,
 ) -> Part:
     """Update part state."""
-    part.state = new_state
+    part.part_status = new_state.value if hasattr(new_state, 'value') else new_state
     part.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(part)
@@ -52,10 +51,9 @@ async def transition_to_mass_production(
     part: Part,
 ) -> Part:
     """Transition part from Sampling to MassProduction."""
-    if part.state != PartState.SAMPLING:
-        raise ValueError(f"Part must be in Sampling state, current: {part.state.value}")
-
-    part.state = PartState.MASSPRODUCTION
+    if part.part_status != PartState.SAMPLING:
+        raise ValueError(f"Part must be in Sampling state, current: {part.part_status}")
+    part.part_status = PartState.MASSPRODUCTION
     part.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(part)
@@ -67,10 +65,9 @@ async def transition_to_sampling(
     part: Part,
 ) -> Part:
     """Transition part to Sampling state (for sample-first fix path)."""
-    if part.state != PartState.DRAFT:
-        raise ValueError(f"Part must be in Draft state, current: {part.state.value}")
-
-    part.state = PartState.SAMPLING
+    if part.part_status != PartState.DRAFT:
+        raise ValueError(f"Part must be in Draft state, current: {part.part_status}")
+    part.part_status = PartState.SAMPLING
     part.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(part)

@@ -30,6 +30,18 @@ const routes: RouteRecordRaw[] = [
         meta: { roleLevel: 3 },
       },
       {
+        path: 'customers',
+        name: 'Customers',
+        component: () => import('@/views/customers/index.vue'),
+        meta: { roleLevel: 3 },
+      },
+      {
+        path: 'dictionary',
+        name: 'Dictionary',
+        component: () => import('@/views/dictionary/index.vue'),
+        meta: { roleLevel: 4 },
+      },
+      {
         path: 'production',
         name: 'Production',
         component: () => import('@/views/production/index.vue'),
@@ -154,6 +166,12 @@ const routes: RouteRecordRaw[] = [
         name: 'CoatingColors',
         component: () => import('@/views/coating/colors.vue'),
         meta: { roleLevel: 3 },
+      },
+      {
+        path: 'admin/context-switch',
+        name: 'AdminContextSwitch',
+        component: () => import('@/views/admin/context-switch.vue'),
+        meta: { roleLevel: 10 },
       },
     ],
   },

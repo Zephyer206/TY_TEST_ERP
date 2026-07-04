@@ -1,99 +1,55 @@
-"""Pydantic schemas for Part."""
+"""Pydantic schemas for Part - 匹配实际数据库字段."""
 
 from datetime import datetime
-from decimal import Decimal
 from typing import Optional
-
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.part import PartState
 
-
-class PartBase(BaseModel):
-    """Base schema for part."""
-
-    part_name: str = Field(max_length=200)
-    customer_id: int
-    customer_part_no: Optional[str] = Field(default=None, max_length=100)
+class PartCreate(BaseModel):
+    part_number: str = Field(max_length=50)
+    internal_name: Optional[str] = Field(default=None, max_length=200)
+    customer_id: Optional[int] = None
+    customer_product_no: Optional[str] = Field(default=None, max_length=100)
     vehicle_model: Optional[str] = Field(default=None, max_length=100)
-    drawing_no: Optional[str] = Field(default=None, max_length=100)
-    material: Optional[str] = Field(default=None, max_length=100)
-    thickness: Optional[float] = None
-    width: Optional[float] = None
-    weight_kg: Optional[float] = None
-    cavity_count: Optional[int] = None
-    tonnage: Optional[float] = None
-
-
-class PartCreate(PartBase):
-    """Schema for creating a part."""
-
-    pass
+    material_name: Optional[str] = Field(default=None, max_length=100)
+    remark: Optional[str] = Field(default=None, max_length=500)
 
 
 class PartUpdate(BaseModel):
-    """Schema for updating a part."""
-
-    part_name: Optional[str] = Field(default=None, max_length=200)
-    customer_part_no: Optional[str] = Field(default=None, max_length=100)
+    internal_name: Optional[str] = Field(default=None, max_length=200)
+    customer_id: Optional[int] = None
+    customer_product_no: Optional[str] = Field(default=None, max_length=100)
     vehicle_model: Optional[str] = Field(default=None, max_length=100)
-    drawing_no: Optional[str] = Field(default=None, max_length=100)
-    material: Optional[str] = Field(default=None, max_length=100)
-    thickness: Optional[float] = None
-    width: Optional[float] = None
-    weight_kg: Optional[float] = None
-    cavity_count: Optional[int] = None
-    tonnage: Optional[float] = None
-    mold_id: Optional[int] = None
-    mold_no: Optional[str] = Field(default=None, max_length=50)
+    material_name: Optional[str] = Field(default=None, max_length=100)
+    mold_number: Optional[str] = Field(default=None, max_length=50)
     mold_type: Optional[str] = Field(default=None, max_length=50)
+    press_tonnage: Optional[str] = Field(default=None, max_length=50)
     ppap_no: Optional[str] = Field(default=None, max_length=100)
-    drawing_path: Optional[str] = None
+    remark: Optional[str] = Field(default=None, max_length=500)
 
 
-class PartResponse(PartBase):
-    """Schema for part response."""
-
+class PartResponse(BaseModel):
     id: int
-    part_no: str
-    quote_id: Optional[int] = None
-    state: PartState
-    mold_id: Optional[int] = None
-    mold_no: Optional[str] = None
-    mold_type: Optional[str] = None
-    ppap_no: Optional[str] = None
-    price_snapshot: Optional[dict] = None
-    stock_pcs: int = 0
-    drawing_path: Optional[str] = None
-    created_at: datetime
-    updated_at: datetime
-
-    model_config = ConfigDict(from_attributes=True)
-
-
-class PartListResponse(BaseModel):
-    """Schema for part list (summary)."""
-
-    id: int
-    part_no: str
-    part_name: str
-    state: PartState
-    customer_id: int
+    part_number: str
+    internal_name: Optional[str] = None
+    customer_id: Optional[int] = None
     customer_name: Optional[str] = None
-    material: Optional[str] = None
+    customer_product_no: Optional[str] = None
+    vehicle_model: Optional[str] = None
+    material_name: Optional[str] = None
+    part_status: str
     stock_pcs: int = 0
-    created_at: datetime
+    mold_number: Optional[str] = None
+    mold_type: Optional[str] = None
+    press_tonnage: Optional[str] = None
+    ppap_no: Optional[str] = None
+    remark: Optional[str] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
+# Keep for import compatibility
 class PartImportRow(BaseModel):
-    """Schema for a single row in the import template."""
-
     material: Optional[str] = None
-    net_weight_kg: Optional[float] = None
-    gross_weight_kg: Optional[float] = None
-    material_unit_price: Optional[Decimal] = None
-    scrap_price: Optional[Decimal] = None
-    surface_treatment: Optional[str] = None
-    drawing_path: Optional[str] = None

@@ -1,14 +1,52 @@
-"""Quote model - 简化版本，匹配云端数据库实际结构."""
+"""Quote model - 匹配云端数据库实际结构."""
 
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum as PyEnum
-from typing import Optional
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import Boolean, DateTime, Integer, JSON, Numeric, String, Text, ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
+
+
+
+class QuoteState(str, PyEnum):
+    """Quote status enumeration — 匹配数据库大写值."""
+    DRAFT = "DRAFT"
+    WAITING_FOR_TECH = "WAITING_FOR_TECH"
+    TECH_REVIEW = "TECH_REVIEW"
+    TECH_APPROVED = "TECH_APPROVED"
+    TECH_REJECTED = "TECH_REJECTED"
+    PENDING_BOSS = "PENDING_BOSS"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    FIXED = "FIXED"
+    CANCELLED = "CANCELLED"
+
+
+class NominationStatus(str, PyEnum):
+    UNFIXED = "unfixed"
+    FIXED = "fixed"
+    REVOKED = "revoked"
+
+
+class MoldFeeMode(str, PyEnum):
+    DIRECT = "direct"
+    AMORTIZED = "amortized"
+
+
+class FixPath(str, PyEnum):
+    DIRECT_PRODUCTION = "direct_production"
+    SAMPLE_FIRST = "sample_first"
+
+
+class SurfaceTreatment(str, PyEnum):
+    NONE = "none"
+    ELECTROPLATE = "electroplate"
+    POWDER_COATING = "powder_coating"
+    PAINTING = "painting"
 
 
 class Quote(Base):
@@ -16,7 +54,6 @@ class Quote(Base):
 
     __tablename__ = "quotes"
 
-    # 基础字段
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     part_id: Mapped[int] = mapped_column(Integer, nullable=False)
     quote_serial: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
@@ -44,14 +81,12 @@ class Quote(Base):
     treatment_fee: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=0)
     profit_margin: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=0)
     final_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
-
-    # 价格覆盖
     unit_price_override: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
     material_cost_override: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
     final_price_override: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
     override_fields: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True, default=[])
 
-    # 审批流程
+    # 审批流程 — approval_status 是实际字段名
     approval_status: Mapped[str] = mapped_column(String(50), nullable=False, default='DRAFT')
     rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     parent_quote_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -80,7 +115,7 @@ class Quote(Base):
     mold_discount_mode: Mapped[str] = mapped_column(String(50), nullable=True, default='direct')
     mold_discount_rate: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=True, default=1.0)
 
-    # 其他字段
+    # 其他
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     die_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     customer_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -96,52 +131,3 @@ class Quote(Base):
 
     def __repr__(self) -> str:
         return f"<Quote {self.quote_serial or self.id}>"
-
-
-# 保留旧的枚举类型用于兼容性
-class NominationStatus(str, PyEnum):
-    """Nomination status enumeration."""
-    UNFIXED = "unfixed"
-    FIXED = "fixed"
-    REVOKED = "revoked"
-
-
-class QuoteState(str, PyEnum):
-    """Quote status enumeration."""
-    WAITING_FOR_TECH = "waiting_for_tech"
-    TECH_REVIEW = "tech_review"
-    TECH_APPROVED = "tech_approved"
-    TECH_REJECTED = "tech_rejected"
-    DRAFT = "draft"
-    PENDING_BOSS = "pending_boss"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    FIXED = "fixed"
-    CANCELLED = "cancelled"
-
-
-class MoldFeeMode(str, PyEnum):
-    """Mold fee charging mode."""
-    DIRECT = "direct"
-    AMORTIZED = "amortized"
-
-
-class FixPath(str, PyEnum):
-    """Customer fixation path after approval."""
-    DIRECT_PRODUCTION = "direct_production"
-    SAMPLE_FIRST = "sample_first"
-
-
-class SurfaceTreatment(str, PyEnum):
-    """Surface treatment types."""
-    NONE = "none"
-    ELECTROPLATE = "electroplate"
-    POWDER_COATING = "powder_coating"
-    PAINTING = "painting"
-
-
-# QuoteItem 暂时注释，如果云端数据库有 quote_items 表再启用
-# class QuoteItem(Base):
-#     """Quote item model."""
-#     __tablename__ = "quote_items"
-#     ...

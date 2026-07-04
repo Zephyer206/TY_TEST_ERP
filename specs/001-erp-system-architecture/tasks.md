@@ -10,7 +10,7 @@
 
 **Purpose**: Project initialization and basic structure
 
-**Total tasks**: 111
+**Total tasks**: 137
 
 - [x] T001 创建项目目录结构：backend/app/、frontend/、miniprogram/、mobile-h5/
 - [x] T002 初始化 Python 后端项目：requirements.txt、.env.example
@@ -415,9 +415,81 @@
 | US10 | 12 | P3 | T085-T090 | 超级管理员视角切换 |
 | QR System | 13 | — | T091-T098 | 二维码系统（跨用户故事） |
 | Polish | 14 | — | T099-T110 | 收尾与优化 |
-| **Total** | | | **111 tasks** | |
+| Enhancement | 15 | — | T111-T137 | 零件名称字典三级分类系统（2026-06-22） |
+| **Total** | | | **137 tasks** | |
 
 **Parallel Opportunities**: 标记为 [P] 的任务可并行执行；Phase 3-12 的用户故事在 Foundational 完成后可并行实施。
+
+---
+
+## Phase 15: Part Name Dictionary Enhancement (零件名称字典优化)
+
+**Purpose**: 将零件名称从单字段结构升级为三级分类系统，支持「一级分类 → 二级分类 → 客户零件名称」层级管理
+
+**Date**: 2026-06-22
+
+**Context**: 原有单字段 `name` + `category` 结构无法满足复杂零件分类需求，重构为三级分类：
+- **一级分类** (primary_category): 零件主类型（必填）
+- **二级分类** (secondary_category): 零件子类型（可选）
+- **三级分类** (customer_part_name): 客户特定名称（可选）
+
+### 15.1 Database Migration
+
+- [x] T111 设计三级分类数据库架构：part_name_dict 表添加 primary_category、secondary_category、customer_part_name、remark 字段
+- [x] T112 创建 backend/migrate_remote_db.py 数据库迁移脚本
+- [x] T113 执行远程 PostgreSQL 数据库迁移（124.222.29.229:5432/stamping_system）
+- [x] T114 将现有数据从 name/category 字段迁移到新三级结构
+- [x] T115 设置 primary_category NOT NULL 约束
+- [x] T116 创建 UNIQUE(primary_category, secondary_category, customer_part_name) 唯一约束
+
+### 15.2 Backend API Updates
+
+- [x] T117 [P] 更新 backend/app/models/part_name_dict.py ORM 模型定义
+- [x] T118 [P] 更新 backend/app/schemas/part.py：PartNameCreate、PartNameResponse schema
+- [x] T119 [P] 更新 backend/app/api/part_names.py：POST /api/v1/part-names 端点（支持三级分类）
+- [x] T120 [P] 更新 backend/app/api/part_names.py：GET /api/v1/part-names 端点（支持按分类过滤）
+- [x] T121 [P] 更新 backend/app/api/part_names.py：PATCH /api/v1/part-names/{id} 端点
+- [x] T122 实现重复检查逻辑：三级组合唯一性验证
+- [x] T123 实现使用计数保护：usage_count > 0 时禁止删除
+
+### 15.3 Frontend Implementation
+
+- [x] T124 在 frontend/src/views/quotes/index.vue 中实现三级级联选择器（Element Plus Cascader）
+- [x] T125 实现快捷新增零件名称对话框（一级分类下拉 + 手动输入二级/三级）
+- [x] T126 修复 Vue 模板语法错误：删除重复 `</el-form-item>` 标签
+- [x] T127 移除废弃的 description 字段表单项
+- [x] T128 更新 frontend/src/views/parts/index.vue 零件管理页面（支持三级分类显示）
+
+### 15.4 Testing & Bug Fixes
+
+- [x] T129 使用 Playwright 测试三级分类 API 响应字段
+- [x] T130 修复 Uvicorn --reload 模式挂起问题（Windows 特定，改用生产模式启动）
+- [x] T131 验证前端级联选择器与后端 API 集成
+- [x] T132 端到端测试：创建报价单 → 快捷新增零件名称 → 保存成功
+
+### 15.5 Documentation Updates
+
+- [x] T133 [P] 更新 specs/001-erp-system-architecture/data-model.md：添加 part_name_dict 表结构
+- [x] T134 [P] 更新 specs/001-erp-system-architecture/data-model.md：添加索引定义
+- [x] T135 [P] 更新 specs/001-erp-system-architecture/data-model.md：添加验证规则
+- [x] T136 [P] 更新 specs/001-erp-system-architecture/contracts/README.md：添加零件名称字典 API 契约（1.2 节）
+- [x] T137 更新 specs/001-erp-system-architecture/tasks.md：添加 Phase 15 任务记录
+
+### Integration Points
+
+- **Quotes (US1)**: 报价单快捷新增功能集成三级分类选择器
+- **Parts (Foundational)**: 零件创建表单支持从字典选择标准化名称
+- **Data Model**: 三级分类系统成为零件命名的基础架构
+
+### Independent Test
+
+1. 登录系统（admin / 123456）
+2. 进入报价管理页面
+3. 点击"快捷新增零件名称"
+4. 选择一级分类"支架" → 输入二级分类"A型" → 输入客户零件名称"前门支架"
+5. 保存成功，返回三级分类数据
+6. 在报价单中使用级联选择器选择刚创建的零件名称
+7. 验证保存的报价单包含完整三级分类信息
 
 ---
 
