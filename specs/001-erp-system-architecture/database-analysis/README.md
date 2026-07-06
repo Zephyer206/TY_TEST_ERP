@@ -28,6 +28,12 @@
 - 维护策略和最佳实践
 - **用途**：定期更新实际数据库文档
 
+### Part 实体组设计文档
+- [part-entity-parts-table-final.md](part-entity-parts-table-final.md) — parts / part_name_dict
+- [part-entity-aliases-table-final.md](part-entity-aliases-table-final.md) — part_customer_aliases
+- [part-entity-price-tables-final.md](part-entity-price-tables-final.md) — price_accounts / price_adjustments
+- [material-treatment-price-history-final.md](material-treatment-price-history-final.md) — material_dict / treatment_dict / 客户材料&工序价格历史
+
 ---
 
 ## 🎯 项目策略
@@ -57,7 +63,7 @@
 |-------|---------|---------|--------|
 | User & Auth | ✅ 已设计 | 🟡 部分实现 | 补齐特殊权限系统 |
 | Quote | ✅ 已设计 | 🟡 简化版 | 讨论一对多 vs 一对一 |
-| **Part** | ✅ 已设计 | 🟡 替代方案 | ✅ **讨论完成** |
+| **Part（含材料/工序价格）** | ✅ 已设计 | 🟡 替代方案 | ✅ **讨论完成** |
 | Tooling | ✅ 已设计 | 🟢 已实现 | 待验证 |
 | Machine | ✅ 已设计 | 🟢 已实现 | 待验证 |
 | Production | ✅ 已设计 | 🟢 已实现 | 待验证 |
