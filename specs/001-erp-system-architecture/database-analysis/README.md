@@ -28,10 +28,16 @@
 - 维护策略和最佳实践
 - **用途**：定期更新实际数据库文档
 
+### 设计总结文档
+- [complete-database-design-summary.md](complete-database-design-summary.md) — **15张核心表完整设计总结**（已讨论完毕，可进入实施阶段）
+
 ### Part 实体组设计文档
 - [part-entity-parts-table-final.md](part-entity-parts-table-final.md) — parts / part_name_dict
 - [part-entity-aliases-table-final.md](part-entity-aliases-table-final.md) — part_customer_aliases
 - [part-entity-price-tables-final.md](part-entity-price-tables-final.md) — price_accounts / price_adjustments
+
+### Customer 实体组设计文档
+- [customer-entity-group-final.md](customer-entity-group-final.md) — Customer 实体组完整设计（customers + 价格体系）
 - [material-treatment-price-history-final.md](material-treatment-price-history-final.md) — material_dict / treatment_dict / 客户材料&工序价格历史
 
 ---
