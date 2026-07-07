@@ -6,7 +6,14 @@ from .customer import Customer
 from .die import Die
 from .machine import Machine, MachineState, MachineStatusLog
 from .part import Part, PartState
-from .price import AnnualPriceRecord, PriceAccount, PriceAdjustment, PriceAdjustmentType
+from .price import (
+    CustomerMaterialPrice,
+    CustomerTreatmentPrice,
+    PriceAccount,
+    PriceAdjustment,
+    PriceAdjustmentType,
+    TreatmentDict,
+)
 from .production import (
     PlanMachineAssignment,
     PlanStatus,
@@ -58,8 +65,9 @@ from .mold_type_dict import MoldTypeDict
 
 __all__ = [
     "AdminContextSwitch",
-    "AnnualPriceRecord",
     "AuditLog",
+    "CustomerMaterialPrice",
+    "CustomerTreatmentPrice",
     "BatchStatus",
     "BatchTransaction",
     "CoatingColor",
@@ -122,5 +130,6 @@ __all__ = [
     "ToolingMaintenanceLog",
     "ToolingPart",
     "ToolingState",
+    "TreatmentDict",
     "User",
 ]

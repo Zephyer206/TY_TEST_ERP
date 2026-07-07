@@ -4,10 +4,13 @@ from .part import *
 from .price import *
 from .quote import *
 from .sampling import *
+from .treatment import *
 
 __all__ = [
-    "AnnualPriceRecordCreate",
-    "AnnualPriceRecordResponse",
+    "CustomerMaterialPriceCreate",
+    "CustomerMaterialPriceResponse",
+    "CustomerTreatmentPriceCreate",
+    "CustomerTreatmentPriceResponse",
     "CurrentPriceResponse",
     "FixUpdate",
     "PartCreate",
@@ -19,6 +22,7 @@ __all__ = [
     "PriceAccountListResponse",
     "PriceAccountResponse",
     "PriceAccountUpdate",
+    "PriceAdjustmentApprovalRequest",
     "PriceAdjustmentCreate",
     "PriceAdjustmentResponse",
     "PricingUpdate",
@@ -40,4 +44,7 @@ __all__ = [
     "SurfaceTreatmentResponse",
     "TechApprovalUpdate",
     "TechReviewUpdate",
+    "TreatmentDictCreate",
+    "TreatmentDictResponse",
+    "TreatmentDictUpdate",
 ]

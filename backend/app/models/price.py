@@ -54,14 +54,84 @@ class PriceAccount(Base):
         return f"<PriceAccount {self.id}>"
 
 
-# 以下模型在云端数据库中不存在，暂时注释
-class AnnualPriceRecord(Base):
-    """Annual price record - 占位符，实际表不存在."""
-    __tablename__ = "annual_price_records_placeholder"
+# ============= 新增：价格管理系统模型 (T011-T014) =============
+
+
+class TreatmentDict(Base):
+    """工序字典表 - T013."""
+
+    __tablename__ = "treatment_dict"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    calc_mode: Mapped[str] = mapped_column(String(20), nullable=False, default="manual")
+    default_rate: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0"))
+    unit: Mapped[str] = mapped_column(String(20), nullable=False, default="元/件")
+    is_active: Mapped[bool] = mapped_column(nullable=False, default=True)
+    sort_order: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<TreatmentDict {self.name}>"
+
+
+class CustomerMaterialPrice(Base):
+    """客户材料价格历史表 - T011."""
+
+    __tablename__ = "customer_material_prices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    customer_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    material_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    scrap_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
+    quote_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    quoted_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<CustomerMaterialPrice {self.customer_id}-{self.material_id}>"
+
+
+class CustomerTreatmentPrice(Base):
+    """客户工序价格历史表 - T012."""
+
+    __tablename__ = "customer_treatment_prices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    customer_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    treatment_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    calc_mode_snapshot: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    unit_snapshot: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    quote_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
+    quoted_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<CustomerTreatmentPrice {self.customer_id}-{self.treatment_id}>"
 
 
 class PriceAdjustment(Base):
-    """Price adjustment - 占位符，实际表不存在."""
-    __tablename__ = "price_adjustments_placeholder"
+    """价格调整审批表 - T014（替换占位符）."""
+
+    __tablename__ = "price_adjustments"
+
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    price_account_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    old_price: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    new_price: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    adjustment_type: Mapped[str] = mapped_column(String(20), nullable=False)  # increase / decrease
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # pending / approved / rejected
+    created_by: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    approved_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+
+    def __repr__(self) -> str:
+        return f"<PriceAdjustment {self.id} {self.status}>"
