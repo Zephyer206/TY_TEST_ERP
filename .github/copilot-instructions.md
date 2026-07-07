@@ -1,15 +1,22 @@
 <!-- SPECKIT START -->
-**Current Active Feature**: `001-erp-system-architecture`
-**Plan**: `specs/001-erp-system-architecture/plan.md`
-**Data Model**: `specs/001-erp-system-architecture/data-model.md`
-**Quickstart**: `specs/001-erp-system-architecture/quickstart.md`
+**Current Active Feature**: `003-price-management-system`
+**Plan**: `specs/003-price-management-system/plan.md`
+**Data Model**: `specs/003-price-management-system/data-model.md`
+**Research**: `specs/003-price-management-system/research.md`
+**Tasks**: `specs/003-price-management-system/tasks.md`
+**Quickstart**: `specs/003-price-management-system/quickstart.md`
 
-**Tech Stack**: Python 3.11 + FastAPI (backend), Vue 3 + Element Plus (frontend), 微信小程序 (扫码终端主方案), PostgreSQL 15, Redis, 云端OSS
-**Architecture**: Monorepo, RESTful API, JWT auth, role-based permissions (role_level 1-10)
-**Key Patterns**: State machines for quote/part/tooling states, event sourcing for audit logs, QR code pre-generation + OSS storage + CDN
-**Deployment**: Cloud (轻量级云服务器 + Docker), 微信小程序主方案
+**Feature Summary**: 价格管理系统后端 - 客户材料/工序价格历史、工序字典管理、价格调整审批流程
+**Branch**: `003-price-management-system`
+**Tech Stack**: Python 3.11 + FastAPI + asyncpg + PostgreSQL 15 + Pydantic v2 + Alembic
+**Key Components**: 
+- 4张新表：customer_material_prices, customer_treatment_prices, treatment_dict, price_adjustments
+- 7个数据库迁移脚本（废弃旧表 material_base_prices 等）
+- 完整 CRUD API（遵循项目现有风格）
+- 审批工作流（业务经理申请 → 老板审批 → 价格自动更新）
+**Constitution**: ✅ asyncpg（非 psycopg2）、✅ SQL 聚合、✅ @require_role、✅ 审计完整性
 
-Read the plan before implementing any code. All backend code under `backend/`, frontend under `frontend/`, miniprogram under `miniprogram/`.
+Read the plan and tasks before implementing. All code under `backend/app/`, migrations under `backend/scripts/migrations/`, tests under `backend/tests/`.
 <!-- SPECKIT END -->
 
 ---
