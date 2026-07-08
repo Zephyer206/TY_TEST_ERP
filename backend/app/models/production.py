@@ -92,6 +92,7 @@ class ProductionPlan(Base):
     )
 
     # Relationships
+    part: Mapped["Part"] = relationship("Part", foreign_keys=[part_id])
     assignments: Mapped[list["PlanMachineAssignment"]] = relationship(
         "PlanMachineAssignment", back_populates="plan", cascade="all, delete-orphan"
     )

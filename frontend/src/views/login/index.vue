@@ -50,7 +50,7 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    const { data } = await api.post('/v1/auth/login', form)
+    const { data } = await api.post('/auth/login', form)
     userStore.setToken(data.access_token)
 
     // 设置基本用户信息（从 token 或默认值）
