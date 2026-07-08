@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.price import (
-    AnnualPriceRecord,
+    # AnnualPriceRecord,  # 已废弃，使用新的价格历史表
     PriceAccount,
     PriceAdjustment,
     PriceAdjustmentType,
@@ -137,42 +137,23 @@ async def add_annual_price_record(
     annual_qty: Optional[int] = None,
     notes: Optional[str] = None,
     created_by: Optional[User] = None,
-) -> AnnualPriceRecord:
-    """Add an annual price record to a price account."""
-    record = AnnualPriceRecord(
-        price_account_id=account_id,
-        year=year,
-        unit_price=unit_price,
-        annual_qty=annual_qty,
-        notes=notes,
-        created_by=created_by.id if created_by else None,
-    )
-    db.add(record)
+):
+    """Add an annual price record to a price account.
 
-    account = await get_price_account_by_id(db, account_id)
-    if account:
-        account.current_price = unit_price
-        account.price_year = year
-
-    await db.commit()
-    await db.refresh(record)
-    return record
+    ⚠️ 已废弃：使用新的 customer_material_prices 和 customer_treatment_prices 表
+    """
+    raise NotImplementedError("Use customer_material_prices / customer_treatment_prices instead")
 
 
 async def get_annual_records(
     db: AsyncSession,
     account_id: int,
-) -> Sequence[AnnualPriceRecord]:
-    """Get all annual records for a price account."""
-    result = await db.execute(
-        select(AnnualPriceRecord)
-        .where(
-            AnnualPriceRecord.price_account_id == account_id,
-            AnnualPriceRecord.is_deleted == False,
-        )
-        .order_by(AnnualPriceRecord.year.desc())
-    )
-    return result.scalars().all()
+):
+    """Get all annual records for a price account.
+
+    ⚠️ 已废弃：使用新的价格历史查询 API
+    """
+    return []  # 返回空列表以保持兼容性
 
 
 def compute_current_price_from_records(
