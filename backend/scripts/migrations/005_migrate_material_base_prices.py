@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy import text
-from app.database import async_engine
+from app.database import engine
 
 
 async def migrate():
@@ -46,7 +46,7 @@ async def migrate():
     END $$;
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         result = await conn.execute(text(sql))
         # asyncpg 会自动打印 RAISE NOTICE 的消息
 

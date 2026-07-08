@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy import text
-from app.database import async_engine
+from app.database import engine
 
 
 async def migrate():
@@ -48,7 +48,7 @@ async def migrate():
     COMMENT ON COLUMN customer_treatment_prices.unit_snapshot IS '快照：当时的单位';
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text(sql))
 
     print("✅ customer_treatment_prices 表创建成功")
@@ -61,7 +61,7 @@ async def rollback():
     DROP TABLE IF EXISTS customer_treatment_prices CASCADE;
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text(sql))
 
     print("✅ customer_treatment_prices 表已删除")

@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy import text
-from app.database import async_engine
+from app.database import engine
 
 
 async def migrate():
@@ -41,7 +41,7 @@ async def migrate():
     END $$;
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text(sql))
 
     print("✅ 工序字典数据迁移完成（白名单10条，测试数据已过滤）")

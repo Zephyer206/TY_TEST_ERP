@@ -99,17 +99,21 @@ async def health_check() -> dict[str, Any]:
 from app.api.admin import router as admin_router
 from app.api.auth import router as auth_router
 from app.api.coating import router as coating_router
+from app.api.customer_prices import router as customer_prices_router
 from app.api.customers import router as customers_router
 from app.api.machines import router as machines_router
+from app.api.migrations import router as migrations_router
 from app.api.packaging import router as packaging_router
 from app.api.parts import router as parts_router
 from app.api.price_accounts import router as price_accounts_router
+from app.api.price_adjustments import router as price_adjustments_router
 from app.api.production import router as production_router
 from app.api.quality import router as quality_router
 from app.api.qr import router as qr_router
 from app.api.quotes import router as quotes_router
 from app.api.sampling_tasks import router as sampling_tasks_router
 from app.api.toolings import router as toolings_router
+from app.api.treatments import router as treatments_router
 from app.api.warehouse import router as warehouse_router
 # Dictionary routers
 from app.api.part_names import router as part_names_router
@@ -121,17 +125,21 @@ from app.api.mold_types import router as mold_types_router
 app.include_router(admin_router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(coating_router, prefix=settings.API_V1_PREFIX)
+app.include_router(customer_prices_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customers_router, prefix=settings.API_V1_PREFIX)
 app.include_router(machines_router, prefix=settings.API_V1_PREFIX)
+app.include_router(migrations_router, prefix=settings.API_V1_PREFIX)
 app.include_router(packaging_router, prefix=settings.API_V1_PREFIX)
 app.include_router(parts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_accounts_router, prefix=settings.API_V1_PREFIX)
+app.include_router(price_adjustments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(production_router, prefix=settings.API_V1_PREFIX)
 app.include_router(quality_router, prefix=settings.API_V1_PREFIX)
 app.include_router(qr_router, prefix=settings.API_V1_PREFIX)
 app.include_router(quotes_router, prefix=settings.API_V1_PREFIX)
 app.include_router(sampling_tasks_router, prefix=settings.API_V1_PREFIX)
 app.include_router(toolings_router, prefix=settings.API_V1_PREFIX)
+app.include_router(treatments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(warehouse_router, prefix=settings.API_V1_PREFIX)
 # Dictionary endpoints
 app.include_router(part_names_router, prefix=settings.API_V1_PREFIX)

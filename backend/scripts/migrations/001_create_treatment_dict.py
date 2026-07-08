@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy import text
-from app.database import async_engine
+from app.database import engine
 
 
 async def migrate():
@@ -59,7 +59,7 @@ async def migrate():
     COMMENT ON COLUMN treatment_dict.unit IS '单位: 元/件 或 元/kg';
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text(sql))
 
     print("✅ treatment_dict 表创建成功，已插入10条种子数据")
@@ -72,7 +72,7 @@ async def rollback():
     DROP TABLE IF EXISTS treatment_dict CASCADE;
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text(sql))
 
     print("✅ treatment_dict 表已删除")

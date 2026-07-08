@@ -12,7 +12,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from sqlalchemy import text
-from app.database import async_engine
+from app.database import engine
 
 
 async def migrate():
@@ -30,7 +30,7 @@ async def migrate():
     DROP TABLE IF EXISTS price_adjustments_placeholder CASCADE;
     """
 
-    async with async_engine.begin() as conn:
+    async with engine.begin() as conn:
         await conn.execute(text(sql))
 
     print("✅ 旧表已删除：material_base_prices, treatment_dicts, material_cost_history, treatment_cost_history")
