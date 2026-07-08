@@ -173,6 +173,24 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/admin/context-switch.vue'),
         meta: { roleLevel: 10 },
       },
+      {
+        path: 'price-management/treatments',
+        name: 'TreatmentDict',
+        component: () => import('@/views/price-management/TreatmentDict.vue'),
+        meta: { roleLevel: 5 },
+      },
+      {
+        path: 'price-management/customer-prices',
+        name: 'CustomerPrices',
+        component: () => import('@/views/price-management/CustomerPrices.vue'),
+        meta: { roleLevel: 5 },
+      },
+      {
+        path: 'price-management/price-adjustments',
+        name: 'PriceAdjustments',
+        component: () => import('@/views/price-management/PriceAdjustments.vue'),
+        meta: { roleLevel: 5 },
+      },
     ],
   },
 ]
