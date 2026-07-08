@@ -29,4 +29,14 @@ api.interceptors.response.use(
   }
 )
 
+export async function sendApiRequest(method: string, url: string, data?: any) {
+  const response = await api.request({
+    method,
+    url,
+    data: method === 'POST' || method === 'PUT' || method === 'PATCH' ? data : undefined,
+    params: method === 'GET' || method === 'DELETE' ? data : undefined,
+  })
+  return response.data
+}
+
 export default api

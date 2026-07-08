@@ -37,7 +37,8 @@
       "Bash(taskkill /F /PID 6964)",
       "Bash(cat > *)",
       "Bash(mv *.png docs/screenshots/ 2>/dev/null; echo \"Screenshots moved\")",
-      "Bash(awk '{print $NF}')"
+      "Bash(awk '{print $NF}')",
+      "Bash(.venv/Scripts/python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000)"
     ],
     "additionalDirectories": [
       "\\tmp",

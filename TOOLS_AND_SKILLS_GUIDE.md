@@ -158,7 +158,7 @@
 
 ## 🛠️ 可用的 Skills
 
-> Skills 是预定义的命令，通过 `/skill-name` 语法调用。
+> Skills 是预定义的命令，部分通过 `/skill-name` 语法调用，部分自动激活。
 
 ### 当前项目 Skills
 
@@ -168,9 +168,197 @@
 ls .claude/skills/
 ```
 
-**常用 Skills**:
-- 如果项目中有自定义 skills，它们会显示在聊天界面的技能列表中
-- 使用 `/help` 查看所有可用的内置命令
+#### 1. UI/UX Pro Max - 设计智能系统
+
+**安装位置**: `.claude/skills/ui-ux-pro-max/`
+
+**功能**: AI 驱动的 UI/UX 设计智能系统，包含完整的设计知识库
+
+**核心能力**:
+- **67 种 UI 样式** - Glassmorphism、Claymorphism、Minimalism、Brutalism、Neumorphism、Bento Grid、Dark Mode 等
+- **161 个调色板** - 针对不同行业和产品类型的配色方案
+- **57 个字体组合** - Google Fonts 字体配对，自动生成 CSS import
+- **161 条行业规则** - 针对不同产品类型的设计系统生成规则
+- **25 种图表类型** - 数据可视化推荐
+- **22 个技术栈** - React、Next.js、Vue、Svelte、Astro、SwiftUI、React Native、Flutter、WPF、WinUI 3、UWP、Avalonia、Uno Platform 等
+- **99 条 UX 指南** - 最佳实践、反模式和可访问性规则
+
+**激活方式**: 自动激活（当你进行 UI/UX 相关任务时）
+
+**使用示例**:
+
+```javascript
+// 自然语言使用（自动激活）
+"为我的 SaaS 产品创建一个着陆页"
+"设计一个医疗分析仪表板"
+"创建一个深色模式的作品集网站"
+"构建一个电商移动应用 UI"
+"为金融银行应用设计深色主题"
+
+// 高级命令：设计系统生成器
+py .claude/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard" --design-system -p "MyApp"
+
+// 领域特定搜索
+py .claude/skills/ui-ux-pro-max/scripts/search.py "glassmorphism" --domain style
+py .claude/skills/ui-ux-pro-max/scripts/search.py "elegant serif" --domain typography
+py .claude/skills/ui-ux-pro-max/scripts/search.py "dashboard" --domain chart
+
+// 技术栈特定指南
+py .claude/skills/ui-ux-pro-max/scripts/search.py "form validation" --stack react
+py .claude/skills/ui-ux-pro-max/scripts/search.py "responsive layout" --stack html-tailwind
+```
+
+**设计系统持久化**:
+
+```bash
+# 生成并保存设计系统到 design-system/MASTER.md
+py .claude/skills/ui-ux-pro-max/scripts/search.py "SaaS dashboard" --design-system --persist -p "Zephyr ERP"
+
+# 创建页面特定的覆盖文件
+py .claude/skills/ui-ux-pro-max/scripts/search.py "dashboard" --design-system --persist -p "Zephyr ERP" --page "dashboard"
+```
+
+这将创建分层的设计系统结构：
+```
+design-system/
+├── MASTER.md           # 全局设计规则（颜色、字体、间距、组件）
+└── pages/
+    └── dashboard.md    # 页面特定覆盖（仅记录与 Master 的差异）
+```
+
+**设计系统生成示例输出**:
+```markdown
+## Design System: Zephyr ERP
+
+### Pattern
+- Real-Time / Operations Landing
+- 转化焦点: 运维/安全/物联网产品。演示或沙盒链接。信任信号。
+- CTA 位置: 主 CTA 在导航 + 指标之后
+
+### Style
+- 名称: Glassmorphism
+- 模式支持: Light ✓ Full | Dark ✓ Full
+- 关键词: 磨砂玻璃、透明、模糊背景、分层、充满活力的背景
+
+### Colors
+- Primary: #0F172A
+- Secondary: #1E293B
+- Accent/CTA: #22C55E
+- Background: #020617
+- Foreground: #F8FAFC
+
+### Typography
+- 标题: Fira Code
+- 正文: Fira Sans
+- Google Fonts: https://fonts.googleapis.com/css2?family=Fira+Code...
+
+### 预交付检查清单
+- [ ] 无表情符号图标（使用 SVG: Heroicons/Lucide）
+- [ ] 所有可点击元素添加 cursor-pointer
+- [ ] 悬停状态使用平滑过渡（150-300ms）
+- [ ] 亮色模式：文本对比度最低 4.5:1
+- [ ] 响应式：375px, 768px, 1024px, 1440px
+```
+
+**适用场景**:
+- ✅ 设计新页面（着陆页、仪表板、管理面板、SaaS、移动应用）
+- ✅ 创建或重构 UI 组件（按钮、弹窗、表单、表格、图表）
+- ✅ 选择配色方案、字体系统、间距规范或布局体系
+- ✅ 审查 UI 代码的用户体验、可访问性或视觉一致性
+- ✅ 实现导航结构、动效或响应式行为
+
+**跳过场景**:
+- ❌ 纯后端逻辑开发
+- ❌ 仅涉及 API 或数据库设计
+- ❌ 非视觉类脚本或自动化任务
+
+**相关 Skills**（同时安装）:
+- `banner-design` - 横幅设计
+- `brand` - 品牌设计
+- `design` - 通用设计
+- `design-system` - 设计系统
+- `slides` - 幻灯片设计
+- `ui-styling` - UI 样式（shadcn/ui + Tailwind）
+
+**CLI 工具**:
+```bash
+# 更新 skill
+npm install -g ui-ux-pro-max-cli
+uipro update
+
+# 卸载
+uipro uninstall
+```
+
+---
+
+#### 2. BMS Speckit - 自动化开发工作流
+
+**版本**: v6.12.0（2026-06-30）  
+**安装位置**: `.claude/commands/bms-speckit-auto/`
+
+**🚀 新功能：全自动开发管道**
+
+使用 `/bms-speckit:bms-speckit-auto` 启动完整的 12 步自动化开发流程：
+
+```bash
+/bms-speckit:bms-speckit-auto "创建客户管理模块"
+```
+
+**12 步开发管道**：
+1. **Brainstorm** - 探索需求和设计方案
+2. **Research** - 最佳实践和技术调研
+3. **Constitution** - 工程原则定义
+4. **CLAUDE.md sync** - 同步项目配置
+5. **Specify** - 功能规格说明
+6. **Plan** - 实施计划
+7. **Tasks** - 任务列表
+8. **Analyze** - 一致性检查
+9. **Implement with rolling QC** - 实现 + 滚动质量检查
+10. **Final quality gate** - 最终质量关卡
+11. **Merge to main** - 合并到主分支
+12. **Done** - 完成
+
+**自动化特性**：
+- ✅ 完全自主运行，无需中途确认
+- ✅ 自动解决不明确需求（记录假设）
+- ✅ 每步自动提交并推送
+- ✅ 内置 9 维度质量检查：
+  - 代码错误
+  - 安全性（含 SQL 参数化）
+  - 依赖管理
+  - UX/UI
+  - 可访问性
+  - 部署制品
+  - 跨数据库兼容性
+  - 真实数据库集成测试
+  - 业务逻辑验证
+
+**单独使用的 Speckit Skills**：
+- `/speckit.constitution` - 创建/更新项目宪法和治理规则
+- `/speckit.specify` - 编写需求规格说明
+- `/speckit.plan` - 制定实施计划
+- `/speckit.implement` - 执行实施
+- `/speckit.analyze` - 分析代码或需求
+- `/speckit.clarify` - 澄清需求细节
+- `/speckit.tasks` - 任务管理
+
+**使用建议**：
+- 💡 大型功能开发：使用 `/bms-speckit:bms-speckit-auto` 完整工作流
+- 💡 单个步骤：使用 `/speckit.*` 独立命令
+- 💡 需求不明确时：让 BMS Speckit 自动推断并记录假设
+
+**更新方法**：
+```bash
+npm install -g bms-speckit-plugin
+cp -r "$(npm root -g)/bms-speckit-plugin/skills/"* .claude/commands/
+```
+
+---
+
+#### 3. 其他内置 Skills
+
+使用 `/help` 查看所有可用的内置命令
 
 ---
 
