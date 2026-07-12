@@ -1,0 +1,89 @@
+======================================================================
+FINAL COMPLETE MIGRATION EXECUTION
+Started: 2026-07-12 09:38:12.580319
+======================================================================
+
+[OK] Connected to 124.222.29.229:5432/stamping_system
+
+=== FIX REMAINING ISSUES ===
+[OK] Fixed tooling_parts unique index
+[OK] Reset 2061 ERROR rows to VALID
+
+=== PROCESS REMAINING ROWS ===
+Processing 4551 VALID rows...
+
+  Progress: 500/4551 (11.0%)
+  Progress: 1000/4551 (22.0%)
+  Progress: 1500/4551 (33.0%)
+  Progress: 2000/4551 (43.9%)
+  Progress: 2500/4551 (54.9%)
+  Progress: 3000/4551 (65.9%)
+  Progress: 3500/4551 (76.9%)
+  Progress: 4000/4551 (87.9%)
+  Progress: 4500/4551 (98.9%)
+
+[OK] Processing completed
+  Processed: 4551/4551
+  Customers created: 1
+  Parts created: 810
+  Tooling links: 498
+  Customer links: 604
+  Aliases created: 4254
+  Skipped (no name): 0
+  Errors: 0
+
+=== FINAL VALIDATION ===
+[OK] Validation completed
+
+Final counts:
+  customers: 129
+  parts: 2506
+  tooling: 1357
+  tooling_parts: 1021
+  part_customer_aliases: 1608
+  tooling_customer_links: 1126
+
+Staging status:
+  IMPORTED: 6308
+
+Data quality:
+  Orphan tooling_parts (bad tooling_id): 0
+  Orphan tooling_parts (bad part_id): 0
+  Orphan aliases: 0
+  Duplicate aliases: 0
+
+Sample traces (10):
+  1. [浙江万宝机械有限公司(A):4] 前壳体
+     Part:IMPORT_1_1783820293, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:BYDLK-3510111
+  2. [浙江万宝机械有限公司(A):5] 后壳体
+     Part:IMPORT_2_1783820293, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:CFAIO-3510121
+  3. [浙江万宝机械有限公司(A):8] 左制动支架
+     Part:IMPORT_3_1783820293, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:MR7180-3507111
+  4. [浙江万宝机械有限公司(A):9] 右制动支架
+     Part:IMPORT_4_1783820293, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:MR7180-3507211
+  5. [浙江万宝机械有限公司(A):10] 左挡泥板
+     Part:B2-3501151, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:B15-3507110-1-G
+  6. [浙江万宝机械有限公司(A):11] 右挡泥板
+     Part:B2-3501251, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:B15-3507210-1-G
+  7. [浙江万宝机械有限公司(A):12] 左制动底板
+     Part:SRV-3507112, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:MR7180-3507113
+  8. [浙江万宝机械有限公司(A):13] 右制动底板
+     Part:SRV-3507212, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:MR7180-3507213
+  9. [浙江万宝机械有限公司(A):14] 支座
+     Part:IMPORT_9_1783820294, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:MR7180-3507114
+  10. [浙江万宝机械有限公司(A):15] 挂簧片
+     Part:IMPORT_10_1783820294, Cust:浙江万宝机械有限公司, Tooling:None, CustPN:MR7180-3507115
+
+=== COMPLETION CRITERIA ===
+  tooling_parts > 0: True (1021)
+  aliases > 0: True (1608)
+  tooling_customer_links > 0: True (1126)
+  imported >= 5000: True (6308)
+  no orphans: True
+  10 sample traces: True
+  ALL CRITERIA MET: True
+
+======================================================================
+MIGRATION COMPLETED SUCCESSFULLY - ALL CRITERIA MET
+Duration: 222.5s
+======================================================================

@@ -30,19 +30,34 @@ class PartUpdate(BaseModel):
 
 class PartResponse(BaseModel):
     id: int
-    part_number: str
+    part_number: Optional[str] = None
     internal_name: Optional[str] = None
     customer_id: Optional[int] = None
     customer_name: Optional[str] = None
     customer_product_no: Optional[str] = None
+    customer_product_name: Optional[str] = None
     vehicle_model: Optional[str] = None
     material_name: Optional[str] = None
+    material_name_full: Optional[str] = None  # 完整材料名称
     part_status: str
     stock_pcs: int = 0
     mold_number: Optional[str] = None
     mold_type: Optional[str] = None
     press_tonnage: Optional[str] = None
     ppap_no: Optional[str] = None
+    # TWP字段
+    spec_twph: Optional[str] = None
+    thickness: Optional[float] = None
+    width: Optional[float] = None
+    pitch: Optional[float] = None
+    height: Optional[float] = None
+    # 重量
+    gross_weight: Optional[float] = None
+    net_weight: Optional[float] = None
+    # 左右件
+    part_position: Optional[str] = None
+    # 穴数（从tooling表获取）
+    cavity_count: Optional[str] = None
     remark: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 
 from app.api.deps import CurrentUser, DbSession, require_role
 from app.models.customer import Customer
@@ -142,3 +142,46 @@ async def delete_customer(
 
     await db.delete(customer)
     await db.commit()
+
+
+@router.get("/{customer_id}/parts")
+async def get_customer_parts(
+    customer_id: int,
+    db: DbSession,
+    current_user: CurrentUser
+):
+    """Get all parts associated with a customer."""
+    from app.models.part import Part
+
+    # Get all parts for this customer through quotes
+    query = """
+        SELECT DISTINCT
+            p.id,
+            p.part_no,
+            p.name,
+            p.material_id,
+            m.name as material_name
+        FROM parts p
+        LEFT JOIN materials m ON p.material_id = m.id
+        INNER JOIN quotes q ON q.part_id = p.id
+        WHERE q.customer_id = :customer_id
+        ORDER BY p.part_no
+    """
+
+    result = await db.execute(
+        select(Part).from_statement(text(query)),
+        {"customer_id": customer_id}
+    )
+
+    parts = result.scalars().all()
+
+    return [
+        {
+            "id": part.id,
+            "part_no": part.part_no,
+            "name": part.name,
+            "material_id": part.material_id,
+            "material_name": getattr(part, 'material_name', None)
+        }
+        for part in parts
+    ]

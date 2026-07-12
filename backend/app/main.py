@@ -105,6 +105,7 @@ from app.api.machines import router as machines_router
 from app.api.migrations import router as migrations_router
 from app.api.packaging import router as packaging_router
 from app.api.parts import router as parts_router
+from app.api.parts_detail import router as parts_detail_router
 from app.api.price_accounts import router as price_accounts_router
 from app.api.price_adjustments import router as price_adjustments_router
 from app.api.production import router as production_router
@@ -131,6 +132,7 @@ app.include_router(machines_router, prefix=settings.API_V1_PREFIX)
 app.include_router(migrations_router, prefix=settings.API_V1_PREFIX)
 app.include_router(packaging_router, prefix=settings.API_V1_PREFIX)
 app.include_router(parts_router, prefix=settings.API_V1_PREFIX)
+app.include_router(parts_detail_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_accounts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_adjustments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(production_router, prefix=settings.API_V1_PREFIX)

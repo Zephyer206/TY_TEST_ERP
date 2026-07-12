@@ -10,12 +10,15 @@
     <el-card class="filter-card">
       <el-form :inline="true" :model="filter">
         <el-form-item label="搜索">
-          <el-input v-model="filter.search" placeholder="零件名称/编号" clearable style="width:200px" />
+          <el-input v-model="filter.search" placeholder="零件编号/名称/模具号" clearable style="width:240px" />
         </el-form-item>
         <el-form-item label="客户">
           <el-select v-model="filter.customer_id" clearable placeholder="全部" style="width:160px" filterable>
             <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.name" />
           </el-select>
+        </el-form-item>
+        <el-form-item label="材料">
+          <el-input v-model="filter.material" placeholder="材料名称" clearable style="width:160px" />
         </el-form-item>
         <el-form-item label="状态">
           <el-select v-model="filter.part_status" clearable placeholder="全部" style="width:120px">
@@ -33,20 +36,52 @@
     </el-card>
 
     <el-table :data="parts" v-loading="loading" stripe>
-      <el-table-column prop="part_number" label="零件编号" width="130" />
-      <el-table-column prop="internal_name" label="零件名称" min-width="150" />
-      <el-table-column prop="customer_name" label="客户" min-width="130" />
-      <el-table-column prop="customer_product_no" label="客户件号" width="120" />
-      <el-table-column prop="vehicle_model" label="车型" width="100" />
-      <el-table-column prop="material_name" label="材质" width="90" />
-      <el-table-column label="状态" width="90">
+      <el-table-column prop="part_number" label="零件编号" width="120" fixed />
+      <el-table-column prop="internal_name" label="零件名称" min-width="140" />
+      <el-table-column prop="mold_number" label="模具号" width="120" />
+      <el-table-column label="TWP规格" width="140">
+        <template #default="{ row }">
+          <span v-if="row.thickness || row.width || row.pitch" class="twp-text">
+            <span v-if="row.thickness">T{{ row.thickness }}</span>
+            <span v-if="row.width">×W{{ row.width }}</span>
+            <span v-if="row.pitch">×P{{ row.pitch }}</span>
+          </span>
+          <span v-else-if="row.spec_twph" class="spec-text">{{ row.spec_twph }}</span>
+          <span v-else class="text-muted">-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="材料" width="120">
+        <template #default="{ row }">
+          <el-tooltip :content="row.material_name_full" placement="top" v-if="row.material_name_full">
+            <span>{{ row.material_name || '-' }}</span>
+          </el-tooltip>
+          <span v-else>{{ row.material_name || '-' }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="穴数" width="80" align="center">
+        <template #default="{ row }">
+          <span v-if="row.cavity_count">{{ row.cavity_count }}</span>
+          <span v-else class="text-muted">-</span>
+        </template>
+      </el-table-column>
+      <el-table-column prop="customer_name" label="客户" width="140" />
+      <el-table-column prop="mold_type" label="模具类型" width="110" />
+      <el-table-column label="位置" width="60" align="center">
+        <template #default="{ row }">
+          <el-tag v-if="row.part_position === 'left'" type="info" size="small">左</el-tag>
+          <el-tag v-else-if="row.part_position === 'right'" type="info" size="small">右</el-tag>
+          <span v-else class="text-muted">-</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="状态" width="80">
         <template #default="{ row }">
           <el-tag :type="statusType(row.part_status)" size="small">{{ statusLabel(row.part_status) }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="stock_pcs" label="库存" width="80" align="right" />
-      <el-table-column label="操作" width="140" fixed="right">
+      <el-table-column prop="stock_pcs" label="库存" width="70" align="right" />
+      <el-table-column label="操作" width="160" fixed="right">
         <template #default="{ row }">
+          <el-button link type="primary" size="small" @click="viewDetail(row)">详情</el-button>
           <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
           <el-button link type="danger" size="small" @click="handleDelete(row)"
             v-if="row.part_status !== 'OBSOLETE'">删除</el-button>
@@ -65,6 +100,9 @@
         @current-change="fetchParts"
       />
     </div>
+
+    <!-- 零件详情对话框 -->
+    <PartDetailDialog v-model="detailVisible" :detail="detailData" />
 
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="editId ? '编辑零件' : '新增零件'" width="520px">
@@ -108,6 +146,7 @@ import { Plus } from '@element-plus/icons-vue'
 import { get, post } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import apiClient from '@/utils/request'
+import PartDetailDialog from '@/components/PartDetailDialog.vue'
 
 const userStore = useUserStore()
 
@@ -116,10 +155,12 @@ const customers = ref([])
 const loading = ref(false)
 const saving = ref(false)
 const dialogVisible = ref(false)
+const detailVisible = ref(false)
+const detailData = ref(null)
 const editId = ref(null)
 const formRef = ref(null)
 
-const filter = reactive({ search: '', customer_id: null, part_status: '' })
+const filter = reactive({ search: '', customer_id: null, part_status: '', material: '' })
 const page = reactive({ current: 1, size: 20, total: 0 })
 const form = reactive({
   part_number: '', internal_name: '', customer_id: null,
@@ -145,6 +186,7 @@ const fetchParts = async () => {
       ...(filter.search && { search: filter.search }),
       ...(filter.customer_id && { customer_id: filter.customer_id }),
       ...(filter.part_status && { part_status: filter.part_status }),
+      ...(filter.material && { material: filter.material }),
     }
     const data = await get('/parts', params)
     parts.value = Array.isArray(data) ? data : (data.items || [])
@@ -163,8 +205,24 @@ const fetchCustomers = async () => {
 }
 
 const resetFilter = () => {
-  filter.search = ''; filter.customer_id = null; filter.part_status = ''
+  filter.search = ''; filter.customer_id = null; filter.part_status = ''; filter.material = ''
   page.current = 1; fetchParts()
+}
+
+const viewDetail = async (row) => {
+  try {
+    // Fetch full detail with relationships from new API
+    const detail = await get(`/parts/${row.id}/detail`)
+    detailData.value = detail
+    detailVisible.value = true
+  } catch (e) {
+    ElMessage.error('获取详情失败: ' + (e.message || '未知错误'))
+  }
+}
+
+const openEditFromDetail = () => {
+  detailVisible.value = false
+  openEdit(detailData.value)
 }
 
 const openCreate = () => {
@@ -227,4 +285,8 @@ onMounted(() => { fetchParts(); fetchCustomers() })
 .page-header h2 { margin: 0; }
 .filter-card { margin-bottom: 16px; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
+.twp-text { color: #409eff; font-weight: 500; }
+.spec-text { color: #909399; font-size: 13px; }
+.text-muted { color: #c0c4cc; }
+.twp-tag { margin-right: 8px; }
 </style>

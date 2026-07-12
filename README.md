@@ -41,7 +41,7 @@ npm install
 npm run dev
 ```
 
-详细安装步骤请查看 [部署文档](docs/deployment.md)（待补充）
+详细安装步骤待补充；现有部署验证记录位于 `docs/` 目录。
 
 ---
 
@@ -54,7 +54,7 @@ npm run dev
 | 文档 | 说明 |
 |------|------|
 | [功能规格](specs/001-erp-system-architecture/spec.md) | 业务需求和用户故事 |
-| [数据模型](specs/001-erp-system-architecture/data-model.md) | 目标数据库设计 |
+| [数据模型](specs/001-erp-system-architecture/data-model.md) | 唯一权威数据库设计 |
 | [API 契约](specs/001-erp-system-architecture/contracts/) | 接口定义 |
 | [开发任务](specs/001-erp-system-architecture/tasks.md) | 任务清单 |
 | [数据库分析](specs/001-erp-system-architecture/database-analysis/) | 当前数据库结构分析 |
@@ -147,7 +147,7 @@ Zephyr_test_Erp/
 ### 新成员入门
 
 1. 阅读 [功能规格](specs/001-erp-system-architecture/spec.md) 了解业务
-2. 查看 [数据模型](specs/001-erp-system-architecture/data-model.md) 理解架构
+2. 查看 [数据模型](specs/001-erp-system-architecture/data-model.md) 理解唯一权威架构
 3. 浏览 [开发任务](specs/001-erp-system-architecture/tasks.md) 认领任务
 
 ### 开发流程

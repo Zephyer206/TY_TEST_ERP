@@ -45,19 +45,25 @@ BOSS_TOKEN="<老板的JWT token>"
 
 ```sql
 -- 插入测试客户
-INSERT INTO customers (id, name, code) VALUES
-('11111111-1111-1111-1111-111111111111', '比亚迪', 'BYD001');
+INSERT INTO customers (id, name, customer_code) VALUES
+(101, '比亚迪', 'BYD001');
 
 -- 确认材质存在（SUS304应该已在 material_dict 中）
 SELECT id, name, default_price FROM material_dict WHERE name = 'SUS304';
 -- 假设返回 id = 1, default_price = 18.00
 
--- 插入测试零件和价格台账
-INSERT INTO parts (id, name, customer_id) VALUES
-(1001, '测试零件A', '11111111-1111-1111-1111-111111111111');
+-- 插入内部零件；parts 不直接归属于单一客户
+INSERT INTO parts (id, internal_name) VALUES
+(1001, '测试零件A');
 
-INSERT INTO price_accounts (id, part_id, customer_id, material, current_price) VALUES
-(2001, 1001, '11111111-1111-1111-1111-111111111111', 'SUS304', 50.00);
+-- 建立客户件号映射；同一内部零件可映射多个客户
+INSERT INTO part_customer_aliases
+  (id, part_id, customer_id, customer_part_no, revision)
+VALUES
+  (3001, 1001, 101, 'BYD-TEST-001', '');
+
+INSERT INTO price_accounts (id, part_id, customer_id, current_price) VALUES
+(2001, 1001, 101, 50.00);
 ```
 
 ---
@@ -115,7 +121,7 @@ SELECT COUNT(*) FROM material_base_prices;  -- 应报错：表不存在
 ### Step 1: 查询无历史记录的客户材料价格（兜底逻辑）
 
 ```bash
-curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=11111111-1111-1111-1111-111111111111&material_id=1" \
+curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=101&material_id=1" \
   -H "Authorization: Bearer $SALES_TOKEN"
 ```
 
@@ -135,7 +141,7 @@ curl -X POST http://localhost:8000/api/customer-prices/materials \
   -H "Authorization: Bearer $SALES_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "11111111-1111-1111-1111-111111111111",
+    "customer_id": 101,
     "material_id": 1,
     "unit_price": 18.50,
     "scrap_price": 3.50,
@@ -146,8 +152,8 @@ curl -X POST http://localhost:8000/api/customer-prices/materials \
 **Expected Response**:
 ```json
 {
-  "id": "<UUID>",
-  "customer_id": "11111111-1111-1111-1111-111111111111",
+  "id": 3001,
+  "customer_id": 101,
   "material_id": 1,
   "unit_price": 18.50,
   "scrap_price": 3.50,
@@ -160,7 +166,7 @@ curl -X POST http://localhost:8000/api/customer-prices/materials \
 ### Step 3: 再次查询，验证历史记录
 
 ```bash
-curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=11111111-1111-1111-1111-111111111111&material_id=1&limit=3" \
+curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=101&material_id=1&limit=3" \
   -H "Authorization: Bearer $SALES_TOKEN"
 ```
 
@@ -169,7 +175,7 @@ curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=111
 {
   "history": [
     {
-      "id": "<UUID>",
+      "id": 3001,
       "unit_price": 18.50,
       "scrap_price": 3.50,
       "quoted_at": "2026-07-08T10:30:00Z",
@@ -189,7 +195,7 @@ curl -X POST http://localhost:8000/api/customer-prices/materials \
   -H "Authorization: Bearer $SALES_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "11111111-1111-1111-1111-111111111111",
+    "customer_id": 101,
     "material_id": 1,
     "unit_price": 19.00,
     "scrap_price": 3.60
@@ -200,7 +206,7 @@ curl -X POST http://localhost:8000/api/customer-prices/materials \
   -H "Authorization: Bearer $SALES_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "11111111-1111-1111-1111-111111111111",
+    "customer_id": 101,
     "material_id": 1,
     "unit_price": 19.50,
     "scrap_price": 3.70
@@ -211,14 +217,14 @@ curl -X POST http://localhost:8000/api/customer-prices/materials \
   -H "Authorization: Bearer $SALES_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "11111111-1111-1111-1111-111111111111",
+    "customer_id": 101,
     "material_id": 1,
     "unit_price": 20.00,
     "scrap_price": 3.80
   }'
 
 # 查询，应只返回最近3条
-curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=11111111-1111-1111-1111-111111111111&material_id=1&limit=3" \
+curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=101&material_id=1&limit=3" \
   -H "Authorization: Bearer $SALES_TOKEN"
 ```
 
@@ -281,7 +287,7 @@ curl -X POST http://localhost:8000/api/customer-prices/treatments \
   -H "Authorization: Bearer $SALES_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "customer_id": "11111111-1111-1111-1111-111111111111",
+    "customer_id": 101,
     "treatment_id": 2,
     "unit_price": 2.20,
     "calc_mode_snapshot": "manual",
@@ -293,8 +299,8 @@ curl -X POST http://localhost:8000/api/customer-prices/treatments \
 **Expected Response**:
 ```json
 {
-  "id": "<UUID>",
-  "customer_id": "11111111-1111-1111-1111-111111111111",
+  "id": 4001,
+  "customer_id": 101,
   "treatment_id": 2,
   "unit_price": 2.20,
   "calc_mode_snapshot": "manual",
@@ -318,7 +324,7 @@ curl -X PUT http://localhost:8000/api/treatments/2 \
   }'
 
 # 查询工序历史，验证快照值仍是 manual
-curl -X GET "http://localhost:8000/api/customer-prices/treatments?customer_id=11111111-1111-1111-1111-111111111111&treatment_id=2" \
+curl -X GET "http://localhost:8000/api/customer-prices/treatments?customer_id=101&treatment_id=2" \
   -H "Authorization: Bearer $SALES_TOKEN"
 ```
 
@@ -327,7 +333,7 @@ curl -X GET "http://localhost:8000/api/customer-prices/treatments?customer_id=11
 {
   "history": [
     {
-      "id": "<UUID>",
+      "id": 4001,
       "unit_price": 2.20,
       "calc_mode_snapshot": "manual",  // ← 仍是旧值，未受字典变更影响
       "unit_snapshot": "元/件",
@@ -365,7 +371,7 @@ curl -X POST http://localhost:8000/api/price-adjustments \
 **Expected Response**:
 ```json
 {
-  "id": "<UUID>",
+  "id": 5001,
   "price_account_id": 2001,
   "old_price": 50.00,
   "new_price": 55.00,
@@ -406,7 +412,7 @@ curl -X GET http://localhost:8000/api/price-adjustments/pending \
 ```json
 [
   {
-    "id": "<UUID>",
+    "id": 5001,
     "price_account_id": 2001,
     "part_name": "测试零件A",
     "customer_name": "比亚迪",
@@ -433,7 +439,7 @@ curl -X POST http://localhost:8000/api/price-adjustments/<adjustment_id>/approve
 **Expected Response**:
 ```json
 {
-  "id": "<UUID>",
+  "id": 5001,
   "status": "approved",
   "approved_by": "<boss_user_id>",
   "approved_at": "2026-07-08T11:05:00Z",
@@ -469,7 +475,7 @@ curl -X GET "http://localhost:8000/api/price-adjustments?price_account_id=2001" 
 ```json
 [
   {
-    "id": "<UUID>",
+    "id": 5001,
     "old_price": 50.00,
     "new_price": 55.00,
     "status": "approved",
@@ -519,7 +525,7 @@ curl -X POST http://localhost:8000/api/price-adjustments/<adjustment_id>/reject 
 **Expected Response**:
 ```json
 {
-  "id": "<UUID>",
+  "id": 5002,
   "status": "rejected",
   "approved_by": "<boss_user_id>",
   "approved_at": "2026-07-08T11:15:00Z",
@@ -611,7 +617,7 @@ for i in {1..100}; do
     -H "Authorization: Bearer $SALES_TOKEN" \
     -H "Content-Type: application/json" \
     -d "{
-      \"customer_id\": \"11111111-1111-1111-1111-111111111111\",
+      \"customer_id\": 101,
       \"material_id\": 1,
       \"unit_price\": $((18 + i * 0.1)),
       \"scrap_price\": 3.50
@@ -619,7 +625,7 @@ for i in {1..100}; do
 done
 
 # 测量查询响应时间
-time curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=11111111-1111-1111-1111-111111111111&material_id=1&limit=3" \
+time curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_id=101&material_id=1&limit=3" \
   -H "Authorization: Bearer $SALES_TOKEN"
 ```
 
@@ -632,7 +638,7 @@ time curl -X GET "http://localhost:8000/api/customer-prices/materials?customer_i
 ```bash
 # 使用 Apache Bench 测试50并发请求
 ab -n 500 -c 50 -H "Authorization: Bearer $SALES_TOKEN" \
-  "http://localhost:8000/api/customer-prices/materials?customer_id=11111111-1111-1111-1111-111111111111&material_id=1&limit=3"
+  "http://localhost:8000/api/customer-prices/materials?customer_id=101&material_id=1&limit=3"
 ```
 
 **Expected**: 

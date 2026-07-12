@@ -131,7 +131,7 @@ curl -X POST http://localhost:8000/api/quotes \
       "annual_volume": 10000
     }]
   }'
-# Response: {"id": "uuid", "quote_number": "Q-20260612-001", "status": "waiting_tech_review"}
+# Response: {"id": 1, "quote_number": "Q-20260612-001", "status": "waiting_tech_review"}
 
 # 3. 设计工程师登录并填写技术参数
 curl -X PUT http://localhost:8000/api/quotes/<quote_id>/tech-review \
@@ -178,8 +178,8 @@ curl -X POST http://localhost:8000/api/quotes/<quote_id>/fix \
 curl -X POST http://localhost:8000/api/sampling-tasks \
   -H "Authorization: Bearer <sales_token>" \
   -d '{
-    "part_id": "<part_uuid>",
-    "customer_id": "<customer_uuid>",
+    "part_id": 1,
+    "customer_id": 1,
     "planned_finish_date": "2026-06-20",
     "sample_quantity": 5
   }'
@@ -191,7 +191,7 @@ curl -X PUT http://localhost:8000/api/sampling-tasks/<task_id>/boss-approve \
 # 3. 组长安排打样（分配机台）
 curl -X PUT http://localhost:8000/api/sampling-tasks/<task_id>/start \
   -H "Authorization: Bearer <leader_token>" \
-  -d '{"machine_id": "<machine_uuid>"}'
+  -d '{"machine_id": 1}'
 
 # 4. 打样完成，提交评审
 curl -X PUT http://localhost:8000/api/sampling-tasks/<task_id>/submit-review \
@@ -216,7 +216,7 @@ curl -X PUT http://localhost:8000/api/sampling-tasks/<task_id>/review \
 curl -X POST http://localhost:8000/api/production/plans \
   -H "Authorization: Bearer <leader_token>" \
   -d '{
-    "part_id": "<part_uuid>",
+    "part_id": 1,
     "total_quantity": 1000,
     "deadline": "2026-06-15",
     "urgency": "normal"
@@ -225,22 +225,22 @@ curl -X POST http://localhost:8000/api/production/plans \
 # 2. 分配机台
 curl -X POST http://localhost:8000/api/production/plans/<plan_id>/assign-machine \
   -H "Authorization: Bearer <leader_token>" \
-  -d '{"machine_id": "<machine_uuid>"}'
+  -d '{"machine_id": 1}'
 
 # 3. 操作工扫码（模拟：先扫原材料，再扫机台）
 curl -X POST http://localhost:8000/api/production/sessions/start \
   -H "Authorization: Bearer <operator_token>" \
   -d '{
-    "plan_id": "<plan_id>",
-    "machine_id": "<machine_uuid>",
-    "material_batch_id": "<batch_uuid>"
+    "plan_id": 1,
+    "machine_id": 1,
+    "material_batch_id": 1
   }'
 
 # 4. 多次报工
 curl -X POST http://localhost:8000/api/production/reports \
   -H "Authorization: Bearer <operator_token>" \
   -d '{
-    "session_id": "<session_id>",
+    "session_id": 1,
     "strokes": 100
   }'
 

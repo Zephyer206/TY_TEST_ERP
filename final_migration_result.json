@@ -1,0 +1,36 @@
+{
+  "status": "PARTIAL",
+  "duration_seconds": 273.262588,
+  "process_stats": {
+    "processed": 2858,
+    "customers_created": 37,
+    "parts_created": 0,
+    "parts_updated": 326,
+    "tooling_linked": 589,
+    "aliases_created": 2636,
+    "customer_links_created": 646,
+    "skipped": 0,
+    "errors": 1955
+  },
+  "validation": {
+    "counts": {
+      "customers": 128,
+      "parts": 1696,
+      "tooling": 1357,
+      "tooling_parts": 523,
+      "aliases": 286,
+      "tooling_customer_links": 522
+    },
+    "staging_status": {
+      "VALID": 2490,
+      "IMPORTED": 1757,
+      "ERROR": 2061
+    },
+    "orphans": {
+      "tooling_parts": 0,
+      "aliases": 0
+    },
+    "sample_traces_count": 10
+  },
+  "success_criteria_met": false
+}

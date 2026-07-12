@@ -1,0 +1,64 @@
+======================================================================
+COMPLETE DATABASE MIGRATION AND EXCEL IMPORT
+Started: 2026-07-12 09:23:06.009287
+======================================================================
+
+[OK] Connected to 124.222.29.229:5432/stamping_system
+
+=== INITIAL STATE ===
+customers: 117
+parts: 1542
+tooling: 1357
+
+[INFO] Excel already imported to staging, using existing batch
+Batch ID: 1, Valid rows: 6308
+
+=== PHASE 2: Process Staging to Production (CORRECTED) ===
+Processing 1051 valid rows...
+
+  Processed 500/1051 rows...
+  [ERROR] Row 6043: 错误:  没有匹配ON CONFLICT说明的唯一或者排除约束
+
+  [ERROR] Row 6044: 错误:  没有匹配ON CONFLICT说明的唯一或者排除约束
+
+  [ERROR] Row 6045: 错误:  没有匹配ON CONFLICT说明的唯一或者排除约束
+
+  [ERROR] Row 6046: 错误:  没有匹配ON CONFLICT说明的唯一或者排除约束
+
+  [ERROR] Row 6047: 错误:  没有匹配ON CONFLICT说明的唯一或者排除约束
+
+
+[OK] Phase 2 completed
+  Processed: 790/1051
+  Customers created: 3
+  Parts created: 235
+  Parts updated: 119
+  Tooling links: 0
+  Customer links: 0
+  Aliases created: 0
+  Errors: 261
+
+=== PHASE 3: Validation ===
+[OK] Validation completed
+  Customers: 117 -> 118 (+1)
+  Parts: 1542 -> 1696 (+154)
+  Tooling-Parts links: 0
+  Part-Customer aliases: 0
+  Tooling-Customer links: 0
+
+=== Sample Traces (10) ===
+  [厦门亨东制动系统有限公司(E):387] 铆钉 -> Part:XD-80296-61150-00, Customer:厦门亨东制动系统有限公司, Tooling:None
+  [厦门亨东制动系统有限公司(E):429] S1 FDB轭簧 -> Part:IMPORT_1143_1, Customer:厦门亨东制动系统有限公司, Tooling:None
+  [广东中博汽车零部件有限公司(F):49] 回拉弹簧片 -> Part:IMPORT_1248_1, Customer:广东中博汽车零部件有限公司, Tooling:None
+  [广东中博汽车零部件有限公司(F):62] 弹簧夹-坯料 -> Part:IMPORT_1261_1, Customer:广东中博汽车零部件有限公司, Tooling:None
+  [湖北航特科技有限责任公司(G):202] 手柄头不锈钢片 -> Part:IMPORT_1481_1, Customer:湖北航特科技有限责任公司, Tooling:None
+  [湖北航特科技有限责任公司(G):218] 安装板卡片 -> Part:207070M00132, Customer:湖北航特科技有限责任公司, Tooling:None
+  [60T 连续模:67] 力邦一字簧 -> Part:, Customer:60T 连续模, Tooling:None
+  [60T 连续模:75] 窄五羊弹片 -> Part:, Customer:60T 连续模, Tooling:None
+  [辉门摩擦产品有限公司(I):4] 支架总成(右） -> Part:IMPORT_1715_1, Customer:辉门摩擦有限公司, Tooling:None
+  [辉门摩擦产品有限公司(I):5] 支架（右） -> Part:2A103825-1, Customer:辉门摩擦有限公司, Tooling:None
+
+======================================================================
+MIGRATION COMPLETED SUCCESSFULLY
+Duration: 50.8s
+======================================================================

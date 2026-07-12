@@ -51,12 +51,10 @@ async def list_price_adjustments(
 
     query = select(PriceAdjustment)
 
-    if customer_id:
-        query = query.where(PriceAdjustment.customer_id == customer_id)
     if status:
         query = query.where(PriceAdjustment.status == status)
 
-    query = query.order_by(desc(PriceAdjustment.requested_at)).offset(skip).limit(limit)
+    query = query.order_by(desc(PriceAdjustment.created_at)).offset(skip).limit(limit)
 
     result = await db.execute(query)
     return list(result.scalars().all())

@@ -8,12 +8,20 @@ from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, DbSession
-from app.models.price import CustomerMaterialPrice, CustomerTreatmentPrice
+from app.models.customer import Customer
+from app.models.part import Part
+from app.models.part_customer_alias import PartCustomerAlias
+from app.models.price import CustomerMaterialPrice, CustomerTreatmentPrice, PriceAccount, PriceAdjustment
 from app.schemas.price import (
     CustomerMaterialPriceCreate,
     CustomerMaterialPriceResponse,
     CustomerTreatmentPriceCreate,
     CustomerTreatmentPriceResponse,
+)
+from app.schemas.customer_price import (
+    CustomerPartsWithPricesResponse,
+    CustomerPartPriceInfo,
+    PriceAdjustmentInfo,
 )
 
 router = APIRouter(prefix="/customer-prices", tags=["Customer Prices"])
@@ -159,3 +167,125 @@ async def get_latest_treatment_price(
         raise HTTPException(status_code=404, detail="No price found for this customer-treatment combination")
 
     return price
+
+
+@router.get("/customers/{customer_id}/parts-with-prices", response_model=CustomerPartsWithPricesResponse)
+async def get_customer_parts_with_prices(
+    customer_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> CustomerPartsWithPricesResponse:
+    """获取指定客户的所有零件及价格信息。
+
+    - 零件集合从 part_customer_aliases 获取（不使用废弃的 parts.customer_id）
+    - 价格从 prices 表左连接获取，无价格时显示"暂无价格"
+    - 不伪造价格数据
+    """
+    # Get customer
+    customer = await db.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="客户不存在")
+
+    # Query all parts for this customer via part_customer_aliases
+    # LEFT JOIN prices to include parts without price accounts
+    query = (
+        select(
+            Part.id,
+            Part.internal_name,
+            PartCustomerAlias.customer_part_no,
+            PartCustomerAlias.customer_part_name,
+            Part.material_name,
+            PriceAccount.id.label('price_account_id'),
+            PriceAccount.material_unit_price,
+            PriceAccount.scrap_price,
+            PriceAccount.surface_treatment_cost,
+            PriceAccount.material_cost,
+        )
+        .select_from(PartCustomerAlias)
+        .join(Part, PartCustomerAlias.part_id == Part.id)
+        .outerjoin(
+            PriceAccount,
+            (PriceAccount.part_id == Part.id) & (PriceAccount.customer_id == customer_id)
+        )
+        .where(PartCustomerAlias.customer_id == customer_id)
+        .where(PartCustomerAlias.is_active == True)
+        .order_by(Part.internal_name, PartCustomerAlias.customer_part_no)
+    )
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    parts_list = [
+        CustomerPartPriceInfo(
+            part_id=row.id,
+            internal_name=row.internal_name,
+            customer_part_no=row.customer_part_no,
+            customer_part_name=row.customer_part_name,
+            material_name=row.material_name,
+            has_price_account=row.price_account_id is not None,
+            material_unit_price=float(row.material_unit_price) if row.material_unit_price else None,
+            scrap_price=float(row.scrap_price) if row.scrap_price else None,
+            surface_treatment_cost=float(row.surface_treatment_cost) if row.surface_treatment_cost else None,
+            material_cost=float(row.material_cost) if row.material_cost else None,
+        )
+        for row in rows
+    ]
+
+    return CustomerPartsWithPricesResponse(
+        customer_id=customer.id,
+        customer_name=customer.name,
+        customer_code=customer.customer_code,
+        parts_count=len(parts_list),
+        parts=parts_list,
+    )
+
+
+@router.get("/customers/{customer_id}/parts/{part_id}/price-history", response_model=list[PriceAdjustmentInfo])
+async def get_part_price_history(
+    customer_id: int,
+    part_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> list[PriceAdjustmentInfo]:
+    """获取指定客户-零件组合的调价历史。
+
+    从 price_adjustments 表查询，无记录时返回空列表（前端显示"暂无调价记录"）。
+    """
+    # Verify customer and part exist
+    customer = await db.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="客户不存在")
+
+    part = await db.get(Part, part_id)
+    if not part:
+        raise HTTPException(status_code=404, detail="零件不存在")
+
+    # Query price adjustments
+    query = (
+        select(PriceAdjustment)
+        .where(PriceAdjustment.customer_id == customer_id)
+        .where(PriceAdjustment.part_id == part_id)
+        .where(PriceAdjustment.adjustment_type == 'part')
+        .order_by(PriceAdjustment.requested_at.desc())
+    )
+
+    result = await db.execute(query)
+    adjustments = result.scalars().all()
+
+    return [
+        PriceAdjustmentInfo(
+            id=adj.id,
+            adjustment_type=adj.adjustment_type,
+            old_price=float(adj.old_price) if adj.old_price else None,
+            new_price=float(adj.new_price),
+            reason=adj.reason,
+            status=adj.status,
+            requested_by=adj.requested_by,
+            requested_at=adj.requested_at,
+            reviewed_by=adj.reviewed_by,
+            reviewed_at=adj.reviewed_at,
+            review_notes=adj.review_notes,
+            effective_date=adj.effective_date,
+        )
+        for adj in adjustments
+    ]

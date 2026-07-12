@@ -1,0 +1,2144 @@
+[
+  {
+    "name": "SUS301 3/4H",
+    "category": "不锈钢",
+    "base_material": "SUS301",
+    "grade": "3/4H",
+    "count": 1664,
+    "variants": [
+      "SUS301-3/4H",
+      "SUS301-CSP3/4H",
+      "SUS301 3/4H",
+      "SUS301-CSP 3/4H（JIS G4305）",
+      "SUS301 CSP 3/4H",
+      "SUS301-CSP 3/4H",
+      "SUS301-CSP 3/4H(实达)",
+      "SUS301-3/4H（HV390-420）",
+      "SUS301-3/4H CPS((HV370~460)) (JIS G4313)",
+      "SUS301CSP-3/4H（实达）",
+      "SUS301-CSP-3/4H",
+      "SUS301CSP-3/4H",
+      "SUS301-3/4H（HV380-410）",
+      "SUS301  3/4H",
+      "SUS301-CSP3/4H(HV370~450)",
+      "SUS301-CSP3/4H(HV400~430)",
+      "SUS301-3/4H(JIS G4313)",
+      "SUS301-3/4H(注：用实达材料）",
+      "SUS301-3/4H（实达）",
+      "SUS301-3/4H（HV380-400）",
+      "SUS301-3/4H(HV370~410)",
+      "SUS301  CSP3/4H",
+      "SUS301-1/2H；SUS301-3/4H；SUS301-H",
+      "SUS301 3/4H（HV390-410)",
+      "SUS301-3/4H（HV390-410）",
+      "SUS301-3/4H (HV390-420)",
+      "SUS301 3/4H(材质更改 2014.1.2)",
+      "SUS301-3/4H CPS((HV370~410)) (JIS G4313)",
+      "SUS301-3/4H（内部用SUS304-3/4H)",
+      "SUS301-CSP3/4H(HV370~420)",
+      "SUS301-3/4H   HV390-420",
+      "SUS301 3/4H（HV370-400）",
+      "1Cr18Ni9/SUS301-3/4H",
+      "SUS301 3/4H  (HV390-420)",
+      "SUS301-3/4H(HV390~410)",
+      "SUS301-CSP 3/4H（JIS G4305）(进口料)",
+      "SUS301-3/4H (370~420HV)",
+      "SUS301-CSP/JIS301 3/4H",
+      "SUS301-CSP3/4H(HV370以上)",
+      "SUS301- 3/4H",
+      "SUS301- CSP 3/4H",
+      "SUS301-CSP3/4H  JIS G4313",
+      "SUS301 CSP-3/4H(HV400~420)",
+      "SUS301-3/4H(HV390-420)",
+      "SUS301-3/4H   HV380-400",
+      "SUS301-3/4H   HV380-410"
+    ]
+  },
+  {
+    "name": "SUS304 3/4H",
+    "category": "不锈钢",
+    "base_material": "SUS304",
+    "grade": "3/4H",
+    "count": 518,
+    "variants": [
+      "SUS304 3/4H",
+      "SUS304-3/4H",
+      "SUS304-CSP3/4H",
+      "SUS304  3/4H",
+      "SUS304- 3/4H(HRC37~46)"
+    ]
+  },
+  {
+    "name": "SPCC",
+    "category": "冷轧钢板",
+    "base_material": "SPCC",
+    "grade": null,
+    "count": 384,
+    "variants": [
+      "SPCC",
+      "冷轧板",
+      "SPCC冷轧板",
+      "SAEV1010-1018(SPCC)",
+      "20(SPCC)",
+      "SPCC JIS G3141-2011",
+      "下脚料（SPCC）",
+      "DC01 GB/T 5213或者SPCC JISG 3141",
+      "SAEV1010-1035(SPCC)",
+      "SPCC~E",
+      "SECC 改为SPCC,生产后需要表面处理",
+      "SPCC或DC01",
+      "边角料（SPCC）",
+      "钢板(SPCC)",
+      "SAEV1010-1018(SPCC"
+    ]
+  },
+  {
+    "name": "65Mn",
+    "category": "弹簧钢",
+    "base_material": "65Mn",
+    "grade": null,
+    "count": 198,
+    "variants": [
+      "65Mn",
+      "65Mn(弹簧钢）",
+      "65Mn [D] YB/T 5058",
+      "65Mn-GB/T1222",
+      "CS60 (65Mn)",
+      "C75/65Mn"
+    ]
+  },
+  {
+    "name": "SAPH440",
+    "category": "热轧酸洗钢板",
+    "base_material": "SAPH440",
+    "grade": null,
+    "count": 180,
+    "variants": [
+      "SAPH440",
+      "SAPH440 Q/BQB 310",
+      "SAPH440或SPFH540",
+      "SAPH440（热轧）",
+      "SAPH440或Q235B",
+      "SPFH540/SAPH440"
+    ]
+  },
+  {
+    "name": "SUS201",
+    "category": "不锈钢",
+    "base_material": "SUS201",
+    "grade": null,
+    "count": 179,
+    "variants": [
+      "复合材料（REN50 54 11)(基材SUS201)",
+      "SUS201",
+      "复合材料（REN50 55 11)(基材SUS201)",
+      "复合材料 （REN50 55 11）(基材SUS201)",
+      "复合材料（REN50 56 11)(基材SUS201)",
+      "复合材料（REN50 55 11)（基材SUS201）",
+      "复合材料 （REN50 54 11）(0基材SUS201",
+      "复合材料（REN50 53 11)(基材SUS201)",
+      "复合材料(基材SUS201)",
+      "复合材料 （REN50 56 11）(基材SUS201)",
+      "复合材料（REN50 54 11)（基材SUS201）",
+      "SUS201-1/2H",
+      "SUS201(软态)",
+      "复合材料（REN50 55 11）(基材SUS201)",
+      "复合材料(REN50 56 11)(基材SUS201)",
+      "复合材料 （REN50 55 11）(0基材SUS201",
+      "复合材料(REN50 55 11)(基材SUS201)",
+      "复合材料（REN50 54 11)  (基材SUS201)",
+      "SUS201复合材料"
+    ]
+  },
+  {
+    "name": "REN50-54-11",
+    "category": "复合材料",
+    "base_material": "REN50-54-11",
+    "grade": null,
+    "count": 147,
+    "variants": [
+      "复合材料（REN50 54 11)",
+      "复合材料（REN50 54 11）"
+    ]
+  },
+  {
+    "name": "SUS201 3/4H",
+    "category": "不锈钢",
+    "base_material": "SUS201",
+    "grade": "3/4H",
+    "count": 146,
+    "variants": [
+      "SUS201-3/4H",
+      "SUS201-CSP3/4H",
+      "SUS201 3/4H"
+    ]
+  },
+  {
+    "name": "SUS301 1/2H",
+    "category": "不锈钢",
+    "base_material": "SUS301",
+    "grade": "1/2H",
+    "count": 128,
+    "variants": [
+      "SUS301-1/2H",
+      "SUS301-CSP1/2H",
+      "SUS301-1/2H（实达）",
+      "SUS301 CSP 1/2H",
+      "SUS301 1/2H（HV310~340）",
+      "SUS301  1/2H",
+      "SUS301-1/2H(HV300~360)",
+      "SUS301- CSP1/2H",
+      "SUS301 1/2H"
+    ]
+  },
+  {
+    "name": "SUS301 CSP-H",
+    "category": "不锈钢",
+    "base_material": "SUS301",
+    "grade": "CSP-H",
+    "count": 110,
+    "variants": [
+      "SUS301 CSP-H(HV420~450)",
+      "SUS301 CSP-H(HV390~450)",
+      "SUS301-CSP-H",
+      "SUS301-CSP EH（抗拉1500-1700）",
+      "SUS301 CSP-H(HV430~440)",
+      "SUS301 CSP(JIS G4313)(HV390~450)",
+      "SUS301 CSP-H(HV400~500)",
+      "SUS301-CSP H（抗拉1500-1700）",
+      "SUS301-CSP H(HV420~490)",
+      "SUS301-CSP H(HV410~460)",
+      "SUS301-CSP H  JIS G4313",
+      "SUS301 CSP-H(HV420~450，抗拉1230-1450)",
+      "SUS301 CSP-H(HV440~450)",
+      "SUS301 CSP-H(HV435~455)",
+      "SUS301 CSP-H(JIS G4313)(HV400~500)",
+      "SUS301 CSP-H (JIS G4313)(HV400~500)"
+    ]
+  },
+  {
+    "name": "SUS304",
+    "category": "不锈钢",
+    "base_material": "SUS304",
+    "grade": null,
+    "count": 98,
+    "variants": [
+      "SUS304",
+      "SUS 304",
+      "SUS304-CPS-H",
+      "SUS304 软态",
+      "SUS304(软态）",
+      "SUS304-H(HV370以上)",
+      "SUS304/Cr17Ni17",
+      "SUS304 3/5H",
+      "SUS304 3/6H",
+      "06Cr19Ni10(SUS304)",
+      "SUS304(HV350~450)"
+    ]
+  },
+  {
+    "name": "SUS301",
+    "category": "不锈钢",
+    "base_material": "SUS301",
+    "grade": null,
+    "count": 94,
+    "variants": [
+      "SUS301",
+      "SUS301-3/4",
+      "SUS301-CSP3/4",
+      "SUS301（HV390-420）",
+      "SUS301-CSP",
+      "SUS301 H(HV420~450)",
+      "SUS301 JIS G4313-2011",
+      "SUS301软态",
+      "SUS301 H(HRC42-52)",
+      "SUS301    （HV390-420）",
+      "SUS301 3/5H",
+      "SUS301+C1150 WXP-6401+PTFE",
+      "SUS301-CSP-JIS 4313",
+      "SUS301+PDFE（复合材料）",
+      "SUS301 AS1449/420 2B(HV410-460)",
+      "SUS301EH（HV510~520）",
+      "SUS301   HV390-420",
+      "SUS301(HV390-420)"
+    ]
+  },
+  {
+    "name": "X10CrNi18-8",
+    "category": "不锈钢",
+    "base_material": "X10CrNi18-8",
+    "grade": null,
+    "count": 72,
+    "variants": [
+      "X10CrNi18-8",
+      "X10CrNi18-8+C1300-EN10151（实达）",
+      "X10CrNi18-8（HV390-420）",
+      "X10CrNi18-8+C1300-EN10151",
+      "X10CrNi18-8 (抗拉 1300以上)",
+      "ASTMA666(TYPE301,3/4H)/EN10151(X10CrNi18-8+C1150)",
+      "X10CrNi18-8+C1150-EN 10151",
+      "X10CrNi18-8（HV380-460）",
+      "X10CrNi 18-8(HV390~450)",
+      "X10CrNi18-8[BOS-05.13]",
+      "X10CrNi18-8+C1300+2H-EN10151#1.4310",
+      "EN 10151-X10CrNi18-8(1.4310)（抗拉1400-1600）",
+      "EN 10151 (X10CrNi 18-8+C850)",
+      "EN10151 X10CrNi 18-8(1.4313)",
+      "X10CrNi18-8 EN10151",
+      "X10CrNi18-8+C1300",
+      "X10CrNi18-8+C1150-EN10151",
+      "X10CrNi18-8 EN10088-2(AISI 301)            抗拉（1325-1475）",
+      "X10CrNi18-8 EN10088-2(AISI 301)            抗拉（1150-1300）",
+      "X10CrNi18-8+C1150EN101511.4310"
+    ]
+  },
+  {
+    "name": "REN50-55-11",
+    "category": "复合材料",
+    "base_material": "REN50-55-11",
+    "grade": null,
+    "count": 66,
+    "variants": [
+      "复合材料（REN50 55 11)",
+      "复合材料 （REN50 55 11）",
+      "复合材料（REN50 55 11）",
+      "复合材料(REN50 55 11)"
+    ]
+  },
+  {
+    "name": "SPHC",
+    "category": "热轧钢板",
+    "base_material": "SPHC",
+    "grade": null,
+    "count": 56,
+    "variants": [
+      "SPHC",
+      "SPHC Q/BQB 302",
+      "SPHC-P",
+      "SPHC Q/BQB 311",
+      "JIS SPHC-P",
+      "SPHC Q/BQB302"
+    ]
+  },
+  {
+    "name": "复合材料",
+    "category": "复合材料",
+    "base_material": "复合材料",
+    "grade": null,
+    "count": 54,
+    "variants": [
+      "复合材料",
+      "复合材料（客户提供）",
+      "复合材料(REN50 56 11)",
+      "复合材料（REN50 56 11)",
+      "复合材料（REN50 53 11)",
+      "复合材料 （REN50 56 11）",
+      "复合材料（涂层0.6+0.1）",
+      "复合材料（REN50 56 11）"
+    ]
+  },
+  {
+    "name": "Q235B",
+    "category": "碳素结构钢",
+    "base_material": "Q235B",
+    "grade": null,
+    "count": 51,
+    "variants": [
+      "Q235B",
+      "酸洗Q235B",
+      "Q235",
+      "SS400或Q235B",
+      "Q235B-GB/T3274-2007",
+      "Q235-GB"
+    ]
+  },
+  {
+    "name": "DC01",
+    "category": "冷轧钢板",
+    "base_material": "DC01",
+    "grade": null,
+    "count": 50,
+    "variants": [
+      "DC01",
+      "DC01+C390",
+      "钢板 DC01",
+      "DC01-T=8 GB/T 5213-2008",
+      "（DC01）钢板SAE 1006-1010",
+      "DC01 1mmQ/BQB 403"
+    ]
+  },
+  {
+    "name": "QStE420",
+    "category": "高强度钢",
+    "base_material": "QStE420",
+    "grade": null,
+    "count": 50,
+    "variants": [
+      "QSTE 420或SPFH590",
+      "QSTE420",
+      "QSTE420TM",
+      "QSTE 420",
+      "QSte420TM"
+    ]
+  },
+  {
+    "name": "DC04",
+    "category": "冷轧钢板",
+    "base_material": "DC04",
+    "grade": null,
+    "count": 47,
+    "variants": [
+      "DC04",
+      "DC04(EN 10139-4)",
+      "DC04或镀锌板53D",
+      "EN10139-DC04"
+    ]
+  },
+  {
+    "name": "SPCE",
+    "category": "冷轧钢板",
+    "base_material": "SPCE",
+    "grade": null,
+    "count": 28,
+    "variants": [
+      "SPCE"
+    ]
+  },
+  {
+    "name": "QStE460TM",
+    "category": "高强度钢",
+    "base_material": "QStE460TM",
+    "grade": null,
+    "count": 28,
+    "variants": [
+      "QStE 460TM",
+      "QSTE460"
+    ]
+  },
+  {
+    "name": "SUS301 H",
+    "category": "不锈钢",
+    "base_material": "SUS301",
+    "grade": "H",
+    "count": 24,
+    "variants": [
+      "SUS301-H",
+      "SUS301-H(HV420~450)"
+    ]
+  },
+  {
+    "name": "12Cr17Ni7 3/4H",
+    "category": "不锈钢",
+    "base_material": "12Cr17Ni7",
+    "grade": "3/4H",
+    "count": 23,
+    "variants": [
+      "12Cr17Ni7-3/4H",
+      "12Cr17Ni7 3/4H",
+      "12Cr17Ni7-3/4H YB/T 5310",
+      "12Cr17Ni7-CSP-3/4H",
+      "12Cr17Ni7-3/4H-1.0 YB/T 5310",
+      "12Cr17Ni7-3/4H-0.8 YB/T 5310",
+      "12Cr17Ni7-3/4H 0.8 YB/T 5310"
+    ]
+  },
+  {
+    "name": "45#",
+    "category": "碳素结构钢",
+    "base_material": "45#",
+    "grade": null,
+    "count": 16,
+    "variants": [
+      "45#",
+      "45#或S45C",
+      "S45C-P或45#"
+    ]
+  },
+  {
+    "name": "AL5754",
+    "category": "铝合金",
+    "base_material": "AL5754",
+    "grade": null,
+    "count": 14,
+    "variants": [
+      "铝合金 5754",
+      "铝合金（5754）"
+    ]
+  },
+  {
+    "name": "SECC",
+    "category": "其他",
+    "base_material": "SECC",
+    "grade": null,
+    "count": 10,
+    "variants": [
+      "SECC"
+    ]
+  },
+  {
+    "name": "SAPH400",
+    "category": "其他",
+    "base_material": "SAPH400",
+    "grade": null,
+    "count": 9,
+    "variants": [
+      "SAPH400"
+    ]
+  },
+  {
+    "name": "1050钢",
+    "category": "其他",
+    "base_material": "1050钢",
+    "grade": null,
+    "count": 9,
+    "variants": [
+      "1050钢"
+    ]
+  },
+  {
+    "name": "12Cr17Ni7",
+    "category": "不锈钢",
+    "base_material": "12Cr17Ni7",
+    "grade": null,
+    "count": 9,
+    "variants": [
+      "12Cr17Ni7",
+      "12Cr17Ni7-1/2H",
+      "12Cr17Ni7-GB/T3280"
+    ]
+  },
+  {
+    "name": "SPFH540",
+    "category": "其他",
+    "base_material": "SPFH540",
+    "grade": null,
+    "count": 8,
+    "variants": [
+      "SPFH540"
+    ]
+  },
+  {
+    "name": "C67S",
+    "category": "其他",
+    "base_material": "C67S",
+    "grade": null,
+    "count": 8,
+    "variants": [
+      "C67S"
+    ]
+  },
+  {
+    "name": "SCM435",
+    "category": "其他",
+    "base_material": "SCM435",
+    "grade": null,
+    "count": 8,
+    "variants": [
+      "SCM435"
+    ]
+  },
+  {
+    "name": "客户提供材料",
+    "category": "其他",
+    "base_material": "客户提供材料",
+    "grade": null,
+    "count": 7,
+    "variants": [
+      "客户提供材料"
+    ]
+  },
+  {
+    "name": "HueHoco",
+    "category": "其他",
+    "base_material": "HueHoco",
+    "grade": null,
+    "count": 7,
+    "variants": [
+      "HueHoco"
+    ]
+  },
+  {
+    "name": "301-ASTM A 666",
+    "category": "其他",
+    "base_material": "301-ASTM A 666",
+    "grade": null,
+    "count": 7,
+    "variants": [
+      "301-ASTM A 666"
+    ]
+  },
+  {
+    "name": "SUS304 1/2H",
+    "category": "不锈钢",
+    "base_material": "SUS304",
+    "grade": "1/2H",
+    "count": 7,
+    "variants": [
+      "SUS304 1/2H（HV310~330)",
+      "SUS304-1/2H",
+      "SUS 304 1/2H"
+    ]
+  },
+  {
+    "name": "无",
+    "category": "其他",
+    "base_material": "无",
+    "grade": null,
+    "count": 6,
+    "variants": [
+      "无"
+    ]
+  },
+  {
+    "name": "X-ANTS-S4015/X471-CN",
+    "category": "其他",
+    "base_material": "X-ANTS-S4015/X471-CN",
+    "grade": null,
+    "count": 6,
+    "variants": [
+      "X-ANTS-S4015/X471-CN"
+    ]
+  },
+  {
+    "name": "SPHE",
+    "category": "其他",
+    "base_material": "SPHE",
+    "grade": null,
+    "count": 5,
+    "variants": [
+      "SPHE"
+    ]
+  },
+  {
+    "name": "SPFH590",
+    "category": "高强度钢板",
+    "base_material": "SPFH590",
+    "grade": null,
+    "count": 5,
+    "variants": [
+      "SPFH590"
+    ]
+  },
+  {
+    "name": "BH-1510",
+    "category": "其他",
+    "base_material": "BH-1510",
+    "grade": null,
+    "count": 5,
+    "variants": [
+      "BH-1510"
+    ]
+  },
+  {
+    "name": "DC03",
+    "category": "其他",
+    "base_material": "DC03",
+    "grade": null,
+    "count": 5,
+    "variants": [
+      "DC03"
+    ]
+  },
+  {
+    "name": "纯红铜",
+    "category": "其他",
+    "base_material": "纯红铜",
+    "grade": null,
+    "count": 5,
+    "variants": [
+      "纯红铜"
+    ]
+  },
+  {
+    "name": "钢板",
+    "category": "其他",
+    "base_material": "钢板",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "钢板"
+    ]
+  },
+  {
+    "name": "ST12",
+    "category": "其他",
+    "base_material": "ST12",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "ST12"
+    ]
+  },
+  {
+    "name": "C75S (EN 10132-4)",
+    "category": "其他",
+    "base_material": "C75S (EN 10132-4)",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "C75S (EN 10132-4)"
+    ]
+  },
+  {
+    "name": "SK85",
+    "category": "其他",
+    "base_material": "SK85",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "SK85"
+    ]
+  },
+  {
+    "name": "S40-S50C",
+    "category": "其他",
+    "base_material": "S40-S50C",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "S40-S50C"
+    ]
+  },
+  {
+    "name": "S355MC Q/BQB 311",
+    "category": "其他",
+    "base_material": "S355MC Q/BQB 311",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "S355MC Q/BQB 311"
+    ]
+  },
+  {
+    "name": "SAE 30301-30302不锈钢",
+    "category": "其他",
+    "base_material": "SAE 30301-30302不锈钢",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "SAE 30301-30302不锈钢"
+    ]
+  },
+  {
+    "name": "SUS 305（需无磁）",
+    "category": "其他",
+    "base_material": "SUS 305（需无磁）",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "SUS 305（需无磁）"
+    ]
+  },
+  {
+    "name": "铝合金",
+    "category": "铝合金",
+    "base_material": "铝合金",
+    "grade": null,
+    "count": 4,
+    "variants": [
+      "ALUMINUM 3003-H24",
+      "ALUMINUM 3003-H32",
+      "0Cr17Ni7AL-BY-YB/5310-2006"
+    ]
+  },
+  {
+    "name": "热轧板",
+    "category": "其他",
+    "base_material": "热轧板",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "热轧板"
+    ]
+  },
+  {
+    "name": "S20C",
+    "category": "其他",
+    "base_material": "S20C",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "S20C"
+    ]
+  },
+  {
+    "name": "SAPH450",
+    "category": "其他",
+    "base_material": "SAPH450",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "SAPH450"
+    ]
+  },
+  {
+    "name": "SPCD",
+    "category": "其他",
+    "base_material": "SPCD",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "SPCD"
+    ]
+  },
+  {
+    "name": "51CrV4",
+    "category": "其他",
+    "base_material": "51CrV4",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "51CrV4"
+    ]
+  },
+  {
+    "name": "DOC-T=8.0 GB/T 5213-2008",
+    "category": "其他",
+    "base_material": "DOC-T=8.0 GB/T 5213-2008",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "DOC-T=8.0 GB/T 5213-2008"
+    ]
+  },
+  {
+    "name": "1Cr17Ni7-GB4239-91 3/4H",
+    "category": "其他",
+    "base_material": "1Cr17Ni7-GB4239-91 3/4H",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "1Cr17Ni7-GB4239-91 3/4H"
+    ]
+  },
+  {
+    "name": "1Cr17Ni7",
+    "category": "其他",
+    "base_material": "1Cr17Ni7",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "1Cr17Ni7"
+    ]
+  },
+  {
+    "name": "SUS430",
+    "category": "不锈钢",
+    "base_material": "SUS430",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "SUS430"
+    ]
+  },
+  {
+    "name": "1070-1074 （标准 SAE J403)",
+    "category": "其他",
+    "base_material": "1070-1074 （标准 SAE J403)",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "1070-1074 （标准 SAE J403)"
+    ]
+  },
+  {
+    "name": "EN10088-2-X5CrNi18-10(1.4301)",
+    "category": "其他",
+    "base_material": "EN10088-2-X5CrNi18-10(1.4301)",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "EN10088-2-X5CrNi18-10(1.4301)"
+    ]
+  },
+  {
+    "name": "不然小脚会开裂",
+    "category": "其他",
+    "base_material": "不然小脚会开裂",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "不然小脚会开裂"
+    ]
+  },
+  {
+    "name": "HC340LA(Rm410-510N/mm²)Q/BQB419",
+    "category": "其他",
+    "base_material": "HC340LA(Rm410-510N/mm²)Q/BQB419",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "HC340LA(Rm410-510N/mm²)Q/BQB419"
+    ]
+  },
+  {
+    "name": "4343/3003MOD/4343",
+    "category": "其他",
+    "base_material": "4343/3003MOD/4343",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "4343/3003MOD/4343"
+    ]
+  },
+  {
+    "name": "SNCM220",
+    "category": "其他",
+    "base_material": "SNCM220",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "SNCM220"
+    ]
+  },
+  {
+    "name": "301-3/4H(ASTM A666)（实达）",
+    "category": "其他",
+    "base_material": "301-3/4H(ASTM A666)（实达）",
+    "grade": null,
+    "count": 3,
+    "variants": [
+      "301-3/4H(ASTM A666)（实达）"
+    ]
+  },
+  {
+    "name": "1Cr18Ni9Ti",
+    "category": "其他",
+    "base_material": "1Cr18Ni9Ti",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "1Cr18Ni9Ti"
+    ]
+  },
+  {
+    "name": "CK67",
+    "category": "其他",
+    "base_material": "CK67",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "CK67"
+    ]
+  },
+  {
+    "name": "钢板B-6.0-GB/T709/35-II-P-GB/T710",
+    "category": "其他",
+    "base_material": "钢板B-6.0-GB/T709/35-II-P-GB/T710",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "钢板B-6.0-GB/T709/35-II-P-GB/T710"
+    ]
+  },
+  {
+    "name": "ANT S-S 4015",
+    "category": "其他",
+    "base_material": "ANT S-S 4015",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "ANT S-S 4015"
+    ]
+  },
+  {
+    "name": "20 GB699-99",
+    "category": "其他",
+    "base_material": "20 GB699-99",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "20 GB699-99"
+    ]
+  },
+  {
+    "name": "S45C-P",
+    "category": "其他",
+    "base_material": "S45C-P",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "S45C-P"
+    ]
+  },
+  {
+    "name": "S65CM/弹簧钢C70",
+    "category": "其他",
+    "base_material": "S65CM/弹簧钢C70",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "S65CM/弹簧钢C70"
+    ]
+  },
+  {
+    "name": "铝板",
+    "category": "其他",
+    "base_material": "铝板",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "铝板"
+    ]
+  },
+  {
+    "name": "SS420",
+    "category": "其他",
+    "base_material": "SS420",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "SS420"
+    ]
+  },
+  {
+    "name": "镀锌板",
+    "category": "其他",
+    "base_material": "镀锌板",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "镀锌板"
+    ]
+  },
+  {
+    "name": "ML10 冷镦钢",
+    "category": "其他",
+    "base_material": "ML10 冷镦钢",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "ML10 冷镦钢"
+    ]
+  },
+  {
+    "name": "(JIS G4313)",
+    "category": "其他",
+    "base_material": "(JIS G4313)",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "(JIS G4313)"
+    ]
+  },
+  {
+    "name": "H 380LA",
+    "category": "其他",
+    "base_material": "H 380LA",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "H 380LA"
+    ]
+  },
+  {
+    "name": "S355MC",
+    "category": "其他",
+    "base_material": "S355MC",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "S355MC"
+    ]
+  },
+  {
+    "name": "F9469PC",
+    "category": "其他",
+    "base_material": "F9469PC",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "F9469PC"
+    ]
+  },
+  {
+    "name": "1Cr17Ni7-GB/T3280-92",
+    "category": "其他",
+    "base_material": "1Cr17Ni7-GB/T3280-92",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "1Cr17Ni7-GB/T3280-92"
+    ]
+  },
+  {
+    "name": "SAE 1213",
+    "category": "其他",
+    "base_material": "SAE 1213",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "SAE 1213"
+    ]
+  },
+  {
+    "name": "SUS631-CSP3/4H（HV400~430)",
+    "category": "其他",
+    "base_material": "SUS631-CSP3/4H（HV400~430)",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "SUS631-CSP3/4H（HV400~430)"
+    ]
+  },
+  {
+    "name": "WOLVERINE BH-1510",
+    "category": "其他",
+    "base_material": "WOLVERINE BH-1510",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "WOLVERINE BH-1510"
+    ]
+  },
+  {
+    "name": "HC260LA",
+    "category": "其他",
+    "base_material": "HC260LA",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "HC260LA"
+    ]
+  },
+  {
+    "name": "EN 10132-4-C67S(国产)",
+    "category": "其他",
+    "base_material": "EN 10132-4-C67S(国产)",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "EN 10132-4-C67S(国产)"
+    ]
+  },
+  {
+    "name": "EN 10132-4-C67S",
+    "category": "其他",
+    "base_material": "EN 10132-4-C67S",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "EN 10132-4-C67S"
+    ]
+  },
+  {
+    "name": "HC340LA（锌镁铝）",
+    "category": "其他",
+    "base_material": "HC340LA（锌镁铝）",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "HC340LA（锌镁铝）"
+    ]
+  },
+  {
+    "name": "1010冷轧钢(制造精度按J级)",
+    "category": "其他",
+    "base_material": "1010冷轧钢(制造精度按J级)",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "1010冷轧钢(制造精度按J级)"
+    ]
+  },
+  {
+    "name": "HC220Y",
+    "category": "其他",
+    "base_material": "HC220Y",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "HC220Y"
+    ]
+  },
+  {
+    "name": "HC340LA",
+    "category": "其他",
+    "base_material": "HC340LA",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "HC340LA"
+    ]
+  },
+  {
+    "name": "Q/BQB311 S355MC",
+    "category": "其他",
+    "base_material": "Q/BQB311 S355MC",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "Q/BQB311 S355MC"
+    ]
+  },
+  {
+    "name": "QSTE500TM(Q/BQB310)",
+    "category": "其他",
+    "base_material": "QSTE500TM(Q/BQB310)",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "QSTE500TM(Q/BQB310)"
+    ]
+  },
+  {
+    "name": "（Rm=1400-1600N/mm2）",
+    "category": "其他",
+    "base_material": "（Rm=1400-1600N/mm2）",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "（Rm=1400-1600N/mm2）"
+    ]
+  },
+  {
+    "name": "S355MC Q/BQB 311-2018",
+    "category": "其他",
+    "base_material": "S355MC Q/BQB 311-2018",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "S355MC Q/BQB 311-2018"
+    ]
+  },
+  {
+    "name": "GB/T 3190-2008;5754 H16",
+    "category": "其他",
+    "base_material": "GB/T 3190-2008;5754 H16",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "GB/T 3190-2008;5754 H16"
+    ]
+  },
+  {
+    "name": "CuSn6-H180",
+    "category": "其他",
+    "base_material": "CuSn6-H180",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "CuSn6-H180"
+    ]
+  },
+  {
+    "name": "DD13(DIN EN 10111)",
+    "category": "其他",
+    "base_material": "DD13(DIN EN 10111)",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "DD13(DIN EN 10111)"
+    ]
+  },
+  {
+    "name": "DD11",
+    "category": "其他",
+    "base_material": "DD11",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "DD11"
+    ]
+  },
+  {
+    "name": "ANT S-S 4010/A1197-CN",
+    "category": "其他",
+    "base_material": "ANT S-S 4010/A1197-CN",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "ANT S-S 4010/A1197-CN"
+    ]
+  },
+  {
+    "name": "SAE1010",
+    "category": "其他",
+    "base_material": "SAE1010",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "SAE1010"
+    ]
+  },
+  {
+    "name": "HUEHOCO",
+    "category": "其他",
+    "base_material": "HUEHOCO",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "HUEHOCO"
+    ]
+  },
+  {
+    "name": "WOLVERRINE WXP-5845+PTFE",
+    "category": "其他",
+    "base_material": "WOLVERRINE WXP-5845+PTFE",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "WOLVERRINE WXP-5845+PTFE"
+    ]
+  },
+  {
+    "name": "301-H(ASTM A666)抗拉1275以上（实达）",
+    "category": "其他",
+    "base_material": "301-H(ASTM A666)抗拉1275以上（实达）",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "301-H(ASTM A666)抗拉1275以上（实达）"
+    ]
+  },
+  {
+    "name": "弹簧钢丝EN 10270-1-SH-1.60",
+    "category": "其他",
+    "base_material": "弹簧钢丝EN 10270-1-SH-1.60",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "弹簧钢丝EN 10270-1-SH-1.60"
+    ]
+  },
+  {
+    "name": "弹簧钢丝EN 10270-1-SH-1.65",
+    "category": "其他",
+    "base_material": "弹簧钢丝EN 10270-1-SH-1.65",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "弹簧钢丝EN 10270-1-SH-1.65"
+    ]
+  },
+  {
+    "name": "A6061-O（延伸率>28%）",
+    "category": "其他",
+    "base_material": "A6061-O（延伸率>28%）",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "A6061-O（延伸率>28%）"
+    ]
+  },
+  {
+    "name": "10B21",
+    "category": "其他",
+    "base_material": "10B21",
+    "grade": null,
+    "count": 2,
+    "variants": [
+      "10B21"
+    ]
+  },
+  {
+    "name": "20#钢板",
+    "category": "其他",
+    "base_material": "20#钢板",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "20#钢板"
+    ]
+  },
+  {
+    "name": "S20C或20#",
+    "category": "其他",
+    "base_material": "S20C或20#",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "S20C或20#"
+    ]
+  },
+  {
+    "name": "圆钢12-12-GB905/45-GB/T699",
+    "category": "其他",
+    "base_material": "圆钢12-12-GB905/45-GB/T699",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "圆钢12-12-GB905/45-GB/T699"
+    ]
+  },
+  {
+    "name": "外加工",
+    "category": "其他",
+    "base_material": "外加工",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "外加工"
+    ]
+  },
+  {
+    "name": "云母片",
+    "category": "其他",
+    "base_material": "云母片",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "云母片"
+    ]
+  },
+  {
+    "name": "SK5",
+    "category": "其他",
+    "base_material": "SK5",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SK5"
+    ]
+  },
+  {
+    "name": "SAPH400(酸洗板)",
+    "category": "其他",
+    "base_material": "SAPH400(酸洗板)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SAPH400(酸洗板)"
+    ]
+  },
+  {
+    "name": "SECC~D",
+    "category": "其他",
+    "base_material": "SECC~D",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SECC~D"
+    ]
+  },
+  {
+    "name": "SAPH400-440",
+    "category": "其他",
+    "base_material": "SAPH400-440",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SAPH400-440"
+    ]
+  },
+  {
+    "name": "SK-6/SK-5",
+    "category": "其他",
+    "base_material": "SK-6/SK-5",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SK-6/SK-5"
+    ]
+  },
+  {
+    "name": "SECE",
+    "category": "其他",
+    "base_material": "SECE",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SECE"
+    ]
+  },
+  {
+    "name": "S65CM",
+    "category": "其他",
+    "base_material": "S65CM",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "S65CM"
+    ]
+  },
+  {
+    "name": "SK-5(已淬火)",
+    "category": "其他",
+    "base_material": "SK-5(已淬火)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SK-5(已淬火)"
+    ]
+  },
+  {
+    "name": "REN50 23 11",
+    "category": "其他",
+    "base_material": "REN50 23 11",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "REN50 23 11"
+    ]
+  },
+  {
+    "name": "51CrMnV GB/T 1222    /51CrV4 EN10089",
+    "category": "其他",
+    "base_material": "51CrMnV GB/T 1222    /51CrV4 EN10089",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "51CrMnV GB/T 1222    /51CrV4 EN10089"
+    ]
+  },
+  {
+    "name": "Q345",
+    "category": "其他",
+    "base_material": "Q345",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "Q345"
+    ]
+  },
+  {
+    "name": "DCO1-T=3.0 GB/T5213-2008",
+    "category": "其他",
+    "base_material": "DCO1-T=3.0 GB/T5213-2008",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "DCO1-T=3.0 GB/T5213-2008"
+    ]
+  },
+  {
+    "name": "20#",
+    "category": "其他",
+    "base_material": "20#",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "20#"
+    ]
+  },
+  {
+    "name": "1Cr17Ni7-δ0.5  GB/T 202878-2007",
+    "category": "其他",
+    "base_material": "1Cr17Ni7-δ0.5  GB/T 202878-2007",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "1Cr17Ni7-δ0.5  GB/T 202878-2007"
+    ]
+  },
+  {
+    "name": "1Cr17Ni7-0.4",
+    "category": "其他",
+    "base_material": "1Cr17Ni7-0.4",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "1Cr17Ni7-0.4"
+    ]
+  },
+  {
+    "name": "SUS631-CSP3/4H",
+    "category": "其他",
+    "base_material": "SUS631-CSP3/4H",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SUS631-CSP3/4H"
+    ]
+  },
+  {
+    "name": "冷砸钢板",
+    "category": "其他",
+    "base_material": "冷砸钢板",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "冷砸钢板"
+    ]
+  },
+  {
+    "name": "冷轧钢板",
+    "category": "其他",
+    "base_material": "冷轧钢板",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "冷轧钢板"
+    ]
+  },
+  {
+    "name": "不锈钢EN0088-1.4310",
+    "category": "其他",
+    "base_material": "不锈钢EN0088-1.4310",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "不锈钢EN0088-1.4310"
+    ]
+  },
+  {
+    "name": "(HV390-410)",
+    "category": "其他",
+    "base_material": "(HV390-410)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "(HV390-410)"
+    ]
+  },
+  {
+    "name": "SPHD",
+    "category": "其他",
+    "base_material": "SPHD",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SPHD"
+    ]
+  },
+  {
+    "name": "0Cr18Ni9",
+    "category": "其他",
+    "base_material": "0Cr18Ni9",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "0Cr18Ni9"
+    ]
+  },
+  {
+    "name": "ASS，Y",
+    "category": "其他",
+    "base_material": "ASS，Y",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "ASS，Y"
+    ]
+  },
+  {
+    "name": "9795.0",
+    "category": "其他",
+    "base_material": "9795.0",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "9795.0"
+    ]
+  },
+  {
+    "name": "5052H32",
+    "category": "其他",
+    "base_material": "5052H32",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "5052H32"
+    ]
+  },
+  {
+    "name": "云母板",
+    "category": "其他",
+    "base_material": "云母板",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "云母板"
+    ]
+  },
+  {
+    "name": "SUS302-3/4H",
+    "category": "其他",
+    "base_material": "SUS302-3/4H",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SUS302-3/4H"
+    ]
+  },
+  {
+    "name": "JSH270C",
+    "category": "其他",
+    "base_material": "JSH270C",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "JSH270C"
+    ]
+  },
+  {
+    "name": "SAPH 440",
+    "category": "其他",
+    "base_material": "SAPH 440",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SAPH 440"
+    ]
+  },
+  {
+    "name": "60Si2Mn GB/T1222",
+    "category": "其他",
+    "base_material": "60Si2Mn GB/T1222",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "60Si2Mn GB/T1222"
+    ]
+  },
+  {
+    "name": "H380LA",
+    "category": "其他",
+    "base_material": "H380LA",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "H380LA"
+    ]
+  },
+  {
+    "name": "301 DIN 1.4310（抗拉1860-2100）",
+    "category": "其他",
+    "base_material": "301 DIN 1.4310（抗拉1860-2100）",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "301 DIN 1.4310（抗拉1860-2100）"
+    ]
+  },
+  {
+    "name": "S355 MC （标准 Q/BQB311)",
+    "category": "其他",
+    "base_material": "S355 MC （标准 Q/BQB311)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "S355 MC （标准 Q/BQB311)"
+    ]
+  },
+  {
+    "name": "QSTE340TM",
+    "category": "其他",
+    "base_material": "QSTE340TM",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "QSTE340TM"
+    ]
+  },
+  {
+    "name": "51Crv4",
+    "category": "其他",
+    "base_material": "51Crv4",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "51Crv4"
+    ]
+  },
+  {
+    "name": "1010#(制造精度按J级)",
+    "category": "其他",
+    "base_material": "1010#(制造精度按J级)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "1010#(制造精度按J级)"
+    ]
+  },
+  {
+    "name": "S420MC Q/BQB 311-2009",
+    "category": "其他",
+    "base_material": "S420MC Q/BQB 311-2009",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "S420MC Q/BQB 311-2009"
+    ]
+  },
+  {
+    "name": "1010冷轧钢板(制造精度按J级)",
+    "category": "其他",
+    "base_material": "1010冷轧钢板(制造精度按J级)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "1010冷轧钢板(制造精度按J级)"
+    ]
+  },
+  {
+    "name": "DC53D+Z 70/70",
+    "category": "其他",
+    "base_material": "DC53D+Z 70/70",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "DC53D+Z 70/70"
+    ]
+  },
+  {
+    "name": "GB/T 3880-2012 6082 T6",
+    "category": "其他",
+    "base_material": "GB/T 3880-2012 6082 T6",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "GB/T 3880-2012 6082 T6"
+    ]
+  },
+  {
+    "name": "C75S+QT(硬度HRC50~54)抗拉：1700~1900）热处理好的材料",
+    "category": "其他",
+    "base_material": "C75S+QT(硬度HRC50~54)抗拉：1700~1900）热处理好的材料",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "C75S+QT(硬度HRC50~54)抗拉：1700~1900）热处理好的材料"
+    ]
+  },
+  {
+    "name": "QSTE500TM",
+    "category": "其他",
+    "base_material": "QSTE500TM",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "QSTE500TM"
+    ]
+  },
+  {
+    "name": "EN AW-5754 H22",
+    "category": "其他",
+    "base_material": "EN AW-5754 H22",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "EN AW-5754 H22"
+    ]
+  },
+  {
+    "name": "DD13 (DIN EN10111或Q/BQB302)",
+    "category": "其他",
+    "base_material": "DD13 (DIN EN10111或Q/BQB302)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "DD13 (DIN EN10111或Q/BQB302)"
+    ]
+  },
+  {
+    "name": "C75S+QT(980~1180）Mpa",
+    "category": "其他",
+    "base_material": "C75S+QT(980~1180）Mpa",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "C75S+QT(980~1180）Mpa"
+    ]
+  },
+  {
+    "name": "S355MC DIN EN 10149-2",
+    "category": "其他",
+    "base_material": "S355MC DIN EN 10149-2",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "S355MC DIN EN 10149-2"
+    ]
+  },
+  {
+    "name": "DD13 EN10111)",
+    "category": "其他",
+    "base_material": "DD13 EN10111)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "DD13 EN10111)"
+    ]
+  },
+  {
+    "name": "SPHE Q/BQB",
+    "category": "其他",
+    "base_material": "SPHE Q/BQB",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SPHE Q/BQB"
+    ]
+  },
+  {
+    "name": "SAPH370 Q/BQB310",
+    "category": "其他",
+    "base_material": "SAPH370 Q/BQB310",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SAPH370 Q/BQB310"
+    ]
+  },
+  {
+    "name": "涂层材料（客户提供",
+    "category": "其他",
+    "base_material": "涂层材料（客户提供",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "涂层材料（客户提供"
+    ]
+  },
+  {
+    "name": "SUS305 (软态)",
+    "category": "其他",
+    "base_material": "SUS305 (软态)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SUS305 (软态)"
+    ]
+  },
+  {
+    "name": "ANT S-S 4005",
+    "category": "其他",
+    "base_material": "ANT S-S 4005",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "ANT S-S 4005"
+    ]
+  },
+  {
+    "name": "涂层材料",
+    "category": "其他",
+    "base_material": "涂层材料",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "涂层材料"
+    ]
+  },
+  {
+    "name": "涂层材料（不锈钢0.55/涂层0.05）",
+    "category": "其他",
+    "base_material": "涂层材料（不锈钢0.55/涂层0.05）",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "涂层材料（不锈钢0.55/涂层0.05）"
+    ]
+  },
+  {
+    "name": "AA6061-O",
+    "category": "其他",
+    "base_material": "AA6061-O",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "AA6061-O"
+    ]
+  },
+  {
+    "name": "5052.0",
+    "category": "其他",
+    "base_material": "5052.0",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "5052.0"
+    ]
+  },
+  {
+    "name": "SWRCH10A+HC340LA",
+    "category": "其他",
+    "base_material": "SWRCH10A+HC340LA",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SWRCH10A+HC340LA"
+    ]
+  },
+  {
+    "name": "SWRCH10A",
+    "category": "其他",
+    "base_material": "SWRCH10A",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SWRCH10A"
+    ]
+  },
+  {
+    "name": "3003/6060MOD/3003",
+    "category": "其他",
+    "base_material": "3003/6060MOD/3003",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "3003/6060MOD/3003"
+    ]
+  },
+  {
+    "name": "紫铜",
+    "category": "其他",
+    "base_material": "紫铜",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "紫铜"
+    ]
+  },
+  {
+    "name": "(抗拉 1300以上)",
+    "category": "其他",
+    "base_material": "(抗拉 1300以上)",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "(抗拉 1300以上)"
+    ]
+  },
+  {
+    "name": "WS006711 粘合剂3M VHB 9460",
+    "category": "其他",
+    "base_material": "WS006711 粘合剂3M VHB 9460",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "WS006711 粘合剂3M VHB 9460"
+    ]
+  },
+  {
+    "name": "钢",
+    "category": "其他",
+    "base_material": "钢",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "钢"
+    ]
+  },
+  {
+    "name": "HC340LA+C390-MA",
+    "category": "其他",
+    "base_material": "HC340LA+C390-MA",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "HC340LA+C390-MA"
+    ]
+  },
+  {
+    "name": "SAE1010钢",
+    "category": "其他",
+    "base_material": "SAE1010钢",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "SAE1010钢"
+    ]
+  },
+  {
+    "name": "钢板20#",
+    "category": "其他",
+    "base_material": "钢板20#",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "钢板20#"
+    ]
+  },
+  {
+    "name": "碳素弹簧钢丝",
+    "category": "其他",
+    "base_material": "碳素弹簧钢丝",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "碳素弹簧钢丝"
+    ]
+  },
+  {
+    "name": "钢20 GB699",
+    "category": "其他",
+    "base_material": "钢20 GB699",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "钢20 GB699"
+    ]
+  },
+  {
+    "name": "C67S  C75S",
+    "category": "其他",
+    "base_material": "C67S  C75S",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "C67S  C75S"
+    ]
+  },
+  {
+    "name": "C67   C75",
+    "category": "其他",
+    "base_material": "C67   C75",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "C67   C75"
+    ]
+  },
+  {
+    "name": "5052H32      GB/T 3880",
+    "category": "其他",
+    "base_material": "5052H32      GB/T 3880",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "5052H32      GB/T 3880"
+    ]
+  },
+  {
+    "name": "DC510    无花镀锌板",
+    "category": "其他",
+    "base_material": "DC510    无花镀锌板",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "DC510    无花镀锌板"
+    ]
+  },
+  {
+    "name": "DC51D+Z",
+    "category": "其他",
+    "base_material": "DC51D+Z",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "DC51D+Z"
+    ]
+  },
+  {
+    "name": "1Cr17Ni7-1.0",
+    "category": "其他",
+    "base_material": "1Cr17Ni7-1.0",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "1Cr17Ni7-1.0"
+    ]
+  },
+  {
+    "name": "ASSˊY",
+    "category": "其他",
+    "base_material": "ASSˊY",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "ASSˊY"
+    ]
+  },
+  {
+    "name": "ASTM A666-2010 301",
+    "category": "其他",
+    "base_material": "ASTM A666-2010 301",
+    "grade": null,
+    "count": 1,
+    "variants": [
+      "ASTM A666-2010 301"
+    ]
+  }
+]

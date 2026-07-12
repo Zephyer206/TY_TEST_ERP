@@ -62,6 +62,21 @@
             <el-icon><Brush /></el-icon>
             <span>喷涂管理</span>
           </el-menu-item>
+          <el-sub-menu index="/price-management" v-if="userStore.userInfo?.role_level >= 5">
+            <template #title>
+              <el-icon><Coin /></el-icon>
+              <span>价格管理</span>
+            </template>
+            <el-menu-item index="/price-management/treatments">
+              <span>工序字典</span>
+            </el-menu-item>
+            <el-menu-item index="/price-management/customer-prices">
+              <span>客户价格</span>
+            </el-menu-item>
+            <el-menu-item index="/price-management/price-adjustments">
+              <span>价格调整</span>
+            </el-menu-item>
+          </el-sub-menu>
           <el-menu-item
             v-if="userStore.userInfo?.role_level >= 10"
             index="/admin/context-switch"

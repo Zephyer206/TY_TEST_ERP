@@ -1,0 +1,131 @@
+- generic [ref=f2e4]:
+  - complementary [ref=f2e5]:
+    - menubar [ref=f2e6]:
+      - menuitem "工作台" [ref=f2e7] [cursor=pointer]
+      - menuitem "报价管理" [ref=f2e14] [cursor=pointer]
+      - menuitem "零件管理" [ref=f2e19] [cursor=pointer]
+      - menuitem "客户管理" [ref=f2e26] [cursor=pointer]
+      - menuitem "字典管理" [ref=f2e31] [cursor=pointer]
+      - menuitem "生产计划" [ref=f2e36] [cursor=pointer]
+      - menuitem "机台管理" [ref=f2e41] [cursor=pointer]
+      - menuitem "打样管理" [ref=f2e47] [cursor=pointer]
+      - menuitem "模具管理" [ref=f2e53] [cursor=pointer]
+      - menuitem "仓库" [ref=f2e58] [cursor=pointer]
+      - menuitem "原材料管理" [ref=f2e63] [cursor=pointer]
+      - menuitem "包装管理" [ref=f2e68] [cursor=pointer]
+      - menuitem "质量管控" [ref=f2e73] [cursor=pointer]
+      - menuitem "喷涂管理" [ref=f2e79] [cursor=pointer]
+      - menuitem "价格管理" [ref=f2e84]
+      - menuitem "视角切换" [ref=f2e95] [cursor=pointer]
+  - generic [ref=f2e101]:
+    - generic [ref=f2e103]:
+      - heading "Zephyr ERP" [level=3] [ref=f2e104]
+      - button [ref=f2e106] [cursor=pointer]
+    - main [ref=f2e110]:
+      - generic [ref=f2e111]:
+        - generic [ref=f2e112]:
+          - heading "零件管理" [level=2] [ref=f2e113]
+          - button [ref=f2e114] [cursor=pointer]
+        - generic [ref=f2e121]:
+          - generic [ref=f2e122]:
+            - generic [ref=f2e123]: 搜索
+            - textbox "搜索" [ref=f2e127]:
+              - /placeholder: 零件编号/名称/模具号
+              - text: 柱销防尘盖
+          - generic [ref=f2e129]:
+            - generic [ref=f2e130]: 客户
+            - generic [ref=f2e134]:
+              - combobox "客户" [ref=f2e136]
+              - generic [ref=f2e137]: 全部
+          - generic [ref=f2e142]:
+            - generic [ref=f2e143]: 材料
+            - textbox "材料" [ref=f2e147]:
+              - /placeholder: 材料名称
+          - generic [ref=f2e149]:
+            - generic [ref=f2e150]: 状态
+            - generic [ref=f2e153] [cursor=pointer]:
+              - generic:
+                - combobox "状态" [ref=f2e155]
+                - generic [ref=f2e156]: 全部
+          - generic [ref=f2e162]:
+            - button "搜索" [active] [ref=f2e163] [cursor=pointer]
+            - button "重置" [ref=f2e165] [cursor=pointer]
+        - generic [ref=f2e168]:
+          - table [ref=f2e170]:
+            - rowgroup [ref=f2e184]:
+              - row [ref=f2e185]:
+                - columnheader "零件编号" [ref=f2e186]
+                - columnheader "零件名称" [ref=f2e188]
+                - columnheader "模具号" [ref=f2e190]
+                - columnheader "TWP规格" [ref=f2e192]
+                - columnheader "材料" [ref=f2e194]
+                - columnheader "穴数" [ref=f2e196]
+                - columnheader "客户" [ref=f2e198]
+                - columnheader "模具类型" [ref=f2e200]
+                - columnheader "位置" [ref=f2e202]
+                - columnheader "状态" [ref=f2e204]
+                - columnheader "库存" [ref=f2e206]
+                - columnheader "操作" [ref=f2e208]
+          - table [ref=f2e214]:
+            - rowgroup [ref=f2e228]:
+              - row [ref=f2e840]:
+                - cell [ref=f2e230]
+                - cell "柱销防尘盖" [ref=f2e841]
+                - cell [ref=f2e233]
+                - cell "-" [ref=f2e234]
+                - cell "-" [ref=f2e842]
+                - cell "-" [ref=f2e238]
+                - cell [ref=f2e240]
+                - cell [ref=f2e241]
+                - cell "-" [ref=f2e242]
+                - cell "草稿" [ref=f2e244]
+                - cell "0" [ref=f2e248]
+                - cell [ref=f2e250]:
+                  - generic [ref=f2e251]:
+                    - button "详情" [ref=f2e252] [cursor=pointer]
+                    - button "编辑" [ref=f2e254] [cursor=pointer]
+                    - button "删除" [ref=f2e256] [cursor=pointer]
+              - row [ref=f2e843]:
+                - cell "VIE19.5W-3501323" [ref=f2e844]
+                - cell "柱销防尘盖" [ref=f2e846]
+                - cell "TYB-Q0009" [ref=f2e847]
+                - cell "-" [ref=f2e263]
+                - cell "-" [ref=f2e849]
+                - cell "0" [ref=f2e850]
+                - cell "浙江万安科技股份有限公司" [ref=f2e851]
+                - cell [ref=f2e270]
+                - cell "右" [ref=f2e853]
+                - cell "量产" [ref=f2e856]
+                - cell "0" [ref=f2e277]
+                - cell [ref=f2e279]:
+                  - generic [ref=f2e280]:
+                    - button "详情" [ref=f2e281] [cursor=pointer]
+                    - button "编辑" [ref=f2e283] [cursor=pointer]
+                    - button "删除" [ref=f2e285] [cursor=pointer]
+              - row [ref=f2e857]:
+                - cell [ref=f2e288]
+                - cell "柱销防尘盖" [ref=f2e858]
+                - cell "TYB-Q0007" [ref=f2e859]
+                - cell "-" [ref=f2e292]
+                - cell "-" [ref=f2e861]
+                - cell "0" [ref=f2e862]
+                - cell "浙江万安科技股份有限公司" [ref=f2e863]
+                - cell "工程模" [ref=f2e865]
+                - cell "-" [ref=f2e300]
+                - cell "量产" [ref=f2e867]
+                - cell "0" [ref=f2e306]
+                - cell [ref=f2e308]:
+                  - generic [ref=f2e309]:
+                    - button "详情" [ref=f2e310] [cursor=pointer]
+                    - button "编辑" [ref=f2e312] [cursor=pointer]
+                    - button "删除" [ref=f2e314] [cursor=pointer]
+        - generic [ref=f2e810]:
+          - generic [ref=f2e811]: 共 3 条
+          - generic [ref=f2e814] [cursor=pointer]:
+            - generic:
+              - combobox [ref=f2e816]
+              - generic [ref=f2e817]: 20条/页
+          - button "上一页" [disabled] [ref=f2e822]
+          - list [ref=f2e823]:
+            - listitem "第 1 页" [ref=f2e824]: "1"
+          - button "下一页" [disabled] [ref=f2e825]

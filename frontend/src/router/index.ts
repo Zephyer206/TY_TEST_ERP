@@ -186,6 +186,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roleLevel: 5 },
       },
       {
+        path: 'price-management/customer-prices-query',
+        name: 'CustomerPricesQuery',
+        component: () => import('@/views/price-management/CustomerPricesQuery.vue'),
+        meta: { roleLevel: 3 },
+      },
+      {
         path: 'price-management/price-adjustments',
         name: 'PriceAdjustments',
         component: () => import('@/views/price-management/PriceAdjustments.vue'),

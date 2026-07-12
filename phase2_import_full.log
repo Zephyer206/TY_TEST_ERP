@@ -1,0 +1,610 @@
+======================================================================
+PHASE 2: Excel Dynamic Parsing and Staging
+======================================================================
+[INFO] Loaded config from settings: 124.222.29.229:5432/stamping_system
+
+[OK] Connected to 124.222.29.229:5432/stamping_system
+
+Processing: excel/五金模具及产品清单表.xls
+Deleted 1 old batch(es) with 10152 rows for this file
+Created batch_id: 4
+
+[Sheet 1/95] 目录
+  [SKIP] Special sheet: Table of contents
+
+[Sheet 2/95] 五金模具进度一览表
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 30 rows
+       Valid: 28, Skipped: 2, Review: 0
+
+[Sheet 3/95] 客户名称代号
+  [SKIP] Special sheet: Customer name codes
+
+[Sheet 4/95] 浙江万宝机械有限公司(A)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 634 rows
+       Valid: 594, Skipped: 40, Review: 0
+
+[Sheet 5/95] 浙江万安科技股份有限公司(B)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 59 rows
+       Valid: 37, Skipped: 22, Review: 0
+
+[Sheet 6/95] 安徽万安汽车零部件有限公司(C)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 62 rows
+       Valid: 19, Skipped: 43, Review: 0
+
+[Sheet 7/95] 亨国(厦门)精机工业有限公司(D)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 94 rows
+       Valid: 92, Skipped: 2, Review: 0
+
+[Sheet 8/95] 厦门亨东制动系统有限公司(E)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 500 rows
+       Valid: 496, Skipped: 4, Review: 0
+
+[Sheet 9/95] 广东中博汽车零部件有限公司(F)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 110 rows
+       Valid: 98, Skipped: 12, Review: 0
+
+[Sheet 10/95] 湖北航特科技有限责任公司(G)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 317 rows
+       Valid: 266, Skipped: 51, Review: 0
+
+[Sheet 11/95] 60T 连续模
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 152 rows
+       Valid: 124, Skipped: 28, Review: 0
+
+[Sheet 12/95] 福州新信制动系统有限公司(H)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 79 rows
+       Valid: 39, Skipped: 40, Review: 0
+
+[Sheet 13/95] 辉门摩擦产品有限公司(I)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 389 rows
+       Valid: 382, Skipped: 7, Review: 0
+
+[Sheet 14/95] 广州曙光制动系统有限公司(J)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 79 rows
+       Valid: 77, Skipped: 2, Review: 0
+
+[Sheet 15/95] 汽车部件苏州有限公司(东机工)(K)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 166 rows
+       Valid: 164, Skipped: 2, Review: 0
+
+[Sheet 16/95] 厦门安思通制动系统有限公司(L)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 37, Skipped: 40, Review: 0
+
+[Sheet 17/95] 厦门永裕机械工业有限公司(M)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 37, Skipped: 40, Review: 0
+
+[Sheet 18/95] 石家庄泰明顿摩擦材料有限公司(N)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 0, Skipped: 77, Review: 0
+
+[Sheet 19/95] 浙江钱江摩托股份有限公司(O)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 36, Skipped: 41, Review: 0
+
+[Sheet 20/95] 温州力邦企业有限公司(P)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 571 rows
+       Valid: 519, Skipped: 52, Review: 0
+
+[Sheet 21/95] 丰铃公司Q
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 37, Skipped: 40, Review: 0
+
+[Sheet 22/95] 正凌制动器有限公司(R)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 78 rows
+       Valid: 38, Skipped: 40, Review: 0
+
+[Sheet 23/95]  浙江精科汽车零件部件有限公司(S)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 108 rows
+       Valid: 76, Skipped: 32, Review: 0
+
+[Sheet 24/95] 玉环万建机械有限公司(T)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 2, Skipped: 75, Review: 0
+
+[Sheet 25/95] 天越五金(U)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 114 rows
+       Valid: 53, Skipped: 61, Review: 0
+
+[Sheet 26/95] 台湾贺安贸易有限公司(V)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 80 rows
+       Valid: 31, Skipped: 49, Review: 0
+
+[Sheet 27/95] 湖南运达机械制造有限公司(W)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 55 rows
+       Valid: 53, Skipped: 2, Review: 0
+
+[Sheet 28/95] 厦门和利多卫浴科技有限公司（X）
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 3, Skipped: 74, Review: 0
+
+[Sheet 29/95] 山东日信(Y) 
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 130 rows
+       Valid: 127, Skipped: 3, Review: 0
+
+[Sheet 30/95] 常州泰山弹簧有限公司（Z）
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 1, Skipped: 76, Review: 0
+
+[Sheet 31/95] 上海万向钱潮A-A
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 167 rows
+       Valid: 138, Skipped: 29, Review: 0
+
+[Sheet 32/95] 爱得利A-B
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 6, Skipped: 71, Review: 0
+
+[Sheet 33/95] 展翔A-C
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 1, Skipped: 76, Review: 0
+
+[Sheet 34/95] A-D武汉元丰
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 81 rows
+       Valid: 37, Skipped: 44, Review: 0
+
+[Sheet 35/95] A-E龙港工艺品厂
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 1, Skipped: 76, Review: 0
+
+[Sheet 36/95] A-F日立高新
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 37, Skipped: 40, Review: 0
+
+[Sheet 37/95] A-G沃富润
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 0, Skipped: 77, Review: 0
+
+[Sheet 38/95] A-H泰明顿
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 3, Skipped: 74, Review: 0
+
+[Sheet 39/95] ZF
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 244 rows
+       Valid: 219, Skipped: 25, Review: 0
+
+[Sheet 40/95] A-J湖北悦达科技有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 10, Skipped: 67, Review: 0
+
+[Sheet 41/95] A-K 一汽东机工减振器有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 80 rows
+       Valid: 18, Skipped: 62, Review: 0
+
+[Sheet 42/95] A-L 浙江亚太机电股份有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 242 rows
+       Valid: 197, Skipped: 45, Review: 0
+
+[Sheet 43/95] A-M 宁波双林
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 1, Skipped: 76, Review: 0
+
+[Sheet 44/95] A-N 京西重工
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 92 rows
+       Valid: 90, Skipped: 2, Review: 0
+
+[Sheet 45/95] A-O 南方天合
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 268 rows
+       Valid: 60, Skipped: 208, Review: 0
+
+[Sheet 46/95] A-P IBI
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 1672 rows
+       Valid: 1668, Skipped: 4, Review: 0
+
+[Sheet 47/95] A-Q江苏恒义汽配制造有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 11 rows
+       Valid: 9, Skipped: 2, Review: 0
+
+[Sheet 48/95] A-R莆田荣兴机械有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 26 rows
+       Valid: 9, Skipped: 17, Review: 0
+
+[Sheet 49/95] A-S江西江铃集团博亚制动系统有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 26 rows
+       Valid: 4, Skipped: 22, Review: 0
+
+[Sheet 50/95] A-T浙江万向系统有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 34, Skipped: 2, Review: 0
+
+[Sheet 51/95] A-U比亚迪
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 258 rows
+       Valid: 251, Skipped: 7, Review: 0
+
+[Sheet 52/95] A-V精诚工科汽车系统有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 27 rows
+       Valid: 17, Skipped: 10, Review: 0
+
+[Sheet 53/95] A-W大工科技
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 26 rows
+       Valid: 8, Skipped: 18, Review: 0
+
+[Sheet 54/95] A-X泛博
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 77 rows
+       Valid: 62, Skipped: 15, Review: 0
+
+[Sheet 55/95] A-Y瑞立
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 26 rows
+       Valid: 24, Skipped: 2, Review: 0
+
+[Sheet 56/95] A-Z柳州五菱
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 27 rows
+       Valid: 10, Skipped: 17, Review: 0
+
+[Sheet 57/95] B-A烟台海纳
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 26 rows
+       Valid: 1, Skipped: 25, Review: 0
+
+[Sheet 58/95] B-B 大陆集团
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 160 rows
+       Valid: 150, Skipped: 10, Review: 0
+
+[Sheet 59/95] B-C武汉万向汽车制动器有限公司 
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 39 rows
+       Valid: 37, Skipped: 2, Review: 0
+
+[Sheet 60/95] B-D东营信义汽车配件有限公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 29 rows
+       Valid: 12, Skipped: 17, Review: 0
+
+[Sheet 61/95] B-E坤泰
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 26 rows
+       Valid: 6, Skipped: 20, Review: 0
+
+[Sheet 62/95] B-F上海汇众汽车制造有限公司 
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 35 rows
+       Valid: 4, Skipped: 31, Review: 0
+
+[Sheet 63/95] B-G芜湖伯特利  
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 115 rows
+       Valid: 109, Skipped: 6, Review: 0
+
+[Sheet 64/95] B-H杭州吉成
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 12, Skipped: 24, Review: 0
+
+[Sheet 65/95] B-I江苏恒力
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 12, Skipped: 24, Review: 0
+
+[Sheet 66/95] B-J兰溪捷克
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 12, Skipped: 24, Review: 0
+
+[Sheet 67/95] B-K万都
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 68/95] B-L山东双连
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 13, Skipped: 23, Review: 0
+
+[Sheet 69/95] B-M布雷博
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 280 rows
+       Valid: 257, Skipped: 23, Review: 0
+
+[Sheet 70/95] GBA 浙江盖博汽车零部件公司
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 10, Skipped: 26, Review: 0
+
+[Sheet 71/95] B-N 上海拿森
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 36 rows
+       Valid: 2, Skipped: 34, Review: 0
+
+[Sheet 72/95] B-O炯熠电子科技（苏州）有限公司 
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 22, Skipped: 16, Review: 0
+
+[Sheet 73/95] B-P致森
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 39 rows
+       Valid: 10, Skipped: 29, Review: 0
+
+[Sheet 74/95] B-Q爱德克斯
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 39 rows
+       Valid: 10, Skipped: 29, Review: 0
+
+[Sheet 75/95] B-R格陆博科技
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 39 rows
+       Valid: 24, Skipped: 15, Review: 0
+
+[Sheet 76/95] B-S上海同驭
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 23, Skipped: 15, Review: 0
+
+[Sheet 77/95] B-T湖北华阳
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 22, Skipped: 16, Review: 0
+
+[Sheet 78/95] B-U  ITT
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 163 rows
+       Valid: 161, Skipped: 2, Review: 0
+
+[Sheet 79/95] B-V  上海龙感
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 50 rows
+       Valid: 34, Skipped: 16, Review: 0
+
+[Sheet 80/95] B-W 珠海格莱利 
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 70 rows
+       Valid: 34, Skipped: 34, Review: 2
+
+[Sheet 81/95] B-X 坐标系智能
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 63 rows
+       Valid: 4, Skipped: 48, Review: 11
+
+[Sheet 82/95] B-Y 浙江杭摩欧亿
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 62 rows
+       Valid: 2, Skipped: 48, Review: 12
+
+[Sheet 83/95] B-Z 天津垠石)
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 62 rows
+       Valid: 1, Skipped: 48, Review: 13
+
+[Sheet 84/95] CA 重庆三友
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 62 rows
+       Valid: 2, Skipped: 48, Review: 12
+
+[Sheet 85/95] CB英创
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 9, Skipped: 29, Review: 0
+
+[Sheet 86/95] CC扬州敦煌
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 9, Skipped: 29, Review: 0
+
+[Sheet 87/95] CD嘉默传感技术
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 9, Skipped: 29, Review: 0
+
+[Sheet 88/95] CE领联（上海）
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 89/95] CF柳州三立
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 90/95] CG耐世特
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 91/95] CH谋行科技
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 92/95] CI上海奥林
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 93/95] CJ江苏炬瑞
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 14, Skipped: 24, Review: 0
+
+[Sheet 94/95] GBC浙江隆中
+  [OK] Header detected at row 1
+  [OK] Mapped columns: ['customer_name', 'customer_part_no', 'customer_part_name', 'tooling_number', 'internal_name', 'mold_type', 'process_step_count', 'cavity_count', 'material', 'thickness', 'width', 'pitch', 'gross_weight', 'net_weight', 'position']
+  [OK] Processed 38 rows
+       Valid: 9, Skipped: 29, Review: 0
+
+[Sheet 95/95] Sheet2
+  [SKIP] No valid header detected
+
+======================================================================
+PROCESSING SUMMARY
+======================================================================
+Total sheets: 95
+Data sheets: 92
+Special sheets: 2
+Total rows scanned: 10532
+Empty/template rows: 0
+Valid rows: 7500
+Skipped rows: 2982
+Error rows: 0
+Review rows: 50
+
+Parsed field statistics:
+  Has mold_type: 7498
+  Has process_step_count: 1160
+  Has cavity_count: 0
+  Has tooling_number: 7500
+  Continuous molds: 5
+  Non-continuous molds: 7494
+
+Sheet details with issues:
+  目录: SPECIAL
+    Reason: Table of contents
+  客户名称代号: SPECIAL
+    Reason: Customer name codes
+  B-W 珠海格莱利 : DATA
+    Review: 2
+  B-X 坐标系智能: DATA
+    Review: 11
+  B-Y 浙江杭摩欧亿: DATA
+    Review: 12
+  B-Z 天津垠石): DATA
+    Review: 13
+  CA 重庆三友: DATA
+    Review: 12
+  Sheet2: NO_HEADER
+    Reason: Could not detect valid header row

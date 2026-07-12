@@ -116,22 +116,28 @@ class CustomerTreatmentPrice(Base):
 
 
 class PriceAdjustment(Base):
-    """价格调整审批表 - T014（替换占位符）."""
+    """价格调整审批表 - matches price_adjustments table from migration."""
 
     __tablename__ = "price_adjustments"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    price_account_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    old_price: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    customer_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    part_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    material_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    treatment_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    adjustment_type: Mapped[str] = mapped_column(String(20), nullable=False)  # material / treatment / part
+    old_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 4), nullable=True)
     new_price: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
-    adjustment_type: Mapped[str] = mapped_column(String(20), nullable=False)  # increase / decrease
-    reason: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # pending / approved / rejected
-    created_by: Mapped[int] = mapped_column(Integer, nullable=False)
+    reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), nullable=False, default="pending")  # pending / approved / rejected / cancelled
+    requested_by: Mapped[int] = mapped_column(Integer, nullable=False)
+    requested_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    reviewed_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    reviewed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    review_notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    effective_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    approved_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    rejection_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self) -> str:
         return f"<PriceAdjustment {self.id} {self.status}>"

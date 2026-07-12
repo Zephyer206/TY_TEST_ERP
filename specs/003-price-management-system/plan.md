@@ -13,7 +13,7 @@
 - 实现价格调整审批工作流（业务经理申请 → 老板审批 → 自动更新价格台账）
 - 添加后端单元测试和集成测试
 
-参考设计文档：`specs/001-erp-system-architecture/database-analysis/material-treatment-price-history-final.md`
+参考设计文档：`specs/001-erp-system-architecture/data-model.md`（唯一权威）
 
 ## Technical Context
 
@@ -143,7 +143,7 @@ backend/
 | R3: 数据迁移策略和回滚方案 | ✅ 已完成 | research.md |
 | R4: API 路由命名和权限分配 | ✅ 已完成 | contracts/ |
 
-**说明**: 数据库表结构已在 `specs/001-erp-system-architecture/database-analysis/material-treatment-price-history-final.md` 中定稿（2026-07-06），本计划直接采用该设计。
+**说明**: 数据库表结构只在 `specs/001-erp-system-architecture/data-model.md` 中维护，本计划不得另行定义实体和关系。
 
 ## Phase 1: Design & Contracts
 
@@ -152,10 +152,10 @@ backend/
 **输出**: `data-model.md`
 
 核心实体：
-- **customer_material_prices**: 客户材料价格历史（UUID 主键，关联 customers + material_dict）
-- **customer_treatment_prices**: 客户工序价格历史（UUID 主键，关联 customers + treatment_dict，快照 calc_mode/unit）
+- **customer_material_prices**: 客户材料价格历史（INTEGER 主键，关联 customers + material_dict）
+- **customer_treatment_prices**: 客户工序价格历史（INTEGER 主键，关联 customers + treatment_dict，快照 calc_mode/unit）
 - **treatment_dict**: 工序字典（INTEGER 主键，全局参考数据）
-- **price_adjustments**: 价格调整审批（UUID 主键，关联 price_accounts，状态机：pending → approved/rejected）
+- **price_adjustments**: 价格调整审批（INTEGER 主键，关联 price_accounts，状态机：pending → approved/rejected）
 
 关键设计：
 - 价格历史表只允许 INSERT 和 SELECT，禁止 UPDATE/DELETE（审计要求）
@@ -292,7 +292,7 @@ backend/
 
 ### Phase 0: Research (Complete)
 
-- ✅ 数据库表结构设计已定案（参考 material-treatment-price-history-final.md）
+- ✅ 数据库表结构设计已定案（参考唯一权威 data-model.md）
 - ✅ 审批工作流状态机已明确（pending/approved/rejected）
 - ✅ 数据迁移策略已制定（7步迁移 + 回滚方案）
 

@@ -28,12 +28,12 @@
   "token_type": "bearer",
   "expires_in": 3600,
   "user": {
-    "id": "uuid",
+    "id": 1,
     "username": "string",
     "real_name": "string",
     "role_level": 5,
     "department": {
-      "id": "uuid",
+      "id": 1,
       "name": "string"
     }
   }
@@ -164,9 +164,9 @@
 **Response** (201):
 ```json
 {
-  "id": "uuid",
+  "id": 1,
   "quote_number": "Q-20260612-001",
-  "customer": { "id": "uuid", "name": "string" },
+  "customer": { "id": 1, "name": "string" },
   "status": "waiting_tech_review",
   "items": [...],
   "created_at": "2026-06-12T10:00:00Z"
@@ -198,7 +198,7 @@
 **Response** (200):
 ```json
 {
-  "id": "uuid",
+  "id": 1,
   "status": "boss_approved",
   "quote_snapshot": {
     "stamping_fee": 15.0,
@@ -236,16 +236,16 @@
 **Request**:
 ```json
 {
-  "plan_id": "uuid",
-  "machine_id": "uuid",
-  "material_batch_id": "uuid"
+  "plan_id": 1,
+  "machine_id": 1,
+  "material_batch_id": 1
 }
 ```
 
 **Response** (201):
 ```json
 {
-  "session_id": "uuid",
+  "session_id": 1,
   "status": "active",
   "started_at": "2026-06-12T11:00:00Z",
   "validation": {
@@ -262,7 +262,7 @@
 **Request**:
 ```json
 {
-  "session_id": "uuid",
+  "session_id": 1,
   "strokes": 100
 }
 ```
@@ -270,12 +270,12 @@
 **Response** (201):
 ```json
 {
-  "id": "uuid",
+  "id": 1,
   "report_number": "PR-20260612-001",
   "strokes": 100,
   "output_quantity": 400,
   "qualified_quantity": 398,
-  "process_flow_card_id": "uuid",
+  "process_flow_card_id": 1,
   "card_number": "PFC-20260612-001",
   "created_at": "2026-06-12T11:05:00Z"
 }
@@ -303,7 +303,7 @@
 **Response** (201):
 ```json
 {
-  "id": "uuid",
+  "id": 1,
   "batch_number": "MAT-20260612-001",
   "qr_code_path": "/static/qr/material/MAT-20260612-001.png",
   "status": "available",
@@ -388,29 +388,29 @@
 
 ```python
 class QuoteStatusChanged(Event):
-    quote_id: UUID
+    quote_id: int
     old_status: QuoteStatus
     new_status: QuoteStatus
-    changed_by: UUID
+    changed_by: int
     changed_at: datetime
 
 class PartStatusChanged(Event):
-    part_id: UUID
+    part_id: int
     old_status: PartStatus
     new_status: PartStatus
     reason: str | None
-    changed_by: UUID
+    changed_by: int
     changed_at: datetime
 
 class ProductionSessionClosed(Event):
-    session_id: UUID
-    plan_id: UUID
+    session_id: int
+    plan_id: int
     total_output: int
     total_qualified: int
-    process_flow_card_id: UUID
+    process_flow_card_id: int
     closed_at: datetime
 ```
 
 ---
 
-*Contracts documented. See [quickstart.md](./quickstart.md) for runnable validation scenarios.*
+*Contracts documented. See [quickstart.md](../quickstart.md) for runnable validation scenarios.*

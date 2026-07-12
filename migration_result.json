@@ -1,0 +1,522 @@
+{
+  "status": "COMPLETED",
+  "started_at": "2026-07-12T09:00:33.606448",
+  "completed_at": "2026-07-12T09:12:16.330610",
+  "duration_seconds": 702.724162,
+  "database": "124.222.29.229:5432/stamping_system",
+  "before_counts": {
+    "customers": 117,
+    "parts": 1534,
+    "tooling": 1357,
+    "part_customer_aliases": 0,
+    "tooling_parts": 0,
+    "tooling_steps": "NOT_EXISTS",
+    "tooling_customer_links": "NOT_EXISTS",
+    "quotes": 0,
+    "price_accounts": "NOT_EXISTS",
+    "price_adjustments": 0,
+    "import_batches": "NOT_EXISTS",
+    "excel_import_rows": "NOT_EXISTS"
+  },
+  "after_counts": {
+    "customers": 117,
+    "parts": 1534,
+    "tooling": 1357,
+    "part_customer_aliases": 0,
+    "tooling_parts": 0,
+    "tooling_steps": 0,
+    "tooling_customer_links": 0,
+    "quotes": 0,
+    "price_accounts": "NOT_EXISTS",
+    "price_adjustments": 0,
+    "import_batches": 1,
+    "excel_import_rows": 6308
+  },
+  "import_stats": {
+    "batch_id": 1,
+    "total_sheets": 95,
+    "data_sheets": 91,
+    "skipped_sheets": 4,
+    "total_rows": 10417,
+    "valid_rows": 6308,
+    "failed_rows": 0,
+    "sheets": {
+      "五金模具进度一览表": {
+        "type": "special",
+        "rows": 31
+      },
+      "客户名称代号": {
+        "type": "special",
+        "rows": 69
+      },
+      "浙江万宝机械有限公司(A)": {
+        "data_rows": 587,
+        "skipped_rows": 46,
+        "imported_rows": 587
+      },
+      "浙江万安科技股份有限公司(B)": {
+        "data_rows": 12,
+        "skipped_rows": 46,
+        "imported_rows": 12
+      },
+      "安徽万安汽车零部件有限公司(C)": {
+        "data_rows": 38,
+        "skipped_rows": 23,
+        "imported_rows": 38
+      },
+      "亨国(厦门)精机工业有限公司(D)": {
+        "data_rows": 81,
+        "skipped_rows": 12,
+        "imported_rows": 81
+      },
+      "厦门亨东制动系统有限公司(E)": {
+        "data_rows": 486,
+        "skipped_rows": 13,
+        "imported_rows": 486
+      },
+      "广东中博汽车零部件有限公司(F)": {
+        "data_rows": 94,
+        "skipped_rows": 15,
+        "imported_rows": 94
+      },
+      "湖北航特科技有限责任公司(G)": {
+        "data_rows": 263,
+        "skipped_rows": 53,
+        "imported_rows": 263
+      },
+      "60T 连续模": {
+        "data_rows": 124,
+        "skipped_rows": 27,
+        "imported_rows": 124
+      },
+      "福州新信制动系统有限公司(H)": {
+        "data_rows": 29,
+        "skipped_rows": 49,
+        "imported_rows": 29
+      },
+      "辉门摩擦产品有限公司(I)": {
+        "data_rows": 370,
+        "skipped_rows": 18,
+        "imported_rows": 370
+      },
+      "广州曙光制动系统有限公司(J)": {
+        "data_rows": 55,
+        "skipped_rows": 23,
+        "imported_rows": 55
+      },
+      "汽车部件苏州有限公司(东机工)(K)": {
+        "data_rows": 137,
+        "skipped_rows": 28,
+        "imported_rows": 137
+      },
+      "厦门安思通制动系统有限公司(L)": {
+        "data_rows": 9,
+        "skipped_rows": 67,
+        "imported_rows": 9
+      },
+      "厦门永裕机械工业有限公司(M)": {
+        "data_rows": 21,
+        "skipped_rows": 55,
+        "imported_rows": 21
+      },
+      "石家庄泰明顿摩擦材料有限公司(N)": {
+        "data_rows": 0,
+        "skipped_rows": 76,
+        "imported_rows": 0
+      },
+      "浙江钱江摩托股份有限公司(O)": {
+        "data_rows": 5,
+        "skipped_rows": 71,
+        "imported_rows": 5
+      },
+      "温州力邦企业有限公司(P)": {
+        "data_rows": 544,
+        "skipped_rows": 26,
+        "imported_rows": 544
+      },
+      "丰铃公司Q": {
+        "data_rows": 7,
+        "skipped_rows": 69,
+        "imported_rows": 7
+      },
+      "正凌制动器有限公司(R)": {
+        "data_rows": 24,
+        "skipped_rows": 53,
+        "imported_rows": 24
+      },
+      " 浙江精科汽车零件部件有限公司(S)": {
+        "data_rows": 71,
+        "skipped_rows": 36,
+        "imported_rows": 71
+      },
+      "玉环万建机械有限公司(T)": {
+        "data_rows": 2,
+        "skipped_rows": 74,
+        "imported_rows": 2
+      },
+      "天越五金(U)": {
+        "data_rows": 53,
+        "skipped_rows": 60,
+        "imported_rows": 53
+      },
+      "台湾贺安贸易有限公司(V)": {
+        "data_rows": 24,
+        "skipped_rows": 55,
+        "imported_rows": 24
+      },
+      "湖南运达机械制造有限公司(W)": {
+        "data_rows": 37,
+        "skipped_rows": 17,
+        "imported_rows": 37
+      },
+      "厦门和利多卫浴科技有限公司（X）": {
+        "data_rows": 3,
+        "skipped_rows": 73,
+        "imported_rows": 3
+      },
+      "山东日信(Y) ": {
+        "data_rows": 121,
+        "skipped_rows": 8,
+        "imported_rows": 121
+      },
+      "常州泰山弹簧有限公司（Z）": {
+        "data_rows": 1,
+        "skipped_rows": 75,
+        "imported_rows": 1
+      },
+      "上海万向钱潮A-A": {
+        "data_rows": 133,
+        "skipped_rows": 33,
+        "imported_rows": 133
+      },
+      "爱得利A-B": {
+        "data_rows": 6,
+        "skipped_rows": 70,
+        "imported_rows": 6
+      },
+      "展翔A-C": {
+        "data_rows": 4,
+        "skipped_rows": 72,
+        "imported_rows": 4
+      },
+      "A-D武汉元丰": {
+        "data_rows": 35,
+        "skipped_rows": 45,
+        "imported_rows": 35
+      },
+      "A-E龙港工艺品厂": {
+        "data_rows": 2,
+        "skipped_rows": 74,
+        "imported_rows": 2
+      },
+      "A-F日立高新": {
+        "data_rows": 34,
+        "skipped_rows": 42,
+        "imported_rows": 34
+      },
+      "A-G沃富润": {
+        "data_rows": 14,
+        "skipped_rows": 62,
+        "imported_rows": 14
+      },
+      "A-H泰明顿": {
+        "data_rows": 3,
+        "skipped_rows": 73,
+        "imported_rows": 3
+      },
+      "ZF": {
+        "data_rows": 215,
+        "skipped_rows": 28,
+        "imported_rows": 215
+      },
+      "A-J湖北悦达科技有限公司": {
+        "data_rows": 0,
+        "skipped_rows": 76,
+        "imported_rows": 0
+      },
+      "A-K 一汽东机工减振器有限公司": {
+        "data_rows": 16,
+        "skipped_rows": 63,
+        "imported_rows": 16
+      },
+      "A-L 浙江亚太机电股份有限公司": {
+        "data_rows": 225,
+        "skipped_rows": 16,
+        "imported_rows": 225
+      },
+      "A-M 宁波双林": {
+        "data_rows": 1,
+        "skipped_rows": 75,
+        "imported_rows": 1
+      },
+      "A-N 京西重工": {
+        "data_rows": 87,
+        "skipped_rows": 4,
+        "imported_rows": 87
+      },
+      "A-O 南方天合": {
+        "data_rows": 60,
+        "skipped_rows": 207,
+        "imported_rows": 60
+      },
+      "A-P IBI": {
+        "data_rows": 1162,
+        "skipped_rows": 509,
+        "imported_rows": 1162
+      },
+      "A-Q江苏恒义汽配制造有限公司": {
+        "data_rows": 2,
+        "skipped_rows": 8,
+        "imported_rows": 2
+      },
+      "A-R莆田荣兴机械有限公司": {
+        "data_rows": 2,
+        "skipped_rows": 23,
+        "imported_rows": 2
+      },
+      "A-S江西江铃集团博亚制动系统有限公司": {
+        "data_rows": 4,
+        "skipped_rows": 21,
+        "imported_rows": 4
+      },
+      "A-T浙江万向系统有限公司": {
+        "data_rows": 12,
+        "skipped_rows": 23,
+        "imported_rows": 12
+      },
+      "A-U比亚迪": {
+        "data_rows": 228,
+        "skipped_rows": 29,
+        "imported_rows": 228
+      },
+      "A-V精诚工科汽车系统有限公司": {
+        "data_rows": 15,
+        "skipped_rows": 11,
+        "imported_rows": 15
+      },
+      "A-W大工科技": {
+        "data_rows": 7,
+        "skipped_rows": 18,
+        "imported_rows": 7
+      },
+      "A-X泛博": {
+        "data_rows": 52,
+        "skipped_rows": 24,
+        "imported_rows": 52
+      },
+      "A-Y瑞立": {
+        "data_rows": 10,
+        "skipped_rows": 15,
+        "imported_rows": 10
+      },
+      "A-Z柳州五菱": {
+        "data_rows": 10,
+        "skipped_rows": 16,
+        "imported_rows": 10
+      },
+      "B-A烟台海纳": {
+        "data_rows": 1,
+        "skipped_rows": 24,
+        "imported_rows": 1
+      },
+      "B-B 大陆集团": {
+        "data_rows": 128,
+        "skipped_rows": 31,
+        "imported_rows": 128
+      },
+      "B-C武汉万向汽车制动器有限公司 ": {
+        "data_rows": 29,
+        "skipped_rows": 9,
+        "imported_rows": 29
+      },
+      "B-D东营信义汽车配件有限公司": {
+        "data_rows": 10,
+        "skipped_rows": 18,
+        "imported_rows": 10
+      },
+      "B-E坤泰": {
+        "data_rows": 6,
+        "skipped_rows": 19,
+        "imported_rows": 6
+      },
+      "B-F上海汇众汽车制造有限公司 ": {
+        "data_rows": 1,
+        "skipped_rows": 33,
+        "imported_rows": 1
+      },
+      "B-G芜湖伯特利  ": {
+        "data_rows": 110,
+        "skipped_rows": 5,
+        "imported_rows": 110
+      },
+      "B-H杭州吉成": {
+        "data_rows": 4,
+        "skipped_rows": 31,
+        "imported_rows": 4
+      },
+      "B-I江苏恒力": {
+        "data_rows": 5,
+        "skipped_rows": 30,
+        "imported_rows": 5
+      },
+      "B-J兰溪捷克": {
+        "data_rows": 7,
+        "skipped_rows": 28,
+        "imported_rows": 7
+      },
+      "B-K万都": {
+        "data_rows": 14,
+        "skipped_rows": 23,
+        "imported_rows": 14
+      },
+      "B-L山东双连": {
+        "data_rows": 1,
+        "skipped_rows": 34,
+        "imported_rows": 1
+      },
+      "B-M布雷博": {
+        "data_rows": 219,
+        "skipped_rows": 60,
+        "imported_rows": 219
+      },
+      "GBA 浙江盖博汽车零部件公司": {
+        "data_rows": 6,
+        "skipped_rows": 29,
+        "imported_rows": 6
+      },
+      "B-N 上海拿森": {
+        "data_rows": 2,
+        "skipped_rows": 33,
+        "imported_rows": 2
+      },
+      "B-O炯熠电子科技（苏州）有限公司 ": {
+        "data_rows": 9,
+        "skipped_rows": 28,
+        "imported_rows": 9
+      },
+      "B-P致森": {
+        "data_rows": 10,
+        "skipped_rows": 28,
+        "imported_rows": 10
+      },
+      "B-Q爱德克斯": {
+        "data_rows": 4,
+        "skipped_rows": 34,
+        "imported_rows": 4
+      },
+      "B-R格陆博科技": {
+        "data_rows": 11,
+        "skipped_rows": 27,
+        "imported_rows": 11
+      },
+      "B-S上海同驭": {
+        "data_rows": 10,
+        "skipped_rows": 27,
+        "imported_rows": 10
+      },
+      "B-T湖北华阳": {
+        "data_rows": 1,
+        "skipped_rows": 36,
+        "imported_rows": 1
+      },
+      "B-U  ITT": {
+        "data_rows": 108,
+        "skipped_rows": 54,
+        "imported_rows": 108
+      },
+      "B-V  上海龙感": {
+        "data_rows": 18,
+        "skipped_rows": 31,
+        "imported_rows": 18
+      },
+      "B-W 珠海格莱利 ": {
+        "data_rows": 34,
+        "skipped_rows": 36,
+        "imported_rows": 34
+      },
+      "B-X 坐标系智能": {
+        "data_rows": 4,
+        "skipped_rows": 59,
+        "imported_rows": 4
+      },
+      "B-Y 浙江杭摩欧亿": {
+        "data_rows": 2,
+        "skipped_rows": 60,
+        "imported_rows": 2
+      },
+      "B-Z 天津垠石)": {
+        "data_rows": 1,
+        "skipped_rows": 61,
+        "imported_rows": 1
+      },
+      "CA 重庆三友": {
+        "data_rows": 2,
+        "skipped_rows": 60,
+        "imported_rows": 2
+      },
+      "CB英创": {
+        "data_rows": 3,
+        "skipped_rows": 34,
+        "imported_rows": 3
+      },
+      "CC扬州敦煌": {
+        "data_rows": 1,
+        "skipped_rows": 36,
+        "imported_rows": 1
+      },
+      "CD嘉默传感技术": {
+        "data_rows": 1,
+        "skipped_rows": 36,
+        "imported_rows": 1
+      },
+      "CE领联（上海）": {
+        "data_rows": 1,
+        "skipped_rows": 36,
+        "imported_rows": 1
+      },
+      "CF柳州三立": {
+        "data_rows": 1,
+        "skipped_rows": 36,
+        "imported_rows": 1
+      },
+      "CG耐世特": {
+        "data_rows": 4,
+        "skipped_rows": 33,
+        "imported_rows": 4
+      },
+      "CH谋行科技": {
+        "data_rows": 0,
+        "skipped_rows": 37,
+        "imported_rows": 0
+      },
+      "CI上海奥林": {
+        "data_rows": 0,
+        "skipped_rows": 37,
+        "imported_rows": 0
+      },
+      "CJ江苏炬瑞": {
+        "data_rows": 0,
+        "skipped_rows": 37,
+        "imported_rows": 0
+      },
+      "GBC浙江隆中": {
+        "data_rows": 3,
+        "skipped_rows": 34,
+        "imported_rows": 3
+      }
+    }
+  },
+  "process_stats": {
+    "customers_created": 27,
+    "parts_created": 2413,
+    "tooling_linked": 0,
+    "aliases_created": 0,
+    "errors": 6308
+  },
+  "validation": {
+    "orphaned_parts_customer": 0,
+    "duplicate_aliases_count": 0,
+    "tooling_parts_count": 0,
+    "sample_traces_count": 0
+  }
+}

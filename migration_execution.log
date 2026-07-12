@@ -1,0 +1,456 @@
+============================================================
+DATABASE MIGRATION AND EXCEL IMPORT
+Started: 2026-07-12 09:00:33.606448
+============================================================
+
+Connecting to database...
+[OK] Connected to 124.222.29.229:5432/stamping_system
+
+=== Initial State ===
+  customers: 117
+  parts: 1534
+  tooling: 1357
+  part_customer_aliases: 0
+  tooling_parts: 0
+  tooling_steps: NOT_EXISTS
+  tooling_customer_links: NOT_EXISTS
+  quotes: 0
+  price_accounts: NOT_EXISTS
+  price_adjustments: 0
+  import_batches: NOT_EXISTS
+  excel_import_rows: NOT_EXISTS
+
+=== PHASE 1: Create Missing Tables ===
+[OK] import_batches table ready
+[OK] excel_import_rows table ready
+[OK] tooling_steps table ready
+[OK] tooling_customer_links table ready
+[OK] Added customer_code to customers
+[OK] Added process_step_count to tooling
+[OK] Added is_continuous to tooling
+[OK] Added internal_part_no to parts
+[OK] Phase 1 completed
+
+=== PHASE 2: Import Excel to Staging ===
+File: excel/五金模具及产品清单表.xls
+Size: 2711552 bytes
+SHA256: ca35e3e654bfb9b2ce68e220904d8b9ca48f91f978029ed2df7fcba1374cf117
+[OK] Created import batch #1
+
+[Sheet 1/95] 目录
+  [SKIP] No header row found
+
+[Sheet 2/95] 五金模具进度一览表
+  [SKIP] Special sheet - will process separately
+
+[Sheet 3/95] 客户名称代号
+  [SKIP] Special sheet - will process separately
+
+[Sheet 4/95] 浙江万宝机械有限公司(A)
+  Header at row 2
+  Data rows: 587, Imported: 587, Skipped: 46
+
+[Sheet 5/95] 浙江万安科技股份有限公司(B)
+  Header at row 2
+  Data rows: 12, Imported: 12, Skipped: 46
+
+[Sheet 6/95] 安徽万安汽车零部件有限公司(C)
+  Header at row 2
+  Data rows: 38, Imported: 38, Skipped: 23
+
+[Sheet 7/95] 亨国(厦门)精机工业有限公司(D)
+  Header at row 2
+  Data rows: 81, Imported: 81, Skipped: 12
+
+[Sheet 8/95] 厦门亨东制动系统有限公司(E)
+  Header at row 2
+  Data rows: 486, Imported: 486, Skipped: 13
+
+[Sheet 9/95] 广东中博汽车零部件有限公司(F)
+  Header at row 2
+  Data rows: 94, Imported: 94, Skipped: 15
+
+[Sheet 10/95] 湖北航特科技有限责任公司(G)
+  Header at row 2
+  Data rows: 263, Imported: 263, Skipped: 53
+
+[Sheet 11/95] 60T 连续模
+  Header at row 2
+  Data rows: 124, Imported: 124, Skipped: 27
+
+[Sheet 12/95] 福州新信制动系统有限公司(H)
+  Header at row 2
+  Data rows: 29, Imported: 29, Skipped: 49
+
+[Sheet 13/95] 辉门摩擦产品有限公司(I)
+  Header at row 2
+  Data rows: 370, Imported: 370, Skipped: 18
+
+[Sheet 14/95] 广州曙光制动系统有限公司(J)
+  Header at row 2
+  Data rows: 55, Imported: 55, Skipped: 23
+
+[Sheet 15/95] 汽车部件苏州有限公司(东机工)(K)
+  Header at row 2
+  Data rows: 137, Imported: 137, Skipped: 28
+
+[Sheet 16/95] 厦门安思通制动系统有限公司(L)
+  Header at row 2
+  Data rows: 9, Imported: 9, Skipped: 67
+
+[Sheet 17/95] 厦门永裕机械工业有限公司(M)
+  Header at row 2
+  Data rows: 21, Imported: 21, Skipped: 55
+
+[Sheet 18/95] 石家庄泰明顿摩擦材料有限公司(N)
+  Header at row 2
+  Data rows: 0, Imported: 0, Skipped: 76
+
+[Sheet 19/95] 浙江钱江摩托股份有限公司(O)
+  Header at row 2
+  Data rows: 5, Imported: 5, Skipped: 71
+
+[Sheet 20/95] 温州力邦企业有限公司(P)
+  Header at row 2
+  Data rows: 544, Imported: 544, Skipped: 26
+
+[Sheet 21/95] 丰铃公司Q
+  Header at row 2
+  Data rows: 7, Imported: 7, Skipped: 69
+
+[Sheet 22/95] 正凌制动器有限公司(R)
+  Header at row 2
+  Data rows: 24, Imported: 24, Skipped: 53
+
+[Sheet 23/95]  浙江精科汽车零件部件有限公司(S)
+  Header at row 2
+  Data rows: 71, Imported: 71, Skipped: 36
+
+[Sheet 24/95] 玉环万建机械有限公司(T)
+  Header at row 2
+  Data rows: 2, Imported: 2, Skipped: 74
+
+[Sheet 25/95] 天越五金(U)
+  Header at row 2
+  Data rows: 53, Imported: 53, Skipped: 60
+
+[Sheet 26/95] 台湾贺安贸易有限公司(V)
+  Header at row 2
+  Data rows: 24, Imported: 24, Skipped: 55
+
+[Sheet 27/95] 湖南运达机械制造有限公司(W)
+  Header at row 2
+  Data rows: 37, Imported: 37, Skipped: 17
+
+[Sheet 28/95] 厦门和利多卫浴科技有限公司（X）
+  Header at row 2
+  Data rows: 3, Imported: 3, Skipped: 73
+
+[Sheet 29/95] 山东日信(Y) 
+  Header at row 2
+  Data rows: 121, Imported: 121, Skipped: 8
+
+[Sheet 30/95] 常州泰山弹簧有限公司（Z）
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 75
+
+[Sheet 31/95] 上海万向钱潮A-A
+  Header at row 2
+  Data rows: 133, Imported: 133, Skipped: 33
+
+[Sheet 32/95] 爱得利A-B
+  Header at row 2
+  Data rows: 6, Imported: 6, Skipped: 70
+
+[Sheet 33/95] 展翔A-C
+  Header at row 2
+  Data rows: 4, Imported: 4, Skipped: 72
+
+[Sheet 34/95] A-D武汉元丰
+  Header at row 2
+  Data rows: 35, Imported: 35, Skipped: 45
+
+[Sheet 35/95] A-E龙港工艺品厂
+  Header at row 2
+  Data rows: 2, Imported: 2, Skipped: 74
+
+[Sheet 36/95] A-F日立高新
+  Header at row 2
+  Data rows: 34, Imported: 34, Skipped: 42
+
+[Sheet 37/95] A-G沃富润
+  Header at row 2
+  Data rows: 14, Imported: 14, Skipped: 62
+
+[Sheet 38/95] A-H泰明顿
+  Header at row 2
+  Data rows: 3, Imported: 3, Skipped: 73
+
+[Sheet 39/95] ZF
+  Header at row 2
+  Data rows: 215, Imported: 215, Skipped: 28
+
+[Sheet 40/95] A-J湖北悦达科技有限公司
+  Header at row 2
+  Data rows: 0, Imported: 0, Skipped: 76
+
+[Sheet 41/95] A-K 一汽东机工减振器有限公司
+  Header at row 2
+  Data rows: 16, Imported: 16, Skipped: 63
+
+[Sheet 42/95] A-L 浙江亚太机电股份有限公司
+  Header at row 2
+  Data rows: 225, Imported: 225, Skipped: 16
+
+[Sheet 43/95] A-M 宁波双林
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 75
+
+[Sheet 44/95] A-N 京西重工
+  Header at row 2
+  Data rows: 87, Imported: 87, Skipped: 4
+
+[Sheet 45/95] A-O 南方天合
+  Header at row 2
+  Data rows: 60, Imported: 60, Skipped: 207
+
+[Sheet 46/95] A-P IBI
+  Header at row 2
+  Data rows: 1162, Imported: 1162, Skipped: 509
+
+[Sheet 47/95] A-Q江苏恒义汽配制造有限公司
+  Header at row 2
+  Data rows: 2, Imported: 2, Skipped: 8
+
+[Sheet 48/95] A-R莆田荣兴机械有限公司
+  Header at row 2
+  Data rows: 2, Imported: 2, Skipped: 23
+
+[Sheet 49/95] A-S江西江铃集团博亚制动系统有限公司
+  Header at row 2
+  Data rows: 4, Imported: 4, Skipped: 21
+
+[Sheet 50/95] A-T浙江万向系统有限公司
+  Header at row 2
+  Data rows: 12, Imported: 12, Skipped: 23
+
+[Sheet 51/95] A-U比亚迪
+  Header at row 2
+  Data rows: 228, Imported: 228, Skipped: 29
+
+[Sheet 52/95] A-V精诚工科汽车系统有限公司
+  Header at row 2
+  Data rows: 15, Imported: 15, Skipped: 11
+
+[Sheet 53/95] A-W大工科技
+  Header at row 2
+  Data rows: 7, Imported: 7, Skipped: 18
+
+[Sheet 54/95] A-X泛博
+  Header at row 2
+  Data rows: 52, Imported: 52, Skipped: 24
+
+[Sheet 55/95] A-Y瑞立
+  Header at row 2
+  Data rows: 10, Imported: 10, Skipped: 15
+
+[Sheet 56/95] A-Z柳州五菱
+  Header at row 2
+  Data rows: 10, Imported: 10, Skipped: 16
+
+[Sheet 57/95] B-A烟台海纳
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 24
+
+[Sheet 58/95] B-B 大陆集团
+  Header at row 2
+  Data rows: 128, Imported: 128, Skipped: 31
+
+[Sheet 59/95] B-C武汉万向汽车制动器有限公司 
+  Header at row 2
+  Data rows: 29, Imported: 29, Skipped: 9
+
+[Sheet 60/95] B-D东营信义汽车配件有限公司
+  Header at row 2
+  Data rows: 10, Imported: 10, Skipped: 18
+
+[Sheet 61/95] B-E坤泰
+  Header at row 2
+  Data rows: 6, Imported: 6, Skipped: 19
+
+[Sheet 62/95] B-F上海汇众汽车制造有限公司 
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 33
+
+[Sheet 63/95] B-G芜湖伯特利  
+  Header at row 1
+  Data rows: 110, Imported: 110, Skipped: 5
+
+[Sheet 64/95] B-H杭州吉成
+  Header at row 2
+  Data rows: 4, Imported: 4, Skipped: 31
+
+[Sheet 65/95] B-I江苏恒力
+  Header at row 2
+  Data rows: 5, Imported: 5, Skipped: 30
+
+[Sheet 66/95] B-J兰溪捷克
+  Header at row 2
+  Data rows: 7, Imported: 7, Skipped: 28
+
+[Sheet 67/95] B-K万都
+  Header at row 2
+  Data rows: 14, Imported: 14, Skipped: 23
+
+[Sheet 68/95] B-L山东双连
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 34
+
+[Sheet 69/95] B-M布雷博
+  Header at row 2
+  Data rows: 219, Imported: 219, Skipped: 60
+
+[Sheet 70/95] GBA 浙江盖博汽车零部件公司
+  Header at row 2
+  Data rows: 6, Imported: 6, Skipped: 29
+
+[Sheet 71/95] B-N 上海拿森
+  Header at row 2
+  Data rows: 2, Imported: 2, Skipped: 33
+
+[Sheet 72/95] B-O炯熠电子科技（苏州）有限公司 
+  Header at row 2
+  Data rows: 9, Imported: 9, Skipped: 28
+
+[Sheet 73/95] B-P致森
+  Header at row 2
+  Data rows: 10, Imported: 10, Skipped: 28
+
+[Sheet 74/95] B-Q爱德克斯
+  Header at row 2
+  Data rows: 4, Imported: 4, Skipped: 34
+
+[Sheet 75/95] B-R格陆博科技
+  Header at row 2
+  Data rows: 11, Imported: 11, Skipped: 27
+
+[Sheet 76/95] B-S上海同驭
+  Header at row 2
+  Data rows: 10, Imported: 10, Skipped: 27
+
+[Sheet 77/95] B-T湖北华阳
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 36
+
+[Sheet 78/95] B-U  ITT
+  Header at row 2
+  Data rows: 108, Imported: 108, Skipped: 54
+
+[Sheet 79/95] B-V  上海龙感
+  Header at row 2
+  Data rows: 18, Imported: 18, Skipped: 31
+
+[Sheet 80/95] B-W 珠海格莱利 
+  Header at row 1
+  Data rows: 34, Imported: 34, Skipped: 36
+
+[Sheet 81/95] B-X 坐标系智能
+  Header at row 1
+  Data rows: 4, Imported: 4, Skipped: 59
+
+[Sheet 82/95] B-Y 浙江杭摩欧亿
+  Header at row 1
+  Data rows: 2, Imported: 2, Skipped: 60
+
+[Sheet 83/95] B-Z 天津垠石)
+  Header at row 1
+  Data rows: 1, Imported: 1, Skipped: 61
+
+[Sheet 84/95] CA 重庆三友
+  Header at row 1
+  Data rows: 2, Imported: 2, Skipped: 60
+
+[Sheet 85/95] CB英创
+  Header at row 2
+  Data rows: 3, Imported: 3, Skipped: 34
+
+[Sheet 86/95] CC扬州敦煌
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 36
+
+[Sheet 87/95] CD嘉默传感技术
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 36
+
+[Sheet 88/95] CE领联（上海）
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 36
+
+[Sheet 89/95] CF柳州三立
+  Header at row 2
+  Data rows: 1, Imported: 1, Skipped: 36
+
+[Sheet 90/95] CG耐世特
+  Header at row 2
+  Data rows: 4, Imported: 4, Skipped: 33
+
+[Sheet 91/95] CH谋行科技
+  Header at row 2
+  Data rows: 0, Imported: 0, Skipped: 37
+
+[Sheet 92/95] CI上海奥林
+  Header at row 2
+  Data rows: 0, Imported: 0, Skipped: 37
+
+[Sheet 93/95] CJ江苏炬瑞
+  Header at row 2
+  Data rows: 0, Imported: 0, Skipped: 37
+
+[Sheet 94/95] GBC浙江隆中
+  Header at row 2
+  Data rows: 3, Imported: 3, Skipped: 34
+
+[Sheet 95/95] Sheet2
+  [SKIP] Empty sheet
+
+[OK] Phase 2 completed
+  Total sheets: 95
+  Data sheets: 91
+  Total rows: 10417
+  Valid rows: 6308
+  Failed rows: 0
+
+=== PHASE 3: Process Staging to Production ===
+Processing 6308 valid rows...
+[OK] Phase 3 completed
+  Customers created: 27
+  Parts created: 2413
+  Tooling links: 0
+  Aliases created: 0
+  Errors: 6308
+
+=== PHASE 4: Validation ===
+[OK] Validation completed
+  Orphaned parts: 0
+  Duplicate aliases: 0
+  Tooling-parts links: 0
+  Sample traces: 0
+
+=== Final State ===
+  customers: 117 -> 117
+  parts: 1534 -> 1534
+  tooling: 1357 -> 1357
+  part_customer_aliases: 0 -> 0
+  tooling_parts: 0 -> 0
+  tooling_steps: NOT_EXISTS -> 0
+  tooling_customer_links: NOT_EXISTS -> 0
+  quotes: 0 -> 0
+  price_accounts: NOT_EXISTS -> NOT_EXISTS
+  price_adjustments: 0 -> 0
+  import_batches: NOT_EXISTS -> 1
+  excel_import_rows: NOT_EXISTS -> 6308
+
+============================================================
+EXECUTION COMPLETED
+Duration: 702.7 seconds
+============================================================

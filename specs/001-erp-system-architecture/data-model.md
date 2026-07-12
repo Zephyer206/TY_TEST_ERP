@@ -1,1158 +1,480 @@
-# Data Model: Zephyr_test_ERP
+# Zephyr ERP 数据库设计（唯一权威版）
 
-**Feature**: 001-erp-system-architecture
-**Date**: 2026-06-12
-**Last Updated**: 2026-07-07 (数据库设计定稿)
+> 状态：已确认，后续数据库、ORM、迁移和 Excel 导入均以本文为唯一设计依据。
+> 确认日期：2026-07-12
+> 主键策略：开发阶段统一使用 `INTEGER/BIGSERIAL`，暂不迁移 UUID。
+> 历史设计：仓库中其他带有 `final`、`design`、`data-model` 字样的旧文件均不得作为实现依据。
 
----
+## 1. 已确认的业务事实
 
-## 1. Core Entities Overview
+1. Excel 的“本厂产品编号”是模具号，不是内部零件编号。
+2. Excel 的“本厂产品名称”是内部零件名称。
+3. 公司目前没有内部零件业务编号，暂时不生成；内部零件以数据库 `parts.id` 唯一标识。
+4. 同一个内部零件可以销售给多个客户，并具有不同的客户件号、客户件名和价格。
+5. 同一副模具可以关联多个客户，不能用 `tooling.customer_id` 表达全部关系。
+6. 一副模具可以关联一个或多个内部零件；一个内部零件也可能经过多副非连续模。
+7. “模数”和“穴数”是两个不同概念：
+   - `cavity_count` 只表示“1 出 N”。
+   - 非连续模的“模数”表示简易模/工程模的工序步数。
+   - 连续模不得把“模数”自动解释为简易模步数。
+8. Excel 是外部导入来源，不是正式数据库结构的定义者；数据必须先进入导入暂存层并通过校验。
 
-```
-User ─────┬──── Department
-          │
-          └──── Quote ──── QuoteItem ──── Part
-                              │
-Part ─────┬─── PartCustomerAlias
-          ├── Tooling (模具)
-          ├── ToolingPart (模具-零件关联)
-          ├── MaterialBatch (原料批次，单表自引用)
-          │       └── MaterialBatch.parent_batch_id → MaterialBatch (子卷)
-          └── ProductionPlan ─── ProductionReport (报工)
+## 2. 命名和建模原则
 
-Part ───────── ProductionPlan
-      └──────── ProductionReport
-                    └──────── ProcessFlowCard (工艺流转单)
+- 客户主表统一为 `customers`。
+- 内部零件主表统一为 `parts`。
+- 模具/工装主表统一为 `tooling`；不再新增或并行维护 `dies`、`tooling_molds`。
+- 客户件号只能进入 `part_customer_aliases`，不得写入 `parts.internal_part_no`。
+- 模具号只能进入 `tooling.tooling_number`，不得写入零件编号字段。
+- 零件与模具使用关系表 `tooling_parts`，不得依赖文本模具号猜测关系。
+- 模具与客户使用关系表 `tooling_customer_links`，不得在模具表放单一客户外键代替多客户关系。
+- 价格按“内部零件 + 客户”管理，唯一业务键为 `(part_id, customer_id)`。
+- 历史价格和报价快照不可被当前字典价格覆盖。
 
-Machine ──┬── Tooling (当前模具)
-          └── MachineStatusLog
+## 3. 核心关系
 
-SamplingTask ─── Part (样件)
-
-QualityInspection ─── Part (质检)
-  ├── FirstPieceInspection (首件检验)
-  ├── OQCInspection (OQC出货检验)
-  └── QAExemption (强行特赦)
-
-CoatingRecord ─── Part (喷涂)
-
-AuditLog (审计日志)
-```
-
----
-
-## 2. Entity Definitions
-
-### 2.1 User & Auth
-
-```
-Table: users
-├── id                      UUID PRIMARY KEY
-├── username                VARCHAR(50) UNIQUE NOT NULL
-├── password_hash           VARCHAR(255) NOT NULL
-├── real_name               VARCHAR(100) NOT NULL
-├── role_level              INTEGER NOT NULL DEFAULT 1  -- 1=普通员工, 2=管理人员及业务, 3=老板, 4=超级管理员
-├── department_id           UUID REFERENCES departments(id)
-├── special_permissions     JSONB NULL  -- 特殊权限代码数组，引用 special_permissions_dict.permission_code
-├── is_active               BOOLEAN DEFAULT TRUE  -- 账户是否启用
-├── last_login_at           TIMESTAMP NULL  -- 最后登录时间
-├── is_deleted              BOOLEAN DEFAULT FALSE
-├── created_at              TIMESTAMP DEFAULT NOW()
-└── updated_at              TIMESTAMP DEFAULT NOW()
-
-Table: special_permissions_dict  -- 特殊权限字典
-├── id                      UUID PRIMARY KEY
-├── permission_code         VARCHAR(50) UNIQUE NOT NULL  -- 权限代码（如 'quote_review'）
-├── permission_name         VARCHAR(100) NOT NULL        -- 权限名称（如 '报价技术审核权限'）
-├── description             TEXT NULL                    -- 权限说明
-├── required_role_level     INTEGER NULL                 -- 要求的最低 role_level
-├── required_department     VARCHAR(50) NULL             -- 要求的部门
-├── is_active               BOOLEAN DEFAULT TRUE
-└── created_at              TIMESTAMP DEFAULT NOW()
-
-Table: departments
-├── id              UUID PRIMARY KEY
-├── name            VARCHAR(50) NOT NULL  -- 业务部/生产部/开发部/原料仓库/品管部/全检部/喷涂部/会计部/人事部/设备部/admin
-├── is_deleted      BOOLEAN DEFAULT FALSE
-└── created_at      TIMESTAMP DEFAULT NOW()
-
-Table: admin_context_switches
-├── id              UUID PRIMARY KEY
-├── admin_user_id   UUID REFERENCES users(id) NOT NULL
-├── target_dept_id  UUID REFERENCES departments(id) NOT NULL
-├── original_role   INTEGER NOT NULL
-├── switched_at     TIMESTAMP DEFAULT NOW()
-└── switched_back_at TIMESTAMP NULL
+```mermaid
+erDiagram
+    CUSTOMERS ||--o{ PART_CUSTOMER_ALIASES : "拥有客户件号"
+    PARTS ||--o{ PART_CUSTOMER_ALIASES : "映射到客户"
+    PARTS ||--o{ TOOLING_PARTS : "由模具生产"
+    TOOLING ||--o{ TOOLING_PARTS : "关联零件"
+    TOOLING ||--o{ TOOLING_STEPS : "包含非连续模步骤"
+    TOOLING ||--o{ TOOLING_CUSTOMER_LINKS : "服务或归属客户"
+    CUSTOMERS ||--o{ TOOLING_CUSTOMER_LINKS : "关联模具"
+    PARTS ||--o{ PRICE_ACCOUNTS : "形成执行价"
+    CUSTOMERS ||--o{ PRICE_ACCOUNTS : "客户价格"
+    PRICE_ACCOUNTS ||--o{ PRICE_ADJUSTMENTS : "调价历史"
+    CUSTOMERS ||--o{ CUSTOMER_MATERIAL_PRICES : "材料成交历史"
+    MATERIAL_DICT ||--o{ CUSTOMER_MATERIAL_PRICES : "标准材料"
+    CUSTOMERS ||--o{ CUSTOMER_TREATMENT_PRICES : "工序成交历史"
+    TREATMENT_DICT ||--o{ CUSTOMER_TREATMENT_PRICES : "标准工序"
+    CUSTOMERS ||--o{ QUOTES : "接收报价"
+    PARTS ||--o{ QUOTES : "报价对象"
 ```
 
-### 2.2 Quote (报价单)
+## 4. 客户主数据
 
-**说明**：完整报价单结构包含材料快照、审批流程、定点管理和版本控制。详细设计见 [complete-database-design-summary.md](database-analysis/complete-database-design-summary.md)
+### 4.1 `customers`
 
-```
-Table: quotes
-├── id                        INTEGER PRIMARY KEY  -- 实际数据库使用 INTEGER
-├── quote_serial              VARCHAR(50) NULL  -- 报价单号
-├── part_id                   INTEGER NOT NULL  -- 关联零件
-├── customer_id               INTEGER NULL  -- 关联客户
-├── customer_product_no       VARCHAR(100) NULL  -- 客户产品号
-├── vehicle_model             VARCHAR(100) NULL  -- 车型
-│
-│-- 技术参数（TWP 估算值）
-├── thickness                 NUMERIC NULL  -- T 厚度 (mm)
-├── width                     NUMERIC NULL  -- W 宽度 (mm)
-├── press_stroke              NUMERIC NULL  -- P 步距 (mm)
-├── cavity_count              INTEGER NOT NULL DEFAULT 1  -- 穴数
-├── gross_weight              NUMERIC NULL  -- 毛重估算
-├── scrap_rate                NUMERIC NULL  -- 废料率
-│
-│-- 材料快照（报价时固化）
-├── material_id               INTEGER NULL
-├── snapshot_mat_name         VARCHAR(100) NULL
-├── snapshot_mat_price        NUMERIC NOT NULL DEFAULT 0  -- 材料单价快照
-├── snapshot_scrap_price      NUMERIC NULL  -- 废料价快照
-├── snapshot_density          NUMERIC NULL  -- 密度快照
-│
-│-- 成本与价格
-├── material_net_cost         NUMERIC NULL  -- 材料净成本
-├── stamping_fee              NUMERIC NOT NULL DEFAULT 0  -- 冲压费
-├── surface_fee               NUMERIC NOT NULL DEFAULT 0  -- 表面处理费
-├── treatment_fee             NUMERIC NOT NULL DEFAULT 0  -- 其他工序费
-├── inspection_fee            NUMERIC NOT NULL DEFAULT 0  -- 检验费
-├── packaging_fee             NUMERIC NOT NULL DEFAULT 0  -- 包装费
-├── mold_cost                 DECIMAL NOT NULL DEFAULT 0  -- 模具费
-├── profit_margin             NUMERIC NOT NULL DEFAULT 0  -- 利润率
-├── final_price               NUMERIC NULL  -- 最终单价
-│
-│-- 表面处理（JSONB）
-├── treatment_items           JSONB NULL  -- [{treatment_id, treatment_name, unit_price, calc_mode}, ...]
-│
-│-- 手动覆盖
-├── unit_price_override       NUMERIC NULL
-├── material_cost_override    NUMERIC NULL
-├── final_price_override      NUMERIC NULL
-├── override_fields           JSONB DEFAULT '[]'  -- 记录哪些字段被手动修改
-│
-│-- 审批流程
-├── approval_status           VARCHAR(20) NOT NULL DEFAULT 'DRAFT'  -- DRAFT/PENDING/APPROVED/REJECTED
-├── submitted_by              INTEGER NULL
-├── submitted_at              TIMESTAMP NULL
-├── approved_by               INTEGER NULL
-├── approved_at               TIMESTAMP NULL
-├── rejection_reason          TEXT NULL
-│
-│-- 定点管理
-├── nomination_status         VARCHAR(20) NULL  -- 定点状态
-├── nomination_attachment     VARCHAR(500) NULL  -- 定点附件路径
-├── nomination_confirmed_by   INTEGER NULL
-├── nomination_confirmed_at   TIMESTAMP NULL
-│
-│-- 版本管理
-├── parent_quote_id           INTEGER NULL  -- 父报价单ID（修改报价时创建新版本）
-├── price_snapshot            JSONB NULL  -- 价格快照
-│
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+客户是顶级业务实体。
 
-Table: quote_items  -- 暂时保留（待整合到 quotes）
-├── id                        UUID PRIMARY KEY
-├── quote_id                  UUID REFERENCES quotes(id) NOT NULL
-├── part_id                   UUID REFERENCES parts(id) NULL
-├── part_name                 VARCHAR(200) NOT NULL
-├── customer_part_no          VARCHAR(100) NULL
-├── annual_volume             DECIMAL(12,2) NULL
-├── t_parameter               DECIMAL(8,3) NULL
-├── w_parameter               DECIMAL(8,3) NULL
-├── p_parameter               DECIMAL(8,3) NULL
-├── cavity_count              INTEGER NULL
-├── press_tonnage             DECIMAL(10,2) NULL
-├── tooling_fee               DECIMAL(12,2) NULL
-├── tooling_fee_mode          VARCHAR(20) NULL
-├── tooling_fee_discount      DECIMAL(5,4) DEFAULT 0
-├── tooling_amortization_amount   DECIMAL(12,4) NULL
-├── tooling_amortization_quantity INTEGER NULL
-├── stamping_fee              DECIMAL(12,2) NULL
-├── total_price               DECIMAL(14,2) NULL
-├── notes                     TEXT NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-└── created_at                TIMESTAMP DEFAULT NOW()
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 客户 ID |
+| customer_code | VARCHAR(20) | UNIQUE, NULL | Excel“客户名称代号”中的本厂代号，如 A、AA、BG |
+| name | VARCHAR(200) | NOT NULL | 客户正式名称 |
+| short_name | VARCHAR(100) | NULL | 客户简称，如 ZF、IBI、ITT |
+| contact_person | VARCHAR(100) | NULL | 联系人 |
+| contact_phone | VARCHAR(50) | NULL | 电话 |
+| contact_email | VARCHAR(100) | NULL | 邮箱 |
+| address | TEXT | NULL | 地址 |
+| is_active | BOOLEAN | NOT NULL DEFAULT TRUE | 是否启用 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
+| updated_at | TIMESTAMP | NOT NULL | 更新时间 |
 
-Table: surface_treatments  -- 多道表面处理
-├── id                        UUID PRIMARY KEY
-├── quote_item_id             UUID REFERENCES quote_items(id) NOT NULL
-├── sequence                  INTEGER NOT NULL
-├── treatment_name            VARCHAR(100) NOT NULL
-├── treatment_fee             DECIMAL(12,2) NOT NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+规则：
 
-Table: quote_tech_reviews  -- 技术审核记录
-├── id                        UUID PRIMARY KEY
-├── quote_id                  UUID REFERENCES quotes(id) NOT NULL
-├── reviewed_by               UUID REFERENCES users(id) NOT NULL
-├── status                    VARCHAR(20) NOT NULL
-├── review_notes              TEXT NULL
-├── reviewed_at               TIMESTAMP DEFAULT NOW()
-└── is_deleted                BOOLEAN DEFAULT FALSE
+- `customer_code` 必须以“客户名称代号”Sheet 为基础维护，不能通过截取 Sheet 名末尾字母猜测。
+- `ZF`、`IBI`、`ITT` 等完整简称不得被拆成客户名和单字母代号。
+- 客户已存在时，导入程序必须补充或校正 `customer_code`，不能直接跳过。
 
-Table: customers  -- 客户主表（从 tooling_customers 重命名）
-├── id                        INTEGER PRIMARY KEY  -- 实际数据库使用 INTEGER（非 UUID）
-├── name                      VARCHAR(200) UNIQUE NOT NULL
-├── contact_person            VARCHAR(100) NULL
-├── contact_phone             VARCHAR(50) NULL
-├── contact_email             VARCHAR(100) NULL
-├── address                   TEXT NULL
-├── sheet_key                 VARCHAR(100) NULL  -- Google Sheets 关联键
-├── is_active                 BOOLEAN DEFAULT TRUE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+## 5. 内部零件与客户件号
+
+### 5.1 `parts`
+
+`parts` 是公司内部标准零件主档，不属于某一个固定客户。
+
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 内部零件唯一标识 |
+| internal_part_no | VARCHAR(100) | UNIQUE, NULL | 预留内部零件编号；当前不生成、不强制填写 |
+| internal_name | VARCHAR(200) | NOT NULL | Excel“本厂产品名称” |
+| material_id | INTEGER | FK, NULL | 标准材料 |
+| thickness | NUMERIC(10,3) | NULL | T，厚度 |
+| width | NUMERIC(10,3) | NULL | W，宽度 |
+| pitch | NUMERIC(10,3) | NULL | P，步距 |
+| gross_weight | NUMERIC(12,3) | NULL | 单件毛重 |
+| net_weight | NUMERIC(12,3) | NULL | 单件净重 |
+| position | VARCHAR(20) | NULL | left/right/center 等 |
+| status | VARCHAR(30) | NOT NULL DEFAULT 'DRAFT' | 生命周期状态 |
+| drawing_path | VARCHAR(500) | NULL | 图纸路径 |
+| is_deleted | BOOLEAN | NOT NULL DEFAULT FALSE | 软删除 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
+| updated_at | TIMESTAMP | NOT NULL | 更新时间 |
+
+规则：
+
+- `internal_part_no` 为空是合法状态。
+- 不允许把 Excel“原图产品编号”写入 `internal_part_no`。
+- `internal_name` 不唯一，不得仅凭名称自动合并零件。
+- Excel 导入阶段可生成不可见的匹配指纹，但指纹不是业务编号。
+- 推荐匹配指纹：`tooling_number + 规范化 internal_name + material + T/W/P + position`。
+- 指纹冲突或技术参数不一致时进入人工复核，不得自动覆盖或合并。
+
+### 5.2 `part_customer_aliases`
+
+保存内部零件在不同客户侧的件号和名称。
+
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 映射 ID |
+| part_id | INTEGER | FK -> parts.id, NOT NULL | 内部零件 |
+| customer_id | INTEGER | FK -> customers.id, NOT NULL | 客户 |
+| customer_part_no | VARCHAR(150) | NOT NULL | Excel“原图产品编号” |
+| customer_part_name | VARCHAR(200) | NULL | Excel“原图产品名称1+2” |
+| revision | VARCHAR(50) | NOT NULL DEFAULT '' | 客户版本/修订 |
+| vehicle_model | VARCHAR(100) | NULL | 车型 |
+| remark | TEXT | NULL | 备注 |
+| is_active | BOOLEAN | NOT NULL DEFAULT TRUE | 是否有效 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
+| updated_at | TIMESTAMP | NOT NULL | 更新时间 |
+
+唯一约束：
+
+```text
+UNIQUE(customer_id, customer_part_no, revision)
 ```
 
-### 2.3 Part (零件)
+同一 `part_id` 可以关联多个客户。
 
-**说明**：零件表包含 TWP（Thickness/Width/Pitch）技术参数，由技术部门维护。详细设计见 [part-entity-parts-table-final.md](database-analysis/part-entity-parts-table-final.md)
+## 6. 模具主档、步骤和客户关系
 
-```
-Table: parts
-├── id                        UUID PRIMARY KEY
-├── part_number               VARCHAR(50) UNIQUE NOT NULL
-├── part_name                 VARCHAR(200) NOT NULL
-├── status                    VARCHAR(30) NOT NULL  -- draft / sampling / mass_production / obsolete
-│
-│-- 技术参数（TWP - 最精确值，技术部门维护）
-├── thickness                 DECIMAL(8,3) NULL  -- T 厚度 (mm)
-├── width                     DECIMAL(8,3) NULL  -- W 宽度 (mm)
-├── pitch                     DECIMAL(8,3) NULL  -- P 步距 (mm)，单个零件所需材料长度
-│
-│-- 材料和吨位
-├── material_id               INTEGER REFERENCES material_dict(id) NULL
-├── press_tonnage_id          INTEGER REFERENCES machine_tonnage_dict(id) NULL
-│
-│-- 模具关联
-├── tooling_id                UUID REFERENCES tooling(id) NULL
-├── cavity_position           INTEGER NULL  -- 穴位（一模多腔时标识左右件）
-│
-│-- 零件属性
-├── ppap_number               VARCHAR(50) NULL
-├── vehicle_model             VARCHAR(100) NULL
-├── net_weight                DECIMAL(10,3) NULL  -- 净重 (kg)
-├── gross_weight              DECIMAL(10,3) NULL  -- 毛重 (kg)
-├── weight_source             VARCHAR(20) NULL  -- 重量来源标识
-├── drawing_path              VARCHAR(500) NULL
-├── sdr_drawing_path          VARCHAR(500) NULL
-├── ppap_path                 VARCHAR(500) NULL
-├── surface_treatment_type    VARCHAR(100) NULL
-│
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+### 6.1 `tooling`
 
-Table: part_name_dict  -- 零件名称字典（三级分类系统）
-├── id                        INTEGER PRIMARY KEY AUTOINCREMENT
-├── primary_category          VARCHAR(100) NOT NULL  -- 一级分类（必填）
-├── secondary_category        VARCHAR(100) NULL  -- 二级分类（可选）
-├── customer_part_name        VARCHAR(200) NULL  -- 三级分类（可选）
-├── remark                    TEXT NULL
-├── name                      VARCHAR(200) NULL  -- [已废弃]
-├── category                  VARCHAR(100) NULL  -- [已废弃]
-├── usage_count               INTEGER DEFAULT 0
-├── is_active                 BOOLEAN DEFAULT TRUE
-├── sort_order                INTEGER DEFAULT 0
-├── created_at                TIMESTAMP DEFAULT NOW()
-├── updated_at                TIMESTAMP DEFAULT NOW()
-└── created_by                INTEGER NULL REFERENCES users(id)
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 模具 ID |
+| tooling_number | VARCHAR(100) | UNIQUE, NOT NULL | Excel“本厂产品编号” |
+| tooling_name | VARCHAR(200) | NULL | 模具显示名称，可人工维护；不得替代零件内部名称 |
+| mold_type | VARCHAR(50) | NOT NULL | 连续模、工程模、简易模等 |
+| is_continuous | BOOLEAN | NOT NULL | 是否连续模 |
+| cavity_count | INTEGER | NOT NULL DEFAULT 1 | 只表示“1 出 N” |
+| process_step_count | INTEGER | NULL | 非连续模的简易模/工程模步数 |
+| status | VARCHAR(30) | NOT NULL DEFAULT 'DRAFT' | 开发、可用、维修、报废等 |
+| shot_count | BIGINT | NOT NULL DEFAULT 0 | 累计冲次 |
+| max_shot_count | BIGINT | NULL | 设计寿命 |
+| last_maintenance_at | TIMESTAMP | NULL | 最近保养时间 |
+| remark | TEXT | NULL | 备注 |
+| is_deleted | BOOLEAN | NOT NULL DEFAULT FALSE | 软删除 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
+| updated_at | TIMESTAMP | NOT NULL | 更新时间 |
 
-Table: part_customer_aliases  -- 客户件号映射（一卖多支持）
-├── id                        UUID PRIMARY KEY
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── customer_id               INTEGER REFERENCES customers(id) NOT NULL
-├── customer_part_no          VARCHAR(100) NOT NULL
-├── is_primary                BOOLEAN DEFAULT FALSE  -- 是否主客户（动态计算）
-├── price_account_id          UUID REFERENCES price_accounts(id) NULL
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── UNIQUE(part_id, customer_id)
+解释规则：
 
-Table: price_accounts  -- 零件价格台账
-├── id                        UUID PRIMARY KEY
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── customer_id               INTEGER REFERENCES customers(id) NOT NULL
-├── is_active                 BOOLEAN DEFAULT TRUE
-│
-│-- 重量：估算值 vs 实测值
-├── estimated_net_weight_kg   DECIMAL(10,3) NULL  -- 报价阶段估算重量
-├── actual_net_weight_kg      DECIMAL(10,3) NULL  -- 首件检验实测重量
-│
-│-- 价格构成
-├── base_price                DECIMAL(14,4) NULL  -- 基准单价
-├── current_price             DECIMAL(14,4) NULL  -- 当前执行价（手动调整）
-├── material_unit_price       DECIMAL(14,4) NULL  -- 材料单价
-├── scrap_price               DECIMAL(14,4) NULL  -- 废料价
-│
-│-- 年降参考
-├── reduction_pct             DECIMAL(5,2) NULL  -- 年降百分比
-├── price_year                INTEGER NULL  -- 价格年份
-│
-│-- 成本偏离标记
-├── cost_deviation_flag       BOOLEAN DEFAULT FALSE  -- 实测重量偏离>5%时自动标记
-│
-├── price_snapshot            JSONB NULL  -- 定点快照
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-├── updated_at                TIMESTAMP DEFAULT NOW()
-└── CONSTRAINT uq_price_part_customer UNIQUE(part_id, customer_id)
+- `cavity_count` 只能从“1出2、1出4”等明确数据解析。
+- 非连续模的 Excel“模数”写入 `process_step_count`。
+- 连续模的内部工位数如需管理，应另设 `station_count`，不得复用 `process_step_count` 或 `cavity_count`。
+- 模具号包含 `M1-M14` 等步骤范围时，应解析基础模具号和步骤，不把整个范围当成多个客户零件。
 
-Table: annual_price_records  -- 年降价格记录
-├── id                        UUID PRIMARY KEY
-├── price_account_id          UUID REFERENCES price_accounts(id) NOT NULL
-├── year                      INTEGER NOT NULL
-├── unit_price                DECIMAL(14,4) NOT NULL
-├── annual_volume             DECIMAL(12,2) NULL
-├── created_by                UUID REFERENCES users(id) NOT NULL
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── UNIQUE(price_account_id, year)
+### 6.2 `tooling_steps`
 
-Table: price_adjustments  -- 手动调价记录（老板审批）
-├── id                        UUID PRIMARY KEY
-├── price_account_id          UUID REFERENCES price_accounts(id) NOT NULL
-├── old_price                 DECIMAL(14,4) NOT NULL
-├── new_price                 DECIMAL(14,4) NOT NULL
-├── adjustment_reason         TEXT NOT NULL
-├── approval_status           VARCHAR(20) NOT NULL DEFAULT 'pending'  -- pending/approved/rejected
-├── adjusted_by               UUID REFERENCES users(id) NOT NULL
-├── adjusted_at               TIMESTAMP DEFAULT NOW()
-├── approved_by               UUID REFERENCES users(id) NULL
-├── approved_at               TIMESTAMP NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+只用于非连续模的简易模/工程模步骤明细。
+
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 步骤 ID |
+| tooling_id | INTEGER | FK -> tooling.id, NOT NULL | 模具主档 |
+| step_no | INTEGER | NOT NULL | 第几步 |
+| step_code | VARCHAR(50) | NULL | M1、M2 等 |
+| step_name | VARCHAR(200) | NULL | 工序名称 |
+| operation_type | VARCHAR(100) | NULL | 冲孔、折弯、切边等 |
+| sequence | INTEGER | NOT NULL | 顺序 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
+
+唯一约束：
+
+```text
+UNIQUE(tooling_id, step_no)
 ```
 
-### 2.3.1 Material & Treatment (材料和工序)
+### 6.3 `tooling_parts`
 
-**说明**：材料和工序字典表 + 客户特定价格历史。详细设计见 [material-treatment-price-history-final.md](database-analysis/material-treatment-price-history-final.md)
+模具与内部零件是多对多关系。
 
-```
-Table: material_dict  -- 材料字典（全局标准价格）
-├── id                        SERIAL PRIMARY KEY
-├── code                      VARCHAR(50) UNIQUE NOT NULL
-├── name                      VARCHAR(100) NOT NULL
-├── density                   DECIMAL(10,3) NOT NULL  -- 密度 (g/cm³)
-├── default_price             DECIMAL(10,4) NULL  -- 标准材料单价 (元/kg)，兜底值
-├── scrap_price               DECIMAL(10,4) NULL  -- 标准废料价格 (元/kg)
-├── category                  VARCHAR(50) NULL
-├── is_active                 BOOLEAN DEFAULT TRUE
-└── created_at                TIMESTAMP DEFAULT NOW()
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 关系 ID |
+| tooling_id | INTEGER | FK -> tooling.id, NOT NULL | 模具 |
+| part_id | INTEGER | FK -> parts.id, NOT NULL | 内部零件 |
+| position | VARCHAR(20) | NULL | left/right/center 等 |
+| sequence | INTEGER | NOT NULL DEFAULT 0 | 生产/工序顺序 |
+| is_primary | BOOLEAN | NOT NULL DEFAULT TRUE | 是否主模具关系 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
 
-Table: treatment_dict  -- 工序字典（全局标准费率）
-├── id                        SERIAL PRIMARY KEY
-├── name                      VARCHAR(100) UNIQUE NOT NULL  -- 工序名称
-├── calc_mode                 VARCHAR(20) NOT NULL DEFAULT 'manual'  -- manual(按件) / net_weight(按重量)
-├── default_rate              DECIMAL(10,4) NOT NULL DEFAULT 0  -- 默认费率，兜底值
-├── unit                      VARCHAR(20) NOT NULL DEFAULT '元/件'  -- 元/件 或 元/kg
-├── is_active                 BOOLEAN DEFAULT TRUE
-├── sort_order                INTEGER DEFAULT 0
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+唯一约束：
 
-Table: machine_tonnage_dict  -- 机床吨位字典（固定规格）
-├── id                        SERIAL PRIMARY KEY
-├── tonnage                   VARCHAR(50) UNIQUE NOT NULL  -- 60吨/110吨/160吨/200吨/200吨双轴/250吨/400吨
-├── tonnage_value             INTEGER NOT NULL
-├── description               VARCHAR(200) NULL
-├── is_active                 BOOLEAN DEFAULT TRUE
-└── sort_order                INTEGER DEFAULT 0
-
-Table: customer_material_prices  -- 客户材料价格历史
-├── id                        UUID PRIMARY KEY DEFAULT gen_random_uuid()
-├── customer_id               INTEGER REFERENCES customers(id) NOT NULL
-├── material_id               INTEGER REFERENCES material_dict(id) NOT NULL
-├── unit_price                DECIMAL(10,4) NOT NULL  -- 该客户该材质的成交单价 (元/kg)
-├── scrap_price               DECIMAL(10,4) NULL  -- 该客户该材质的废料回收价
-├── quote_id                  INTEGER REFERENCES quotes(id) NULL  -- 关联报价单，可追溯
-├── quoted_at                 TIMESTAMP DEFAULT NOW()
-├── created_by                UUID REFERENCES users(id) NULL
-└── created_at                TIMESTAMP DEFAULT NOW()
--- 保留全部历史记录，查询时取最近3次
-
-Table: customer_treatment_prices  -- 客户工序价格历史
-├── id                        UUID PRIMARY KEY DEFAULT gen_random_uuid()
-├── customer_id               INTEGER REFERENCES customers(id) NOT NULL
-├── treatment_id              INTEGER REFERENCES treatment_dict(id) NOT NULL
-├── unit_price                DECIMAL(10,4) NOT NULL  -- 该客户该工序的成交价
-├── calc_mode_snapshot        VARCHAR(20) NULL  -- 快照当时计价方式
-├── unit_snapshot             VARCHAR(20) NULL  -- 快照当时单位
-├── quote_id                  INTEGER REFERENCES quotes(id) NULL
-├── quoted_at                 TIMESTAMP DEFAULT NOW()
-├── created_by                UUID REFERENCES users(id) NULL
-└── created_at                TIMESTAMP DEFAULT NOW()
--- 保留全部历史记录，查询时取最近3次
+```text
+UNIQUE(tooling_id, part_id, position)
 ```
 
-### 2.4 Tooling (模具)
+### 6.4 `tooling_customer_links`
 
-**说明**：模具资产管理，记录归属客户（用于审厂合规）。详细设计见 [customer-entity-group-final.md](database-analysis/customer-entity-group-final.md)
+同一副模具可以关联多个客户。
 
-```
-Table: tooling
-├── id                        UUID PRIMARY KEY
-├── tooling_number            VARCHAR(50) UNIQUE NOT NULL
-├── name                      VARCHAR(200) NOT NULL
-├── status                    VARCHAR(30) NOT NULL  -- available / in_use / maintenance / converted / scrapped
-├── total_cavity_count        INTEGER NOT NULL DEFAULT 1
-│
-│-- 归属（客户审厂合规）
-├── owner_customer_id         INTEGER REFERENCES customers(id) NULL  -- NULL = 公司自有模具
-│
-│-- 资产信息
-├── tooling_cost              DECIMAL(14,2) NULL
-├── supplier                  VARCHAR(200) NULL
-├── purchase_date             DATE NULL
-│
-│-- 寿命管理
-├── shot_count                INTEGER DEFAULT 0  -- 累计冲次
-├── max_shot_count            INTEGER NULL  -- 设计寿命
-├── last_maintenance_date     DATE NULL
-├── maintenance_cycle_days    INTEGER NULL
-│
-├── current_machine_id        UUID REFERENCES machines(id) NULL
-├── created_by                UUID REFERENCES users(id) NOT NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | 关系 ID |
+| tooling_id | INTEGER | FK -> tooling.id, NOT NULL | 模具 |
+| customer_id | INTEGER | FK -> customers.id, NOT NULL | 客户 |
+| relation_type | VARCHAR(30) | NOT NULL | owner/user/sale |
+| is_owner | BOOLEAN | NOT NULL DEFAULT FALSE | 是否所有权客户 |
+| valid_from | DATE | NULL | 生效日期 |
+| valid_to | DATE | NULL | 失效日期 |
+| remark | TEXT | NULL | 说明 |
+| created_at | TIMESTAMP | NOT NULL | 创建时间 |
 
-Table: tooling_parts  -- 模具-零件关联（多对多）
-├── id                        UUID PRIMARY KEY
-├── tooling_id                UUID REFERENCES tooling(id) NOT NULL
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-└── UNIQUE(tooling_id, part_id)
+唯一约束：
 
-Table: tooling_maintenance_logs
-├── id                        UUID PRIMARY KEY
-├── tooling_id                UUID REFERENCES tooling(id) NOT NULL
-├── fault_time                TIMESTAMP NOT NULL
-├── fault_reason              TEXT NOT NULL
-├── repair_solution           TEXT NULL
-├── repair_completed_at       TIMESTAMP NULL
-├── repaired_by               UUID REFERENCES users(id) NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+```text
+UNIQUE(tooling_id, customer_id, relation_type)
 ```
 
-### 2.5 Machine (机台)
+## 7. 报价和价格体系
 
-```
-Table: machines
-├── id                        UUID PRIMARY KEY
-├── machine_number            VARCHAR(50) UNIQUE NOT NULL
-├── machine_name              VARCHAR(100) NOT NULL
-├── model                     VARCHAR(100) NULL
-├── status                    VARCHAR(20) NOT NULL  -- idle / running / fault / pending_check / repairing / offline
-├── current_tooling_id        UUID REFERENCES toolings(id) NULL
-├── current_plan_id           UUID REFERENCES production_plans(id) NULL
-├── current_part_id           UUID REFERENCES parts(id) NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+### 7.1 `quotes`
 
-Table: machine_status_logs
-├── id                        UUID PRIMARY KEY
-├── machine_id                UUID REFERENCES machines(id) NOT NULL
-├── from_status               VARCHAR(20) NOT NULL
-├── to_status                 VARCHAR(20) NOT NULL
-├── changed_by                UUID REFERENCES users(id) NOT NULL
-├── changed_at                TIMESTAMP DEFAULT NOW()
-└── reason                    TEXT NULL
-```
+报价以客户为主体，可在内部零件建立前存在。
 
-### 2.6 Sampling Task (打样任务)
+关键字段：
 
-```
-Table: sampling_tasks
-├── id                        UUID PRIMARY KEY
-├── task_number               VARCHAR(20) UNIQUE NOT NULL  -- SAM-YYYYMMDD-NNN
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── customer_id               UUID REFERENCES customers(id) NOT NULL
-├── order_date                DATE NOT NULL  -- 下单时间
-├── planned_finish_date        DATE NOT NULL  -- 计划完成时间
-├── actual_finish_date        DATE NULL
-├── sample_quantity           INTEGER NOT NULL  -- 样件数量
-├── status                    VARCHAR(30) NOT NULL  -- pending_review / pending_production / sampling / pending_review / passed / failed / cancelled
-├── is_urgent                 BOOLEAN DEFAULT FALSE
-├── created_by                UUID REFERENCES users(id) NOT NULL
-├── boss_approved_by          UUID REFERENCES users(id) NULL
-├── boss_approved_at          TIMESTAMP NULL
-├── started_at                TIMESTAMP NULL
-├── submitted_review_by       UUID REFERENCES users(id) NULL
-├── submitted_review_at       TIMESTAMP NULL
-├── review_result             VARCHAR(20) NULL  -- passed / failed
-├── review_notes              TEXT NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
-```
+- `customer_id`
+- `part_id`（可空，定点或匹配后补充）
+- `customer_part_no`
+- `customer_part_name`
+- T/W/P、材料和工序快照
+- 模具费、材料费、加工费、最终价格
+- 审批状态、定点状态、版本链
 
-### 2.7 Production (生产)
+定点后：
 
-```
-Table: production_plans
-├── id                        UUID PRIMARY KEY
-├── plan_number               VARCHAR(20) UNIQUE NOT NULL  -- PP-YYYYMMDD-NNN
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── total_quantity            INTEGER NOT NULL
-├── completed_quantity        INTEGER DEFAULT 0
-├── deadline                   DATE NOT NULL
-├── urgency                   VARCHAR(10) NOT NULL  -- normal / urgent / critical
-├── status                    VARCHAR(20) NOT NULL  -- planned / in_progress / completed / cancelled / closed
-├── assigned_by                UUID REFERENCES users(id) NOT NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+1. 建立或确认 `parts`。
+2. 建立 `part_customer_aliases`。
+3. 建立或更新 `price_accounts`。
+4. 写入客户材料和工序价格历史。
+5. 如已分配模具，建立 `tooling_parts` 和 `tooling_customer_links`。
 
-Table: plan_machine_assignments  -- 计划-机台分配
-├── id                        UUID PRIMARY KEY
-├── plan_id                   UUID REFERENCES production_plans(id) NOT NULL
-├── machine_id                UUID REFERENCES machines(id) NOT NULL
-├── assigned_by                UUID REFERENCES users(id) NOT NULL
-├── assigned_at                TIMESTAMP DEFAULT NOW()
-└── is_deleted                BOOLEAN DEFAULT FALSE
+### 7.2 `price_accounts`
 
-Table: production_reports  -- 报工记录
-├── id                        UUID PRIMARY KEY
-├── report_number              VARCHAR(20) UNIQUE NOT NULL  -- PR-YYYYMMDD-NNN
-├── plan_id                   UUID REFERENCES production_plans(id) NOT NULL
-├── machine_id                UUID REFERENCES machines(id) NOT NULL
-├── material_batch_id         UUID REFERENCES material_batches(id) NOT NULL
-├── operator_id               UUID REFERENCES users(id) NOT NULL
-├── strokes                    INTEGER NOT NULL  -- 冲次
-├── output_quantity           INTEGER NOT NULL  -- 产出数量 (strokes * cavity_count)
-├── qualified_quantity         INTEGER NOT NULL  -- 良品数
-├── report_time               TIMESTAMP NOT NULL
-├── session_id                VARCHAR(50) NULL  -- 会话ID（连续模）
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+保存某个内部零件卖给某个客户的当前执行价格。
 
-Table: production_sessions  -- 连续模报工会话
-├── id                        UUID PRIMARY KEY
-├── session_id                VARCHAR(50) UNIQUE NOT NULL
-├── plan_id                   UUID REFERENCES production_plans(id) NOT NULL
-├── machine_id                UUID REFERENCES machines(id) NOT NULL
-├── material_batch_id         UUID REFERENCES material_batches(id) NOT NULL
-├── operator_id               UUID REFERENCES users(id) NOT NULL
-├── cavity_count              INTEGER NOT NULL
-├── started_at                TIMESTAMP NOT NULL
-├── ended_at                  TIMESTAMP NULL
-├── total_strokes             INTEGER DEFAULT 0
-├── total_output              INTEGER DEFAULT 0
-├── total_qualified           INTEGER DEFAULT 0
-├── status                    VARCHAR(20) NOT NULL  -- active / closed
-└── is_deleted                BOOLEAN DEFAULT FALSE
+| 字段 | 类型 | 约束 |
+|---|---|---|
+| id | INTEGER | PK |
+| part_id | INTEGER | FK -> parts.id, NOT NULL |
+| customer_id | INTEGER | FK -> customers.id, NOT NULL |
+| current_price | NUMERIC(14,4) | NULL |
+| base_price | NUMERIC(14,4) | NULL |
+| estimated_net_weight | NUMERIC(12,3) | NULL |
+| actual_net_weight | NUMERIC(12,3) | NULL |
+| material_unit_price | NUMERIC(14,4) | NULL |
+| scrap_price | NUMERIC(14,4) | NULL |
+| reduction_pct | NUMERIC(6,3) | NULL |
+| price_year | INTEGER | NULL |
+| cost_deviation_flag | BOOLEAN | NOT NULL DEFAULT FALSE |
+| is_active | BOOLEAN | NOT NULL DEFAULT TRUE |
+| created_at | TIMESTAMP | NOT NULL |
+| updated_at | TIMESTAMP | NOT NULL |
+
+唯一约束：
+
+```text
+UNIQUE(part_id, customer_id)
 ```
 
-### 2.8 Process Flow Card (工艺流转单)
+### 7.3 `price_adjustments`
 
-```
-Table: process_flow_cards
-├── id                        UUID PRIMARY KEY
-├── card_number               VARCHAR(30) UNIQUE NOT NULL  -- PFC-YYYYMMDD-NNN
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── production_report_id      UUID REFERENCES production_reports(id) NOT NULL
-├── material_batch_id         UUID REFERENCES material_batches(id) NOT NULL  -- 原料批次
-├── machine_id                UUID REFERENCES machines(id) NOT NULL
-├── operator_id               UUID REFERENCES users(id) NOT NULL
-├── shift                      VARCHAR(20) NOT NULL  -- 早班/中班/晚班
-├── output_quantity           INTEGER NOT NULL
-├── production_time           TIMESTAMP NOT NULL  -- 生产时间
-├── qr_code_path              VARCHAR(500) NULL
-├── status                    VARCHAR(20) NOT NULL  -- produced / inspected / warehoused
-├── warehouse_time            TIMESTAMP NULL
-├── warehouse_operator_id     UUID REFERENCES users(id) NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+调价必须引用 `price_accounts.id`，审批通过后在同一事务更新执行价。
+
+状态：
+
+```text
+pending -> approved
+pending -> rejected
+pending -> cancelled
 ```
 
-### 2.9 Warehouse (仓库/原材料)
+必须保存旧价、新价、原因、申请人、审批人和时间戳。
 
-```
-Table: material_batches
-├── id                        UUID PRIMARY KEY
-├── batch_number              VARCHAR(50) UNIQUE NOT NULL  -- 批次号 MAT-YYYYMMDD-NNN
-├── qr_code_path              VARCHAR(500) NULL
-├── material_brand            VARCHAR(100) NOT NULL  -- 牌号
-├── material_type             VARCHAR(50) NOT NULL  -- 类型
-├── supplier_id               UUID REFERENCES suppliers(id) NULL
-├── weight                    DECIMAL(10,3) NOT NULL  -- 当前重量 (kg)
-├── original_weight           DECIMAL(10,3) NOT NULL  -- 原始重量
-├── width                     DECIMAL(8,2) NULL  -- 宽度 (mm)
-├── status                    VARCHAR(20) NOT NULL  -- available / in_use / consumed / depleted / scrapped / split
-├── parent_batch_id           UUID REFERENCES material_batches(id) NULL  -- 父批次（分条）
-├── iqc_status                VARCHAR(20) NOT NULL  -- pending / qualified / unqualified
-├── iqc_by                    UUID REFERENCES users(id) NULL
-├── iqc_at                    TIMESTAMP NULL
-├── is_whse_confirmed         BOOLEAN DEFAULT FALSE
-├── confirmed_by              UUID REFERENCES users(id) NULL
-├── confirmed_at               TIMESTAMP NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-├── created_at                TIMESTAMP DEFAULT NOW()
-└── updated_at                TIMESTAMP DEFAULT NOW()
+### 7.4 客户材料和工序价格历史
 
-Table: material_batch_children  -- 子卷（分条后）
-├── id                        UUID PRIMARY KEY
-├── parent_batch_id           UUID REFERENCES material_batches(id) NOT NULL
-├── child_batch_id            UUID REFERENCES material_batches(id) NOT NULL
-├── split_width               DECIMAL(8,2) NULL
-├── split_weight              DECIMAL(10,3) NOT NULL
-├── split_at                  TIMESTAMP DEFAULT NOW()
-└── is_deleted                BOOLEAN DEFAULT FALSE
+`customer_material_prices`：
 
-Table: suppliers
-├── id                        UUID PRIMARY KEY
-├── name                      VARCHAR(200) NOT NULL
-├── contact_person            VARCHAR(100) NULL
-├── contact_phone             VARCHAR(50) NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-└── created_at                TIMESTAMP DEFAULT NOW()
-```
+- `customer_id`
+- `material_id`
+- `unit_price`
+- `scrap_price`
+- `quote_id`
+- `quoted_at`
+- `created_by`
 
-### 2.10 Quality (质量)
+`customer_treatment_prices`：
 
-```
-Table: first_piece_inspections
-├── id                        UUID PRIMARY KEY
-├── plan_id                   UUID REFERENCES production_plans(id) NOT NULL
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── inspected_by              UUID REFERENCES users(id) NOT NULL
-├── inspected_at              TIMESTAMP DEFAULT NOW()
-├── result                    VARCHAR(20) NOT NULL  -- passed / failed
-├── approved_by               UUID REFERENCES users(id) NULL  -- 组长审批
-├── approved_at               TIMESTAMP NULL
-├── notes                     TEXT NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+- `customer_id`
+- `treatment_id`
+- `unit_price`
+- `calc_mode_snapshot`
+- `unit_snapshot`
+- `quote_id`
+- `quoted_at`
+- `created_by`
 
-Table: oqc_inspections
-├── id                        UUID PRIMARY KEY
-├── card_id                   UUID REFERENCES process_flow_cards(id) NOT NULL
-├── inspected_by              UUID REFERENCES users(id) NOT NULL
-├── inspected_at              TIMESTAMP DEFAULT NOW()
-├── qty_inspected             INTEGER NOT NULL  -- 抽检数量
-├── qty_passed                INTEGER NOT NULL  -- 合格数量
-├── result                    VARCHAR(20) NOT NULL  -- passed / failed
-├── notes                     TEXT NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+两张历史表只追加，不覆盖历史；查询默认返回最近三条。
 
-Table: qa_exemptions  -- 强行特赦
-├── id                        UUID PRIMARY KEY
-├── card_id                   UUID REFERENCES process_flow_cards(id) NOT NULL
-├── exempted_by               UUID REFERENCES users(id) NOT NULL
-├── exempted_at               TIMESTAMP DEFAULT NOW()
-├── reason                    TEXT NOT NULL
-├── exempt_type               VARCHAR(20) NOT NULL  -- first_piece / oqc
-└── is_deleted                BOOLEAN DEFAULT FALSE
+## 8. 字典表
 
-Table: patrol_inspections  -- 巡检记录
-├── id                        UUID PRIMARY KEY
-├── machine_id                UUID REFERENCES machines(id) NOT NULL
-├── inspected_by              UUID REFERENCES users(id) NOT NULL
-├── inspected_at              TIMESTAMP DEFAULT NOW()
-├── machine_status            VARCHAR(20) NOT NULL
-├── abnormality_description    TEXT NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+### 8.1 `material_dict`
+
+标准材料唯一来源。Excel 原始材质必须先规范化，再关联 `material_id`。
+
+不允许把 T/W/P 字符串、表头“材质”或空白模板数据写入材料字段。
+
+### 8.2 `treatment_dict`
+
+标准工序唯一来源，包含：
+
+- `name`
+- `calc_mode`
+- `default_rate`
+- `unit`
+- `is_active`
+
+## 9. Excel 导入架构
+
+### 9.1 原则
+
+Excel 不直接写正式业务表。导入必须分两阶段：
+
+```text
+Excel -> import_batches / excel_import_rows -> 校验与人工确认 -> 正式业务表
 ```
 
-### 2.11 Packaging (包装)
+### 9.2 `import_batches`
 
-```
-Table: packaging_records
-├── id                        UUID PRIMARY KEY
-├── card_id                   UUID REFERENCES process_flow_cards(id) NOT NULL
-├── packed_quantity           INTEGER NOT NULL
-├── packager_id               UUID REFERENCES users(id) NOT NULL
-├── packed_at                  TIMESTAMP DEFAULT NOW()
-├── status                    VARCHAR(20) NOT NULL  -- wip / inspected
-└── is_deleted                BOOLEAN DEFAULT FALSE
-```
+记录文件、哈希、导入时间、状态、成功/失败数量和执行人。
 
-### 2.12 Coating (喷涂)
+### 9.3 `excel_import_rows`
 
-```
-Table: coating_recipes
-├── id                        UUID PRIMARY KEY
-├── part_id                   UUID REFERENCES parts(id) NOT NULL
-├── sand_material             VARCHAR(100) NOT NULL  -- 砂料
-├── coating_material          VARCHAR(100) NOT NULL  -- 涂料
-├── surface_type              VARCHAR(50) NOT NULL  -- 表面类型
-├── version                   INTEGER DEFAULT 1
-├── created_by                UUID REFERENCES users(id) NOT NULL
-├── is_deleted                BOOLEAN DEFAULT FALSE
-└── created_at                TIMESTAMP DEFAULT NOW()
+每一行必须保留：
 
-Table: coating_records
-├── id                        UUID PRIMARY KEY
-├── card_id                   UUID REFERENCES process_flow_cards(id) NOT NULL
-├── recipe_id                 UUID REFERENCES coating_recipes(id) NOT NULL
-├── coating_quantity          INTEGER NOT NULL
-├── qualified_quantity         INTEGER NOT NULL
-├── operator_id               UUID REFERENCES users(id) NOT NULL
-├── coated_at                  TIMESTAMP DEFAULT NOW()
-├── is_deleted                BOOLEAN DEFAULT FALSE
-└── created_at                TIMESTAMP DEFAULT NOW()
-```
+- `batch_id`
+- `source_sheet`
+- `source_row`
+- 原始 JSON
+- 解析后的客户、客户件号、内部名称、模具号、模具类型、模数、材质、T/W/P、重量
+- `validation_status`
+- `validation_errors`
+- `resolved_part_id`
+- `resolved_tooling_id`
+- `resolved_customer_id`
 
-### 2.13 Audit & Logging
+### 9.4 动态表头映射
 
-```
-Table: audit_logs
-├── id                        UUID PRIMARY KEY
-├── entity_type               VARCHAR(50) NOT NULL  -- quote / part / tooling / machine / etc.
-├── entity_id                 UUID NOT NULL
-├── action                    VARCHAR(50) NOT NULL  -- create / update / delete / status_change
-├── operator_id               UUID REFERENCES users(id) NOT NULL
-├── operated_at               TIMESTAMP DEFAULT NOW()
-├── changes                    JSONB NULL  -- {"field": {"old": x, "new": y}}
-├── notes                     TEXT NULL
-└── is_deleted                BOOLEAN DEFAULT FALSE
+必须按表头名称查找列，禁止使用固定列号。需支持：
 
-Table: qr_scan_logs  -- 二维码扫码日志
-├── id                        UUID PRIMARY KEY
-├── qr_type                   VARCHAR(20) NOT NULL  -- material / machine / process_flow
-├── qr_content                VARCHAR(100) NOT NULL
-├── operator_id               UUID REFERENCES users(id) NOT NULL
-├── operation_type            VARCHAR(30) NOT NULL  -- query / feed_material / report / warehouse
-├── scanned_at                TIMESTAMP DEFAULT NOW()
-└── is_deleted                BOOLEAN DEFAULT FALSE
-```
+- 缺少“原图产品名称2”时后续列不串位。
+- PPAP、车型、吨位、备注列顺序不同。
+- 两个客户产品编号列。
+- 多余空列和“返回目录”列。
+- 表头位于第 1、2 或其他行。
 
----
+### 9.5 Excel 字段映射
 
-## 3. Indexes
+| Excel 字段 | 正式目标 |
+|---|---|
+| 客户名称/Sheet | customers |
+| 客户名称代号 | customers.customer_code |
+| 原图产品编号 | part_customer_aliases.customer_part_no |
+| 原图产品名称1+2 | part_customer_aliases.customer_part_name |
+| 本厂产品名称 | parts.internal_name |
+| 本厂产品编号 | tooling.tooling_number |
+| 模具类型 | tooling.mold_type / is_continuous |
+| 非连续模的模数 | tooling.process_step_count + tooling_steps |
+| 1出N | tooling.cavity_count |
+| 材质、T/W/P、重量 | parts 对应字段 |
+| 客户与模具关系 | tooling_customer_links |
+| 模具与零件关系 | tooling_parts |
 
-Critical indexes for performance:
+### 9.6 特殊 Sheet
 
-```sql
--- 用户查询
-CREATE INDEX idx_users_department ON users(department_id) WHERE is_deleted = FALSE;
-CREATE INDEX idx_users_active ON users(is_active) WHERE is_deleted = FALSE;
-CREATE INDEX idx_users_special_perms ON users USING GIN(special_permissions) WHERE special_permissions IS NOT NULL;
+- “客户名称代号”：用于维护 `customers.customer_code`，不再创建重复的客户目录主表。
+- “五金模具进度一览表”：进入 `tooling_development_records` 或等价的模具开发进度表，并关联 `tooling.id`；不得丢弃。
 
--- 特殊权限字典
-CREATE INDEX idx_special_perms_code ON special_permissions_dict(permission_code) WHERE is_active = TRUE;
-CREATE INDEX idx_special_perms_dept ON special_permissions_dict(required_department) WHERE required_department IS NOT NULL;
+### 9.7 导入阻断规则
 
--- 报价单查询
-CREATE INDEX idx_quotes_approval_status ON quotes(approval_status) WHERE is_deleted = FALSE;
-CREATE INDEX idx_quotes_submitted_by ON quotes(submitted_by);
-CREATE INDEX idx_quotes_customer ON quotes(customer_id);
+以下数据不得进入正式表：
 
--- 零件查询
-CREATE INDEX idx_parts_status ON parts(status) WHERE is_deleted = FALSE;
-CREATE INDEX idx_parts_number ON parts(part_number);
-CREATE INDEX idx_parts_tooling ON parts(tooling_id) WHERE tooling_id IS NOT NULL;
-CREATE INDEX idx_parts_material ON parts(material_id) WHERE material_id IS NOT NULL;
+- 表头、目录、汇总、合计行。
+- 空客户、空客户件号且无模具号的行。
+- 把规格字符串解析为材质的行。
+- 非连续模“模数”被写入穴数的行。
+- 客户代号冲突。
+- 同一客户件号映射到多个内部零件且未经人工确认。
+- 指纹相同但技术参数冲突的零件。
 
--- 零件别名（一卖多）
-CREATE INDEX idx_part_aliases_part ON part_customer_aliases(part_id);
-CREATE INDEX idx_part_aliases_customer ON part_customer_aliases(customer_id);
+## 10. 状态和审计
 
--- 模具查询
-CREATE INDEX idx_tooling_status ON tooling(status) WHERE is_deleted = FALSE;
-CREATE INDEX idx_tooling_machine ON tooling(current_machine_id) WHERE current_machine_id IS NOT NULL;
-CREATE INDEX idx_tooling_owner ON tooling(owner_customer_id) WHERE owner_customer_id IS NOT NULL;
+### 10.1 零件状态
 
--- 机台查询
-CREATE INDEX idx_machines_status ON machines(status) WHERE is_deleted = FALSE;
-
--- 生产计划
-CREATE INDEX idx_plans_status ON production_plans(status) WHERE is_deleted = FALSE;
-CREATE INDEX idx_plans_deadline ON production_plans(deadline);
-
--- 工艺流转单
-CREATE INDEX idx_pfc_status ON process_flow_cards(status) WHERE is_deleted = FALSE;
-CREATE INDEX idx_pfc_part ON process_flow_cards(part_id);
-CREATE INDEX idx_pfc_qr ON process_flow_cards(card_number);
-
--- 原料批次
-CREATE INDEX idx_batches_status ON material_batches(status) WHERE is_deleted = FALSE;
-CREATE INDEX idx_batches_supplier ON material_batches(supplier_id);
-CREATE INDEX idx_batches_iqc ON material_batches(iqc_status);
-
--- 审计日志
-CREATE INDEX idx_audit_entity ON audit_logs(entity_type, entity_id);
-CREATE INDEX idx_audit_operator ON audit_logs(operator_id);
-CREATE INDEX idx_audit_time ON audit_logs(operated_at);
-
--- 价格档案
-CREATE INDEX idx_price_part_customer ON price_accounts(part_id, customer_id) WHERE is_deleted = FALSE;
-
--- 客户材料价格历史
-CREATE INDEX idx_cmp_customer_material ON customer_material_prices(customer_id, material_id, quoted_at DESC);
-CREATE INDEX idx_cmp_quote ON customer_material_prices(quote_id) WHERE quote_id IS NOT NULL;
-
--- 客户工序价格历史
-CREATE INDEX idx_ctp_customer_treatment ON customer_treatment_prices(customer_id, treatment_id, quoted_at DESC);
-CREATE INDEX idx_ctp_quote ON customer_treatment_prices(quote_id) WHERE quote_id IS NOT NULL;
-
--- 零件名称字典
-CREATE INDEX idx_part_name_dict_primary ON part_name_dict(primary_category) WHERE is_active = TRUE;
-CREATE INDEX idx_part_name_dict_secondary ON part_name_dict(secondary_category) WHERE is_active = TRUE AND secondary_category IS NOT NULL;
-CREATE INDEX idx_part_name_dict_active ON part_name_dict(is_active);
-
--- 材料字典
-CREATE INDEX idx_material_dict_active ON material_dict(is_active);
-CREATE INDEX idx_material_dict_code ON material_dict(code);
-
--- 工序字典
-CREATE INDEX idx_treatment_dict_active ON treatment_dict(is_active);
+```text
+DRAFT -> SAMPLING -> MASS_PRODUCTION -> OBSOLETE
 ```
 
----
+Excel 导入的历史数据不能一律强制设为 `MASS_PRODUCTION`；无法判断时使用 `DRAFT` 或专用的 `IMPORTED_PENDING_REVIEW`。
 
-## 4. State Transitions
+### 10.2 模具状态
 
-### Quote States
+至少包含：
 
-```
-等待技术审核 → 技术通过 → 草稿 → 待老板审批 → 已审批(定点)
-     ↓            ↓         ↓          ↓
-  技术驳回 ← ─────┘    老板驳回 ←───┘
-     ↓
- 等待技术审核(重新提交)
+```text
+DEVELOPING / AVAILABLE / MOUNTED / MAINTENANCE / SCRAPPED
 ```
 
-### Part States
-
-```
-Draft → Sampling → MassProduction → Obsolete
-```
-
-### Machine States
-
-```
-idle ↔ running ↔ fault → pending_check → repairing → offline
-                  ↑______________|        ↓
-                  └───────────────────────┘
-```
-
-### Sampling Task States
-
-```
-pending_review → pending_production → sampling → pending_review
-                    ↓                                    ↓
-                cancelled                            passed / failed
-```
-
----
-
-## 6. Data Access Control (数据权限控制)
-
-### 6.1 报价单数据权限隔离
-
-**核心原则**：
-- 业务部 + 老板 + 超管：完整查看所有报价单
-- 开发部：仅通过"待审核队列"查看，能看模具费和技术参数，不能看其他价格
-- 会计部：仅查看已定点报价单，能看总价/模具费/模摊费用，不能看技术参数和其他价格
-- 生产相关部门：仅查看已定点报价单，能看技术参数，不能看任何价格
-
-### 6.2 报价单字段权限矩阵
-
-| 字段类型 | 业务部 | 开发部 | 会计部 | 生产部 | 原料仓库 | 品管部 | 喷涂部 | 设备部 | 老板 | 超管 |
-|---------|-------|-------|-------|-------|---------|-------|-------|-------|------|------|
-| **基础信息** |
-| 报价单号、客户名称、零件名称 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 年用量 | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| **价格字段** |
-| 总价 (total_price) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| 模具费 (tooling_fee) | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| 模摊费用 (tooling_amortization_amount) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| 模摊数量 (tooling_amortization_quantity) | ✅ | ❌ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| 冲压费 (stamping_fee) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| 表面处理费 (treatment_fee) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| **技术参数** |
-| T 厚度 (t_parameter) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| W 宽度 (w_parameter) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| P 冲次 (p_parameter) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 穴数 (cavity_count) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 吨位 (press_tonnage) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 材料类型 (material_type) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 模具编号 (tooling_number) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| 表面处理类型 (surface_treatment_type) | ✅ | ✅ | ❌ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-
-### 6.3 数据查询范围
-
-| 部门 | 报价单查询范围 | 过滤条件 |
-|------|--------------|---------|
-| 业务部 | 所有报价单 | 无过滤 |
-| 开发部 | 待审核队列 | `status = 'waiting_tech_review'` |
-| 会计部 | 仅已定点 | `is_fixed = true` |
-| 生产部 | 仅已定点 | `is_fixed = true` |
-| 原料仓库 | 仅已定点 | `is_fixed = true` |
-| 品管部 | 仅已定点 | `is_fixed = true` |
-| 全检部 | 仅已定点 | `is_fixed = true` |
-| 喷涂部 | 仅已定点 | `is_fixed = true` |
-| 设备部 | 仅已定点 | `is_fixed = true` |
-| 人事部 | 不可访问 | - |
-| 老板 | 所有报价单 | 无过滤 |
-| 超级管理员 | 所有报价单 | 无过滤 |
-
-### 6.4 权限实现方式
-
-**实现层次**：代码层字段过滤（API 响应层）
-
-**核心逻辑**：
-1. 查询时根据 `role_level` + `department` 应用过滤条件
-2. 响应时根据权限矩阵动态隐藏字段（设置为 `null` 或移除）
-3. 开发部通过专用端点 `GET /api/quotes/pending-tech-review` 访问待审核队列
-
-**权限判断示例**：
-```python
-def can_view_quote(user: User, quote: Quote) -> bool:
-    # 老板、超管、业务部：查看所有
-    if user.role_level >= 3 or user.department.name == "业务部":
-        return True
-    
-    # 开发部：仅通过待审核队列访问（专用端点）
-    if user.department.name == "开发部":
-        return quote.status == "waiting_tech_review"
-    
-    # 会计部、生产相关部门：仅已定点
-    if user.department.name in ["会计部", "生产部", "原料仓库", "品管部", "全检部", "喷涂部", "设备部"]:
-        return quote.is_fixed == True
-    
-    # 其他部门：无权限
-    return False
-```
-
-### 6.5 特殊权限系统
-
-**设计原则**：基础角色（role_level + department）+ 特殊权限（special_permissions）双重验证
-
-**典型场景**：报价技术审核权限
-- 基础条件：role_level >= 2（管理人员及业务）且 department = '开发部'
-- 特殊权限：拥有 'quote_review' 权限
-
-**权限检查逻辑**：
-```python
-async def has_special_permission(
-    db: AsyncSession,
-    user: User,
-    permission_code: str
-) -> bool:
-    """检查用户是否拥有特殊权限"""
-    
-    # 1. 查询权限定义
-    perm_def = await db.execute(
-        select(SpecialPermissionsDict).where(
-            SpecialPermissionsDict.permission_code == permission_code,
-            SpecialPermissionsDict.is_active == True
-        )
-    )
-    perm = perm_def.scalar_one_or_none()
-    if not perm:
-        return False
-    
-    # 2. 检查基础条件
-    if user.role_level < perm.required_role_level:
-        return False
-    if perm.required_department and user.department.name != perm.required_department:
-        return False
-    
-    # 3. 检查特殊权限
-    if not user.special_permissions:
-        return False
-    return permission_code in user.special_permissions
-```
-
-**初始权限定义**：
-```sql
-INSERT INTO special_permissions_dict (
-    permission_code, 
-    permission_name, 
-    description, 
-    required_role_level, 
-    required_department
-) VALUES (
-    'quote_review',
-    '报价技术审核权限',
-    '审核报价单技术参数，填写 T/W/P/穴数/吨位/模具费',
-    2,
-    '开发部'
-);
-```
-
-**超管授权/撤销 API**：
-- `POST /api/admin/users/{user_id}/special-permissions` - 授予特殊权限
-- `DELETE /api/admin/users/{user_id}/special-permissions/{permission_code}` - 撤销特殊权限
-
-**授权验证规则**：
-1. 用户必须满足权限的基础条件（required_role_level + required_department）
-2. 权限代码必须在 special_permissions_dict 中存在且 is_active = true
-3. 仅超级管理员（role_level = 4）可以授予/撤销特殊权限
-
----
-
-## 7. Validation Rules
-
-| Field | Rule |
-|-------|------|
-| `users.role_level` | 1 ≤ role_level ≤ 4 (1=普通员工, 2=管理人员及业务, 3=老板, 4=超级管理员) |
-| `users.special_permissions` | JSONB 数组，每个元素必须是有效的 permission_code（存在于 special_permissions_dict 且 is_active=true） |
-| `special_permissions_dict.permission_code` | 唯一且非空，最大 50 字符 |
-| `special_permissions_dict.required_role_level` | 1 ≤ value ≤ 4（若设置） |
-| `quote_items.t_parameter`, `w_parameter`, `p_parameter` | > 0 |
-| `quote_items.tooling_fee_discount` | 0.0 ≤ value ≤ 1.0 |
-| `production_reports.strokes` | ≥ 0 |
-| `production_reports.qualified_quantity` | ≤ output_quantity |
-| `material_batches.weight` | ≥ 0 |
-| `price_accounts` | UNIQUE(part_id, customer_id) |
-| `part_name_dict.primary_category` | NOT NULL, max 100 chars |
-| `part_name_dict` | UNIQUE(primary_category, secondary_category, customer_part_name) |
-
-## 7. Validation Rules
-
-| Field | Rule |
-|-------|------|
-| `users.role_level` | 1 ≤ role_level ≤ 4 (1=普通员工, 2=管理人员及业务, 3=老板, 4=超级管理员) |
-| `users.special_permissions` | JSONB 数组，每个元素必须是有效的 permission_code（存在于 special_permissions_dict 且 is_active=true） |
-| `special_permissions_dict.permission_code` | 唯一且非空，最大 50 字符 |
-| `special_permissions_dict.required_role_level` | 1 ≤ value ≤ 4（若设置） |
-| `parts.thickness`, `width`, `pitch` | > 0（TWP 参数） |
-| `quotes.thickness`, `width`, `press_stroke` | > 0（报价时 TWP 估算） |
-| `production_reports.strokes` | ≥ 0 |
-| `production_reports.qualified_quantity` | ≤ output_quantity |
-| `material_batches.weight` | ≥ 0 |
-| `price_accounts` | UNIQUE(part_id, customer_id) |
-| `part_customer_aliases` | UNIQUE(part_id, customer_id) |
-| `part_name_dict.primary_category` | NOT NULL, max 100 chars |
-| `material_dict.density` | > 0 (g/cm³) |
-| `customer_material_prices.unit_price` | > 0 (元/kg) |
-| `customer_treatment_prices.unit_price` | > 0 |
-| `machine_tonnage_dict.tonnage_value` | > 0 |
-
----
-
-## 8. Business Rules & Data Flow
-
-### 8.1 材料成本计算公式
-
-```
-单件材料成本 = [T(mm) × W(mm) × P(mm) × 密度(g/cm³) × (材料单价 - 废料价格)(元/kg)] / (10^6 × 穴数)
-
-取值优先级：
-- TWP: parts 表（最精确）
-- 密度: material_dict.density
-- 材料单价: customer_material_prices（最近1次）或 material_dict.default_price
-- 废料价格: customer_material_prices.scrap_price 或 material_dict.scrap_price
-```
-
-### 8.2 数据流转流程
-
-```
-① 报价阶段
-   quotes: 填写估算 TWP (T/W/P)
-   快照材料价格（snapshot_mat_price, snapshot_density）
-   → 计算 material_net_cost
-   → 老板审批（DRAFT → PENDING → APPROVED）
-
-② 定点阶段
-   quotes.nomination_status = confirmed
-   → 创建/更新 parts: 从 quotes 拷贝 TWP（初始值）
-   → 创建 price_accounts: estimated_net_weight
-   → 写入 customer_material_prices: 本次成交价
-   → 写入 customer_treatment_prices: 本次工序价
-
-③ 开模阶段
-   创建 tooling: 模具基本信息, owner_customer_id
-   → 更新 parts.tooling_id: 关联零件到模具
-
-④ 技术维护阶段
-   更新 parts.TWP: 根据实际模具调整（最精确值）
-   → 重新计算 net_weight
-
-⑤ 首件检验阶段
-   更新 price_accounts.actual_net_weight: 实测重量
-   → 自动检测成本偏离（>5% 标记 cost_deviation_flag）
-
-⑥ 调价流程
-   创建 price_adjustments: pending_approval
-   → 老板审批 → approved
-   → 更新 price_accounts.current_price
-```
-
-### 8.3 特殊业务场景
-
-**一卖多（一个零件卖给多个客户）**：
-- parts 表：1条记录
-- part_customer_aliases：N条记录（每个客户一条）
-- price_accounts：N条记录（每个客户独立价格）
-
-**一模多腔（一个模具生产多个零件）**：
-- tooling 表：1条记录，total_cavity_count=N
-- parts 表：N条记录，每个 parts.tooling_id 指向同一个 tooling
-- 每个 part 有独立的 cavity_position 标识穴位
-
-**跨客户使用（客户A的模具为客户B生产）**：
-- tooling.owner_customer_id = 客户A（归属）
-- production_plans.customer_id = 客户B（实际生产）
-- 合规检查视图标记跨客户使用场景
-
----
-
-## 9. Key Design Decisions
-
-### 9.1 主键类型策略
-
-| 表类型 | 主键类型 | 说明 |
-|-------|---------|------|
-| 字典表 | INTEGER/SERIAL | material_dict, treatment_dict, machine_tonnage_dict |
-| 客户表 | INTEGER | customers（实际数据库，从 tooling_customers 重命名） |
-| 报价表 | INTEGER | quotes（实际数据库） |
-| 业务主表 | UUID | parts, tooling, users, production_plans 等 |
-
-**建议**：短期保持现状兼容现有代码，长期可迁移到 UUID 以支持分布式扩展。
-
-### 9.2 TWP 参数位置
-
-**决策**：TWP（Thickness/Width/Pitch）存储在 parts 表，不存在 tooling 表。
-
-**理由**：
-- 零件的固有属性，技术部门维护最精确值
-- 一模多腔时左右件的 TWP 可能不同
-- parts.tooling_id 反向关联到模具
-
-**数据流**：quotes 估算 → parts 初始值 → 技术部门维护 → 最精确值
-
-### 9.3 价格体系分层
-
-**全局字典表**（兜底参考价）：
-- material_dict.default_price
-- treatment_dict.default_rate
-
-**客户特定历史价**（优先使用）：
-- customer_material_prices（按客户+材质记录，保留全部历史，查询最近3次）
-- customer_treatment_prices（按客户+工序记录，保留全部历史，查询最近3次）
-
-**零件定案价**（最终生效价）：
-- price_accounts.current_price（手动调整，非自动年降）
-
-### 9.4 表命名规范更新
-
-| 旧表名 | 新表名 | 状态 |
-|-------|-------|------|
-| `tooling_customers` | `customers` | ✅ 重命名 |
-| `toolings` | `tooling` | 建议统一为单数形式 |
-| `material_base_prices` | - | ⛔ 废弃，迁移到 material_dict |
-| `treatment_dicts` | `treatment_dict` | ⛔ 废弃，清理后重建 |
-
----
-
-## 10. Reference Documentation
-
-完整的数据库设计文档位于 `specs/001-erp-system-architecture/database-analysis/`：
-
-- **[complete-database-design-summary.md](database-analysis/complete-database-design-summary.md)** — 15张核心表完整设计总结
-- **[customer-entity-group-final.md](database-analysis/customer-entity-group-final.md)** — Customer 实体组完整设计
-- **[part-entity-parts-table-final.md](database-analysis/part-entity-parts-table-final.md)** — parts / part_name_dict
-- **[part-entity-aliases-table-final.md](database-analysis/part-entity-aliases-table-final.md)** — part_customer_aliases
-- **[part-entity-price-tables-final.md](database-analysis/part-entity-price-tables-final.md)** — price_accounts / price_adjustments
-- **[material-treatment-price-history-final.md](database-analysis/material-treatment-price-history-final.md)** — 材料/工序字典和价格历史
-
----
-
-*Data model updated with database design finalized on 2026-07-07. Ready for implementation.*
+### 10.3 审计要求
+
+正式表应能追溯：
+
+- 数据来源批次、Sheet 和行号。
+- 创建人和修改人。
+- 合并、拆分、重新匹配的原因。
+- 客户件号、模具关系和价格的历史变化。
+
+## 11. 当前数据库迁移方向
+
+当前数据库不直接视为目标设计。迁移应按以下顺序进行：
+
+1. 备份当前数据库并冻结旧 Excel 导入脚本。
+2. 创建暂存表和新的关系表。
+3. 清除表头、空件号和明显错列数据。
+4. 使用客户名称代号 Sheet 统一客户主档和 `customer_code`。
+5. 将现有客户件号从 `parts.part_number` 迁移到 `part_customer_aliases`。
+6. 使用内部名称和技术指纹建立内部 `parts`，冲突项人工复核。
+7. 将模具号统一到 `tooling.tooling_number`。
+8. 建立 `tooling_parts`、`tooling_steps`、`tooling_customer_links`。
+9. 对齐 ORM、API 和 Alembic，收敛到单一迁移 head。
+10. 通过源行覆盖率、关系完整性和字段正确率验收后，再停用旧字段和旧表。
+
+## 12. 明确废弃的设计
+
+以下方案不得继续实现：
+
+- 把客户件号直接保存为 `parts.part_number`。
+- 每个客户 Excel 行无条件创建一个独立内部零件。
+- 用 `parts.customer_id` 表达零件只能属于一个客户。
+- 用 `tooling.customer_id` 或单一 `owner_customer_id` 表达模具只能关联一个客户。
+- 用文本 `mold_number` 代替 `tooling_parts` 关系。
+- 把“模数”统一解释为穴数。
+- 把“本厂产品名称”解释为模具名称。
+- 自动生成用户可见内部零件编号。
+- 同时维护 `tooling`、`dies`、`tooling_molds` 三套模具主表。
+- Excel 使用固定列号直接写正式表。
+- 以旧版导入报告中的“100%完成”作为数据验收依据。
+
+## 13. 文档权威性规则
+
+本文是唯一数据库目标设计。
+
+- `current-schema.md` 只能描述数据库现状，不能替代目标设计。
+- `gap-analysis.md` 只能记录差异，不能新增设计决策。
+- 各功能 `spec.md`、`plan.md`、`research.md` 可以描述实现，但不得重新定义本文实体和关系。
+- 发现冲突时，以本文为准，并修改冲突文件指向本文。

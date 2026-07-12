@@ -63,7 +63,6 @@ async def get_plan_by_id(
         select(ProductionPlan)
         .options(
             selectinload(ProductionPlan.assignments).joinedload(PlanMachineAssignment.machine),
-            joinedload(ProductionPlan.part),
         )
         .where(ProductionPlan.id == plan_id, ProductionPlan.is_deleted == False)
     )
@@ -82,7 +81,6 @@ async def get_plans(
         select(ProductionPlan)
         .options(
             selectinload(ProductionPlan.assignments),
-            joinedload(ProductionPlan.part),
         )
         .where(ProductionPlan.is_deleted == False)
     )

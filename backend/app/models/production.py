@@ -1,6 +1,6 @@
 """Production planning and reporting models."""
 
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
@@ -46,59 +46,54 @@ class ProcessFlowStatus(str, PyEnum):
 
 
 class ProductionPlan(Base):
-    """Production plan model."""
+    """Production plan model - 匹配实际数据库结构."""
 
     __tablename__ = "production_plans"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    plan_no: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
-    )
 
-    # Part and customer
-    part_id: Mapped[int] = mapped_column(
-        Integer, nullable=False, index=True
+    # Part reference
+    part_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("parts.id"), nullable=True, index=True
     )
 
     # Plan details
-    total_qty: Mapped[int] = mapped_column(Integer, nullable=False)
-    completed_qty: Mapped[int] = mapped_column(Integer, default=0)
+    total_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    progress_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=0)
+    delivered_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, default=0)
 
     # Scheduling
-    planned_start_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    planned_end_date: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    due_date: Mapped[Optional[date]] = mapped_column(DateTime, nullable=True)
 
-    # Priority
-    priority: Mapped[int] = mapped_column(Integer, default=0)  # 0=normal, 1=urgent
+    # Machine assignment
+    machine_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    plan_order: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    force_order: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True, default=False)
+    assigned_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    assigned_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+
+    # Priority/Urgency
+    urgency: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     # Status
-    status: Mapped[PlanStatus] = mapped_column(
-        Enum(PlanStatus), default=PlanStatus.PLANNED, nullable=False, index=True
-    )
+    status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     # Notes
-    notes: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    remark: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Creator
     created_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
+    created_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, default=datetime.utcnow
     )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
-
-    # Relationships
-    part: Mapped["Part"] = relationship("Part", foreign_keys=[part_id])
-    assignments: Mapped[list["PlanMachineAssignment"]] = relationship(
-        "PlanMachineAssignment", back_populates="plan", cascade="all, delete-orphan"
+    updated_at: Mapped[Optional[datetime]] = mapped_column(
+        DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow
     )
 
     def __repr__(self) -> str:
-        return f"<ProductionPlan {self.plan_no}>"
+        return f"<ProductionPlan {self.id}>"
 
 
 class PlanMachineAssignment(Base):
@@ -110,7 +105,6 @@ class PlanMachineAssignment(Base):
     plan_id: Mapped[int] = mapped_column(
         ForeignKey("production_plans.id", ondelete="CASCADE"), nullable=False, index=True
     )
-    plan: Mapped["ProductionPlan"] = relationship("ProductionPlan", back_populates="assignments")
 
     machine_id: Mapped[int] = mapped_column(
         ForeignKey("machines.id"), nullable=False, index=True
@@ -158,7 +152,7 @@ class ProductionSession(Base):
     )
     machine: Mapped["Machine"] = relationship("Machine")
     tooling_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("tooling_molds.id"), nullable=True, index=True
+        ForeignKey("tooling.id"), nullable=True, index=True
     )
     tooling: Mapped[Optional["Tooling"]] = relationship("Tooling")
 
@@ -276,7 +270,7 @@ class ProcessFlowCard(Base):
     machine: Mapped["Machine"] = relationship("Machine")
 
     tooling_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("tooling_molds.id"), nullable=True
+        ForeignKey("tooling.id"), nullable=True
     )
     tooling: Mapped[Optional["Tooling"]] = relationship("Tooling")
 

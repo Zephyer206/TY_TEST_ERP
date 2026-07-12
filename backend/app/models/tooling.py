@@ -30,7 +30,7 @@ class ToolingMaintenanceLog(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(
-        ForeignKey("tooling_molds.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("tooling.id", ondelete="CASCADE"), nullable=False, index=True
     )
 
     # Machine that reported the fault
@@ -64,62 +64,64 @@ class ToolingMaintenanceLog(Base):
 
 
 class Tooling(Base):
-    """Tooling (mold/die) model."""
+    """Tooling (mold/die) model - 匹配实际数据库结构."""
 
-    __tablename__ = "tooling_molds"
+    __tablename__ = "tooling"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    tooling_no: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
-    )
 
-    # Basic info
-    name: Mapped[str] = mapped_column(String(200), nullable=False)
-    customer_product_no: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, index=True
-    )
-    cavity_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    tonnage: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    # 基本信息
+    tooling_no: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
+    tooling_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, unique=True, index=True)
+    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    tooling_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    # DEPRECATED: Use tooling_customer_links instead
+    customer_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, comment='DEPRECATED: Use tooling_customer_links instead')
+    customer_product_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    customer_product_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+
+    # 模具信息
+    mold_type: Mapped[str] = mapped_column(String(50), nullable=False, default='unknown')
+    is_continuous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    cavity_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    process_step_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    cavity_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    mold_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    mold_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    status: Mapped[str] = mapped_column(String(30), nullable=False, default='DRAFT')
+
+    # 材料和规格
+    material: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    material_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    spec_twph: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+
+    # 压机和工艺
+    press_tonnage: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    forming_steps: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # 多产品相关
+    is_multi_product: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)
+    product_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    seq: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # 其他
     ppap_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     vehicle_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    remark: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
-    # State
-    state: Mapped[ToolingState] = mapped_column(
-        Enum(ToolingState), default=ToolingState.AVAILABLE, nullable=False, index=True
-    )
+    # 生产统计
+    shot_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_shot_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    last_maintenance_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    # Parent-child relationship (for die-sets)
-    parent_id: Mapped[Optional[int]] = mapped_column(
-        ForeignKey("tooling_molds.id"), nullable=True, index=True
-    )
-    parent: Mapped[Optional["Tooling"]] = relationship(
-        "Tooling", remote_side=[id], back_populates="children"
-    )
-    children: Mapped[list["Tooling"]] = relationship(
-        "Tooling", back_populates="parent"
-    )
-
-    # Technical specs
-    spec_data: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    drawing_path: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    sdr_drawing_path: Mapped[Optional[str]] = mapped_column(
-        Text, nullable=True
-    )  # Technical analysis drawing
-
-    # Active maintenance log
-    active_maintenance_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-
-    # Timestamps
-    is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, nullable=False
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
-    )
+    # 时间戳
+    created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.utcnow)
+    updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     def __repr__(self) -> str:
-        return f"<Tooling {self.tooling_no}>"
+        return f"<Tooling {self.tooling_number or self.tooling_no or self.id}>"
 
 
 class ToolingPart(Base):
@@ -129,11 +131,14 @@ class ToolingPart(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(
-        ForeignKey("tooling_molds.id", ondelete="CASCADE"), nullable=False, index=True
+        ForeignKey("tooling.id", ondelete="CASCADE"), nullable=False, index=True
     )
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    position: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    is_primary: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=datetime.utcnow, nullable=False

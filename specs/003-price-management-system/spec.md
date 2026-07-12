@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: 实现完整的价格管理系统后端。功能范围：1) customer_material_prices 表（客户材料价格历史）2) customer_treatment_prices 表（客户工序价格历史）3) price_accounts 表（价格台账）4) price_adjustments 表（调价记录带审批）。参考设计文档 specs/001-erp-system-architecture/database-analysis/material-treatment-price-history-final.md。需要：创建 Alembic 迁移脚本、实现完整 CRUD API（遵循项目现有风格）、迁移 material_base_prices 旧数据到新表后废弃、实现审批工作流逻辑、添加后端测试。
+**Input**: 实现完整的价格管理系统后端。功能范围：1) customer_material_prices 表（客户材料价格历史）2) customer_treatment_prices 表（客户工序价格历史）3) price_accounts 表（价格台账）4) price_adjustments 表（调价记录带审批）。数据库结构只参考 `specs/001-erp-system-architecture/data-model.md`。需要：创建 Alembic 迁移脚本、实现完整 CRUD API（遵循项目现有风格）、迁移 material_base_prices 旧数据到新表后废弃、实现审批工作流逻辑、添加后端测试。
 
 ## User Scenarios & Testing
 

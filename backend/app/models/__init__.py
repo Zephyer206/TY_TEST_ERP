@@ -6,6 +6,7 @@ from .customer import Customer
 from .die import Die
 from .machine import Machine, MachineState, MachineStatusLog
 from .part import Part, PartState
+from .part_customer_alias import PartCustomerAlias
 from .price import (
     CustomerMaterialPrice,
     CustomerTreatmentPrice,
@@ -44,6 +45,9 @@ from .quality import (
 )
 from .sampling import SamplingTask, SamplingTaskState
 from .tooling import Tooling, ToolingPart, ToolingMaintenanceLog, ToolingState
+from .tooling_step import ToolingStep
+from .tooling_customer_link import ToolingCustomerLink
+from .excel_import import ImportBatch, ExcelImportRow
 from .user import User  # Department 和 Position 已移除，因为与数据库不匹配
 from .warehouse import (
     BatchStatus,
@@ -78,9 +82,11 @@ __all__ = [
     "Customer",
     "Die",
     # "Department",  # 已移除，与数据库不匹配
+    "ExcelImportRow",
     "ExemptionType",
     "FirstPieceInspection",
     "FixPath",
+    "ImportBatch",
     "IQCResult",
     "InspectionResult",
     "Inventory",
@@ -100,6 +106,7 @@ __all__ = [
     "PackagingRecord",
     "PackagingStatus",
     "Part",
+    "PartCustomerAlias",
     "PartNameDict",
     "PartState",
     "PatrolInspection",
@@ -127,9 +134,11 @@ __all__ = [
     "Supplier",
     "SurfaceTreatment",
     "Tooling",
+    "ToolingCustomerLink",
     "ToolingMaintenanceLog",
     "ToolingPart",
     "ToolingState",
+    "ToolingStep",
     "TreatmentDict",
     "User",
 ]

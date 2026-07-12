@@ -34,14 +34,15 @@ class Part(Base):
     __tablename__ = "parts"
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    part_number: Mapped[str] = mapped_column(
-        String(50), unique=True, nullable=False, index=True
+    part_number: Mapped[Optional[str]] = mapped_column(
+        String(50), unique=True, nullable=True, index=True
     )
     internal_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    internal_part_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
 
-    # Customer relationship
+    # DEPRECATED: Use part_customer_aliases instead
     customer_id: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, index=True
+        Integer, nullable=True, index=True, comment='DEPRECATED: Use part_customer_aliases instead'
     )
 
     # Drawing and spec
@@ -70,6 +71,19 @@ class Part(Base):
 
     # Material
     material_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    material_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+
+    # TWP规格字段
+    customer_product_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    spec_twph: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    thickness: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
+    width: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
+    pitch: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
+    height: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
+    gross_weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 3), nullable=True)
+    net_weight: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 3), nullable=True)
+    part_position: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    is_deleted: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Nomination
     nomination_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)

@@ -89,7 +89,9 @@
 
 
 
-**可用的表资源** (90 张表):
+**当前旧库实际表资源**（现状盘点，不是目标设计，90 张表）:
+
+> 目标表结构只能以 [`specs/001-erp-system-architecture/data-model.md`](specs/001-erp-system-architecture/data-model.md) 为准。以下列表仅用于识别当前数据库中的历史表和待迁移对象。
 
 **核心业务表**:
 - `users` - 用户表
@@ -452,14 +454,8 @@ python scripts/tools/inspect_cloud_schema.py
 ## 📚 相关文档
 
 ### 数据库设计文档
-- [complete-database-design-summary.md](specs/001-erp-system-architecture/database-analysis/complete-database-design-summary.md) - 完整设计总结
-- [data-model.md](specs/001-erp-system-architecture/data-model.md) - 数据模型文档
+- [data-model.md](specs/001-erp-system-architecture/data-model.md) - 唯一权威数据库与 Excel 导入设计
 - [current-schema.md](backend/current-schema.md) - 云端数据库实际结构（自动生成）
-
-### 实体组设计文档
-- [customer-entity-group-final.md](specs/001-erp-system-architecture/database-analysis/customer-entity-group-final.md)
-- [part-entity-parts-table-final.md](specs/001-erp-system-architecture/database-analysis/part-entity-parts-table-final.md)
-- [material-treatment-price-history-final.md](specs/001-erp-system-architecture/database-analysis/material-treatment-price-history-final.md)
 
 ### 维护指南
 - [maintenance-guide.md](specs/001-erp-system-architecture/database-analysis/maintenance-guide.md)

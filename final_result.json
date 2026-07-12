@@ -1,0 +1,123 @@
+{
+  "status": "COMPLETED",
+  "success": true,
+  "duration_seconds": 222.502415,
+  "database": "124.222.29.229:5432/stamping_system",
+  "process_stats": {
+    "processed": 4551,
+    "customers_created": 1,
+    "parts_created": 810,
+    "tooling_linked": 498,
+    "aliases_created": 4254,
+    "customer_links_created": 604,
+    "skipped_no_internal_name": 0,
+    "errors": 0
+  },
+  "validation": {
+    "customers": 129,
+    "parts": 2506,
+    "tooling": 1357,
+    "tooling_parts": 1021,
+    "aliases": 1608,
+    "tooling_customer_links": 1126,
+    "staging_status": {
+      "IMPORTED": 6308
+    },
+    "orphan_tooling_parts": 0,
+    "orphan_parts_in_tooling": 0,
+    "orphan_aliases": 0,
+    "duplicate_aliases": 0,
+    "sample_traces": [
+      [
+        "浙江万宝机械有限公司(A)",
+        4,
+        "前壳体",
+        "IMPORT_1_1783820293",
+        "浙江万宝机械有限公司",
+        null,
+        "BYDLK-3510111"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        5,
+        "后壳体",
+        "IMPORT_2_1783820293",
+        "浙江万宝机械有限公司",
+        null,
+        "CFAIO-3510121"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        8,
+        "左制动支架",
+        "IMPORT_3_1783820293",
+        "浙江万宝机械有限公司",
+        null,
+        "MR7180-3507111"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        9,
+        "右制动支架",
+        "IMPORT_4_1783820293",
+        "浙江万宝机械有限公司",
+        null,
+        "MR7180-3507211"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        10,
+        "左挡泥板",
+        "B2-3501151",
+        "浙江万宝机械有限公司",
+        null,
+        "B15-3507110-1-G"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        11,
+        "右挡泥板",
+        "B2-3501251",
+        "浙江万宝机械有限公司",
+        null,
+        "B15-3507210-1-G"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        12,
+        "左制动底板",
+        "SRV-3507112",
+        "浙江万宝机械有限公司",
+        null,
+        "MR7180-3507113"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        13,
+        "右制动底板",
+        "SRV-3507212",
+        "浙江万宝机械有限公司",
+        null,
+        "MR7180-3507213"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        14,
+        "支座",
+        "IMPORT_9_1783820294",
+        "浙江万宝机械有限公司",
+        null,
+        "MR7180-3507114"
+      ],
+      [
+        "浙江万宝机械有限公司(A)",
+        15,
+        "挂簧片",
+        "IMPORT_10_1783820294",
+        "浙江万宝机械有限公司",
+        null,
+        "MR7180-3507115"
+      ]
+    ]
+  }
+}

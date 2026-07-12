@@ -6,7 +6,7 @@
 
 ## Research Summary
 
-本功能的数据库表结构设计已在 `specs/001-erp-system-architecture/database-analysis/material-treatment-price-history-final.md`（2026-07-06定稿）中完成。本研究文档记录基于该设计的技术决策和实施细节。
+本功能不维护独立数据库设计。数据库表结构只以 `specs/001-erp-system-architecture/data-model.md` 为准；本文仅记录技术研究和实施细节。
 
 ## Decision Log
 
@@ -58,7 +58,7 @@ class ApprovalStatus(str, Enum):
 ```python
 @router.get("/customer-prices/materials")
 async def get_customer_material_prices(
-    customer_id: UUID,
+    customer_id: int,
     material_id: int,
     limit: int = Query(default=3, ge=1, le=20),  # 默认3条，最大20条
     db: DbSession,
@@ -169,7 +169,7 @@ async def migrate_treatment_dicts():
 
 **Implementation**:
 ```python
-async def approve_price_adjustment(adjustment_id: UUID, approver_id: UUID, db: AsyncSession):
+async def approve_price_adjustment(adjustment_id: int, approver_id: int, db: AsyncSession):
     async with db.begin():  # 事务开始
         # 1. 更新审批记录
         adjustment = await db.get(PriceAdjustment, adjustment_id)
@@ -284,6 +284,6 @@ class CustomerTreatmentPrice(Base):
 
 ## References
 
-- [material-treatment-price-history-final.md](../001-erp-system-architecture/database-analysis/material-treatment-price-history-final.md) - 数据库表结构定稿文档
+- [data-model.md](../001-erp-system-architecture/data-model.md) - 唯一权威数据库设计
 - [Constitution](../../.specify/memory/constitution.md) - 项目宪法
 - [Existing price.py model](../../backend/app/models/price.py) - 现有价格模型
