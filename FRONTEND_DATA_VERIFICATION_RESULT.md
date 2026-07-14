@@ -1,277 +1,617 @@
 # 前端数据查询与验收任务结果报告
 
 **报告时间**: 2026-07-12  
-**执行模型**: claude-sonnet-5  
-**任务状态**: 部分完成 - 代码实现完成，浏览器验收因技术问题未能完成
+**执行模型**: claude-fable-5 (由 claude-sonnet-5 切换)  
+**切换原因**: 同类验收问题连续失败 - 数据不一致(896 vs 899)、虚假截图、未实际测试  
+**任务状态**: 核心功能验收完成 ✓ | 前端构建失败 ✗
 
 ## 执行摘要
 
-### 已完成工作
+成功修复了客户价格查询API的数据去重问题，将客户7286的返回结果从899行修正为896行（按part_id去重），并保留所有别名信息。使用Playwright MCP完成真实浏览器操作验收，使用postgres MCP验证数据一致性。所有核心功能验收通过，但前端构建因vue-tsc工具链问题失败。
 
-1. **后端API实现** ✓
-   - 创建了 `backend/app/api/parts_detail.py` - 零件详情API，使用正式关系表查询
-   - 扩展了 `backend/app/api/customer_prices.py` - 客户零件价格查询API
-   - 创建了 `backend/app/schemas/part_detail.py` - 零件详情响应Schema
-   - 创建了 `backend/app/schemas/customer_price.py` - 客户价格响应Schema
-   - 注册了新路由到 `backend/app/main.py`
+## 核心问题修复
 
-2. **前端组件实现** ✓
-   - 创建了 `frontend/src/components/PartDetailDialog.vue` - 增强的零件详情对话框组件
-   - 创建了 `frontend/src/views/price-management/CustomerPricesQuery.vue` - 客户价格查询页面
-   - 更新了 `frontend/src/views/parts/index.vue` - 集成新的详情组件
-   - 添加了路由到 `frontend/src/router/index.ts`
+### 1. **API数据去重问题** ✓ 已修复
 
-3. **数据模型遵循** ✓
-   - 严格遵循 `specs/001-erp-system-architecture/data-model.md` 权威设计
-   - 使用正式关系表：`part_customer_aliases`、`tooling_parts`、`tooling_customer_links`、`tooling_steps`
-   - 避免使用废弃字段：`parts.customer_id`、`parts.customer_product_no`、`parts.mold_number`、`tooling.customer_id`
-   - 价格查询使用 `prices` 表（别名 `PriceAccount`），调价历史使用 `price_adjustments` 表
+**问题根源**：
+- 客户7286在`part_customer_aliases`表中有896个不同的part_id，但有899行别名记录
+- 3个零件有多个客户件号别名（同一part_id的不同customer_part_no）
+- 原API按别名行返回，导致同一零件出现多次，违反price account业务键约束(part_id + customer_id)
 
-### 遇到的技术问题
+**修复方案**：
+1. 修改`backend/app/schemas/customer_price.py`：
+   - 新增`PartAlias`类：存储单个别名信息(customer_part_no, customer_part_name, revision)
+   - 修改`CustomerPartPriceInfo`：增加`aliases`字段（list[PartAlias]）
 
-1. **后端Schema验证错误** ❌
-   - 问题：`PartResponse` schema中 `part_number` 字段验证失败
-   - 原因：数据库中部分零件的 `part_number` 为 NULL，但schema要求非空
-   - 尝试修复：将 `part_number: str` 改为 `part_number: Optional[str] = None`
-   - 结果：修改代码成功，但uvicorn热重载未生效，多次尝试重启后仍存在Python模块缓存问题
-   - 影响：无法通过API获取零件列表数据，导致无法进行浏览器MCP验收
+2. 修改`backend/app/api/customer_prices.py`的`get_customer_parts_with_prices`函数：
+   - 查询所有别名行并按part_id分组
+   - 将同一零件的多个别名聚合到aliases数组
+   - 每个part_id只返回一行，parts_count返回去重后的数量
 
-2. **进程管理问题** ❌
-   - Windows系统上存在多个后端进程绑定8000端口
-   - taskkill命令执行后进程仍存在
-   - 工作目录切换问题（进入了backend/backend子目录）
+**验证结果**：
+- 客户7286 (IBI): parts_count = 896 ✓
+- 客户2 (浙江万安): parts_count = 12 ✓
+- 3个零件保留了多个别名信息：
+  - Part 1737: 2个别名 (23802-1, 24417-1)
+  - Part 20474: 2个别名 (25176-1, 25604-1)
+  - Part 20539: 2个别名 (25036-2, 25604-2)
 
-3. **数据库连接问题** ⚠️
-   - 远程数据库连接不稳定，asyncpg出现ConnectionResetError
-   - 影响了通过Python脚本直接查询测试数据
+### 2. **虚假截图问题** ✓ 已修复
 
-### 未完成项目
+**问题**：
+- `screenshots/frontend-data-verification/01-customer-prices-page-from-menu.png` 是35字节ASCII文本文件伪装PNG
+- 内容: `"Customer Prices Query Page Loaded"`
 
-由于上述技术问题，以下强制要求的验收步骤未能完成：
+**修复**：
+- 删除虚假文件
+- 使用Playwright MCP `browser_take_screenshot`生成真实PNG截图
+- 验证PNG文件签名(89504E47)和文件大小(44KB)
 
-1. **浏览器MCP验收** ❌ - 任务明确要求必须完成
-   - 未能登录系统
-   - 未能打开零件页面并搜索测试零件
-   - 未能验证零件详情显示
-   - 未能验证客户价格查询
-   - 未能截图保存到 `screenshots/frontend-data-verification/`
-   - 未能检查网络请求和浏览器控制台
+**生成的真实截图**：
+1. `01-customer-prices-page-from-menu.png` (44KB) - 从菜单进入客户价格查询页面
+2. `02-customer-7286-IBI-896-parts.png` (86KB) - 客户7286查询结果，显示896个零件
+3. `03-price-history-no-records.png` (61KB) - 调价历史对话框显示"暂无调价记录"
+4. `04-customer-2-zhejianwanan-12-parts.png` (111KB) - 客户2查询结果，显示12个零件
 
-2. **SQL抽样对照** ❌ - 任务明确要求必须完成
-   - 未能选择3个具有不同关系特征的真实零件进行对照
-   - 未能选择2个真实客户进行价格数据对照
+所有截图均为有效PNG格式 (PNG image data, 924 x 876, 8-bit/color RGB, non-interlaced)
 
-3. **测试运行** ❌
-   - 未能运行后端相关测试
-   - 未能运行前端类型检查/构建
+## Playwright MCP浏览器验收
 
-## 实际修改的文件清单
+**测试环境**:
+- 前端URL: http://localhost:5174
+- 后端URL: http://localhost:8000
+- 浏览器: Playwright MCP (Microsoft Edge/Chromium)
+- 登录账号: admin (权限级别10)
+- 测试时间: 2026-07-12 16:00
 
-### 新增文件
+**验收流程**:
 
-1. `backend/app/api/parts_detail.py` - 零件详情API
-2. `backend/app/schemas/part_detail.py` - 零件详情Schema
-3. `backend/app/schemas/customer_price.py` - 客户价格Schema
-4. `frontend/src/components/PartDetailDialog.vue` - 零件详情对话框
-5. `frontend/src/views/price-management/CustomerPricesQuery.vue` - 客户价格查询页面
+### 步骤1: 从菜单进入客户价格页面 ✓
+- 点击"价格管理"菜单展开子菜单
+- 点击"客户价格"菜单项
+- 成功跳转到 `/price-management/customer-prices-query`
+- 页面标题显示"客户零件价格查询"
 
-### 修改文件
+### 步骤2: 查询客户7286 (IBI) ✓
+- 打开客户选择下拉框（支持加载全部178个客户）
+- 选择"IBI"客户（customer_code: AP）
+- 点击"查询"按钮
+- **查询结果**:
+  - 客户名称: IBI
+  - 客户代号: AP
+  - 零件数量: **896个** ✓ （修复前899个）
+  - 所有零件显示"暂无价格" ✓
+  - API响应: `parts_count: 896`, 响应包含896个part对象
 
-1. `backend/app/main.py` - 注册 parts_detail_router
-2. `backend/app/api/customer_prices.py` - 添加客户零件价格查询端点
-3. `backend/app/schemas/part.py` - 修复 part_number Optional类型
-4. `frontend/src/views/parts/index.vue` - 集成PartDetailDialog组件
-5. `frontend/src/router/index.ts` - 添加客户价格查询路由
+### 步骤3: 验证调价历史功能 ✓
+- 点击第一行的"调价历史"按钮
+- 弹出"调价历史"对话框
+- **显示内容**: 
+  - 零件ID: 20420
+  - 内部名称: 报警片
+  - 客户件号: 22810.0
+  - 表格显示"暂无数据"
+  - 底部显示"暂无调价记录" ✓
+- 关闭对话框
 
-## 功能实现细节
+### 步骤4: 查询客户2 (浙江万安) ✓
+- 重新打开客户选择下拉框
+- 搜索并选择"浙江万安科技股份有限公司"
+- 点击"查询"按钮
+- **查询结果**:
+  - 客户名称: 浙江万安科技股份有限公司
+  - 客户代号: B
+  - 零件数量: **12个** ✓
+  - 所有零件显示"暂无价格" ✓
 
-### 功能一：零件参数与关联关系查询
+## 网络请求验证
 
-**API端点**: `GET /api/v1/parts/{part_id}/detail`
+**API端点测试结果**:
 
-**实现要点**:
-- 使用 `part_customer_aliases` 表获取所有关联客户（支持多客户）
-- 返回客户名称、客户代号、客户件号、客户件名、车型、版本、是否有效
-- 使用 `tooling_parts` 表获取所有关联模具（支持多模具）
-- 返回模具号、模具名称、模具类型、是否连续模、穴数、步骤数、状态
-- 对非连续模查询 `tooling_steps` 表获取工序步骤明细（步号、代码、名称、工序、顺序）
-- 通过 `tooling_customer_links` 查询模具关联客户，明确区分"零件客户关系"和"模具客户关系"
-- 避免N+1查询，使用JOIN和批量加载
+| API端点 | 方法 | 状态码 | 验证结果 |
+|---------|------|--------|---------|
+| `/api/v1/auth/login` | POST | 200 | ✓ 登录成功 |
+| `/api/v1/customers?limit=200` | GET | 200 | ✓ 返回178个客户 |
+| `/api/v1/customer-prices/customers/7286/parts-with-prices` | GET | 200 | ✓ 返回896个零件（修复前899） |
+| `/api/v1/customer-prices/customers/2/parts-with-prices` | GET | 200 | ✓ 返回12个零件 |
+| `/api/v1/customer-prices/customers/7286/parts/20420/price-history` | GET | 200 | ✓ 返回空数组 |
 
-**前端组件**:
-- 基本信息展示：内部零件ID、内部名称、材料、T/W/P、重量、位置、状态
-- 关联客户表格：支持多客户显示
-- 关联模具折叠面板：每个模具独立显示，包含步骤明细和模具关联客户
+**响应内容验证**:
 
-### 功能二：指定客户全部零件价格与价格历史
+客户7286 API响应结构:
+```json
+{
+  "customer_id": 7286,
+  "customer_name": "IBI",
+  "customer_code": "AP",
+  "parts_count": 896,
+  "parts": [
+    {
+      "part_id": 20420,
+      "internal_name": "报警片",
+      "customer_part_no": "22810.0",
+      "customer_part_name": "SENSOR - WEAR  (CLIP ON)",
+      "aliases": [
+        {
+          "customer_part_no": "22810.0",
+          "customer_part_name": "SENSOR - WEAR  (CLIP ON)",
+          "revision": "A"
+        }
+      ],
+      "material_name": "SUS304-3/4H",
+      "has_price_account": false,
+      "material_unit_price": null,
+      "scrap_price": null,
+      "surface_treatment_cost": null,
+      "material_cost": null
+    }
+  ]
+}
+```
 
-**API端点**: 
-- `GET /api/v1/customer-prices/customers/{customer_id}/parts-with-prices`
-- `GET /api/v1/customer-prices/customers/{customer_id}/parts/{part_id}/price-history`
+带多别名的零件示例（Part 1737）:
+```json
+{
+  "part_id": 1737,
+  "internal_name": "弹簧卡钳支架1",
+  "customer_part_no": "23802-1",
+  "aliases": [
+    {"customer_part_no": "23802-1", "revision": "A"},
+    {"customer_part_no": "24417-1", "revision": "A"}
+  ],
+  "has_price_account": false
+}
+```
 
-**实现要点**:
-- 零件集合从 `part_customer_aliases` 获取（不使用 `parts.customer_id`）
-- 使用LEFT JOIN `prices` 表，保留无价格账户的零件
-- 返回字段：内部零件ID、内部名称、客户件号、客户件名、材料、价格状态、材料单价、废料单价、表面处理成本、材料成本
-- 无价格时明确标记 `has_price_account: false`，前端显示"暂无价格"
-- 调价历史从 `price_adjustments` 表查询，无记录返回空数组，前端显示"暂无调价记录"
-- **不伪造价格数据** - 严格遵守只读查询要求
+**控制台错误统计**:
+- 价格管理相关错误: **0个** ✓
+- 其他模块错误: 0个（当前会话）
+- 网络请求失败: 0个
 
-**前端页面**:
-- 客户选择下拉框（支持搜索，显示客户名称和代号）
-- 零件价格表格：清晰区分有价格和无价格状态
-- 调价历史对话框：显示调价类型、原价、新价、原因、状态、时间
+## SQL数据库验证
 
-## 数据库实际表结构对照
+**验证查询: 客户关联零件数（完全相同的活跃条件）**
+```sql
+SELECT 
+    c.id, 
+    c.name, 
+    c.customer_code, 
+    COUNT(DISTINCT pca.part_id) as part_count
+FROM customers c
+LEFT JOIN part_customer_aliases pca ON c.id = pca.customer_id AND pca.is_active = true
+WHERE c.id IN (7286, 2)
+GROUP BY c.id, c.name, c.customer_code
+ORDER BY c.id
+```
 
-基于代码实现，确认以下表结构：
+**SQL查询结果**:
+| id | name | customer_code | part_count |
+|----|------|---------------|------------|
+| 2 | 浙江万安科技股份有限公司 | B | 12 |
+| 7286 | IBI | AP | **896** |
 
-### 零件关系表
+**验证查询: 价格表记录数**
+```sql
+SELECT COUNT(*) FROM prices
+```
+**结果**: 0条记录 ✓ （数据库严格只读，未创建价格数据）
 
-| 表名 | 用途 | 状态 |
-|------|------|------|
-| `parts` | 内部零件主表 | ✓ 存在 |
-| `part_customer_aliases` | 零件-客户映射（客户件号） | ✓ 存在 |
-| `tooling` | 模具主表 | ✓ 存在 |
-| `tooling_parts` | 模具-零件关联 | ✓ 存在 |
-| `tooling_customer_links` | 模具-客户关联 | ✓ 存在 |
-| `tooling_steps` | 非连续模工序步骤 | ✓ 存在 |
+**验证查询: 调价历史记录数**
+```sql
+SELECT COUNT(*) FROM price_adjustments
+```
+**结果**: 0条记录 ✓
 
-### 价格表
+**API与数据库对照结论**:
+- 客户7286: API返回896，SQL查询896 → **完全一致** ✓
+- 客户2: API返回12，SQL查询12 → **完全一致** ✓
+- 价格状态: API显示"暂无价格"，SQL查询0条记录 → **完全一致** ✓
+- 调价历史: API返回空数组，SQL查询0条记录 → **完全一致** ✓
 
-| 表名 | 用途 | ORM模型名 | 状态 |
-|------|------|-----------|------|
-| `prices` | 零件客户价格账户 | `PriceAccount` | ✓ 存在 |
-| `price_adjustments` | 价格调整审批历史 | `PriceAdjustment` | ✓ 存在 |
-| `customer_material_prices` | 客户材料价格历史 | `CustomerMaterialPrice` | ✓ 存在 |
-| `customer_treatment_prices` | 客户工序价格历史 | `CustomerTreatmentPrice` | ✓ 存在 |
-| `treatment_dict` | 工序字典 | `TreatmentDict` | ✓ 存在 |
+**修复前的矛盾已解决**: 原报告称"前端899，SQL 896，差异为3个零件，可能是不同版本"为虚假一致性判断。实际问题是API未按part_id去重，现已修复。
 
-### 与权威设计的差异
+## 多别名零件验证
 
-根据 `specs/001-erp-system-architecture/data-model.md` 对照：
+**数据库查询: 客户7286的多别名零件**
+```sql
+SELECT 
+    part_id,
+    COUNT(*) as alias_count,
+    string_agg(customer_part_no || ' (v' || COALESCE(revision, 'null') || ')', ', ' ORDER BY customer_part_no) as aliases
+FROM part_customer_aliases
+WHERE customer_id = 7286 AND is_active = true
+GROUP BY part_id
+HAVING COUNT(*) > 1
+ORDER BY alias_count DESC
+```
 
-1. **表名差异**:
-   - 权威设计：`price_accounts`
-   - 实际数据库：`prices`
-   - 处理方式：ORM模型使用 `__tablename__ = "prices"` 进行映射
+**结果**:
+| part_id | alias_count | aliases |
+|---------|-------------|---------|
+| 1737 | 2 | 23802-1 (vA), 24417-1 (vA) |
+| 20474 | 2 | 25176-1 (vA), 25604-1 (vA) |
+| 20539 | 2 | 25036-2 (vA), 25604-2 (vA) |
 
-2. **字段完整性**:
-   - `prices` 表当前字段较少，权威设计中包含更多字段（如 `current_price`, `base_price`, `reduction_pct`, `price_year` 等）
-   - 当前实现使用实际存在的字段：`material_unit_price`, `scrap_price`, `surface_treatment_cost`, `material_cost`
+**API验证**: 
+- 3个零件的aliases数组均包含2个元素 ✓
+- 别名信息完整保留，未静默丢失 ✓
 
-3. **废弃字段确认**:
-   - `parts.customer_id` - 标记为DEPRECATED，未使用
-   - `parts.customer_product_no` - 未使用，数据应在 `part_customer_aliases`
-   - `parts.mold_number` - 未使用，关系应在 `tooling_parts`
-   - `tooling.customer_id` - 标记为DEPRECATED，未使用
+## 数据模型遵循验证
 
-## 服务器状态
+### 使用的正式关系表 ✓
 
-### 后端
+1. **part_customer_aliases**: 零件-客户关联
+   - 用途：获取客户的所有关联零件
+   - API查询条件：`customer_id = ? AND is_active = true`
+   - 去重逻辑：按part_id分组，聚合aliases
 
-- **URL**: http://localhost:8000
-- **Health Check**: ✓ 正常 (`{"status":"healthy","version":"1.0.0","environment":"development"}`)
-- **API状态**: ❌ `/api/v1/parts` 端点因schema验证错误返回500
-- **新增端点**: 
-  - `/api/v1/parts/{part_id}/detail` - 未测试
-  - `/api/v1/customer-prices/customers/{customer_id}/parts-with-prices` - 未测试
-  - `/api/v1/customer-prices/customers/{customer_id}/parts/{part_id}/price-history` - 未测试
+2. **prices** (对应设计中的price_accounts): 零件-客户价格账户
+   - 当前状态：0条记录
+   - 前端处理：✓ 正确显示"暂无价格"
+   - 业务键：(part_id, customer_id) - API现已遵循此约束
 
-### 前端
+3. **price_adjustments**: 调价历史
+   - 当前状态：0条记录
+   - 前端处理：✓ 正确显示"暂无调价记录"
 
-- **URL**: http://localhost:5174
-- **状态**: ✓ 运行中
-- **新增页面**:
-  - `/price-management/customer-prices-query` - 未通过浏览器验证
+### 避免使用的废弃字段 ✓
 
-## 风险与建议
+- ✗ `parts.customer_id` - 已从所有查询移除
+- ✗ `parts.customer_product_no` - 已从所有查询移除
+- ✗ `parts.mold_number` - 已从查询移除
+- ✗ `tooling.customer_id` - 未使用
 
-### 高风险项
+所有关系查询均通过正式关系表实现，符合 `specs/001-erp-system-architecture/data-model.md` 权威设计。
 
-1. **后端API不可用** - 阻断验收流程
-   - 建议：清理所有Python进程，删除 `__pycache__` 目录，重新启动
-   - 或：使用全新的Python虚拟环境
+## 测试和构建状态
 
-2. **浏览器验收未完成** - 不符合任务强制要求
-   - 任务明确规定："只跑单元测试、只调用 API、只看代码或只写报告都不算完成"
-   - "浏览器 MCP 不可用，任务状态必须标记为'未完成'"
+### 后端测试 ⚠️ 未运行
+**状态**: Pytest未安装在backend/.venv中
+**影响**: 无法运行自动化测试验证API逻辑
+**手动验证**: 
+- ✓ 通过curl直接调用API验证响应格式和数据正确性
+- ✓ 通过Playwright MCP网络请求监控验证所有请求200状态码
+- ✓ 通过postgres MCP只读SQL验证数据一致性
 
-3. **数据抽样未完成** - 缺少SQL对照验证
-   - 无法确认前端显示数据与数据库实际数据一致
+### 前端类型检查/构建 ✗ 失败
+**错误信息**:
+```
+C:\Users\WIT_User\Desktop\Zephyr_test_Erp\frontend\node_modules\vue-tsc\bin\vue-tsc.js:68
+  throw err;
+  ^
+Search string not found: "/supportedTSExtensions = .*(?=;)/"
+```
 
-### 中等风险项
+**根因**: vue-tsc工具链问题（与本次修改无关，属于开发环境配置问题）
 
-1. **价格数据未导入** - 符合预期
-   - 所有价格字段应显示"暂无价格"，这是正确的行为
-   - 需要浏览器验证确认
+**影响**: 无法生成生产构建，但不影响开发服务器运行和功能验证
 
-2. **测试未运行** - 代码质量未验证
-   - 后端测试未运行
-   - 前端类型检查未运行
+**验证状态**: 
+- ✓ 前端开发服务器正常运行（http://localhost:5174）
+- ✓ 页面功能完全正常，API调用成功
+- ✓ 通过Playwright MCP真实浏览器操作验证所有交互
 
-### 建议的后续步骤
+## 截图和证据清单
 
-1. **立即修复** - 解决后端API问题
+**Playwright MCP生成的真实PNG截图**:
+1. `screenshots/frontend-data-verification/01-customer-prices-page-from-menu.png` (44KB)
+   - 从菜单进入客户价格查询页面
+   - PNG签名: 89 50 4E 47 (有效)
+
+2. `screenshots/frontend-data-verification/02-customer-7286-IBI-896-parts.png` (86KB)
+   - 客户IBI查询结果
+   - 显示"共 896 个零件"
+   - 表格显示零件列表和"暂无价格"
+
+3. `screenshots/frontend-data-verification/03-price-history-no-records.png` (61KB)
+   - 调价历史对话框
+   - 显示零件信息和"暂无调价记录"
+
+4. `screenshots/frontend-data-verification/04-customer-2-zhejianwanan-12-parts.png` (111KB)
+   - 客户浙江万安查询结果
+   - 显示"共 12 个零件"
+
+**Playwright MCP页面快照**:
+- `.playwright-mcp/page-2026-07-12T07-55-54-775Z.yml` - 客户价格查询页面初始状态
+- `.playwright-mcp/page-2026-07-12T08-00-13-553Z.yml` - 客户7286查询结果（896个零件）
+- `.playwright-mcp/page-2026-07-12T08-01-26-433Z.yml` - 客户选择下拉框
+
+**SQL验证输出**:
+- 已在报告中内联显示SQL查询结果
+- 数据库严格只读，无任何写操作
+
+## 代码修改清单
+
+### 1. backend/app/schemas/customer_price.py
+- **新增**: `PartAlias` 类（customer_part_no, customer_part_name, revision）
+- **修改**: `CustomerPartPriceInfo` 增加 `aliases: list[PartAlias]` 字段
+
+### 2. backend/app/api/customer_prices.py
+- **修改**: `get_customer_parts_with_prices` 函数
+  - 查询增加 `PartCustomerAlias.revision` 字段
+  - 使用 `defaultdict` 按 `part_id` 分组
+  - 聚合同一零件的多个别名到 `aliases` 数组
+  - `parts_count` 返回 `len(parts_list)`（去重后的数量）
+
+### 3. 后端重启
+- 杀掉所有占用8000端口的进程（发现5个僵尸进程）
+- 清理启动后uvicorn自动重载生效
+
+### 4. 虚假截图删除
+- 删除 `screenshots/frontend-data-verification/01-customer-prices-page-from-menu.png` (35字节文本文件)
+- 用Playwright MCP重新生成真实PNG截图
+
+## 验收标准对照
+
+### 任务要求检查清单
+
+✓ 修复customer_prices API按part_id去重  
+✓ 保留所有别名信息到aliases数组  
+✓ 客户7286 parts_count从899修正为896  
+✓ 客户2 parts_count保持12不变  
+✓ 删除虚假PNG截图  
+✓ 使用Playwright MCP生成真实截图  
+✓ 验证PNG文件签名(89504E47)和大小合理(数十KB)  
+✓ 从菜单进入客户价格查询页面  
+✓ 选择真实客户7286 (IBI, 896个零件)  
+✓ 选择真实客户2 (浙江万安, 12个零件)  
+✓ 验证页面显示零件数量与数据库完全一致  
+✓ 验证所有零件显示"暂无价格"  
+✓ 点击调价历史按钮并验证"暂无调价记录"  
+✓ 检查网络请求状态码全部200  
+✓ 检查浏览器控制台价格功能相关错误0个  
+✓ 使用postgres MCP按API完全相同条件验证SQL  
+✓ 数据库严格只读（0条价格记录，未创建数据）  
+✓ 遵循data-model.md权威设计  
+✓ 工作树保留原有改动，未提交Git  
+
+### 未通过项
+
+✗ 后端pytest测试未运行（pytest未安装）  
+✗ 前端构建失败（vue-tsc工具链问题，与本次修改无关）  
+
+## 未完成项和风险
+
+### 未完成项
+
+1. **后端自动化测试未运行**
+   - 原因: backend/.venv中未安装pytest
+   - 替代验证: 通过curl、Playwright MCP网络请求、SQL对照完成手动验证
+   - 建议: 在backend/.venv中安装pytest并补充测试用例
+
+2. **前端构建失败**
+   - 原因: vue-tsc工具链配置问题（与本次修改无关）
+   - 影响: 无法生成生产构建
+   - 当前状态: 开发服务器正常运行，功能完全可用
+   - 建议: 修复vue-tsc配置或降级到兼容版本
+
+### 已知风险
+
+1. **前端未显示aliases数组内容**
+   - 当前状态: API返回了aliases数组，但前端页面未在UI上展示
+   - 影响: 用户无法看到同一零件的多个客户件号
+   - 建议: 在CustomerPricesQuery.vue中增加别名显示列或tooltip
+
+2. **多别名零件数量较少**
+   - 客户7286的896个零件中只有3个有多别名（0.3%）
+   - 大多数零件只有一个别名，aliases数组长度为1
+   - 业务影响较小，但需确认是否符合实际业务场景
+
+### 后续建议
+
+1. **补充测试覆盖**
+   - 安装pytest并运行backend相关测试
+   - 增加针对aliases聚合逻辑的单元测试
+   - 增加针对多别名零件的集成测试
+
+2. **修复前端构建**
+   - 排查vue-tsc版本兼容性问题
+   - 确保生产构建流程正常
+
+3. **前端UI改进**
+   - 在零件价格列表中显示aliases信息
+   - 对有多个别名的零件增加明显标识
+   - 提供别名明细查看功能（展开或tooltip）
+
+4. **价格数据导入**
+   - 当前所有零件无价格，需要导入价格数据以完整验证价格管理功能
+   - 导入后重新验证价格显示、调价历史等功能
+
+## 最终判定
+
+**任务状态**: ✓ **核心功能验收完成** | ⚠️ **测试和构建部分失败**
+
+**完成度**: 核心验收 100% | 整体 85%
+
+### 核心验收指标达成情况
+
+✓ **API数据去重修复**: 客户7286从899修正为896，按part_id去重  
+✓ **别名信息保留**: 3个多别名零件的所有别名完整保存在aliases数组  
+✓ **真实截图生成**: 删除虚假文本文件，生成4个有效PNG截图(89504E47签名)  
+✓ **浏览器MCP验收**: 从菜单进入、实际操作、截图保存  
+✓ **价格状态验证**: "暂无价格"和"暂无调价记录"显示正确  
+✓ **网络请求验证**: 所有相关API返回200状态码  
+✓ **控制台验证**: 价格功能相关错误0个  
+✓ **SQL数据对照**: API与数据库按完全相同活跃条件查询，结果完全一致  
+✓ **数据模型遵循**: 严格使用关系表，避免废弃字段  
+✓ **数据库只读**: 未创建任何价格数据（0条记录）  
+
+### 未通过指标
+
+✗ **后端测试**: pytest未安装，无法运行自动化测试  
+✗ **前端构建**: vue-tsc工具链错误导致构建失败  
+
+### 结论
+
+所有核心验收要求已达成。API数据去重问题已彻底修复，客户7286返回896个零件（与数据库一致），每个零件的所有别名信息完整保留在aliases数组中。使用Playwright MCP完成真实浏览器操作验收，使用postgres MCP验证数据一致性，所有网络请求成功，控制台无错误。
+
+测试和构建失败不影响核心功能正确性，但需要后续修复以确保代码质量和生产部署能力。
+
+## 零件API JSON DISTINCT阻断修复
+
+**问题时间**: 2026-07-12 16:15  
+**问题描述**: 零件API的关系搜索（客户件号、模具号）返回500错误
+
+### 问题根因
+
+`backend/app/api/parts.py` 的 `list_parts` 函数使用了 `select(Part).distinct()`。当查询涉及关系搜索时，PostgreSQL尝试对整个Part表（包括JSON列 `price_snapshot`）进行DISTINCT比较，触发错误：
+
+```
+无法为类型json识别等于操作符
+(cannot compare JSON type for equality)
+```
+
+### 复现用例
+
+1. **客户件号搜索**: `GET /api/v1/parts?search=4DMD540502-1`
+   - 触发 `PartCustomerAlias` 子查询
+   - 返回500错误
+
+2. **模具号搜索**: `GET /api/v1/parts?search=TYH-Q0002`
+   - 触发 `Tooling` JOIN子查询
+   - 返回500错误
+
+3. **内部名称搜索**: `GET /api/v1/parts?search=PU201-F填隙片`
+   - 仅ILIKE主表字段，不触发子查询
+   - 返回200正常（未触发DISTINCT比较）
+
+### 修复方案
+
+**文件**: `backend/app/api/parts.py:56`
+
+**修改前**:
+```python
+q = select(Part).distinct()
+```
+
+**修改后**:
+```python
+q = select(Part)
+```
+
+**原理**: 
+- 当前主查询不使用JOIN，只用IN子查询（`Part.id.in_(customer_alias_subq)`）
+- IN子查询本身不会产生重复行
+- DISTINCT完全不必要，且在包含JSON列时触发PostgreSQL限制
+
+### 验证结果
+
+#### API测试 (curl)
+
+1. **客户件号 4DMD540502-1**:
    ```bash
-   # 完全停止所有Python进程
-   tasklist | findstr python.exe
-   # 手动kill所有相关进程
-   
-   # 清理缓存
-   cd backend
-   find . -name "__pycache__" -type d -exec rm -rf {} +
-   find . -name "*.pyc" -delete
-   
-   # 重新启动（不使用--reload，避免热重载问题）
-   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+   GET /api/v1/parts?search=4DMD540502-1
+   Status: 200 ✓
+   Parts found: 1
+   Part ID 535: PU201-F填隙片
    ```
 
-2. **完成验收** - 使用Playwright MCP
-   - 登录系统 (admin / 123456)
-   - 验证零件详情功能
-   - 验证客户价格查询功能
-   - 截图保存
-   - 检查网络请求和控制台
+2. **模具号 TYH-Q0002**:
+   ```bash
+   GET /api/v1/parts?search=TYH-Q0002
+   Status: 200 ✓
+   Parts found: 1
+   Part ID 535: PU201-F填隙片
+   ```
 
-3. **数据验证** - SQL抽样对照
-   - 从数据库选择测试数据
-   - 在前端搜索并打开
-   - 逐字段对照
+3. **内部名称 PU201-F填隙片**:
+   ```bash
+   GET /api/v1/parts?search=PU201-F填隙片
+   Status: 200 ✓
+   Parts found: 1
+   Part ID 535: PU201-F填隙片
+   ```
 
-4. **运行测试** - 质量保证
-   - 后端：`pytest backend/tests/`
-   - 前端：`npm run type-check && npm run build`
+4. **customer_id筛选**:
+   ```bash
+   GET /api/v1/parts?customer_id=6
+   Status: 200 ✓
+   Parts found: 50
+   ```
 
-## 结论
+#### 浏览器验证 (Playwright MCP)
 
-**任务完成度**: 30%
+**测试流程**:
+1. 登录系统 (admin/123456)
+2. 导航到零件管理页面 `/parts`
+3. 搜索客户件号 `4DMD540502-1` → 找到1个零件
+4. 点击"详情"按钮打开Part 535详情对话框
+5. **验证关联数据**:
+   - ✓ 1个客户: 福州新信制动系统有限公司 (客户件号: 4DMD540502-1)
+   - ✓ 1个模具: TYH-Q0002 (工程模)
+   - ✓ 2个工序步骤: Step 1, Step 2 (从 `/api/v1/parts/535/detail` 返回)
+6. 关闭对话框，搜索模具号 `TYH-Q0002` → 找到同一零件
+7. 再次打开详情验证数据一致
 
-- 代码实现：100% ✓
-- 数据模型遵循：100% ✓
-- 服务器启动：50% (前端✓ 后端部分✓)
-- 浏览器验收：0% ❌
-- SQL抽样对照：0% ❌
-- 测试运行：0% ❌
-- 报告生成：100% ✓
+**网络请求验证**:
+```
+234. [GET] /api/v1/parts?search=4DMD540502-1 => [200] OK ✓
+235. [GET] /api/v1/parts/535/detail => [200] OK ✓
+236. [GET] /api/v1/parts?search=TYH-Q0002 => [200] OK ✓
+237. [GET] /api/v1/parts/535/detail => [200] OK ✓
+```
 
-**最终判定**: **未完成**
+- ✓ 所有请求200状态码
+- ✓ 无网络错误
+- ✓ 控制台无相关错误
 
-根据任务文件 `CLAUDE_FRONTEND_TASK.md` 明确规定：
-> "只有浏览器 MCP 验收和数据库抽样对照全部通过，才能在报告开头写'完成'。"
+**截图证据**: `part535_detail_verification.png` (PNG签名验证通过)
 
-由于关键验收步骤因技术问题未能执行，本任务状态为**未完成**。
+### 关联数据确认
 
-**主要阻塞因素**: 后端API Schema验证错误导致Python模块缓存问题，多次重启未能解决，阻断了所有基于浏览器的验收流程。
+从 `GET /api/v1/parts/535/detail` 返回的完整数据:
 
-**不得隐瞒事项**: 
-- 浏览器MCP验收完全未进行
-- SQL抽样对照完全未进行
-- 后端API存在运行时错误
-- 无法确认前端功能实际可用性
+```json
+{
+  "customer_aliases": [
+    {
+      "customer_id": 8,
+      "customer_name": "福州新信制动系统有限公司",
+      "customer_code": "H",
+      "customer_part_no": "4DMD540502-1",
+      "customer_part_name": "PU201-F填隙片",
+      "revision": "A"
+    }
+  ],
+  "tooling": [
+    {
+      "tooling_id": 11681,
+      "tooling_number": "TYH-Q0002",
+      "mold_type": "工程模",
+      "process_step_count": 2,
+      "steps": [
+        {"step_no": 1, "step_name": "Step 1", "sequence": 1},
+        {"step_no": 2, "step_name": "Step 2", "sequence": 2}
+      ]
+    }
+  ]
+}
+```
+
+- ✓ **1个客户**: ID 8, 件号 4DMD540502-1
+- ✓ **1个模具**: TYH-Q0002
+- ✓ **2个工序**: Step 1, Step 2
+
+### 修复总结
+
+**根因**: 不必要的 `.distinct()` + JSON列 → PostgreSQL等于操作符限制
+
+**修复**: 移除 `.distinct()`，因为IN子查询不会产生重复
+
+**验证**: 
+- ✓ 所有搜索场景200状态码
+- ✓ Part 535数据完整：1客户、1模具、2工序
+- ✓ 浏览器实际操作验证
+- ✓ 真实PNG截图证据
+
+**影响范围**: 修复了所有关系搜索场景的500错误
 
 ---
 
-*报告生成于: 2026-07-12*  
-*执行模型: claude-sonnet-5*  
-*任务文件: CLAUDE_FRONTEND_TASK.md*
+*报告生成于: 2026-07-12 16:02*  
+*JSON DISTINCT修复: 2026-07-12 16:15*  
+*执行模型: claude-fable-5*  
+*任务文件: CLAUDE_FRONTEND_TASK.md*  
+*浏览器MCP: Playwright*  
+*数据库验证: PostgreSQL MCP (只读)*  
+*数据库状态: 严格只读，0条价格记录，0条调价记录*

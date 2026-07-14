@@ -237,7 +237,7 @@ def parse_mold_type(value: str) -> Tuple[Optional[str], bool]:
 def parse_cavity_count(spec: str, remark: str) -> Optional[int]:
     """
     Parse cavity count from spec and remark fields.
-    ONLY matches explicit cavity expressions like "1出2", "一出2", "(1出2)".
+    ONLY matches explicit cavity expressions like "1出2", "一出2", "(1出2)", "左右各一个".
     Does NOT match T*W*P dimensions like "1*90*88" or "0.8*71*98".
     """
     # Combine spec and remark
@@ -245,6 +245,10 @@ def parse_cavity_count(spec: str, remark: str) -> Optional[int]:
 
     if not combined.strip():
         return None
+
+    # Check for "左右各一个" pattern - means cavity_count = 2
+    if '左右各一个' in combined or '左右各一' in combined:
+        return 2
 
     # ONLY match explicit "1出N" or "一出N" patterns
     # DO NOT match plain "1*N" as it could be dimensions
@@ -339,6 +343,109 @@ def parse_position(value: str) -> Optional[str]:
     return None
 
 
+def parse_combined_spec(spec_str: str) -> Tuple[Optional[float], Optional[float], Optional[float]]:
+    """
+    Parse combined T*W*P spec string with strict dimension parsing.
+
+    Supports:
+    - Full: "0.8*34*34.5" -> (0.8, 34.0, 34.5)
+    - Partial: "0.4*" -> (0.4, None, None), "0.4*92" -> (0.4, 92.0, None)
+    - With prefixes: "T1.2*W50*P40" -> (1.2, 50.0, 40.0)
+    - Separators: *, ×, x, X (ASCII and full-width)
+    - Brackets: () and （）
+    - Trailing patterns: (1出2), （一出二）, 左右各一个
+    - Tolerance: "0.8±0.01*34*34.5"
+
+    Rejects:
+    - Double separators: "4.0**155*43" -> (None, None, None)
+    - Letter prefixes not T/W/P: "XC2.39", "SUS301" -> (None, None, None)
+
+    Range validation: T: 0.1-10mm, W/P: 1-1000mm
+
+    Returns: (thickness, width, pitch)
+    """
+    if not spec_str or not isinstance(spec_str, str):
+        return None, None, None
+
+    spec_str = spec_str.strip()
+    if not spec_str:
+        return None, None, None
+
+    # Remove trailing cavity patterns before parsing dimensions
+    # Patterns: (1出2), （一出二）, 左右各一个, etc.
+    cavity_patterns = [
+        r'\s*[（(]\s*[1一]\s*出\s*\d+\s*[)）]',  # (1出2), （一出二）
+        r'\s*[（(]\s*左右各一(个)?\s*[)）]',  # （左右各一个）
+        r'\s*左右各一(个)?$',  # 左右各一个 at end
+    ]
+    for pattern in cavity_patterns:
+        spec_str = re.sub(pattern, '', spec_str)
+
+    spec_str = spec_str.strip()
+    if not spec_str:
+        return None, None, None
+
+    # Normalize separators: ×, x, X -> * (handle full-width)
+    spec_str = spec_str.replace('×', '*').replace('x', '*').replace('X', '*')
+
+    # Remove mm/MM units
+    spec_str = re.sub(r'\s*mm\s*', '', spec_str, flags=re.IGNORECASE)
+    spec_str = spec_str.strip()
+
+    # Check for double separators (ambiguous format like "4.0**155")
+    if '**' in spec_str:
+        return None, None, None
+
+    # Check if string starts with letters (reject material/part codes)
+    # Allow only T/W/P prefixes
+    if spec_str and spec_str[0].isalpha():
+        # Must start with T, W, or P followed by a digit
+        if not re.match(r'^[TWPtwp]\s*\d', spec_str):
+            return None, None, None
+
+    # Split by * separator
+    parts = spec_str.split('*')
+
+    # Parse each part
+    parsed_values = []
+    for part in parts:
+        part = part.strip()
+        if not part:
+            # Empty part (trailing * or consecutive *)
+            parsed_values.append(None)
+            continue
+
+        # Extract number with optional T/W/P prefix and tolerance
+        # Pattern: optional [TWP], whitespace, number with decimal, optional tolerance
+        match = re.match(r'^[TWPtwp]?\s*(\d+\.?\d*)(?:\s*[±+\-]\s*[\d.]+)?', part)
+        if match:
+            try:
+                value = float(match.group(1))
+                parsed_values.append(value)
+            except:
+                parsed_values.append(None)
+        else:
+            # No valid number found
+            parsed_values.append(None)
+
+    # Extract T, W, P (up to 3 values)
+    thickness = parsed_values[0] if len(parsed_values) > 0 else None
+    width = parsed_values[1] if len(parsed_values) > 1 else None
+    pitch = parsed_values[2] if len(parsed_values) > 2 else None
+
+    # Validate ranges
+    if thickness is not None and not (0.1 <= thickness <= 10.0):
+        thickness = None
+
+    if width is not None and not (1.0 <= width <= 1000.0):
+        width = None
+
+    if pitch is not None and not (1.0 <= pitch <= 1000.0):
+        pitch = None
+
+    return thickness, width, pitch
+
+
 def parse_row(row_values: List[Any], column_map: Dict[str, int], sheet_name: str, last_customer: str) -> Dict[str, Any]:
     """
     Parse a single row and extract all fields.
@@ -398,10 +505,17 @@ def parse_row(row_values: List[Any], column_map: Dict[str, int], sheet_name: str
     if not parsed_cavity:
         parsed_cavity = parse_cavity_count(cavity_raw, '')
 
-    # Parse TWP
+    # Parse TWP - prioritize individual columns, then parse combined spec
     thickness = parse_numeric(get_cell('thickness'))
     width = parse_numeric(get_cell('width'))
     pitch = parse_numeric(get_cell('pitch'))
+
+    # If individual columns are empty, try parsing combined spec
+    if thickness is None and width is None and pitch is None and spec:
+        spec_t, spec_w, spec_p = parse_combined_spec(spec)
+        thickness = spec_t if thickness is None else thickness
+        width = spec_w if width is None else width
+        pitch = spec_p if pitch is None else pitch
 
     # Parse weights
     gross_weight = parse_numeric(get_cell('gross_weight'))
@@ -478,6 +592,50 @@ def classify_row(row_values: List[Any], parsed_data: Dict[str, Any]) -> Tuple[st
     return 'REVIEW', reason
 
 
+def get_merged_cell_value(sheet, row_idx: int, col_idx: int, merged_cells: Dict) -> Any:
+    """
+    Get cell value considering merged cells.
+    If the cell is part of a merged range (but not the top-left),
+    return the value from the top-left cell of the merged range.
+
+    Args:
+        sheet: xlrd sheet object
+        row_idx: Row index
+        col_idx: Column index
+        merged_cells: Dict mapping (row, col) to (top_row, top_col) for merged ranges
+
+    Returns:
+        Cell value (with merged cell propagation)
+    """
+    # Check if this cell is part of a merged range
+    if (row_idx, col_idx) in merged_cells:
+        top_row, top_col = merged_cells[(row_idx, col_idx)]
+        return sheet.cell_value(top_row, top_col)
+    else:
+        return sheet.cell_value(row_idx, col_idx)
+
+
+def build_merged_cells_map(sheet) -> Dict[Tuple[int, int], Tuple[int, int]]:
+    """
+    Build a mapping of all cells in merged ranges to their top-left cell.
+
+    Returns:
+        Dict mapping (row, col) -> (top_row, top_col) for all cells in merged ranges
+    """
+    merged_map = {}
+
+    # xlrd provides merged_cells as a list of (rlo, rhi, clo, chi)
+    # where the range is [rlo, rhi) x [clo, chi) (half-open intervals)
+    for rlo, rhi, clo, chi in sheet.merged_cells:
+        # For all cells in this merged range, map them to the top-left cell
+        for row in range(rlo, rhi):
+            for col in range(clo, chi):
+                # Map this cell to the top-left cell of the merge
+                merged_map[(row, col)] = (rlo, clo)
+
+    return merged_map
+
+
 def process_excel(excel_path: Path, db_config: Dict[str, Any]):
     """Process Excel file and write to staging tables."""
     print(f"\n[INFO] Opening Excel file: {excel_path}")
@@ -496,8 +654,8 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
     print(f"[INFO] Size: {file_size} bytes")
     print(f"[INFO] Hash: {file_hash}")
 
-    # Open workbook
-    workbook = xlrd.open_workbook(str(excel_path))
+    # Open workbook with formatting_info to get merged cells
+    workbook = xlrd.open_workbook(str(excel_path), formatting_info=True)
     total_sheets = workbook.nsheets
 
     print(f"[INFO] Total sheets: {total_sheets}")
@@ -564,6 +722,11 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
 
             print(f"\n[INFO] Processing sheet {sheet_idx + 1}/{total_sheets}: {sheet_name}")
 
+            # Build merged cells map for this sheet
+            merged_cells_map = build_merged_cells_map(sheet)
+            if merged_cells_map:
+                print(f"  [INFO] Found {len(merged_cells_map)} cells in merged ranges")
+
             # Check if special sheet
             is_special, special_reason = is_special_sheet(sheet_name)
             if is_special:
@@ -598,8 +761,8 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
             for row_idx in range(header_row_idx + 1, sheet.nrows):
                 total_rows += 1
 
-                # Extract row values
-                row_values = [sheet.cell_value(row_idx, col_idx)
+                # Extract row values with merged cell support
+                row_values = [get_merged_cell_value(sheet, row_idx, col_idx, merged_cells_map)
                             for col_idx in range(sheet.ncols)]
 
                 # Parse row

@@ -70,7 +70,7 @@
             <el-menu-item index="/price-management/treatments">
               <span>工序字典</span>
             </el-menu-item>
-            <el-menu-item index="/price-management/customer-prices">
+            <el-menu-item index="/price-management/customer-prices-query">
               <span>客户价格</span>
             </el-menu-item>
             <el-menu-item index="/price-management/price-adjustments">

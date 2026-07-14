@@ -26,8 +26,10 @@ class CustomerUpdate(BaseModel):
 class CustomerResponse(BaseModel):
     id: int
     name: str
+    customer_code: Optional[str] = None
     sheet_key: Optional[str] = None
     created_at: Optional[datetime] = None
+    part_count: Optional[int] = None
 
     class Config:
         from_attributes = True
@@ -40,14 +42,55 @@ async def list_customers(
     search: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
+    is_active: Optional[bool] = Query(default=True, description="Filter by active status"),
+    has_parts: Optional[bool] = Query(default=None, description="Filter customers with parts"),
+    include_part_count: bool = Query(default=False, description="Include part count in response"),
 ) -> list[CustomerResponse]:
-    """List customers with optional search."""
+    """List customers with optional search and filters."""
+    from sqlalchemy import func, exists
+    from app.models.part_customer_alias import PartCustomerAlias
+
     q = select(Customer)
+
+    # Filter by active status
+    if is_active is not None:
+        q = q.where(Customer.is_active == is_active)
+
+    # Filter by has_parts - customers with at least one active part alias
+    if has_parts:
+        q = q.where(
+            exists(
+                select(1)
+                .select_from(PartCustomerAlias)
+                .where(PartCustomerAlias.customer_id == Customer.id)
+                .where(PartCustomerAlias.is_active == True)
+            )
+        )
+
+    # Search by name or customer_code
     if search:
-        q = q.where(Customer.name.ilike(f"%{search}%"))
+        q = q.where(
+            (Customer.name.ilike(f"%{search}%")) |
+            (Customer.customer_code.ilike(f"%{search}%"))
+        )
+
     q = q.order_by(Customer.name).offset(skip).limit(limit)
     customers = (await db.execute(q)).scalars().all()
-    return [CustomerResponse.model_validate(c) for c in customers]
+
+    # Optionally include part count
+    result = []
+    for c in customers:
+        data = CustomerResponse.model_validate(c)
+        if include_part_count:
+            count_query = select(func.count(func.distinct(PartCustomerAlias.part_id))).where(
+                PartCustomerAlias.customer_id == c.id,
+                PartCustomerAlias.is_active == True
+            )
+            count = (await db.execute(count_query)).scalar()
+            data.part_count = count
+        result.append(data)
+
+    return result
 
 
 @router.post("", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)

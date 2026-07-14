@@ -11,9 +11,9 @@
           <el-descriptions-item label="状态">
             <el-tag :type="statusType(detail.part_status)">{{ statusLabel(detail.part_status) }}</el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="厚度(T)">{{ detail.thickness ? detail.thickness + 'mm' : '-' }}</el-descriptions-item>
-          <el-descriptions-item label="宽度(W)">{{ detail.width ? detail.width + 'mm' : '-' }}</el-descriptions-item>
-          <el-descriptions-item label="节距(P)">{{ detail.pitch ? detail.pitch + 'mm' : '-' }}</el-descriptions-item>
+          <el-descriptions-item label="厚度(T)">{{ formatDimension(detail.thickness) }}</el-descriptions-item>
+          <el-descriptions-item label="宽度(W)">{{ formatDimension(detail.width) }}</el-descriptions-item>
+          <el-descriptions-item label="节距(P)">{{ formatDimension(detail.pitch) }}</el-descriptions-item>
           <el-descriptions-item label="位置">{{ detail.part_position || '-' }}</el-descriptions-item>
           <el-descriptions-item label="毛重">{{ detail.gross_weight ? detail.gross_weight + 'g' : '-' }}</el-descriptions-item>
           <el-descriptions-item label="净重">{{ detail.net_weight ? detail.net_weight + 'g' : '-' }}</el-descriptions-item>
@@ -123,6 +123,12 @@ const STATUS_MAP = {
 
 const statusLabel = s => STATUS_MAP[s]?.label || s
 const statusType = s => STATUS_MAP[s]?.type || 'info'
+
+const formatDimension = (value) => {
+  // Format dimension value - just show the number without unit
+  if (value === null || value === undefined) return '-'
+  return String(value)
+}
 
 watch(() => props.modelValue, (val) => { visible.value = val })
 watch(visible, (val) => { emit('update:modelValue', val) })

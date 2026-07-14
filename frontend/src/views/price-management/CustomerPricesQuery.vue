@@ -18,7 +18,7 @@
               v-for="c in customers"
               :key="c.id"
               :value="c.id"
-              :label="`${c.name}${c.customer_code ? ' (' + c.customer_code + ')' : ''}`"
+              :label="c.customer_code ? `${c.customer_code} ${c.name}` : c.name"
             />
           </el-select>
         </el-form-item>
@@ -170,7 +170,7 @@ const statusLabelMap = {
 
 const fetchCustomers = async () => {
   try {
-    customers.value = await get('/customers')
+    customers.value = await get('/customers', { limit: 200, has_parts: true })
   } catch (e) {
     ElMessage.error('获取客户列表失败: ' + (e.message || '未知错误'))
   }

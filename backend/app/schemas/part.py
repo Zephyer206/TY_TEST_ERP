@@ -65,6 +65,23 @@ class PartResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class PartDisplayGroup(BaseModel):
+    """One row in the parts management list.
+
+    Left/right parts that share a base tooling number are returned as one group;
+    ordinary parts contain a single member.
+    """
+
+    key: str
+    is_left_right_pair: bool = False
+    members: list[PartResponse]
+
+
+class PartDisplayPage(BaseModel):
+    total: int
+    items: list[PartDisplayGroup]
+
+
 # Keep for import compatibility
 class PartImportRow(BaseModel):
     material: Optional[str] = None

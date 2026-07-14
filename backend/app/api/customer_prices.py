@@ -178,7 +178,10 @@ async def get_customer_parts_with_prices(
     """获取指定客户的所有零件及价格信息。
 
     - 零件集合从 part_customer_aliases 获取（不使用废弃的 parts.customer_id）
+    - 按 part_id 去重，每个零件只返回一行
+    - 同一零件的多个别名聚合到 aliases 数组中
     - 价格从 prices 表左连接获取，无价格时显示"暂无价格"
+    - parts_count 返回去重后的零件数量（distinct part_id count）
     - 不伪造价格数据
     """
     # Get customer
@@ -186,7 +189,7 @@ async def get_customer_parts_with_prices(
     if not customer:
         raise HTTPException(status_code=404, detail="客户不存在")
 
-    # Query all parts for this customer via part_customer_aliases
+    # Query all aliases for this customer via part_customer_aliases
     # LEFT JOIN prices to include parts without price accounts
     query = (
         select(
@@ -194,6 +197,7 @@ async def get_customer_parts_with_prices(
             Part.internal_name,
             PartCustomerAlias.customer_part_no,
             PartCustomerAlias.customer_part_name,
+            PartCustomerAlias.revision,
             Part.material_name,
             PriceAccount.id.label('price_account_id'),
             PriceAccount.material_unit_price,
@@ -215,27 +219,66 @@ async def get_customer_parts_with_prices(
     result = await db.execute(query)
     rows = result.all()
 
-    parts_list = [
-        CustomerPartPriceInfo(
-            part_id=row.id,
-            internal_name=row.internal_name,
-            customer_part_no=row.customer_part_no,
-            customer_part_name=row.customer_part_name,
-            material_name=row.material_name,
-            has_price_account=row.price_account_id is not None,
-            material_unit_price=float(row.material_unit_price) if row.material_unit_price else None,
-            scrap_price=float(row.scrap_price) if row.scrap_price else None,
-            surface_treatment_cost=float(row.surface_treatment_cost) if row.surface_treatment_cost else None,
-            material_cost=float(row.material_cost) if row.material_cost else None,
-        )
-        for row in rows
-    ]
+    # Group by part_id and aggregate aliases
+    from collections import defaultdict
+    parts_dict = defaultdict(lambda: {
+        'aliases': [],
+        'internal_name': None,
+        'material_name': None,
+        'has_price_account': False,
+        'material_unit_price': None,
+        'scrap_price': None,
+        'surface_treatment_cost': None,
+        'material_cost': None,
+    })
+
+    for row in rows:
+        part_data = parts_dict[row.id]
+
+        # Add alias
+        part_data['aliases'].append({
+            'customer_part_no': row.customer_part_no,
+            'customer_part_name': row.customer_part_name,
+            'revision': row.revision,
+        })
+
+        # Set part-level fields (same for all aliases of this part)
+        if part_data['internal_name'] is None:
+            part_data['internal_name'] = row.internal_name
+            part_data['material_name'] = row.material_name
+            part_data['has_price_account'] = row.price_account_id is not None
+            part_data['material_unit_price'] = float(row.material_unit_price) if row.material_unit_price else None
+            part_data['scrap_price'] = float(row.scrap_price) if row.scrap_price else None
+            part_data['surface_treatment_cost'] = float(row.surface_treatment_cost) if row.surface_treatment_cost else None
+            part_data['material_cost'] = float(row.material_cost) if row.material_cost else None
+
+    # Build response list - one row per part_id
+    from app.schemas.customer_price import PartAlias
+
+    parts_list = []
+    for part_id, part_data in parts_dict.items():
+        # Use first alias as primary display
+        first_alias = part_data['aliases'][0]
+
+        parts_list.append(CustomerPartPriceInfo(
+            part_id=part_id,
+            internal_name=part_data['internal_name'],
+            customer_part_no=first_alias['customer_part_no'],
+            customer_part_name=first_alias['customer_part_name'],
+            aliases=[PartAlias(**alias) for alias in part_data['aliases']],
+            material_name=part_data['material_name'],
+            has_price_account=part_data['has_price_account'],
+            material_unit_price=part_data['material_unit_price'],
+            scrap_price=part_data['scrap_price'],
+            surface_treatment_cost=part_data['surface_treatment_cost'],
+            material_cost=part_data['material_cost'],
+        ))
 
     return CustomerPartsWithPricesResponse(
         customer_id=customer.id,
         customer_name=customer.name,
         customer_code=customer.customer_code,
-        parts_count=len(parts_list),
+        parts_count=len(parts_list),  # Count of distinct part_ids
         parts=parts_list,
     )
 

@@ -29,3 +29,19 @@ frontend/node_modules/
 # Backend logs
 backend/*.log
 backend/restart_backend.sh
+
+# Local runtime, database, and agent state
+*.db
+*.log
+.auth_token*
+.codex-*
+.playwright-mcp/
+.claude/settings.local.json
+
+# Generated verification outputs and backups
+backend/backend/
+backend/backups/
+backend/scripts/backups/
+reports/
+screenshots/
+backend/scripts/*_temp.py

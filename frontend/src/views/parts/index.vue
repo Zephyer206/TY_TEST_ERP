@@ -14,19 +14,12 @@
         </el-form-item>
         <el-form-item label="客户">
           <el-select v-model="filter.customer_id" clearable placeholder="全部" style="width:160px" filterable>
-            <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.name" />
+            <el-option v-for="c in customers" :key="c.id" :value="c.id"
+              :label="c.customer_code ? `${c.customer_code} ${c.name}` : c.name" />
           </el-select>
         </el-form-item>
         <el-form-item label="材料">
           <el-input v-model="filter.material" placeholder="材料名称" clearable style="width:160px" />
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-select v-model="filter.part_status" clearable placeholder="全部" style="width:120px">
-            <el-option label="草稿" value="DRAFT" />
-            <el-option label="打样" value="SAMPLING" />
-            <el-option label="量产" value="MASS_PRODUCTION" />
-            <el-option label="淘汰" value="OBSOLETE" />
-          </el-select>
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="fetchParts">搜索</el-button>
@@ -35,18 +28,19 @@
       </el-form>
     </el-card>
 
-    <el-table :data="parts" v-loading="loading" stripe>
+    <el-table :data="parts" :row-key="row => row._groupKey || row.id" v-loading="loading" stripe>
       <el-table-column prop="part_number" label="零件编号" width="120" fixed />
-      <el-table-column prop="internal_name" label="零件名称" min-width="140" />
-      <el-table-column prop="mold_number" label="模具号" width="120" />
-      <el-table-column label="TWP规格" width="140">
+      <el-table-column prop="internal_name" label="零件名称" min-width="170" />
+      <el-table-column prop="mold_number" label="模具号" width="180" />
+      <el-table-column label="TWP规格" width="170">
         <template #default="{ row }">
           <span v-if="row.thickness || row.width || row.pitch" class="twp-text">
-            <span v-if="row.thickness">T{{ row.thickness }}</span>
-            <span v-if="row.width">×W{{ row.width }}</span>
-            <span v-if="row.pitch">×P{{ row.pitch }}</span>
+            {{ formatTWP(row.thickness, row.width, row.pitch) }}<span v-if="row._isPair">（一出二）</span>
           </span>
-          <span v-else-if="row.spec_twph" class="spec-text">{{ row.spec_twph }}</span>
+          <span v-else-if="row.spec_twph" class="spec-text">
+            {{ row.spec_twph }}<span v-if="row._isPair">（一出二）</span>
+          </span>
+          <span v-else-if="row._isPair" class="twp-text">一出二</span>
           <span v-else class="text-muted">-</span>
         </template>
       </el-table-column>
@@ -68,23 +62,55 @@
       <el-table-column prop="mold_type" label="模具类型" width="110" />
       <el-table-column label="位置" width="60" align="center">
         <template #default="{ row }">
-          <el-tag v-if="row.part_position === 'left'" type="info" size="small">左</el-tag>
+          <el-tag v-if="row.part_position === 'both'" type="info" size="small">左右</el-tag>
+          <el-tag v-else-if="row.part_position === 'left'" type="info" size="small">左</el-tag>
           <el-tag v-else-if="row.part_position === 'right'" type="info" size="small">右</el-tag>
           <span v-else class="text-muted">-</span>
         </template>
       </el-table-column>
-      <el-table-column label="状态" width="80">
+      <el-table-column prop="stock_pcs" label="库存" width="110" align="right" />
+      <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <el-tag :type="statusType(row.part_status)" size="small">{{ statusLabel(row.part_status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="stock_pcs" label="库存" width="70" align="right" />
-      <el-table-column label="操作" width="160" fixed="right">
-        <template #default="{ row }">
-          <el-button link type="primary" size="small" @click="viewDetail(row)">详情</el-button>
-          <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
-          <el-button link type="danger" size="small" @click="handleDelete(row)"
-            v-if="row.part_status !== 'OBSOLETE'">删除</el-button>
+          <template v-if="row._isPair">
+            <el-dropdown trigger="click" @command="viewDetail">
+              <el-button link type="primary" size="small">详情</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="member in row._members" :key="`detail-${member.id}`" :command="member">
+                    {{ positionLabel(member.part_position) }}件详情
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-dropdown trigger="click" @command="openEdit">
+              <el-button link type="primary" size="small">编辑</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="member in row._members" :key="`edit-${member.id}`" :command="member">
+                    {{ positionLabel(member.part_position) }}件编辑
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+            <el-dropdown trigger="click" @command="handleDelete"
+              v-if="row._members.some(member => member.part_status !== 'OBSOLETE')">
+              <el-button link type="danger" size="small">删除</el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item v-for="member in row._members" :key="`delete-${member.id}`" :command="member"
+                    :disabled="member.part_status === 'OBSOLETE'">
+                    删除{{ positionLabel(member.part_position) }}件
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </template>
+          <template v-else>
+            <el-button link type="primary" size="small" @click="viewDetail(row)">详情</el-button>
+            <el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(row)"
+              v-if="row.part_status !== 'OBSOLETE'">删除</el-button>
+          </template>
         </template>
       </el-table-column>
     </el-table>
@@ -115,7 +141,8 @@
         </el-form-item>
         <el-form-item label="客户">
           <el-select v-model="form.customer_id" clearable filterable placeholder="选择客户" style="width:100%">
-            <el-option v-for="c in customers" :key="c.id" :value="c.id" :label="c.name" />
+            <el-option v-for="c in customers" :key="c.id" :value="c.id"
+              :label="c.customer_code ? `${c.customer_code} ${c.name}` : c.name" />
           </el-select>
         </el-form-item>
         <el-form-item label="客户件号">
@@ -173,24 +200,118 @@ const STATUS_MAP = {
   SAMPLING: { label: '打样', type: 'warning' },
   MASS_PRODUCTION: { label: '量产', type: 'success' },
   OBSOLETE: { label: '淘汰', type: 'danger' },
+  MIXED: { label: '状态不一致', type: 'warning' },
 }
 const statusLabel = s => STATUS_MAP[s]?.label || s
 const statusType = s => STATUS_MAP[s]?.type || 'info'
+const positionLabel = position => position === 'left' ? '左' : position === 'right' ? '右' : ''
+
+const formatTWP = (t, w, p) => {
+  // Format T/W/P without letters, using × as separator
+  // Examples:
+  //   T=0.8, W=34, P=34.5 -> "0.8×34×34.5"
+  //   T=0.4, W=null, P=null -> "0.4"
+  //   T=0.4, W=92, P=null -> "0.4×92"
+  //   T=0.4, W=null, P=53 -> "0.4×-×53" (preserve position with -)
+
+  if (!t && !w && !p) return '-'
+
+  const parts = []
+
+  if (t !== null && t !== undefined) {
+    parts.push(String(t))
+  }
+
+  if (w !== null && w !== undefined) {
+    parts.push(String(w))
+  } else if (p !== null && p !== undefined) {
+    // Middle dimension missing but pitch exists - use placeholder
+    parts.push('-')
+  }
+
+  if (p !== null && p !== undefined) {
+    parts.push(String(p))
+  }
+
+  return parts.join('×')
+}
+
+const firstValue = (members, field) => {
+  const member = members.find(item => item[field] !== null && item[field] !== undefined && item[field] !== '')
+  return member?.[field] ?? null
+}
+
+const uniqueValues = (members, field) => [
+  ...new Set(members.map(item => item[field]).filter(value => value !== null && value !== undefined && value !== ''))
+]
+
+const formatPairName = members => {
+  const names = members.map(member => member.internal_name || '').filter(Boolean)
+  const normalized = names.map(name => name.replace(/^[左右]\s*/, '').trim()).filter(Boolean)
+  if (normalized.length && normalized.every(name => name === normalized[0])) {
+    return `${normalized[0]}（左右件）`
+  }
+  return names.join(' / ') || '左右件'
+}
+
+const toDisplayRow = group => {
+  const members = [...(group.members || [])].sort((a, b) => {
+    const order = { left: 0, right: 1 }
+    return (order[a.part_position] ?? 2) - (order[b.part_position] ?? 2)
+  })
+  const first = members[0] || {}
+
+  if (!group.is_left_right_pair || members.length !== 2) {
+    return { ...first, _groupKey: group.key, _isPair: false, _members: members }
+  }
+
+  const statuses = uniqueValues(members, 'part_status')
+  const baseMoldNumber = group.key.replace(/^pair:/, '')
+  const stockByPosition = members
+    .map(member => `${positionLabel(member.part_position)}${member.stock_pcs ?? 0}`)
+    .join(' / ')
+
+  return {
+    ...first,
+    id: group.key,
+    _groupKey: group.key,
+    _isPair: true,
+    _members: members,
+    part_number: uniqueValues(members, 'part_number').join(' / '),
+    internal_name: formatPairName(members),
+    mold_number: `${baseMoldNumber}（-1/-2）`,
+    customer_name: uniqueValues(members, 'customer_name').join(' / '),
+    material_name: uniqueValues(members, 'material_name').join(' / '),
+    material_name_full: uniqueValues(members, 'material_name_full').join(' / '),
+    mold_type: uniqueValues(members, 'mold_type').join(' / '),
+    part_status: statuses.length === 1 ? statuses[0] : 'MIXED',
+    stock_pcs: stockByPosition,
+    spec_twph: firstValue(members, 'spec_twph'),
+    thickness: firstValue(members, 'thickness'),
+    width: firstValue(members, 'width'),
+    pitch: firstValue(members, 'pitch'),
+    cavity_count: 2,
+    part_position: 'both',
+  }
+}
 
 const fetchParts = async () => {
   loading.value = true
   try {
-    const params = {
-      skip: (page.current - 1) * page.size,
-      limit: page.size,
+    const filterParams = {
       ...(filter.search && { search: filter.search }),
       ...(filter.customer_id && { customer_id: filter.customer_id }),
       ...(filter.part_status && { part_status: filter.part_status }),
       ...(filter.material && { material: filter.material }),
     }
-    const data = await get('/parts', params)
-    parts.value = Array.isArray(data) ? data : (data.items || [])
-    page.total = data.total || parts.value.length
+    const params = {
+      skip: (page.current - 1) * page.size,
+      limit: page.size,
+      ...filterParams,
+    }
+    const data = await get('/parts/grouped', params)
+    parts.value = (data.items || []).map(toDisplayRow)
+    page.total = data.total || 0
   } catch (e) {
     ElMessage.error(e.message || '获取失败')
   } finally {
@@ -200,7 +321,7 @@ const fetchParts = async () => {
 
 const fetchCustomers = async () => {
   try {
-    customers.value = await get('/customers')
+    customers.value = await get('/customers', { limit: 200, has_parts: true })
   } catch { /* silent */ }
 }
 
@@ -289,4 +410,5 @@ onMounted(() => { fetchParts(); fetchCustomers() })
 .spec-text { color: #909399; font-size: 13px; }
 .text-muted { color: #c0c4cc; }
 .twp-tag { margin-right: 8px; }
+:deep(.el-dropdown + .el-dropdown) { margin-left: 10px; }
 </style>

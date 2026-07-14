@@ -5,12 +5,20 @@ from typing import Optional
 from pydantic import BaseModel, ConfigDict
 
 
+class PartAlias(BaseModel):
+    """Single part alias (customer part number and name)."""
+    customer_part_no: str
+    customer_part_name: Optional[str] = None
+    revision: Optional[str] = None
+
+
 class CustomerPartPriceInfo(BaseModel):
     """Customer part with price information."""
     part_id: int
     internal_name: Optional[str] = None
     customer_part_no: str
     customer_part_name: Optional[str] = None
+    aliases: list[PartAlias] = []
     material_name: Optional[str] = None
     has_price_account: bool
     material_unit_price: Optional[float] = None
