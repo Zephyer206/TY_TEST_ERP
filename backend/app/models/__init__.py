@@ -45,6 +45,7 @@ from .quality import (
 )
 from .sampling import SamplingTask, SamplingTaskState
 from .tooling import Tooling, ToolingPart, ToolingMaintenanceLog, ToolingState
+from .tooling_shared_relation import ToolingSharedRelation
 from .tooling_step import ToolingStep
 from .tooling_customer_link import ToolingCustomerLink
 from .excel_import import ImportBatch, ExcelImportRow
@@ -138,6 +139,7 @@ __all__ = [
     "ToolingMaintenanceLog",
     "ToolingPart",
     "ToolingState",
+    "ToolingSharedRelation",
     "ToolingStep",
     "TreatmentDict",
     "User",

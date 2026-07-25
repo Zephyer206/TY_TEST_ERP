@@ -1,6 +1,43 @@
 <template>
   <el-dialog v-model="visible" title="零件详情" width="900px" :close-on-click-modal="false">
     <div v-if="detail" class="detail-container">
+      <!-- 零件实物图与图纸 -->
+      <el-card class="section-card media-card" shadow="never">
+        <template #header><strong>实物图与图纸</strong></template>
+        <div class="media-content">
+          <div class="part-image-panel">
+            <div class="media-label">实物图</div>
+            <el-image
+              v-if="detail.drawing_url"
+              class="part-image"
+              :src="detail.drawing_url"
+              :preview-src-list="[detail.drawing_url]"
+              fit="contain"
+              preview-teleported
+            >
+              <template #error>
+                <div class="media-placeholder">图片加载失败</div>
+              </template>
+            </el-image>
+            <div v-else class="media-placeholder">暂无实物图</div>
+          </div>
+
+          <div class="drawing-panel">
+            <div class="media-label">图纸</div>
+            <el-link
+              v-if="detail.drawing_url"
+              :href="detail.drawing_url"
+              target="_blank"
+              rel="noopener noreferrer"
+              type="primary"
+            >
+              打开图纸
+            </el-link>
+            <span v-else class="text-muted">暂无图纸链接</span>
+          </div>
+        </div>
+      </el-card>
+
       <!-- 基本信息 -->
       <el-card class="section-card" shadow="never">
         <template #header><strong>基本信息</strong></template>
@@ -13,7 +50,7 @@
           </el-descriptions-item>
           <el-descriptions-item label="厚度(T)">{{ formatDimension(detail.thickness) }}</el-descriptions-item>
           <el-descriptions-item label="宽度(W)">{{ formatDimension(detail.width) }}</el-descriptions-item>
-          <el-descriptions-item label="节距(P)">{{ formatDimension(detail.pitch) }}</el-descriptions-item>
+          <el-descriptions-item label="步距(P)">{{ formatDimension(detail.pitch) }}</el-descriptions-item>
           <el-descriptions-item label="位置">{{ detail.part_position || '-' }}</el-descriptions-item>
           <el-descriptions-item label="毛重">{{ detail.gross_weight ? detail.gross_weight + 'g' : '-' }}</el-descriptions-item>
           <el-descriptions-item label="净重">{{ detail.net_weight ? detail.net_weight + 'g' : '-' }}</el-descriptions-item>
@@ -25,11 +62,31 @@
         <template #header><strong>关联客户 ({{ detail.customer_aliases?.length || 0 }})</strong></template>
         <el-table :data="detail.customer_aliases" stripe max-height="300" v-if="detail.customer_aliases?.length">
           <el-table-column prop="customer_name" label="客户名称" width="160" />
-          <el-table-column prop="customer_code" label="客户代号" width="100" />
-          <el-table-column prop="customer_part_no" label="客户件号" width="140" />
-          <el-table-column prop="customer_part_name" label="客户件名" min-width="140" />
-          <el-table-column prop="vehicle_model" label="车型" width="100" />
-          <el-table-column prop="revision" label="版本" width="80" />
+          <el-table-column prop="customer_code" label="客户代号" width="100">
+            <template #default="{ row }">
+              {{ row.customer_code || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="customer_part_no" label="客户件号" width="140">
+            <template #default="{ row }">
+              {{ row.customer_part_no || '' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="customer_part_name" label="客户件名" min-width="140">
+            <template #default="{ row }">
+              {{ row.customer_part_name || '' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="vehicle_model" label="车型" width="100">
+            <template #default="{ row }">
+              {{ row.vehicle_model || '-' }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="revision" label="版本" width="80">
+            <template #default="{ row }">
+              {{ row.revision || '-' }}
+            </template>
+          </el-table-column>
           <el-table-column prop="is_active" label="有效" width="60" align="center">
             <template #default="{ row }">
               <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
@@ -53,6 +110,7 @@
                   <span>{{ t.tooling_name || '未命名' }}</span>
                   <el-tag v-if="t.is_continuous" type="success" size="small" style="margin-left: 8px">连续模</el-tag>
                   <el-tag v-else type="warning" size="small" style="margin-left: 8px">{{ t.mold_type }}</el-tag>
+                  <el-tag v-if="t.is_primary" type="danger" size="small" style="margin-left: 8px">主模</el-tag>
                 </div>
               </template>
 
@@ -92,6 +150,26 @@
           </el-collapse>
         </div>
         <el-empty v-else description="暂无关联模具" :image-size="80" />
+      </el-card>
+
+      <el-card v-if="detail.shared_tooling_relations?.length" class="section-card" shadow="never">
+        <template #header><strong>共模关联 ({{ detail.shared_tooling_relations.length }})</strong></template>
+        <el-table :data="detail.shared_tooling_relations" stripe max-height="320">
+          <el-table-column label="模具号" min-width="170">
+            <template #default="{ row }">{{ row.tooling_number || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="共模模具号" min-width="170">
+            <template #default="{ row }">{{ row.related_tooling_number || '-' }}</template>
+          </el-table-column>
+          <el-table-column label="来源" min-width="220">
+            <template #default="{ row }">
+              {{ row.source_sheet || '-' }}<span v-if="row.source_row"> · 第{{ row.source_row }}行</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="备注" min-width="280">
+            <template #default="{ row }">{{ row.source_note || '-' }}</template>
+          </el-table-column>
+        </el-table>
       </el-card>
     </div>
 
@@ -139,4 +217,24 @@ watch(visible, (val) => { emit('update:modelValue', val) })
 .section-card { margin-bottom: 16px; }
 .section-card:last-child { margin-bottom: 0; }
 .tooling-title { display: flex; align-items: center; width: 100%; }
+.media-content { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
+.part-image-panel { min-width: 280px; }
+.drawing-panel { min-width: 180px; padding-top: 4px; }
+.media-label { margin-bottom: 10px; color: #606266; font-weight: 600; }
+.part-image,
+.media-placeholder {
+  width: 280px;
+  height: 210px;
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  background: #f8fafc;
+}
+.media-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #909399;
+  font-size: 13px;
+}
+.text-muted { color: #909399; }
 </style>

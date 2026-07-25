@@ -18,7 +18,7 @@ class PartCustomerAliasInfo(BaseModel):
     customer_id: int
     customer_name: str
     customer_code: Optional[str] = None
-    customer_part_no: str
+    customer_part_no: Optional[str] = None
     customer_part_name: Optional[str] = None
     vehicle_model: Optional[str] = None
     revision: str
@@ -41,11 +41,27 @@ class PartToolingInfo(BaseModel):
     tooling_customers: Optional[list[str]] = None
 
 
+class SharedToolingRelationInfo(BaseModel):
+    """Source-backed shared mold relation visible in part details."""
+
+    relation_id: int
+    tooling_id: int
+    tooling_number: Optional[str] = None
+    related_tooling_id: int
+    related_tooling_number: Optional[str] = None
+    relation_scope: str
+    source_sheet: Optional[str] = None
+    source_row: Optional[int] = None
+    source_note: Optional[str] = None
+    confidence: str
+
+
 class PartDetailResponse(BaseModel):
     """Part detail response with all relationships."""
     id: int
     internal_name: Optional[str] = None
     internal_part_no: Optional[str] = None
+    drawing_url: Optional[str] = None
     material_name: Optional[str] = None
     thickness: Optional[float] = None
     width: Optional[float] = None
@@ -56,5 +72,6 @@ class PartDetailResponse(BaseModel):
     part_status: str
     customer_aliases: list[PartCustomerAliasInfo]
     tooling: list[PartToolingInfo]
+    shared_tooling_relations: list[SharedToolingRelationInfo] = []
 
     model_config = ConfigDict(from_attributes=True)
