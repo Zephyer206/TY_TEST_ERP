@@ -1,0 +1,1721 @@
+# 无法判定模具来源块归类
+
+来源：`C:\Users\WIT_User\Desktop\Zephyr_test_Erp\scripts\analysis\shared_mold_blocks_audit.json`
+
+无法判定总数：**509 组**
+
+本报告只做证据归类，不替业务规则做最终判定。
+
+## MISSING_CAVITY_ONLY · 仅缺少穴数/一出证据（212 组）
+
+决策问题：材料和 TWP 一致且有来源块迹象，但没有明确一出/左右证据；是否允许仅凭左右零件语义或其他规则合并共享字段？
+
+- `浙江万宝机械有限公司(A)` 行 10-11：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 10：零件 MR7180-3507112；模具 TYA-Q0003-2；材料 冷轧板；TWP 0.8*295*320 (四方料)；穴数 -
+  - 行 11：零件 MR7180-3507212；模具 TYA-Q0004-2；材料 冷轧板；TWP 0.8*295*320 (四方料)；穴数 -
+- `浙江万宝机械有限公司(A)` 行 12-13：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 12：零件 MR7180-3507113；模具 TYA-Q0003-3；材料 冷轧板；TWP 1.5*206*203；穴数 -
+  - 行 13：零件 MR7180-3507213；模具 TYA-Q0004-3；材料 冷轧板；TWP 1.5*206*203；穴数 -
+- `浙江万宝机械有限公司(A)` 行 49-50：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 49：零件 CP08-3502101-D；模具 TYA-Q0028；材料 65Mn；TWP 1.0*78*35.5；穴数 -
+  - 行 50：零件 CP08-3502201-D；模具 TYA-Q0029；材料 65Mn；TWP 1.0*78*35.5；穴数 -
+- `浙江万宝机械有限公司(A)` 行 53-54：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 53：零件 HFC6500-3501102-6；模具 TYA-Q0032；材料 DC01；TWP 0.8*327；穴数 -
+  - 行 54：零件 HFC6500-3501202-6；模具 TYA-Q0033；材料 DC01；TWP 0.8*327；穴数 -
+- `浙江万宝机械有限公司(A)` 行 102-103：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 102：零件 Q21D-3501102；模具 TYA-Q0048；材料 DC01；TWP 0.8*224；穴数 -
+  - 行 103：零件 Q21D-3501202；模具 TYA-Q0049；材料 DC01；TWP 0.8*224；穴数 -
+- `浙江万宝机械有限公司(A)` 行 116-117：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 116：零件 SDF-3501103；模具 TYA-Q0055；材料 SPCC；TWP 0.8*350*247；穴数 -
+  - 行 117：零件 SDF-3501203；模具 TYA-Q0056；材料 SPCC；TWP 0.8*350*247；穴数 -
+- `浙江万宝机械有限公司(A)` 行 125-126：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 125：零件 SDF-3507153；模具 TYA-Q0064；材料 QSTE 420或SPFH590；TWP 4.0*125*37；穴数 -
+  - 行 126：零件 SDF-3507253；模具 TYA-Q0065；材料 QSTE 420或SPFH590；TWP 4.0*125*37；穴数 -
+- `浙江万宝机械有限公司(A)` 行 168-169：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 168：零件 LF720-3502129；模具 TYA-Q0097；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+  - 行 169：零件 LF720-3502229；模具 TYA-Q0098；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 170-171：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 170：零件 LF720-3502128；模具 TYA-Q0099；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+  - 行 171：零件 LF720-3502228；模具 TYA-Q0100；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 172-173：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 172：零件 CN754040-4；模具 TYA-Q0101；材料 65Mn；TWP 1.5*71*31；穴数 -
+  - 行 173：零件 CN754039-4；模具 TYA-Q0102；材料 65Mn；TWP 1.5*71*31；穴数 -
+- `浙江万宝机械有限公司(A)` 行 174-175：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 174：零件 CN754035-1；模具 TYA-Q0103；材料 65Mn；TWP 2.0*59*41；穴数 -
+  - 行 175：零件 CN754036-1；模具 TYA-Q0104；材料 65Mn；TWP 2.0*59*41；穴数 -
+- `浙江万宝机械有限公司(A)` 行 183-184：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 183：零件 NA01-3502103；模具 TYA-Q0109；材料 65Mn；TWP 0.8*；穴数 -
+  - 行 184：零件 NA01-3502203；模具 TYA-Q0110；材料 65Mn；TWP 0.8*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 192-193：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 192：零件 SC00-3502113；模具 TYA-Q0115；材料 SUS301-3/4H；TWP 0.4*63*63；穴数 -
+  - 行 193：零件 SC00-3502213；模具 TYA-Q0116；材料 SUS301-3/4H；TWP 0.4*63*63；穴数 -
+- `浙江万宝机械有限公司(A)` 行 194-195：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 194：零件 SC00-3502113；模具 TYA-Q0115；材料 SUS301-3/4H；TWP 0.4*72*63；穴数 -
+  - 行 195：零件 SC00-3502213；模具 TYA-Q0116；材料 SUS301-3/4H；TWP 0.4*72*63；穴数 -
+- `浙江万宝机械有限公司(A)` 行 196-197：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 196：零件 R020-3502114；模具 TYA-Q0117；材料 QSTE 420或SPFH590；TWP 5.0*130*49；穴数 -
+  - 行 197：零件 R020-3502214；模具 TYA-Q0118；材料 QSTE 420或SPFH590；TWP 5.0*130*49；穴数 -
+- `浙江万宝机械有限公司(A)` 行 220-221：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 220：零件 BX3-3507015；模具 TYA-Q0131；材料 无；TWP 无；穴数 -
+  - 行 221：零件 BX3-3507025；模具 TYA-Q0132；材料 无；TWP 无；穴数 -
+- `浙江万宝机械有限公司(A)` 行 222-223：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 222：零件 BX3-3507112；模具 TYA-Q0131-2；材料 冷轧板；TWP 0.8*295*320 (四方料)；穴数 -
+  - 行 223：零件 BX3-3507212；模具 TYA-Q0132-2；材料 冷轧板；TWP 0.8*295*320 (四方料)；穴数 -
+- `浙江万宝机械有限公司(A)` 行 244-245：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 244：零件 3502113-2-801；模具 TYA-Q0145-1；材料 QSTE 420或SPFH590；TWP 4*173*52；穴数 -
+  - 行 245：零件 3502214-2-801；模具 TYA-Q0145-2；材料 QSTE 420或SPFH590；TWP 4*173*52；穴数 -
+- `浙江万宝机械有限公司(A)` 行 252-253：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 252：零件 SE00-3502113；模具 TYA-Q0150-1；材料 QSTE 420或SPFH590；TWP 4*；穴数 -
+  - 行 253：零件 SE00-3502213；模具 TYA-Q0150-2；材料 QSTE 420或SPFH590；TWP 4*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 254-255：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 254：零件 SE00-3502112；模具 TYA-Q0151-1；材料 QSTE 420或SPFH590；TWP 4*102*36；穴数 -
+  - 行 255：零件 SE00-3502212；模具 TYA-Q0151-2；材料 QSTE 420或SPFH590；TWP 4*102*36；穴数 -
+- `浙江万宝机械有限公司(A)` 行 256-257：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 256：零件 HTA11-3502102；模具 TYA-Q0152-1；材料 65Mn；TWP 0.8*；穴数 -
+  - 行 257：零件 HTA11-3502202；模具 TYA-Q0152-2；材料 65Mn；TWP 0.8*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 261-262：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 261：零件 A13T-3502113；模具 TYA-Q0155-1；材料 QSTE 420或SPFH590；TWP 4.5*；穴数 -
+  - 行 262：零件 A13T-3502213；模具 TYA-Q0155-2；材料 QSTE 420或SPFH590；TWP 4.5*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 263-264：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 263：零件 A13T-3502115；模具 TYA-Q0156-1；材料 SAPH440；TWP 6*；穴数 -
+  - 行 264：零件 A13T-3502215；模具 TYA-Q0156-2；材料 SAPH440；TWP 6*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 280-281：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 280：零件 A01-3502113；模具 TYA-Q0168；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+  - 行 281：零件 A01-3502213；模具 TYA-Q0169；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 283-284：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 283：零件 A01-3502114；模具 TYA-Q0171；材料 QSTE 420或SPFH590；TWP 4.5*；穴数 -
+  - 行 284：零件 A01-3502214；模具 TYA-Q0172；材料 QSTE 420或SPFH590；TWP 4.5*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 295-296：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 295：零件 EK01-3507111；模具 TYA-Q0180-1；材料 SPCC冷轧板；TWP 3.0*350*350(片料)；穴数 -
+  - 行 296：零件 EK01-3507211；模具 TYA-Q0181-1；材料 SPCC冷轧板；TWP 3.0*350*350(片料)；穴数 -
+- `浙江万宝机械有限公司(A)` 行 308-309：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 308：零件 MA04-3501103；模具 TYA-Q0188；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+  - 行 309：零件 MA04-3501203；模具 TYA-Q0189；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+- `浙江万宝机械有限公司(A)` 行 311-312：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 311：零件 MA04-3501112；模具 TYA-Q0191；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 312：零件 MA04-3501212；模具 TYA-Q0192；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 313-314：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 313：零件 510101115；模具 TYA-Q0193；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 314：零件 510101215；模具 TYA-Q0194；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 315-316：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 315：零件 HZ-3501113；模具 TYA-Q0195；材料 QSTE420；TWP 4*153*52；穴数 -
+  - 行 316：零件 HZ-3501213；模具 TYA-Q0196；材料 QSTE420；TWP 4*153*52；穴数 -
+- `浙江万宝机械有限公司(A)` 行 318-319：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 318：零件 A-3001117；模具 TYA-Q0198；材料 DC01；TWP 0.8*327；穴数 -
+  - 行 319：零件 A-3001118；模具 TYA-Q0199；材料 DC01；TWP 0.8*327；穴数 -
+- `浙江万宝机械有限公司(A)` 行 335-336：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 335：零件 A36-3502134-110；模具 TYA-Q0214；材料 QSTE420TM；TWP 4.0*75*30；穴数 -
+  - 行 336：零件 A36-3502234-110；模具 TYA-Q0215；材料 QSTE420TM；TWP 4.0*75*30；穴数 -
+- `浙江万宝机械有限公司(A)` 行 337-338：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 337：零件 A36-3502136-110；模具 TYA-Q0216；材料 QSTE420；TWP 4.5*120*47；穴数 -
+  - 行 338：零件 A36-3502236-110；模具 TYA-Q0217；材料 QSTE420；TWP 4.5*120*47；穴数 -
+- `浙江万宝机械有限公司(A)` 行 348-349：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 348：零件 V8-3502114-P；模具 TYA-Q0226-1；材料 SUS301-3/4H；TWP 0.4*31*61.5；穴数 -
+  - 行 349：零件 V8-3502214-P；模具 TYA-Q0226-2；材料 SUS301-3/4H；TWP 0.4*31*61.5；穴数 -
+- `浙江万宝机械有限公司(A)` 行 363-364：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 363：零件 B21-3501110-5；模具 TYA-Q0238-1；材料 SUS301-3/4H；TWP 0.4*；穴数 -
+  - 行 364：零件 B21-3501110-13；模具 TYA-Q0238-2；材料 SUS301-3/4H；TWP 0.4*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 365-366：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 365：零件 MB-3502114；模具 TYA-Q0239-1；材料 QSTE420TM；TWP 4.5*112*51.5；穴数 -
+  - 行 366：零件 MB-3502214；模具 TYA-Q0239-2；材料 QSTE420TM；TWP 4.5*112*51.5；穴数 -
+- `浙江万宝机械有限公司(A)` 行 367-368：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 367：零件 MB-3502113；模具 TYA-Q0240-1；材料 QSTE420TM；TWP 4.0*75*30；穴数 -
+  - 行 368：零件 MB-3502213；模具 TYA-Q0240-2；材料 QSTE420TM；TWP 4.0*75*30；穴数 -
+- `浙江万宝机械有限公司(A)` 行 385-386：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 385：零件 RUNNA-3501113；模具 TYA-Q0252-1；材料 SUS301-3/4H；TWP 0.4*35*61.5；穴数 -
+  - 行 386：零件 RUNNA-3501213；模具 TYA-Q0252-2；材料 SUS301-3/4H；TWP 0.4*35*61.5；穴数 -
+- `浙江万宝机械有限公司(A)` 行 406-407：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 406：零件 A-3001117-1；模具 TYA-Q0267-1；材料 ST12；TWP 0.8*327；穴数 -
+  - 行 407：零件 A-3001118-1；模具 TYA-Q0267-2；材料 ST12；TWP 0.8*327；穴数 -
+- `浙江万宝机械有限公司(A)` 行 416-417：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 416：零件 B15-3507110-1-G；模具 TYA-Q0272-1；材料 铝合金 5754；TWP 1.0*394*367(片料)；穴数 -
+  - 行 417：零件 B15-3507210-1-G；模具 TYA-Q0273-1；材料 铝合金 5754；TWP 1.0*394*367(片料)；穴数 -
+- `浙江万宝机械有限公司(A)` 行 421-422：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 421：零件 B15-3507110-5-G；模具 TYA-Q0272-5；材料 SPCC；TWP 2.2*；穴数 -
+  - 行 422：零件 B15-3507210-5-G；模具 TYA-Q0273-5；材料 SPCC；TWP 2.2*；穴数 -
+- `浙江万宝机械有限公司(A)` 行 429-430：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 429：零件 VIE-H12-3502-102；模具 TYA-Q0277-1；材料 65Mn；TWP 1.2*82*32；穴数 -
+  - 行 430：零件 VIE-H12-3502-202；模具 TYA-Q0277-2；材料 65Mn；TWP 1.2*82*32；穴数 -
+- `浙江万宝机械有限公司(A)` 行 431-432：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 431：零件 VIE-H12-3502-102；模具 TYA-Q0277-1；材料 65Mn；TWP 1.2*82*32；穴数 -
+  - 行 432：零件 VIE-H12-3502-202；模具 TYA-Q0277-2；材料 65Mn；TWP 1.2*82*32；穴数 -
+- `浙江万宝机械有限公司(A)` 行 462-463：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 462：零件 VIE-FX11-3501-1A5；模具 TYA-Q0297-1；材料 SUS301-CSP3/4H；TWP 0.5*150*94；穴数 -
+  - 行 463：零件 VIE-FX11-3501-2A5；模具 TYA-Q0297-2；材料 SUS301-CSP3/4H；TWP 0.5*150*94；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 22-23：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 22：零件 LZ86-0002(LH)；模具 TYE-Q0014；材料 热轧板；TWP 无；穴数 -
+  - 行 23：零件 LZ86-0102(RH)；模具 TYE-Q0015；材料 热轧板；TWP 无；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 43-44：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 43：零件 FB5403-0016；模具 TYE-Q0035；材料 SUS301-3/4H；TWP 1.0*70.0*16.0；穴数 -
+  - 行 44：零件 3V22-0016；模具 TYE-Q0036；材料 SUS301-3/4H；TWP 1.0*70.0*16.0；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 164-165：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 164：零件 LZ84-0008（LH）；模具 TYE-Q0141-1；材料 SPCC；TWP 1.0*315*279；穴数 -
+  - 行 165：零件 LZ84-0108（RH）；模具 TYE-Q0142-1；材料 SPCC；TWP 1.0*315*279；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 166-167：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 166：零件 LZ84-0008（LH）；模具 TYE-Q0141-1；材料 SPCC；TWP 1.2*385*319；穴数 -
+  - 行 167：零件 LZ84-0108（RH）；模具 TYE-Q0142-1；材料 SPCC；TWP 1.2*385*319；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 187-188：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 187：零件 FB5601-0027；模具 TYE-Q0155；材料 SUS301-CSP3/4H；TWP 0.5*37*69.5；穴数 -
+  - 行 188：零件 FB5601-0028；模具 TYE-Q0156；材料 SUS301-CSP3/4H；TWP 0.5*37*69.5；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 310-311：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 310：零件 RB3821-0063；模具 TYE-Q0238-1；材料 SPFH540；TWP 4.0*；穴数 -
+  - 行 311：零件 RB3821-0064；模具 TYE-Q0238-2；材料 SPFH540；TWP 4.0*；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 312-313：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 312：零件 RB4207-0027；模具 TYE-Q0239-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 313：零件 RB4207-0028；模具 TYE-Q0239-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `厦门亨东制动系统有限公司(E)` 行 327-328：厦门亨东制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 327：零件 RB3821-0065；模具 TYE-Q0250-1；材料 SAPH440；TWP 4.0*；穴数 -
+  - 行 328：零件 RB3821-0066；模具 TYE-Q0250-2；材料 SAPH440；TWP 4.0*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 41-42：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 41：零件 35D13165；模具 TYF-Q0026；材料 SUS301-3/4H；TWP 0.4*31*61.5；穴数 -
+  - 行 42：零件 35D13166；模具 TYF-Q0027；材料 SUS301-3/4H；TWP 0.4*31*61.5；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 53-54：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 53：零件 35D041052；模具 TYF-Q0036-1；材料 SUS301-3/4H；TWP 0.4*；穴数 -
+  - 行 54：零件 35D041053；模具 TYF-Q0036-2；材料 SUS301-3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 55-56：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 55：零件 35D041085；模具 TYF-Q0037-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 56：零件 35D041086；模具 TYF-Q0037-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 60-61：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 60：零件 35D13151（35032017；模具 TYF-Q0040-1；材料 Q345；TWP 8.0*176*168；穴数 -
+  - 行 61：零件 35D13151（35032018；模具 TYF-Q0040-2；材料 Q345；TWP 8.0*176*168；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 68-69：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 68：零件 35D041085-1；模具 TYF-Q0045-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 69：零件 35D041085-2；模具 TYF-Q0045-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 70-71：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 70：零件 35D041086-1；模具 TYF-Q0046-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 71：零件 35D041086-2；模具 TYF-Q0046-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 72-73：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 72：零件 LS00317（35D041348）；模具 TYF-Q0047-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 73：零件 LS00318（35D041349）；模具 TYF-Q0047-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 74-75：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 74：零件 LS00319（35D041350）；模具 TYF-Q0048-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 75：零件 LS00320（35D041351）；模具 TYF-Q0048-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 76-77：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 76：零件 35D041348；模具 TYF-Q0047-1；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+  - 行 77：零件 35D041349；模具 TYF-Q0047-2；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 78-79：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 78：零件 35D041350；模具 TYF-Q0048-1；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+  - 行 79：零件 35D041351；模具 TYF-Q0048-2；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 80-81：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 80：零件 35D041348；模具 TYF-Q0047-1；材料 SUS301-CSP3/4H；TWP 0.4*130*62；穴数 -
+  - 行 81：零件 35D041349；模具 TYF-Q0047-2；材料 SUS301-CSP3/4H；TWP 0.4*130*62；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 82-83：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 82：零件 35D041350；模具 TYF-Q0048-1；材料 SUS301-CSP3/4H；TWP 0.4*130*62；穴数 -
+  - 行 83：零件 35D041351；模具 TYF-Q0048-2；材料 SUS301-CSP3/4H；TWP 0.4*130*62；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 84-85：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 84：零件 LS00321；模具 TYF-Q0049-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 85：零件 LS00322；模具 TYF-Q0049-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 86-87：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 86：零件 LS00323；模具 TYF-Q0050-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 87：零件 LS00324；模具 TYF-Q0050-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 88-89：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 88：零件 新35D041085；模具 TYF-Q0051-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 89：零件 新35D041086；模具 TYF-Q0051-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 90-91：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 90：零件 35D041308；模具 TYF-Q0052-1；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+  - 行 91：零件 35D041309；模具 TYF-Q0052-2；材料 SUS301-CSP3/4H；TWP 0.4*；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 92-93：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 92：零件 新35D041085；模具 TYF-Q0051-1；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+  - 行 93：零件 新35D041086；模具 TYF-Q0051-2；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 94-95：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 94：零件 35D041308；模具 TYF-Q0052-1；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+  - 行 95：零件 35D041309；模具 TYF-Q0052-2；材料 SUS301-CSP3/4H；TWP 0.4*187*62；穴数 -
+- `广东中博汽车零部件有限公司(F)` 行 96-97：广东中博汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 96：零件 35D041428；模具 TYF-Q0053-1；材料 SUS301-CSP3/4H；TWP 0.5*；穴数 -
+  - 行 97：零件 35D041429；模具 TYF-Q0053-2；材料 SUS301-CSP3/4H；TWP 0.5*；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 16-17：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 16：零件 800110Q00003；模具 TYG-Q0003-1；材料 SPCC冷轧板；TWP 3.0*300*300(片料)；穴数 -
+  - 行 17：零件 800110Q01003；模具 TYG-Q0004-1；材料 SPCC冷轧板；TWP 3.0*300*300(片料)；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 35-38：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 35：零件 401020Q00003；模具 TYG-Q0027-1；材料 SPCC；TWP 0.8*293*208；穴数 -
+  - 行 36：零件 401020Q02003；模具 TYG-Q0028-1；材料 SPCC；TWP 0.8*293*208；穴数 -
+  - 行 37：零件 401020Q01003；模具 TYG-Q0029-1；材料 SPCC；TWP 0.8*293*208；穴数 -
+  - 行 38：零件 401020Q03003；模具 TYG-Q0030-1；材料 SPCC；TWP 0.8*293*208；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 48-49：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 48：零件 800110Q00006；模具 TYG-Q0038-1；材料 DCO1-T=3.0 GB/T5213-2008；TWP 3.0*300*310；穴数 -
+  - 行 49：零件 800110Q01006；模具 TYG-Q0039-1；材料 DCO1-T=3.0 GB/T5213-2008；TWP 3.0*300*310；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 56-57：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 56：零件 401020Q00004；模具 TYG-Q0040；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+  - 行 57：零件 401020Q01004；模具 TYG-Q0041；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 58-59：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 58：零件 405020Q00004；模具 TYG-Q0042；材料 SPCC；TWP 0.6*250*228；穴数 -
+  - 行 59：零件 405020Q01004；模具 TYG-Q0043；材料 SPCC；TWP 0.6*250*228；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 60-61：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 60：零件 401020Q00007；模具 TYG-Q0044；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+  - 行 61：零件 401020Q01007；模具 TYG-Q0045；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 62-63：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 62：零件 405020Q00007；模具 TYG-Q0046；材料 SPCC；TWP 0.6*250*228；穴数 -
+  - 行 63：零件 405020Q01007；模具 TYG-Q0047；材料 SPCC；TWP 0.6*250*228；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 246-247：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 246：零件 207030-M00064；模具 TYG-M0116；材料 SUS301-3/4H；TWP 0.3*47*55；穴数 -
+  - 行 247：零件 207040-M00064；模具 TYG-M0117；材料 SUS301-3/4H；TWP 0.3*47*55；穴数 -
+- `60T 连续模` 行 76-77：丰铃公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 76：零件 FLABS-03-02；模具 TYQ-M0005；材料 SUS201-3/4H；TWP 0.5*65*22.5；穴数 -
+  - 行 77：零件 FLABS-03-01；模具 TYQ-M0006；材料 SUS201-3/4H；TWP 0.5*65*22.5；穴数 -
+- `60T 连续模` 行 81-82：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 81：零件 TSZF9.2-01；模具 TYS-M0001；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 -
+  - 行 82：零件 TSZF9.2-02；模具 TYS-M0002；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 -
+- `辉门摩擦产品有限公司(I)` 行 8-9：辉门摩擦产品有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 8：零件 GXCHW132731(LH)；模具 TYI-Q0002；材料 Q235B；TWP 4.0*165；穴数 -
+  - 行 9：零件 GXCHW132732(RH)；模具 TYI-Q0003；材料 Q235B；TWP 4.0*165；穴数 -
+- `辉门摩擦产品有限公司(I)` 行 59-60：辉门摩擦产品有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 59：零件 GXCHW139198(LH)；模具 TYI-Q0043；材料 Q235B；TWP 4.5*；穴数 -
+  - 行 60：零件 GXCHW139199(RH)；模具 TYI-Q0044；材料 Q235B；TWP 4.5*；穴数 -
+- `辉门摩擦产品有限公司(I)` 行 154-155：辉门摩擦产品有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 154：零件 GXCHW138089（RH)；模具 TYI-Q0131-1；材料 Q235B；TWP 5*167*36；穴数 -
+  - 行 155：零件 GXCHW138090（LH)；模具 TYI-Q0131-2；材料 Q235B；TWP 5*167*36；穴数 -
+- `汽车部件苏州有限公司(东机工)(K)` 行 101-102：日立安斯泰莫底盘系统（苏州）有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 101：零件 8A12401；模具 TYK-Q0058；材料 SPHC；TWP 3.2*124*64；穴数 -
+  - 行 102：零件 7A18152；模具 TYK-Q0059；材料 SPHC；TWP 3.2*124*64；穴数 -
+- `丰铃公司Q` 行 8-9：丰铃公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 8：零件 FLABS-03-02；模具 TYQ-M0005；材料 SUS201-3/4H；TWP 0.5*65*22.5；穴数 -
+  - 行 9：零件 FLABS-03-01；模具 TYQ-M0006；材料 SUS201-3/4H；TWP 0.5*65*22.5；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 4-5：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 4：零件 TSZF9.2-01；模具 TYS-M0001；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 -
+  - 行 5：零件 TSZF9.2-02；模具 TYS-M0002；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 35-36：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 35：零件 350725110 /350725112；模具 TYS-Q0012；材料 SPCC；TWP 0.6*250*228；穴数 -
+  - 行 36：零件 350725210 /350725212；模具 TYS-Q0013；材料 SPCC；TWP 0.6*250*228；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 37-38：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 37：零件 350125110 /350125112；模具 TYS-Q0014；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+  - 行 38：零件 350125210 /350125212；模具 TYS-Q0015；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 39-40：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 39：零件 350102300  /350102406；模具 TYS-Q0016；材料 SUS301-3/4H；TWP 0.4*72*40；穴数 -
+  - 行 40：零件 350102400 /350102406；模具 TYS-Q0017；材料 SUS301-3/4H；TWP 0.4*72*40；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 54-55：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 54：零件 350133300 /350133306；模具 TYS-Q0031；材料 SUS301-3/4H；TWP 0.4*；穴数 -
+  - 行 55：零件 350133400 /350133306；模具 TYS-Q0032；材料 SUS301-3/4H；TWP 0.4*；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 56-57：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 56：零件 350734300 /350734393；模具 TYS-Q0033；材料 SAPH440；TWP 4.5*；穴数 -
+  - 行 57：零件 350734400 /350734493；模具 TYS-Q0034；材料 SAPH440；TWP 4.5*；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 58-59：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 58：零件 350734300 /350734397；模具 TYS-Q0035；材料 SAPH440；TWP 4.0*；穴数 -
+  - 行 59：零件 350734400 /350734497；模具 TYS-Q0036；材料 SAPH440；TWP 4.0*；穴数 -
+- ` 浙江精科汽车零件部件有限公司(S)` 行 68-69：浙江精科汽车零件部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 68：零件 350730300A /350730393A；模具 TYS-Q0045；材料 SAPH440；TWP 4.0*148*50；穴数 -
+  - 行 69：零件 350730400A /350730493A；模具 TYS-Q0046；材料 SAPH440；TWP 4.0*148*50；穴数 -
+- `台湾贺安贸易有限公司(V)` 行 24-25：台湾贺安贸易有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 24：零件 LA186416-A；模具 TYV-Q0019-1；材料 SAEV1010-1018(SPCC)；TWP 3.17(3.2)*60*74；穴数 -
+  - 行 25：零件 LA186417-A；模具 TYV-Q0020-1；材料 SAEV1010-1018(SPCC)；TWP 3.17(3.2)*60*74；穴数 -
+- `湖南运达机械制造有限公司(W)` 行 28-29：湖南运达机械制造有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 28：零件 3501·231P-219.2；模具 TYW-Q0009；材料 1；TWP SUS301-3/4H；穴数 -
+  - 行 29：零件 3501·231P-219.1；模具 TYW-Q0010；材料 1；TWP SUS301-3/4H；穴数 -
+- `上海万向钱潮A-A` 行 4-5：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 4：零件 60003391；模具 TYAA-Q0001-1；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 5：零件 60003392；模具 TYAA-Q0001-2；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 18-19：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 18：零件 60003785；模具 TYAA-Q0014；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 19：零件 60003786；模具 TYAA-Q0015；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 29-30：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 29：零件 60004529；模具 TYAA-Q0021；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+  - 行 30：零件 60004530；模具 TYAA-Q0022；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+- `上海万向钱潮A-A` 行 31-32：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 31：零件 60004531；模具 TYAA-Q0023；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+  - 行 32：零件 60004532；模具 TYAA-Q0024；材料 QSTE 420或SPFH590；TWP 4.0*；穴数 -
+- `上海万向钱潮A-A` 行 40-41：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 40：零件 60004309X；模具 TYAA-Q0032；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 41：零件 60004310X；模具 TYAA-Q0033；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 53-54：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 53：零件 60006825；模具 TYAA-Q0039；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*56*40；穴数 -
+  - 行 54：零件 60006826；模具 TYAA-Q0040；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*56*40；穴数 -
+- `上海万向钱潮A-A` 行 57-58：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 57：零件 60007309；模具 TYAA-Q0041；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*56*49；穴数 -
+  - 行 58：零件 60007310；模具 TYAA-Q0042；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*56*49；穴数 -
+- `上海万向钱潮A-A` 行 61-62：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 61：零件 60007534；模具 TYAA-Q0043；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.5*；穴数 -
+  - 行 62：零件 60007603；模具 TYAA-Q0044；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.5*；穴数 -
+- `上海万向钱潮A-A` 行 66-67：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 66：零件 新60007851/60006089X；模具 TYAA-Q0046；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 67：零件 新60007852/60006090X；模具 TYAA-Q0047；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 77-78：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 77：零件 60008583；模具 TYAA-Q0053；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 78：零件 60008584；模具 TYAA-Q0054；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 79-80：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 79：零件 MT40471101；模具 TYAA-Q0055；材料 QSTE 420；TWP 4.0*115*39；穴数 -
+  - 行 80：零件 MT40471201；模具 TYAA-Q0056；材料 QSTE 420；TWP 4.0*115*39；穴数 -
+- `上海万向钱潮A-A` 行 81-82：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 81：零件 MT40471501；模具 TYAA-Q0057；材料 QSTE 420；TWP 4.5*117*45；穴数 -
+  - 行 82：零件 MT40471601；模具 TYAA-Q0058；材料 QSTE 420；TWP 4.5*117*45；穴数 -
+- `上海万向钱潮A-A` 行 87-88：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 87：零件 60008581(tuhaohuandiao)；模具 TYAA-Q0063；材料 SUS301-CSP 3/4H（JIS G4305）(进口料)；TWP 0.4*50*47；穴数 -
+  - 行 88：零件 60008582(tuhaohuandiao)；模具 TYAA-Q0064；材料 SUS301-CSP 3/4H（JIS G4305）(进口料)；TWP 0.4*50*47；穴数 -
+- `上海万向钱潮A-A` 行 91-92：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 91：零件 60009753；模具 TYAA-Q0065；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 92：零件 60009754；模具 TYAA-Q0066；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 115-116：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 115：零件 60013587；模具 TYAA-Q0084-1；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 116：零件 60013588；模具 TYAA-Q0084-2；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 117-118：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 117：零件 60013587；模具 TYAA-Q0084-1；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*94*77；穴数 -
+  - 行 118：零件 60013588；模具 TYAA-Q0084-2；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*94*77；穴数 -
+- `上海万向钱潮A-A` 行 125-126：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 125：零件 60016625；模具 TYAA-Q0087-1；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 126：零件 60016626；模具 TYAA-Q0087-2；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 133-134：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 133：零件 60019489；模具 TYAA-Q0092-1；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 134：零件 60019490；模具 TYAA-Q0092-2；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `上海万向钱潮A-A` 行 135-136：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 135：零件 60019491；模具 TYAA-Q0093-1；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+  - 行 136：零件 60019492；模具 TYAA-Q0093-2；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*；穴数 -
+- `A-D武汉元丰` 行 24-25：武汉元丰；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 24：零件 YF3502FC-114；模具 TYAD-Q0019-1；材料 SUS301-3/4H；TWP 0.5*；穴数 -
+  - 行 25：零件 YF3502FC-214；模具 TYAD-Q0019-2；材料 SUS301-3/4H；TWP 0.5*；穴数 -
+- `ZF` 行 17-18：ZF；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 17：零件 A001L134；模具 TYAI-Q0012；材料 DC04；TWP 0.8*50*42；穴数 -
+  - 行 18：零件 A001L137；模具 TYAI-Q0013；材料 DC04；TWP 0.8*50*42；穴数 -
+- `ZF` 行 150-151：ZF；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 150：零件 A021H962；模具 TYAI-Q0107-1；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*；穴数 -
+  - 行 151：零件 A021H963；模具 TYAI-Q0107-2；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*；穴数 -
+- `ZF` 行 191-192：ZF；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 191：零件 004953008930；模具 TYAI-Q0137-1；材料 SPHC Q/BQB 302；TWP 2.0*；穴数 -
+  - 行 192：零件 004953008931；模具 TYAI-Q0137-2；材料 SPHC Q/BQB 302；TWP 2.0*；穴数 -
+- `ZF` 行 200-201：ZF；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 200：零件 004953008949；模具 TYAI-Q0143-1；材料 SPHC Q/BQB 302；TWP 2.0*82*31；穴数 -
+  - 行 201：零件 004953008950；模具 TYAI-Q0143-2；材料 SPHC Q/BQB 302；TWP 2.0*82*31；穴数 -
+- `A-J湖北悦达科技有限公司` 行 7-8：湖北悦达科技有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 7：零件 Q01080LC；模具 TYAJ-Q0004；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+  - 行 8：零件 Q01080RC；模具 TYAJ-Q0005；材料 SPCC；TWP 0.7/0.8*250*200；穴数 -
+- `A-J湖北悦达科技有限公司` 行 9-10：湖北悦达科技有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 9：零件 Q01081LC；模具 TYAJ-Q0006；材料 SPCC；TWP 0.6*250*228；穴数 -
+  - 行 10：零件 Q01081RC；模具 TYAJ-Q0007；材料 SPCC；TWP 0.6*250*228；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 4-5：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 4：零件 L3800 100-P02 101E；模具 TYAL-Q0001；材料 QStE 460TM；TWP 4.0*；穴数 -
+  - 行 5：零件 L3800 100-P02 102E；模具 TYAL-Q0002；材料 QStE 460TM；TWP 4.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 6-7：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 6：零件 L3800 100-P02 103E；模具 TYAL-Q0003；材料 QStE 460TM；TWP 4.0*；穴数 -
+  - 行 7：零件 L3800 100-P02 104E；模具 TYAL-Q0004；材料 QStE 460TM；TWP 4.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 10-11：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 10：零件 3800 090-P02 101C；模具 TYAL-Q0007；材料 QStE 460TM；TWP 5.0*152*50；穴数 -
+  - 行 11：零件 3800 090-P02 102C；模具 TYAL-Q0008；材料 QStE 460TM；TWP 5.0*152*50；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 12-13：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 12：零件 3800 090-P02 103C；模具 TYAL-Q0009；材料 QStE 460TM；TWP 4.0*105*36；穴数 -
+  - 行 13：零件 3800 090-P02 104C；模具 TYAL-Q0010；材料 QStE 460TM；TWP 4.0*105*36；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 14-15：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 14：零件 3800 090-P02 103CA；模具 TYAL-Q0011；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 15：零件 3800 090-P02 104CA；模具 TYAL-Q0012；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 18-19：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 18：零件 4200 120-P02 101A；模具 TYAL-Q0015；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 19：零件 4200 120-P02 102A；模具 TYAL-Q0016；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 20-21：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 20：零件 4200 120-P02 103A；模具 TYAL-Q0017；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 21：零件 4200 120-P02 104A；模具 TYAL-Q0018；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 28-29：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 28：零件 6000 240-P02 103；模具 TYAL-Q0025；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 29：零件 6000 240-P02 104；模具 TYAL-Q0026；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 32-33：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 32：零件 6000 240-P02 043；模具 TYAL-Q0029；材料 SUS301-3/4H；TWP 0.7*；穴数 -
+  - 行 33：零件 6000 240-P02 044；模具 TYAL-Q0030；材料 SUS301-3/4H；TWP 0.7*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 36-37：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 36：零件 5200 160-P02 043；模具 TYAL-Q0033；材料 SUS301-3/4H；TWP 0.7*；穴数 -
+  - 行 37：零件 5200 160-P02 044；模具 TYAL-Q0034；材料 SUS301-3/4H；TWP 0.7*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 38-39：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 38：零件 6000 240-P02 101；模具 TYAL-Q0035；材料 QStE 460TM；TWP 4.0*；穴数 -
+  - 行 39：零件 6000 240-P02 102；模具 TYAL-Q0036；材料 QStE 460TM；TWP 4.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 54-55：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 54：零件 L6000 240-P02 103；模具 TYAL-Q0049；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 55：零件 L6000 240-P02 104；模具 TYAL-Q0050；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 58-59：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 58：零件 10001131；模具 TYAL-Q0053；材料 QStE 460TM；TWP 4.0*135*42；穴数 -
+  - 行 59：零件 10001366；模具 TYAL-Q0054；材料 QStE 460TM；TWP 4.0*135*42；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 60-61：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 60：零件 L3800 090-P02 101C；模具 TYAL-Q0055；材料 QStE 460TM；TWP 5.0*152*50；穴数 -
+  - 行 61：零件 L3800 090-P02 102C；模具 TYAL-Q0056；材料 QStE 460TM；TWP 5.0*152*50；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 62-63：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 62：零件 5400 190-P02 103；模具 TYAL-Q0057-1；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 63：零件 5400 190-P02 104；模具 TYAL-Q0057-2；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 64-65：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 64：零件 5400 190-P02 101；模具 TYAL-Q0058-1；材料 QStE 460TM；TWP 4.0*；穴数 -
+  - 行 65：零件 5400 190-P02 102；模具 TYAL-Q0058-2；材料 QStE 460TM；TWP 4.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 66-67：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 66：零件 L3800 090-P02 101A；模具 TYAL-Q0059-1；材料 QStE 460TM；TWP 4.0*；穴数 -
+  - 行 67：零件 L3800 090-P02 102A；模具 TYAL-Q0059-2；材料 QStE 460TM；TWP 4.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 68-69：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 68：零件 LL10001130；模具 TYAL-Q0060-1；材料 QStE 460TM；TWP 4.0*；穴数 -
+  - 行 69：零件 LL10001365；模具 TYAL-Q0060-2；材料 QStE 460TM；TWP 4.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 71-72：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 71：零件 L4300 120-P02 101A；模具 TYAL-Q0062-1；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 72：零件 L4300 120-P02 102A；模具 TYAL-Q0062-2；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 73-74：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 73：零件 4300 120-P02 101A；模具 TYAL-Q0062-1；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 74：零件 4300 120-P02 102A；模具 TYAL-Q0062-2；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 75-76：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 75：零件 4300 120-P02 103A；模具 TYAL-Q0063-1；材料 QStE 460TM；TWP 5.0*；穴数 -
+  - 行 76：零件 4300 120-P02 104A；模具 TYAL-Q0063-2；材料 QStE 460TM；TWP 5.0*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 81-82：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 81：零件 10008943；模具 TYAL-Q0066-1；材料 SUS201；TWP 0.4*142*50；穴数 -
+  - 行 82：零件 10008963；模具 TYAL-Q0066-2；材料 SUS201；TWP 0.4*142*50；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 83-84：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 83：零件 10008971；模具 TYAL-Q0067-1；材料 SUS201；TWP 0.4*98*42.5；穴数 -
+  - 行 84：零件 10008972；模具 TYAL-Q0067-2；材料 SUS201；TWP 0.4*98*42.5；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 140-141：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 140：零件 APG096-10A；模具 TYAL-Q0106-1；材料 SUS301-1/2H（实达）；TWP 0.4*42*60；穴数 -
+  - 行 141：零件 APG096-10B；模具 TYAL-Q0106-2；材料 SUS301-1/2H（实达）；TWP 0.4*42*60；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 154-155：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 154：零件 APG096-12A；模具 TYAL-Q0106-3；材料 SUS301-1/2H；TWP 0.4*；穴数 -
+  - 行 155：零件 APG096-12B；模具 TYAL-Q0106-4；材料 SUS301-1/2H；TWP 0.4*；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 178-179：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 178：零件 APG098-A；模具 TYAL-Q0114-1；材料 SUS301CSP-3/4H；TWP 0.4*38*70；穴数 -
+  - 行 179：零件 APG098-B；模具 TYAL-Q0114-2；材料 SUS301CSP-3/4H；TWP 0.4*38*70；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 212-213：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 212：零件 10068527；模具 TYAL-Q0121-1；材料 12Cr17Ni7-3/4H；TWP 0.5*；穴数 -
+  - 行 213：零件 10068528；模具 TYAL-Q0121-2；材料 12Cr17Ni7-3/4H；TWP 0.5*；穴数 -
+- `A-N 京西重工` 行 9-10：京西重工；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 9：零件 18121748BA；模具 TYAN-Q0005-1；材料 QSTE420；TWP 4.0*；穴数 -
+  - 行 10：零件 18121749BA；模具 TYAN-Q0005-2；材料 QSTE420；TWP 4.0*；穴数 -
+- `A-N 京西重工` 行 11-12：京西重工；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 11：零件 18121750BA；模具 TYAN-Q0006-1；材料 QSTE420；TWP 4.0*；穴数 -
+  - 行 12：零件 18121751BA；模具 TYAN-Q0006-2；材料 QSTE420；TWP 4.0*；穴数 -
+- `A-N 京西重工` 行 16-17：京西重工；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 16：零件 18123255AA；模具 TYAN-Q0009-1；材料 QSTE420；TWP 4.0*；穴数 -
+  - 行 17：零件 18123256AA；模具 TYAN-Q0009-2；材料 QSTE420；TWP 4.0*；穴数 -
+- `A-N 京西重工` 行 18-19：京西重工；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 18：零件 18123257AA；模具 TYAN-Q0010-1；材料 QSTE420；TWP 4.0*；穴数 -
+  - 行 19：零件 18123258AA；模具 TYAN-Q0010-2；材料 QSTE420；TWP 4.0*；穴数 -
+- `A-N 京西重工` 行 40-41：京西重工；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 40：零件 18125067AA；模具 TYAN-Q0024-1；材料 SAPH440；TWP 2.0*；穴数 -
+  - 行 41：零件 18125068AA；模具 TYAN-Q0024-2；材料 SAPH440；TWP 2.0*；穴数 -
+- `A-O 南方天合` 行 15-16：辰致（重庆）制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 15：零件 15301427；模具 TYAO-Q0008-1；材料 SUS301-CSP3/4H；TWP 0.5*；穴数 -
+  - 行 16：零件 15301428；模具 TYAO-Q0008-2；材料 SUS301-CSP3/4H；TWP 0.5*；穴数 -
+- `A-P IBI` 行 251-252：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 251：零件 5044IP；模具 TYAP-Q0084-1；材料 65Mn；TWP 2.3*145*51；穴数 -
+  - 行 252：零件 5044；模具 TYAP-Q0084-2；材料 65Mn；TWP 2.3*145*51；穴数 -
+- `A-P IBI` 行 281-282：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 281：零件 22245；模具 TYAP-Q0094；材料 SPCC；TWP 1.6*；穴数 -
+  - 行 282：零件 22249；模具 TYAP-Q0095；材料 SPCC；TWP 1.6*；穴数 -
+- `A-P IBI` 行 283-284：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 283：零件 22245；模具 TYAP-Q0094；材料 SPCC；TWP 1.6*72*23；穴数 -
+  - 行 284：零件 22249；模具 TYAP-Q0095；材料 SPCC；TWP 1.6*72*23；穴数 -
+- `A-P IBI` 行 342-343：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 342：零件 23495；模具 TYAP-Q0128-1；材料 SPCC；TWP 1.5*66*30；穴数 -
+  - 行 343：零件 23492；模具 TYAP-Q0128-2；材料 SPCC；TWP 1.5*66*30；穴数 -
+- `A-P IBI` 行 439-440：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 439：零件 22978；模具 TYAP-Q0166-1；材料 SUS304 3/4H；TWP 0.4*62*59.5；穴数 -
+  - 行 440：零件 22978W；模具 TYAP-Q0166-2；材料 SUS304 3/4H；TWP 0.4*62*59.5；穴数 -
+- `A-P IBI` 行 441-442：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 441：零件 22978；模具 TYAP-Q0166-1；材料 SUS304 3/4H；TWP 0.4*66*58；穴数 -
+  - 行 442：零件 22978W；模具 TYAP-Q0166-2；材料 SUS304 3/4H；TWP 0.4*66*58；穴数 -
+- `A-P IBI` 行 475-476：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 475：零件 21764；模具 TYAP-Q0176-1；材料 SUS304 3/4H；TWP 0.5*82*40；穴数 -
+  - 行 476：零件 21764W；模具 TYAP-Q0176-2；材料 SUS304 3/4H；TWP 0.5*82*40；穴数 -
+- `A-P IBI` 行 503-504：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 503：零件 21765；模具 TYAP-Q0183-1；材料 SUS304 3/4H；TWP 0.5*68*41；穴数 -
+  - 行 504：零件 21765W；模具 TYAP-Q0183-2；材料 SUS304 3/4H；TWP 0.5*68*41；穴数 -
+- `A-P IBI` 行 505-506：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 505：零件 21766；模具 TYAP-Q0184-1；材料 SUS304 3/4H；TWP 0.5*68*41；穴数 -
+  - 行 506：零件 21766W；模具 TYAP-Q0184-2；材料 SUS304 3/4H；TWP 0.5*68*41；穴数 -
+- `A-P IBI` 行 546-547：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 546：零件 23055G；模具 TYAP-Q0196；材料 复合材料（REN50 54 11)；TWP 0.4*76*58；穴数 -
+  - 行 547：零件 23055V；模具 TYAP-Q0196-1；材料 复合材料（REN50 54 11)；TWP 0.4*76*58；穴数 -
+- `A-P IBI` 行 558-559：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 558：零件 23350G；模具 TYAP-Q0202-1；材料 复合材料（REN50 54 11)；TWP 0.4*86*165；穴数 -
+  - 行 559：零件 23350；模具 TYAP-Q0202-2；材料 复合材料（REN50 54 11)；TWP 0.4*86*165；穴数 -
+- `A-P IBI` 行 568-569：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 568：零件 23463；模具 TYAP-Q0204-1；材料 SUS304 3/4H；TWP 0.4*86*66.5；穴数 -
+  - 行 569：零件 23463W；模具 TYAP-Q0204-2；材料 SUS304 3/4H；TWP 0.4*86*66.5；穴数 -
+- `A-P IBI` 行 589-590：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 589：零件 24865；模具 TYAP-Q0210-1；材料 SUS304 3/4H；TWP 0.5*172*66；穴数 -
+  - 行 590：零件 24865W；模具 TYAP-Q0210-2；材料 SUS304 3/4H；TWP 0.5*172*66；穴数 -
+- `A-P IBI` 行 592-593：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 592：零件 21735；模具 TYAP-Q0212-1；材料 SUS304 3/4H；TWP 0.6*60*108.5；穴数 -
+  - 行 593：零件 21735W；模具 TYAP-Q0212-2；材料 SUS304 3/4H；TWP 0.6*60*108.5；穴数 -
+- `A-P IBI` 行 650-651：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 650：零件 23277；模具 TYAP-Q0242-1；材料 SUS304 3/4H；TWP 0.4*100*59；穴数 -
+  - 行 651：零件 23277W；模具 TYAP-Q0242-2；材料 SUS304 3/4H；TWP 0.4*100*59；穴数 -
+- `A-P IBI` 行 772-773：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 772：零件 20932；模具 TYAP-Q0295-1；材料 SPCC；TWP 1.7*68*98；穴数 -
+  - 行 773：零件 20933；模具 TYAP-Q0295-2；材料 SPCC；TWP 1.7*68*98；穴数 -
+- `A-P IBI` 行 805-806：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 805：零件 23908；模具 TYAP-Q0315-1；材料 SPCC；TWP 1.0*68*100；穴数 -
+  - 行 806：零件 23909；模具 TYAP-Q0315-2；材料 SPCC；TWP 1.0*68*100；穴数 -
+- `A-P IBI` 行 809-810：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 809：零件 23756；模具 TYAP-Q0317-1；材料 SUS304 3/4H；TWP 0.8*58*33；穴数 -
+  - 行 810：零件 23757；模具 TYAP-Q0317-2；材料 SUS304 3/4H；TWP 0.8*58*33；穴数 -
+- `A-P IBI` 行 816-817：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 816：零件 23568；模具 TYAP-Q0321-1；材料 SPCC；TWP 1.0*97*55；穴数 -
+  - 行 817：零件 23569；模具 TYAP-Q0321-2；材料 SPCC；TWP 1.0*97*55；穴数 -
+- `A-P IBI` 行 824-825：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 824：零件 20790；模具 TYAP-Q0324-1；材料 65Mn；TWP 1.0*77*45；穴数 -
+  - 行 825：零件 20791；模具 TYAP-Q0324-2；材料 65Mn；TWP 1.0*77*45；穴数 -
+- `A-P IBI` 行 881-882：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 881：零件 24754；模具 GBAP-Q0357-1；材料 SPCC；TWP 0.8*60*24；穴数 -
+  - 行 882：零件 24497；模具 GBAP-Q0357-2；材料 SPCC；TWP 0.8*60*24；穴数 -
+- `A-P IBI` 行 964-965：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 964：零件 24217；模具 GBAP-Q0426；材料 SUS304 3/4H；TWP 0.3*75*58；穴数 -
+  - 行 965：零件 24218；模具 GBAP-Q0427；材料 SUS304 3/4H；TWP 0.3*75*58；穴数 -
+- `A-P IBI` 行 1002-1003：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 1002：零件 23835；模具 GBAP-Q0458；材料 SUS304；TWP 0.4*70*67；穴数 -
+  - 行 1003：零件 23834；模具 GBAP-Q0459；材料 SUS304；TWP 0.4*70*67；穴数 -
+- `A-P IBI` 行 1082-1083：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 1082：零件 24000；模具 GBAP-Q0533；材料 SUS304 3/4H；TWP 0.3*58*28.5；穴数 -
+  - 行 1083：零件 24001；模具 GBAP-Q0534；材料 SUS304 3/4H；TWP 0.3*58*28.5；穴数 -
+- `A-P IBI` 行 1088-1089：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 1088：零件 24335；模具 GBAP-Q0539；材料 SUS304 3/4H；TWP 0.4*68*33.5；穴数 -
+  - 行 1089：零件 24336；模具 GBAP-Q0540；材料 SUS304 3/4H；TWP 0.4*68*33.5；穴数 -
+- `A-P IBI` 行 1094-1095：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 1094：零件 20717；模具 GBAP-Q0543；材料 SUS304 3/4H；TWP 0.3*64*30；穴数 -
+  - 行 1095：零件 20718；模具 GBAP-Q0544；材料 SUS304 3/4H；TWP 0.3*64*30；穴数 -
+- `A-P IBI` 行 1223-1224：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 1223：零件 22303；模具 GBAP-Q0652；材料 SUS304；TWP 0.3*32*52；穴数 -
+  - 行 1224：零件 22304；模具 GBAP-Q0653；材料 SUS304；TWP 0.3*32*52；穴数 -
+- `A-P IBI` 行 1225-1226：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 1225：零件 24318；模具 GBAP-Q0654；材料 SUS304；TWP 0.5*78*39.5；穴数 -
+  - 行 1226：零件 24319；模具 GBAP-Q0655；材料 SUS304；TWP 0.5*78*39.5；穴数 -
+- `A-U比亚迪` 行 40-41：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 40：零件 SA3H-3501115A-D1；模具 TYAU-Q0024-1；材料 复合材料；TWP 0.6*50*66；穴数 -
+  - 行 41：零件 SA3H-3501116A-D1；模具 TYAU-Q0024-2；材料 复合材料；TWP 0.6*50*66；穴数 -
+- `A-U比亚迪` 行 84-85：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 84：零件 MRHB-6205351；模具 TYAU-Q0047-1；材料 SAPH440；TWP 2.0*42*26；穴数 -
+  - 行 85：零件 MRHB-6205352；模具 TYAU-Q0047-2；材料 SAPH440；TWP 2.0*42*26；穴数 -
+- `A-U比亚迪` 行 90-91：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 90：零件 MRHB-6205371；模具 TYAU-Q0048-1；材料 SWRCH10A+HC340LA；TWP 1.2*235*54；穴数 -
+  - 行 91：零件 MRHB-6205372；模具 TYAU-Q0048-2；材料 SWRCH10A+HC340LA；TWP 1.2*235*54；穴数 -
+- `A-U比亚迪` 行 99-100：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 99：零件 MRHB-6205715；模具 TYAU-Q0052-1；材料 SAPH400；TWP 1.6*300*174.5；穴数 -
+  - 行 100：零件 MRHB-6205716；模具 TYAU-Q0052-2；材料 SAPH400；TWP 1.6*300*174.5；穴数 -
+- `A-U比亚迪` 行 113-114：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 113：零件 SA3H-3501115A；模具 TYAU-Q0061-1；材料 SUS301 3/4H；TWP 0.5*54*74；穴数 -
+  - 行 114：零件 SA3H-3501116A；模具 TYAU-Q0061-2；材料 SUS301 3/4H；TWP 0.5*54*74；穴数 -
+- `A-U比亚迪` 行 119-120：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 119：零件 SA3H-3501115A-D1；模具 TYAU-Q0063-1；材料 SUS301 3/4H；TWP 0.5*；穴数 -
+  - 行 120：零件 SA3H-3501116A-D1；模具 TYAU-Q0063-2；材料 SUS301 3/4H；TWP 0.5*；穴数 -
+- `A-U比亚迪` 行 156-157：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 156：零件 SA3F-6105297；模具 TYAU-Q0082-1；材料 SPCC；TWP 1.6*；穴数 -
+  - 行 157：零件 SA3F-6105298；模具 TYAU-Q0082-2；材料 SPCC；TWP 1.6*；穴数 -
+- `A-U比亚迪` 行 222-223：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 222：零件 MR2HA-6205351；模具 TYAU-Q0119-1；材料 SAPH440；TWP 2.0*42*26；穴数 -
+  - 行 223：零件 MR2HA-6205352；模具 TYAU-Q0119-2；材料 SAPH440；TWP 2.0*42*26；穴数 -
+- `A-U比亚迪` 行 226-227：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 226：零件 MR2HA-6205715；模具 TYAU-Q0122-1；材料 SAPH440；TWP 1.6*62*45；穴数 -
+  - 行 227：零件 MR2HA-6205716；模具 TYAU-Q0122-2；材料 SAPH440；TWP 1.6*62*45；穴数 -
+- `A-U比亚迪` 行 228-229：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 228：零件 MRHB-6205741；模具 TYAU-Q0123-1；材料 SAPH400；TWP 1.6*300*177.5；穴数 -
+  - 行 229：零件 MRHB-6205742；模具 TYAU-Q0123-2；材料 SAPH400；TWP 1.6*300*177.5；穴数 -
+- `B-B 大陆集团` 行 32-33：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 32：零件 11.8116.0571.1；模具 左弹簧片；材料 0.4*81*65.5(1出2，左右各1个）；TWP 下料模与TYBB-Q0016-1/2共用；穴数 -
+  - 行 33：零件 11.8116.0572.1；模具 右弹簧片；材料 0.4*81*65.5(1出2，左右各1个）；TWP 下料模与TYBB-Q0016-1/2共用；穴数 -
+- `B-B 大陆集团` 行 34-35：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 34：零件 11.8116.0573.1；模具 左弹簧片；材料 0.4*81*65.5(1出2，左右各1个）；TWP 下料模与TYBB-Q0015-1/2共用；穴数 -
+  - 行 35：零件 11.8116.0574.1；模具 右弹簧片；材料 0.4*81*65.5(1出2，左右各1个）；TWP 下料模与TYBB-Q0015-1/2共用；穴数 -
+- `B-B 大陆集团` 行 43-44：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 43：零件 06.9281-1624.1；模具 弹簧片I；材料 0.4*86*72（一出二）；TWP 注：共用TYBB-Q0005/06连续模 不需要喷涂；穴数 -
+  - 行 44：零件 06.9281-1625.1；模具 弹簧片II；材料 0.4*86*72（一出二）；TWP 注：共用TYBB-Q0005/06连续模 不需要喷涂；穴数 -
+- `B-B 大陆集团` 行 47-48：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 47：零件 06.3281-1625.1；模具 左弹簧片；材料 0.4*94*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0018-1/2连续模，需取消一折弯冲头；穴数 -
+  - 行 48：零件 06.3281-1626.1；模具 右弹簧片；材料 0.4*94*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0018-1/2连续模，需取消一折弯冲头；穴数 -
+- `B-B 大陆集团` 行 61-62：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 61：零件 06.3281-1663.1；模具 左弹簧片；材料 0.45*115*73(1出2，左右各1个）；TWP 注：增加一个舌头，新增一组零件；穴数 -
+  - 行 62：零件 06.3281-1664.1；模具 右弹簧片；材料 0.45*115*73(1出2，左右各1个）；TWP 注：增加一个舌头，新增一组零件；穴数 -
+- `B-B 大陆集团` 行 66-67：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 66：零件 06.3281-1661.1；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0029-1/2,不需要喷涂；穴数 -
+  - 行 67：零件 06.3281-1662.1；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0029-1/2,不需要喷涂；穴数 -
+- `B-B 大陆集团` 行 68-69：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 68：零件 06.3281-1665.1；模具 左弹簧片；材料 0.45*115*73(1出2，左右各1个）；TWP 注：共用TYBB-Q0030-1/2,需要喷涂；穴数 -
+  - 行 69：零件 06.3281-1666.1；模具 右弹簧片；材料 0.45*115*73(1出2，左右各1个）；TWP 注：共用TYBB-Q0030-1/2,需要喷涂；穴数 -
+- `B-B 大陆集团` 行 87-88：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 87：零件 06.3281-1689.1；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0034-1/2,需增加浸涂；穴数 -
+  - 行 88：零件 06.3281-1690.1；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0034-1/2,需增加浸涂；穴数 -
+- `B-B 大陆集团` 行 89-90：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 89：零件 06.3281-1603.2；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0044-1/2,需增加贴胶；穴数 -
+  - 行 90：零件 06.3281-1604.2；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0044-1/2,需增加贴胶；穴数 -
+- `B-B 大陆集团` 行 91-92：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 91：零件 06.3281-1691.1；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：新增TYBB-Q0029-1/2机种,需更换零件；穴数 -
+  - 行 92：零件 06.3281-1692.1；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：新增TYBB-Q0029-1/2机种,需更换零件；穴数 -
+- `B-B 大陆集团` 行 93-94：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 93：零件 06.3281-1693.1；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0044-1/2,需增加浸涂；穴数 -
+  - 行 94：零件 06.3281-1694.1；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0044-1/2,需增加浸涂；穴数 -
+- `B-B 大陆集团` 行 95-96：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 95：零件 06.3281-1697.1；模具 左弹簧片；材料 0.45*115*73(1出2，左右各1个）；TWP 注：共用TYBB-Q0030-1/2,需要双面喷涂；穴数 -
+  - 行 96：零件 06.3281-1698.1；模具 右弹簧片；材料 0.45*115*73(1出2，左右各1个）；TWP 注：共用TYBB-Q0030-1/2,需要双面喷涂；穴数 -
+- `B-B 大陆集团` 行 112-113：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 112：零件 06.2281-1639.1；模具 左弹簧片；材料 0.4*；TWP 注：简易模共用TYBB-Q0055-1/2简易模；穴数 -
+  - 行 113：零件 06.2281-1640.1；模具 右弹簧片；材料 0.4*；TWP 注：简易模共用TYBB-Q0055-1/2简易模；穴数 -
+- `B-B 大陆集团` 行 116-117：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 116：零件 06.9281-1643.1；模具 左弹簧片；材料 0.5*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0057-1/2,增加浸涂D7708；穴数 -
+  - 行 117：零件 06.9281-1644.1；模具 右弹簧片；材料 0.5*108*71.5(1出2，左右各1个）；TWP 注：共用TYBB-Q0057-1/2,增加浸涂D7708；穴数 -
+- `B-C武汉万向汽车制动器有限公司 ` 行 15-16：武汉万向汽车制动器有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 15：零件 A00125983-03；模具 TYBC-Q0009-1；材料 SUS301-CSP3/4H；TWP 0.4*40*47；穴数 -
+  - 行 16：零件 A00125983-04；模具 TYBC-Q0009-2；材料 SUS301-CSP3/4H；TWP 0.4*40*47；穴数 -
+- `B-K万都` 行 5-6：万都；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 5：零件 BC470-848-00；模具 TYBK-Q0002-1；材料 SUS301 3/4H；TWP 0.5*；穴数 -
+  - 行 6：零件 BC470-848-01；模具 TYBK-Q0002-2；材料 SUS301 3/4H；TWP 0.5*；穴数 -
+- `B-K万都` 行 7-8：万都；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 7：零件 BC664B5100；模具 TYBK-Q0003-1；材料 SUS301 3/4H；TWP 1.5*；穴数 -
+  - 行 8：零件 BC665B5100；模具 TYBK-Q0003-2；材料 SUS301 3/4H；TWP 1.5*；穴数 -
+- `B-R格陆博科技` 行 10-11：格陆博科技；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 10：零件 56-001277；模具 TYBR-Q0004-1；材料 SUS301 CSP 3/4H；TWP 0.5*；穴数 -
+  - 行 11：零件 56-001278；模具 TYBR-Q0004-2；材料 SUS301 CSP 3/4H；TWP 0.5*；穴数 -
+- `B-S上海同驭` 行 10-11：上海同驭；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent
+  - 行 10：零件 35013500004；模具 TYBS-Q0007-1；材料 SUS301-3/4H；TWP 0.4*32*64.5         （左右各一条料带）；穴数 -
+  - 行 11：零件 35013500005；模具 TYBS-Q0007-2；材料 SUS301-3/4H；TWP 0.4*32*64.5         （左右各一条料带）；穴数 -
+
+## MISSING_CAVITY_MATERIAL · 缺少穴数证据且材料缺失/不一致（163 组）
+
+决策问题：材料字段是否以空白传播、录入遗漏还是实际不同为准？在穴数也不明确时是否禁止合并？
+
+- `60T 连续模` 行 74-75：丰铃公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 74：零件 FLWY-03-08；模具 TYQ-M0003；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 -
+  - 行 75：零件 -；模具 TYQ-M0004；材料 -；TWP 0.5*62*25.5；穴数 -
+- `丰铃公司Q` 行 6-7：丰铃公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 6：零件 FLWY-03-08；模具 TYQ-M0003；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 -
+  - 行 7：零件 -；模具 TYQ-M0004；材料 -；TWP 0.5*62*25.5；穴数 -
+- `A-P IBI` 行 4-5：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 4：零件 23271G；模具 TYAP-Q0001；材料 复合材料 （REN50 56 11）；TWP 0.6*105*42；穴数 -
+  - 行 5：零件 23271V；模具 TYAP-Q0001-1；材料 复合材料 （REN50 56 11）(基材SUS201)；TWP 0.6*105*42；穴数 -
+- `A-P IBI` 行 6-7：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 6：零件 22066；模具 TYAP-Q0002-1；材料 SUS304 3/4H；TWP 0.5*84*78；穴数 -
+  - 行 7：零件 22066G；模具 TYAP-Q0002-2；材料 复合材料 （REN50 55 11）；TWP 0.5*84*78；穴数 -
+- `A-P IBI` 行 8-10：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 8：零件 22066；模具 TYAP-Q0002-1；材料 SUS304 3/4H；TWP 0.5*90*82；穴数 -
+  - 行 9：零件 22066G；模具 TYAP-Q0002-2；材料 复合材料 （REN50 55 11）；TWP 0.5*90*82；穴数 -
+  - 行 10：零件 22066V；模具 TYAP-Q0002-3；材料 复合材料 （REN50 55 11）(基材SUS201)；TWP 0.5*90*82；穴数 -
+- `A-P IBI` 行 13-15：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 13：零件 22892；模具 TYAP-Q0003-1；材料 SUS304 3/4H；TWP 0.5*95*60；穴数 -
+  - 行 14：零件 22892G；模具 TYAP-Q0003-2；材料 复合材料 （REN50 55 11）；TWP 0.5*95*60；穴数 -
+  - 行 15：零件 22892V；模具 TYAP-Q0003-3；材料 复合材料 （REN50 55 11）(基材SUS201)；TWP 0.5*95*60；穴数 -
+- `A-P IBI` 行 18-20：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 18：零件 22893；模具 TYAP-Q0004-1；材料 SUS301-CSP 3/4H；TWP 0.5*104*60；穴数 -
+  - 行 19：零件 22893G；模具 TYAP-Q0004-2；材料 复合材料 （REN50 55 11）；TWP 0.5*104*60；穴数 -
+  - 行 20：零件 22893V；模具 TYAP-Q0004-3；材料 复合材料 （REN50 55 11）(基材SUS201)；TWP 0.5*104*60；穴数 -
+- `A-P IBI` 行 21-23：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 21：零件 22951；模具 TYAP-Q0005-1；材料 SUS304 3/4H；TWP 0.6*116*61.5；穴数 -
+  - 行 22：零件 22951G；模具 TYAP-Q0005-2；材料 复合材料 （REN50 55 11）；TWP 0.6*116*61.5；穴数 -
+  - 行 23：零件 22951V；模具 TYAP-Q0005-3；材料 复合材料 （REN50 55 11）(基材SUS201)；TWP 0.6*116*61.5；穴数 -
+- `A-P IBI` 行 28-30：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 28：零件 23209；模具 TYAP-Q0008-1；材料 SUS301-CSP 3/4H；TWP 0.5*103*57；穴数 -
+  - 行 29：零件 23209G；模具 TYAP-Q0008-2；材料 复合材料 （REN50 55 11）；TWP 0.5*103*57；穴数 -
+  - 行 30：零件 23209V；模具 TYAP-Q0008-3；材料 复合材料 （REN50 55 11）(基材SUS201)；TWP 0.5*103*57；穴数 -
+- `A-P IBI` 行 31-32：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 31：零件 23214G；模具 TYAP-Q0009；材料 复合材料 （REN50 55 11）；TWP 0.5*95*56；穴数 -
+  - 行 32：零件 23214V；模具 TYAP-Q0009-1；材料 复合材料 （REN50 55 11）(基材SUS201)；TWP 0.5*95*56；穴数 -
+- `A-P IBI` 行 44-45：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 44：零件 24376G；模具 TYAP-Q0014；材料 复合材料（REN50 54 11)；TWP 0.4*94*62；穴数 -
+  - 行 45：零件 24376V；模具 TYAP-Q0014-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*94*62；穴数 -
+- `A-P IBI` 行 46-47：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 46：零件 22878；模具 TYAP-Q0015-1；材料 SUS301-CSP 3/4H；TWP 0.5*95*55.5；穴数 -
+  - 行 47：零件 22878G；模具 TYAP-Q0015-2；材料 复合材料（REN50 55 11)；TWP 0.5*95*55.5；穴数 -
+- `A-P IBI` 行 48-49：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 48：零件 22878；模具 TYAP-Q0015-1；材料 SUS301-CSP 3/4H；TWP 0.5*101*60；穴数 -
+  - 行 49：零件 22878G；模具 TYAP-Q0015-2；材料 复合材料（REN50 55 11)；TWP 0.5*101*60；穴数 -
+- `A-P IBI` 行 51-52：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 51：零件 22876G；模具 TYAP-Q0016；材料 复合材料（REN50 55 11)；TWP 0.5*105*56；穴数 -
+  - 行 52：零件 22876V；模具 TYAP-Q0016-1；材料 复合材料（REN50 55 11)（基材SUS201）；TWP 0.5*105*56；穴数 -
+- `A-P IBI` 行 54-56：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 54：零件 23506；模具 TYAP-Q0017-1；材料 SUS301-CSP 3/4H；TWP 0.4*170*68.5；穴数 -
+  - 行 55：零件 23506G；模具 TYAP-Q0017-2；材料 复合材料（REN50 54 11)；TWP 0.4*170*68.5；穴数 -
+  - 行 56：零件 23506V；模具 TYAP-Q0017-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*170*68.5；穴数 -
+- `A-P IBI` 行 58-59：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 58：零件 23388G；模具 TYAP-Q0018；材料 复合材料（REN50 54 11)；TWP 0.4*102*55.5；穴数 -
+  - 行 59：零件 23388V；模具 TYAP-Q0018-1；材料 复合材料（REN50 54 11)（基材SUS201）；TWP 0.4*102*55.5；穴数 -
+- `A-P IBI` 行 66-67：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 66：零件 23309；模具 TYAP-Q0021-1；材料 SUS304 3/4H；TWP 0.4*82*89.5；穴数 -
+  - 行 67：零件 23309G；模具 TYAP-Q0021-2；材料 复合材料（REN50 54 11)；TWP 0.4*82*89.5；穴数 -
+- `A-P IBI` 行 76-77：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 76：零件 23698G；模具 TYAP-Q0025-2；材料 复合材料（REN50 54 11）；TWP 0.4*95*94；穴数 -
+  - 行 77：零件 23698V；模具 TYAP-Q0025-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*95*94；穴数 -
+- `A-P IBI` 行 86-87：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 86：零件 23287G；模具 TYAP-Q0029；材料 复合材料（REN50 54 11)；TWP 0.4*92*63；穴数 -
+  - 行 87：零件 23287V；模具 TYAP-Q0029-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*92*63；穴数 -
+- `A-P IBI` 行 89-90：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 89：零件 24177；模具 TYAP-Q0031-1；材料 SUS304 3/4H；TWP 0.5*92*82；穴数 -
+  - 行 90：零件 24177G；模具 TYAP-Q0031-2；材料 复合材料（REN50 55 11）；TWP 0.5*92*82；穴数 -
+- `A-P IBI` 行 91-93：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 91：零件 24177；模具 TYAP-Q0031-1；材料 SUS304 3/4H；TWP 0.5*97*86；穴数 -
+  - 行 92：零件 24177G；模具 TYAP-Q0031-2；材料 复合材料（REN50 55 11）；TWP 0.5*97*86；穴数 -
+  - 行 93：零件 24177V；模具 TYAP-Q0031-3；材料 复合材料（REN50 55 11）(基材SUS201)；TWP 0.5*97*86；穴数 -
+- `A-P IBI` 行 91-92：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 91：零件 24177；模具 TYAP-Q0031-1；材料 SUS304 3/4H；TWP 0.5*97*86；穴数 -
+  - 行 92：零件 24177G；模具 TYAP-Q0031-2；材料 复合材料（REN50 55 11）；TWP 0.5*97*86；穴数 -
+- `A-P IBI` 行 95-96：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 95：零件 23638G；模具 TYAP-Q0032；材料 复合材料（REN50 54 11)；TWP 0.4*102*56；穴数 -
+  - 行 96：零件 23638V；模具 TYAP-Q0032-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*102*56；穴数 -
+- `A-P IBI` 行 99-100：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 99：零件 22594G；模具 TYAP-Q0034；材料 复合材料（REN50 56 11）；TWP 0.6*73*173.5；穴数 -
+  - 行 100：零件 22594V；模具 TYAP-Q0034-1；材料 复合材料（REN50 56 11)(基材SUS201)；TWP 0.6*73*173.5；穴数 -
+- `A-P IBI` 行 101-102：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 101：零件 24092；模具 TYAP-Q0035-1；材料 SUS304 3/4H；TWP 0.4*55*40；穴数 -
+  - 行 102：零件 24092G；模具 TYAP-Q0035-2；材料 复合材料（REN50 54 11)；TWP 0.4*55*40；穴数 -
+- `A-P IBI` 行 103-105：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 103：零件 24092；模具 TYAP-Q0035-1；材料 SUS304 3/4H；TWP 0.4*60*56；穴数 -
+  - 行 104：零件 24092G；模具 TYAP-Q0035-2；材料 复合材料（REN50 54 11)；TWP 0.4*60*56；穴数 -
+  - 行 105：零件 24092V；模具 TYAP-Q0035-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*60*56；穴数 -
+- `A-P IBI` 行 103-104：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 103：零件 24092；模具 TYAP-Q0035-1；材料 SUS304 3/4H；TWP 0.4*60*56；穴数 -
+  - 行 104：零件 24092G；模具 TYAP-Q0035-2；材料 复合材料（REN50 54 11)；TWP 0.4*60*56；穴数 -
+- `A-P IBI` 行 111-112：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 111：零件 22581G；模具 TYAP-Q0039；材料 复合材料（REN50 54 11）；TWP 0.5*85*25；穴数 -
+  - 行 112：零件 22581V；模具 TYAP-Q0039-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.5*85*25；穴数 -
+- `A-P IBI` 行 113-114：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 113：零件 22652；模具 TYAP-Q0040-1；材料 SUS304 3/4H；TWP 0.4*84*53.5；穴数 -
+  - 行 114：零件 22652G；模具 TYAP-Q0040-2；材料 复合材料（REN50 54 11)；TWP 0.4*84*53.5；穴数 -
+- `A-P IBI` 行 115-117：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 115：零件 22652；模具 TYAP-Q0040-1；材料 SUS304 3/4H；TWP 0.4*90*53；穴数 -
+  - 行 116：零件 22652G；模具 TYAP-Q0040-2；材料 复合材料（REN50 54 11)；TWP 0.4*90*53；穴数 -
+  - 行 117：零件 22652V；模具 TYAP-Q0040-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*90*53；穴数 -
+- `A-P IBI` 行 130-132：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 130：零件 24099；模具 TYAP-Q0045-1；材料 SUS304 3/4H；TWP 0.4*78*43；穴数 -
+  - 行 131：零件 24099G；模具 TYAP-Q0045-2；材料 复合材料（REN50 54 11)；TWP 0.4*78*43；穴数 -
+  - 行 132：零件 24099V；模具 TYAP-Q0045-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*78*43；穴数 -
+- `A-P IBI` 行 135-136：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 135：零件 23444G；模具 TYAP-Q0047；材料 复合材料（REN50 54 11)；TWP 0.4*76*31；穴数 -
+  - 行 136：零件 23444V；模具 TYAP-Q0047-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*31；穴数 -
+- `A-P IBI` 行 140-141：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 140：零件 22561G；模具 TYAP-Q0049；材料 复合材料（REN50 54 11)；TWP 0.4*72*49；穴数 -
+  - 行 141：零件 22561V；模具 TYAP-Q0049-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*72*49；穴数 -
+- `A-P IBI` 行 142-143：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 142：零件 22595；模具 TYAP-Q0050-1；材料 SUS304 3/4H；TWP 0.6*82*52；穴数 -
+  - 行 143：零件 22595G；模具 TYAP-Q0050-2；材料 复合材料 （REN50 55 11）；TWP 0.6*82*52；穴数 -
+- `A-P IBI` 行 144-146：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 144：零件 22595；模具 TYAP-Q0050-1；材料 SUS304 3/4H；TWP 0.6*113*57；穴数 -
+  - 行 145：零件 22595G；模具 TYAP-Q0050-2；材料 复合材料 （REN50 55 11）；TWP 0.6*113*57；穴数 -
+  - 行 146：零件 22595V；模具 TYAP-Q0050-3；材料 复合材料 （REN50 55 11）(0基材SUS201；TWP 0.6*113*57；穴数 -
+- `A-P IBI` 行 147-148：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 147：零件 23282G；模具 TYAP-Q0051；材料 复合材料（REN50 54 11)；TWP 0.4*112*60.5；穴数 -
+  - 行 148：零件 23282V；模具 TYAP-Q0051-1；材料 复合材料 （REN50 54 11）(0基材SUS201；TWP 0.4*112*60.5；穴数 -
+- `A-P IBI` 行 149-150：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 149：零件 23446G；模具 TYAP-Q0052；材料 复合材料（REN50 54 11)；TWP 0.4*90*39.5；穴数 -
+  - 行 150：零件 23446V；模具 TYAP-Q0052-1；材料 复合材料 （REN50 54 11）(0基材SUS201；TWP 0.4*90*39.5；穴数 -
+- `A-P IBI` 行 151-152：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 151：零件 23474G；模具 TYAP-Q0053；材料 复合材料（REN50 54 11)；TWP 0.4*90*59；穴数 -
+  - 行 152：零件 23474V；模具 TYAP-Q0053-1；材料 复合材料 （REN50 54 11）(0基材SUS201；TWP 0.4*90*59；穴数 -
+- `A-P IBI` 行 154-155：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 154：零件 23832；模具 TYAP-Q0055-1；材料 SUS304 3/4H；TWP 0.4*85*38；穴数 -
+  - 行 155：零件 23832G；模具 TYAP-Q0055-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*38；穴数 -
+- `A-P IBI` 行 159-161：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 159：零件 23989；模具 TYAP-Q0057-1；材料 SUS304 3/4H；TWP 0.4*85*66.5；穴数 -
+  - 行 160：零件 23989G；模具 TYAP-Q0057-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*66.5；穴数 -
+  - 行 161：零件 23989V；模具 TYAP-Q0057-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*85*66.5；穴数 -
+- `A-P IBI` 行 166-167：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 166：零件 22859G；模具 TYAP-Q0059；材料 复合材料（REN50 54 11)；TWP 0.4*80*92；穴数 -
+  - 行 167：零件 22859V；模具 TYAP-Q0059-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*80*92；穴数 -
+- `A-P IBI` 行 172-174：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 172：零件 24320；模具 TYAP-Q0061-1；材料 SUS304 3/4H；TWP 0.4*94*92；穴数 -
+  - 行 173：零件 24320G；模具 TYAP-Q0061-2；材料 复合材料（REN50 54 11)；TWP 0.4*94*92；穴数 -
+  - 行 174：零件 24320V；模具 TYAP-Q0061-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*94*92；穴数 -
+- `A-P IBI` 行 185-186：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 185：零件 22603G；模具 TYAP-Q0065；材料 复合材料(REN50 56 11)；TWP 0.6*120*57；穴数 -
+  - 行 186：零件 22603V；模具 TYAP-Q0065-1；材料 复合材料（REN50 56 11)(基材SUS201)；TWP 0.6*120*57；穴数 -
+- `A-P IBI` 行 193-194：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 193：零件 23819；模具 TYAP-Q0069-1；材料 SUS304 3/4H；TWP 0.4*73*69；穴数 -
+  - 行 194：零件 23819G；模具 TYAP-Q0069-2；材料 复合材料（REN50 54 11)；TWP 0.4*73*69；穴数 -
+- `A-P IBI` 行 195-197：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 195：零件 23819；模具 TYAP-Q0069-1；材料 SUS304 3/4H；TWP 0.4*78*72；穴数 -
+  - 行 196：零件 23819G；模具 TYAP-Q0069-2；材料 复合材料（REN50 54 11)；TWP 0.4*78*72；穴数 -
+  - 行 197：零件 23819V；模具 TYAP-Q0069-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*78*72；穴数 -
+- `A-P IBI` 行 202-203：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 202：零件 24091；模具 TYAP-Q0071-1；材料 SUS304 3/4H；TWP 0.4*55*40；穴数 -
+  - 行 203：零件 24091G；模具 TYAP-Q0071-2；材料 复合材料（REN50 54 11)；TWP 0.4*55*40；穴数 -
+- `A-P IBI` 行 204-206：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 204：零件 24091；模具 TYAP-Q0071-1；材料 SUS304 3/4H；TWP 0.4*60*56；穴数 -
+  - 行 205：零件 24091G；模具 TYAP-Q0071-2；材料 复合材料（REN50 54 11)；TWP 0.4*60*56；穴数 -
+  - 行 206：零件 24091V；模具 TYAP-Q0071-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*60*56；穴数 -
+- `A-P IBI` 行 207-209：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 207：零件 23270；模具 TYAP-Q0072-1；材料 SUS304 3/4H；TWP 0.6*105*42；穴数 -
+  - 行 208：零件 23270G；模具 TYAP-Q0072-2；材料 复合材料 （REN50 56 11）；TWP 0.6*105*42；穴数 -
+  - 行 209：零件 23270V；模具 TYAP-Q0072-3；材料 复合材料（REN50 56 11)(基材SUS201)；TWP 0.6*105*42；穴数 -
+- `A-P IBI` 行 212-214：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 212：零件 22687；模具 TYAP-Q0073-1；材料 SUS304 3/4H；TWP 0.5*115*65；穴数 -
+  - 行 213：零件 22687G；模具 TYAP-Q0073-2；材料 复合材料（REN50 55 11)；TWP 0.5*115*65；穴数 -
+  - 行 214：零件 22687V；模具 TYAP-Q0073-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*115*65；穴数 -
+- `A-P IBI` 行 217-218：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 217：零件 24275；模具 TYAP-Q0075-1；材料 SUS304 3/4H；TWP 0.5*82*44；穴数 -
+  - 行 218：零件 24275G；模具 TYAP-Q0075-2；材料 复合材料（REN50 54 11)；TWP 0.5*82*44；穴数 -
+- `A-P IBI` 行 219-221：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 219：零件 24275；模具 TYAP-Q0075-1；材料 SUS304 3/4H；TWP 0.5*85*48；穴数 -
+  - 行 220：零件 24275G；模具 TYAP-Q0075-2；材料 复合材料（REN50 54 11)；TWP 0.5*85*48；穴数 -
+  - 行 221：零件 24275V；模具 TYAP-Q0075-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.5*85*48；穴数 -
+- `A-P IBI` 行 222-223：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 222：零件 23956；模具 TYAP-Q0076-1；材料 SUS304 3/4H；TWP 0.5*98*75.5；穴数 -
+  - 行 223：零件 23956G；模具 TYAP-Q0076-2；材料 复合材料（REN50 55 11)；TWP 0.5*98*75.5；穴数 -
+- `A-P IBI` 行 224-226：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 224：零件 23956；模具 TYAP-Q0076-1；材料 SUS304 3/4H；TWP 0.5*153*71；穴数 -
+  - 行 225：零件 23956G；模具 TYAP-Q0076-2；材料 复合材料（REN50 55 11)；TWP 0.5*153*71；穴数 -
+  - 行 226：零件 23956V；模具 TYAP-Q0076-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*153*71；穴数 -
+- `A-P IBI` 行 231-232：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 231：零件 22686G；模具 TYAP-Q0079；材料 复合材料（REN50 55 11)；TWP 0.5*113*64；穴数 -
+  - 行 232：零件 22686V；模具 TYAP-Q0079-1；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*113*64；穴数 -
+- `A-P IBI` 行 234-235：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 234：零件 23217；模具 TYAP-Q0080-1；材料 SUS304 3/4H；TWP 0.5*110*60；穴数 -
+  - 行 235：零件 23217G；模具 TYAP-Q0080-2；材料 复合材料（REN50 55 11)；TWP 0.5*110*60；穴数 -
+- `A-P IBI` 行 236-238：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 236：零件 23217；模具 TYAP-Q0080-1；材料 SUS304 3/4H；TWP 0.5*116*65；穴数 -
+  - 行 237：零件 23217G；模具 TYAP-Q0080-2；材料 复合材料（REN50 55 11)；TWP 0.5*116*65；穴数 -
+  - 行 238：零件 23217V；模具 TYAP-Q0080-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*116*65；穴数 -
+- `A-P IBI` 行 241-243：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 241：零件 23741；模具 TYAP-Q0081-1；材料 SUS304 3/4H；TWP 0.4*85*86；穴数 -
+  - 行 242：零件 23741G；模具 TYAP-Q0081-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*86；穴数 -
+  - 行 243：零件 23741V；模具 TYAP-Q0081-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*85*86；穴数 -
+- `A-P IBI` 行 246-248：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 246：零件 24179；模具 TYAP-Q0082-1；材料 SUS304 3/4H；TWP 0.5*168*64.5；穴数 -
+  - 行 247：零件 24179G；模具 TYAP-Q0082-2；材料 复合材料（REN50 54 11)；TWP 0.5*168*64.5；穴数 -
+  - 行 248：零件 24179V；模具 TYAP-Q0082-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.5*168*64.5；穴数 -
+- `A-P IBI` 行 246-247：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 246：零件 24179；模具 TYAP-Q0082-1；材料 SUS304 3/4H；TWP 0.5*168*64.5；穴数 -
+  - 行 247：零件 24179G；模具 TYAP-Q0082-2；材料 复合材料（REN50 54 11)；TWP 0.5*168*64.5；穴数 -
+- `A-P IBI` 行 258-259：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 258：零件 24414；模具 TYAP-Q0087-1；材料 SUS304 3/4H；TWP 0.4*64*72.5；穴数 -
+  - 行 259：零件 24414G；模具 TYAP-Q0087-2；材料 复合材料（REN50 54 11)；TWP 0.4*64*72.5；穴数 -
+- `A-P IBI` 行 260-262：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 260：零件 24414；模具 TYAP-Q0087-1；材料 SUS304 3/4H；TWP 0.4*68*76；穴数 -
+  - 行 261：零件 24414G；模具 TYAP-Q0087-2；材料 复合材料（REN50 54 11)；TWP 0.4*68*76；穴数 -
+  - 行 262：零件 24414V；模具 TYAP-Q0087-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*68*76；穴数 -
+- `A-P IBI` 行 263-264：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 263：零件 24511；模具 TYAP-Q0088-1；材料 SUS304 3/4H；TWP 0.3*70*55；穴数 -
+  - 行 264：零件 24511G；模具 TYAP-Q0088-2；材料 复合材料（REN50 53 11)；TWP 0.3*70*55；穴数 -
+- `A-P IBI` 行 265-267：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 265：零件 24511；模具 TYAP-Q0088-1；材料 SUS304 3/4H；TWP 0.3*74*58；穴数 -
+  - 行 266：零件 24511G；模具 TYAP-Q0088-2；材料 复合材料（REN50 53 11)；TWP 0.3*74*58；穴数 -
+  - 行 267：零件 24511V；模具 TYAP-Q0088-3；材料 复合材料（REN50 53 11)(基材SUS201)；TWP 0.3*74*58；穴数 -
+- `A-P IBI` 行 268-269：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 268：零件 24055；模具 TYAP-Q0089-1；材料 SUS304 3/4H；TWP 0.4*89*82；穴数 -
+  - 行 269：零件 24055G；模具 TYAP-Q0089-2；材料 复合材料（REN50 54 11)；TWP 0.4*89*82；穴数 -
+- `A-P IBI` 行 270-272：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 270：零件 24055；模具 TYAP-Q0089-1；材料 SUS304 3/4H；TWP 0.4*85*86；穴数 -
+  - 行 271：零件 24055G；模具 TYAP-Q0089-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*86；穴数 -
+  - 行 272：零件 24055V；模具 TYAP-Q0089-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*85*86；穴数 -
+- `A-P IBI` 行 273-275：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 273：零件 23211；模具 TYAP-Q0090-1；材料 SUS304 3/4H；TWP 1.0*115*30；穴数 -
+  - 行 274：零件 23211G；模具 TYAP-Q0090-2；材料 复合材料；TWP 1.0*115*30；穴数 -
+  - 行 275：零件 23211V；模具 TYAP-Q0090-3；材料 复合材料(基材SUS201)；TWP 1.0*115*30；穴数 -
+- `A-P IBI` 行 346-348：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 346：零件 23117；模具 TYAP-Q0130-1；材料 SUS304 3/4H；TWP 0.4*53*58；穴数 -
+  - 行 347：零件 23117G；模具 TYAP-Q0130-2；材料 复合材料（REN50 54 11)；TWP 0.4*53*58；穴数 -
+  - 行 348：零件 23117V；模具 TYAP-Q0130-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*53*58；穴数 -
+- `A-P IBI` 行 358-360：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 358：零件 23414；模具 TYAP-Q0135-1；材料 SUS304 3/4H；TWP 0.5*76*84；穴数 -
+  - 行 359：零件 23414G；模具 TYAP-Q0135-2；材料 复合材料（REN50 54 11)；TWP 0.5*76*84；穴数 -
+  - 行 360：零件 23414V；模具 TYAP-Q0135-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.5*76*84；穴数 -
+- `A-P IBI` 行 361-362：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 361：零件 23950；模具 TYAP-Q0136-1；材料 SUS304 3/4H；TWP 0.4*84*71；穴数 -
+  - 行 362：零件 23950G；模具 TYAP-Q0136-2；材料 复合材料（REN50 54 11)；TWP 0.4*84*71；穴数 -
+- `A-P IBI` 行 363-365：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 363：零件 23950；模具 TYAP-Q0136-1；材料 SUS304 3/4H；TWP 0.4*89*74；穴数 -
+  - 行 364：零件 23950G；模具 TYAP-Q0136-2；材料 复合材料（REN50 54 11)；TWP 0.4*89*74；穴数 -
+  - 行 365：零件 23950V；模具 TYAP-Q0136-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*89*74；穴数 -
+- `A-P IBI` 行 368-369：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 368：零件 24128；模具 TYAP-Q0138-1；材料 SUS304 3/4H；TWP 0.4*83*70；穴数 -
+  - 行 369：零件 24128G；模具 TYAP-Q0138-2；材料 复合材料（REN50 54 11)；TWP 0.4*83*70；穴数 -
+- `A-P IBI` 行 370-371：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 370：零件 24128；模具 TYAP-Q0138-1；材料 SUS304 3/4H；TWP 0.4*93*72.5；穴数 -
+  - 行 371：零件 24128G；模具 TYAP-Q0138-2；材料 复合材料（REN50 54 11)；TWP 0.4*93*72.5；穴数 -
+- `A-P IBI` 行 372-373：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 372：零件 23401；模具 TYAP-Q0139-1；材料 SUS301 3/5H；TWP 0.4*70*70；穴数 -
+  - 行 373：零件 23401G；模具 TYAP-Q0139-2；材料 复合材料（REN50 54 11)；TWP 0.4*70*70；穴数 -
+- `A-P IBI` 行 374-375：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 374：零件 23401；模具 TYAP-Q0139-1；材料 SUS301 3/5H；TWP 0.4*80**70；穴数 -
+  - 行 375：零件 23401G；模具 TYAP-Q0139-2；材料 复合材料（REN50 54 11)；TWP 0.4*80**70；穴数 -
+- `A-P IBI` 行 378-380：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 378：零件 23739；模具 TYAP-Q0141-1；材料 SUS304 3/4H；TWP 0.4*85*60；穴数 -
+  - 行 379：零件 23739G；模具 TYAP-Q0141-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*60；穴数 -
+  - 行 380：零件 23739V；模具 TYAP-Q0141-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*85*60；穴数 -
+- `A-P IBI` 行 378-379：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 378：零件 23739；模具 TYAP-Q0141-1；材料 SUS304 3/4H；TWP 0.4*85*60；穴数 -
+  - 行 379：零件 23739G；模具 TYAP-Q0141-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*60；穴数 -
+- `A-P IBI` 行 383-385：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 383：零件 24357；模具 TYAP-Q0142-1；材料 SUS304 3/4H；TWP 0.4*93*69；穴数 -
+  - 行 384：零件 24357G；模具 TYAP-Q0142-2；材料 复合材料（REN50 54 11)；TWP 0.4*93*69；穴数 -
+  - 行 385：零件 24357V；模具 TYAP-Q0142-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*93*69；穴数 -
+- `A-P IBI` 行 386-387：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 386：零件 23683；模具 TYAP-Q0143-1；材料 SUS304 3/4H；TWP 0.4*70*82；穴数 -
+  - 行 387：零件 23683G；模具 TYAP-Q0143-2；材料 复合材料（REN50 54 11)；TWP 0.4*70*82；穴数 -
+- `A-P IBI` 行 388-390：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 388：零件 23683；模具 TYAP-Q0143-1；材料 SUS304 3/4H；TWP 0.4*76*85；穴数 -
+  - 行 389：零件 23683G；模具 TYAP-Q0143-2；材料 复合材料（REN50 54 11)；TWP 0.4*76*85；穴数 -
+  - 行 390：零件 23683V；模具 TYAP-Q0143-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*85；穴数 -
+- `A-P IBI` 行 391-392：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 391：零件 23261；模具 TYAP-Q0144-1；材料 SUS304 3/4H；TWP 0.5*74*84；穴数 -
+  - 行 392：零件 23261G；模具 TYAP-Q0144-2；材料 复合材料（REN50 55 11)；TWP 0.5*74*84；穴数 -
+- `A-P IBI` 行 393-395：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 393：零件 23261；模具 TYAP-Q0144-1；材料 SUS304 3/4H；TWP 0.5*80*66；穴数 -
+  - 行 394：零件 23261G；模具 TYAP-Q0144-2；材料 复合材料（REN50 55 11)；TWP 0.5*80*66；穴数 -
+  - 行 395：零件 23261V；模具 TYAP-Q0144-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*80*66；穴数 -
+- `A-P IBI` 行 402-403：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 402：零件 23023；模具 TYAP-Q0148-1；材料 SUS304 3/4H；TWP 0.4*71*51；穴数 -
+  - 行 403：零件 23023W；模具 TYAP-Q0148-2；材料 复合材料（REN50 54 11)；TWP 0.4*71*51；穴数 -
+- `A-P IBI` 行 404-407：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 404：零件 23023；模具 TYAP-Q0148-1；材料 SUS304 3/4H；TWP 0.4*76*60；穴数 -
+  - 行 405：零件 23023W；模具 TYAP-Q0148-2；材料 SUS304 3/4H；TWP 0.4*76*60；穴数 -
+  - 行 406：零件 23023G；模具 TYAP-Q0148-3；材料 复合材料（REN50 54 11)；TWP 0.4*76*60；穴数 -
+  - 行 407：零件 23023V；模具 TYAP-Q0148-4；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*60；穴数 -
+- `A-P IBI` 行 408-409：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 408：零件 24798；模具 TYAP-Q0149-1；材料 SUS304 3/4H；TWP 0.4*56*42.5；穴数 -
+  - 行 409：零件 24798G；模具 TYAP-Q0149-2；材料 复合材料（REN50 54 11)；TWP 0.4*56*42.5；穴数 -
+- `A-P IBI` 行 410-412：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 410：零件 24798；模具 TYAP-Q0149-1；材料 SUS304 3/4H；TWP 0.4*62*41；穴数 -
+  - 行 411：零件 24798G；模具 TYAP-Q0149-2；材料 复合材料（REN50 54 11)；TWP 0.4*62*41；穴数 -
+  - 行 412：零件 24798V；模具 TYAP-Q0149-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*62*41；穴数 -
+- `A-P IBI` 行 413-414：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 413：零件 23281；模具 TYAP-Q0150-1；材料 SUS304 3/4H；TWP 0.4*68*59；穴数 -
+  - 行 414：零件 23281G；模具 TYAP-Q0150-2；材料 复合材料（REN50 54 11)；TWP 0.4*68*59；穴数 -
+- `A-P IBI` 行 415-417：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 415：零件 23281；模具 TYAP-Q0150-1；材料 SUS304 3/4H；TWP 0.4*73*62；穴数 -
+  - 行 416：零件 23281G；模具 TYAP-Q0150-2；材料 复合材料（REN50 54 11)；TWP 0.4*73*62；穴数 -
+  - 行 417：零件 23281V；模具 TYAP-Q0150-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*73*62；穴数 -
+- `A-P IBI` 行 420-421：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 420：零件 22999；模具 TYAP-Q0152-1；材料 SUS304 3/4H；TWP 0.3*52*28；穴数 -
+  - 行 421：零件 22999G；模具 TYAP-Q0152-2；材料 复合材料（REN50 53 11)；TWP 0.3*52*28；穴数 -
+- `A-P IBI` 行 422-424：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 422：零件 22999；模具 TYAP-Q0152-1；材料 SUS304 3/4H；TWP 0.3*41*53；穴数 -
+  - 行 423：零件 22999G；模具 TYAP-Q0152-2；材料 复合材料（REN50 53 11)；TWP 0.3*41*53；穴数 -
+  - 行 424：零件 22999V；模具 TYAP-Q0152-3；材料 复合材料（REN50 53 11)(基材SUS201)；TWP 0.3*41*53；穴数 -
+- `A-P IBI` 行 441-444：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 441：零件 22978；模具 TYAP-Q0166-1；材料 SUS304 3/4H；TWP 0.4*66*58；穴数 -
+  - 行 442：零件 22978W；模具 TYAP-Q0166-2；材料 SUS304 3/4H；TWP 0.4*66*58；穴数 -
+  - 行 443：零件 22978G；模具 TYAP-Q0166-3；材料 复合材料（REN50 54 11)；TWP 0.4*66*58；穴数 -
+  - 行 444：零件 22978V；模具 TYAP-Q0166-4；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*66*58；穴数 -
+- `A-P IBI` 行 450-451：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 450：零件 23447；模具 TYAP-Q0170-1；材料 SUS304 3/4H；TWP 0.4*90*39.5；穴数 -
+  - 行 451：零件 23447G；模具 TYAP-Q0170-2；材料 复合材料（REN50 54 11)；TWP 0.4*90*39.5；穴数 -
+- `A-P IBI` 行 452-454：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 452：零件 23447；模具 TYAP-Q0170-1；材料 SUS304 3/4H；TWP 0.4*84*50；穴数 -
+  - 行 453：零件 23447G；模具 TYAP-Q0170-2；材料 复合材料（REN50 54 11)；TWP 0.4*84*50；穴数 -
+  - 行 454：零件 23447V；模具 TYAP-Q0170-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*84*50；穴数 -
+- `A-P IBI` 行 461-462：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 461：零件 24193；模具 TYAP-Q0173-1；材料 SUS304 3/4H；TWP 0.4*88*60；穴数 -
+  - 行 462：零件 24193G；模具 TYAP-Q0173-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*60；穴数 -
+- `A-P IBI` 行 466-467：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 466：零件 24309；模具 TYAP-Q0174-1；材料 SUS304 3/4H；TWP 0.5*168.64.5；穴数 -
+  - 行 467：零件 24309G；模具 TYAP-Q0174-2；材料 复合材料（REN50 55 11)；TWP 0.5*168.64.5；穴数 -
+- `A-P IBI` 行 468-469：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 468：零件 24634；模具 TYAP-Q0175-1；材料 SUS304 3/4H；TWP 0.4*64*60.5；穴数 -
+  - 行 469：零件 24634G；模具 TYAP-Q0175-2；材料 复合材料（REN50 54 11)；TWP 0.4*64*60.5；穴数 -
+- `A-P IBI` 行 470-472：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 470：零件 24634；模具 TYAP-Q0175-1；材料 SUS304 3/4H；TWP 0.4*70*64；穴数 -
+  - 行 471：零件 24634G；模具 TYAP-Q0175-2；材料 复合材料（REN50 54 11)；TWP 0.4*70*64；穴数 -
+  - 行 472：零件 24634V；模具 TYAP-Q0175-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*70*64；穴数 -
+- `A-P IBI` 行 477-478：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 477：零件 21956；模具 TYAP-Q0177-1；材料 SUS301；TWP 0.4*63*68；穴数 -
+  - 行 478：零件 21956G；模具 TYAP-Q0177-2；材料 复合材料（REN50 54 11)；TWP 0.4*63*68；穴数 -
+- `A-P IBI` 行 479-481：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 479：零件 21956；模具 TYAP-Q0177-1；材料 SUS301；TWP 0.4*70*72；穴数 -
+  - 行 480：零件 21956G；模具 TYAP-Q0177-2；材料 复合材料（REN50 54 11)；TWP 0.4*70*72；穴数 -
+  - 行 481：零件 21956V；模具 TYAP-Q0177-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*70*72；穴数 -
+- `A-P IBI` 行 483-484：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 483：零件 23702；模具 TYAP-Q0178-1；材料 SUS304 3/4H；TWP 0.4*60*80；穴数 -
+  - 行 484：零件 23702G；模具 TYAP-Q0178-2；材料 复合材料（REN50 54 11)；TWP 0.4*60*80；穴数 -
+- `A-P IBI` 行 486-488：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 486：零件 23702；模具 TYAP-Q0178-1；材料 SUS304 3/4H；TWP 0.4*64*85；穴数 -
+  - 行 487：零件 23702G；模具 TYAP-Q0178-2；材料 复合材料（REN50 54 11)；TWP 0.4*64*85；穴数 -
+  - 行 488：零件 23702V；模具 TYAP-Q0178-4；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*64*85；穴数 -
+- `A-P IBI` 行 489-490：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 489：零件 22808；模具 TYAP-Q0179-1；材料 SUS304 3/4H；TWP 0.4*45*27；穴数 -
+  - 行 490：零件 22808G；模具 TYAP-Q0179-2；材料 复合材料（REN50 54 11)；TWP 0.4*45*27；穴数 -
+- `A-P IBI` 行 494-495：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 494：零件 22971；模具 TYAP-Q0180-1；材料 SUS304 3/4H；TWP 0.5*88*56；穴数 -
+  - 行 495：零件 22971G；模具 TYAP-Q0180-2；材料 复合材料（REN50 55 11)；TWP 0.5*88*56；穴数 -
+- `A-P IBI` 行 496-497：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 496：零件 22971；模具 TYAP-Q0180-1；材料 SUS304 3/4H；TWP 0.5*93*67；穴数 -
+  - 行 497：零件 22971G；模具 TYAP-Q0180-2；材料 复合材料（REN50 55 11)；TWP 0.5*93*67；穴数 -
+- `A-P IBI` 行 499-501：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 499：零件 24391；模具 TYAP-Q0181-1；材料 SUS301-CSP3/4H；TWP 0.5*85*81；穴数 -
+  - 行 500：零件 24391G；模具 TYAP-Q0181-2；材料 复合材料（REN50 55 11)；TWP 0.5*85*81；穴数 -
+  - 行 501：零件 24391V；模具 TYAP-Q0181-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*85*81；穴数 -
+- `A-P IBI` 行 507-508：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 507：零件 22546；模具 TYAP-Q0185-1；材料 SUS304 3/4H；TWP 0.4*74*52；穴数 -
+  - 行 508：零件 22546G；模具 TYAP-Q0185-2；材料 复合材料（REN50 54 11)；TWP 0.4*74*52；穴数 -
+- `A-P IBI` 行 509-511：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 509：零件 22546；模具 TYAP-Q0185-1；材料 SUS304 3/4H；TWP 0.4*79*56；穴数 -
+  - 行 510：零件 22546G；模具 TYAP-Q0185-2；材料 复合材料（REN50 54 11)；TWP 0.4*79*56；穴数 -
+  - 行 511：零件 22546V；模具 TYAP-Q0185-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*79*56；穴数 -
+- `A-P IBI` 行 518-520：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 518：零件 23373；模具 TYAP-Q0189-1；材料 SUS304 3/4H；TWP 0.4*95*48；穴数 -
+  - 行 519：零件 23373G；模具 TYAP-Q0189-2；材料 复合材料（REN50 54 11)；TWP 0.4*95*48；穴数 -
+  - 行 520：零件 23373V；模具 TYAP-Q0189-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*95*48；穴数 -
+- `A-P IBI` 行 521-522：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 521：零件 23900；模具 TYAP-Q0190-1；材料 SUS304 3/4H；TWP 0.4*90*61；穴数 -
+  - 行 522：零件 23900G；模具 TYAP-Q0190-2；材料 复合材料（REN50 54 11)；TWP 0.4*90*61；穴数 -
+- `A-P IBI` 行 523-525：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 523：零件 23900；模具 TYAP-Q0190-1；材料 SUS304 3/4H；TWP 0.4*97*65；穴数 -
+  - 行 524：零件 23900G；模具 TYAP-Q0190-2；材料 复合材料（REN50 54 11)；TWP 0.4*97*65；穴数 -
+  - 行 525：零件 23900V；模具 TYAP-Q0190-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*97*65；穴数 -
+- `A-P IBI` 行 528-530：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 528：零件 23966；模具 TYAP-Q0191-1；材料 SUS304 3/4H；TWP 0.5*84*80；穴数 -
+  - 行 529：零件 23966G；模具 TYAP-Q0191-2；材料 复合材料（REN50 55 11)；TWP 0.5*84*80；穴数 -
+  - 行 530：零件 23966V；模具 TYAP-Q0191-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*84*80；穴数 -
+- `A-P IBI` 行 531-532：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 531：零件 23968；模具 TYAP-Q0192-1；材料 SUS304 3/4H；TWP 0.5*60*79.5；穴数 -
+  - 行 532：零件 23968G；模具 TYAP-Q0192-2；材料 复合材料（REN50 55 11)；TWP 0.5*60*79.5；穴数 -
+- `A-P IBI` 行 533-535：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 533：零件 23968；模具 TYAP-Q0192-1；材料 SUS304 3/4H；TWP 0.5*65*83；穴数 -
+  - 行 534：零件 23968G；模具 TYAP-Q0192-2；材料 复合材料（REN50 55 11)；TWP 0.5*65*83；穴数 -
+  - 行 535：零件 23968V；模具 TYAP-Q0192-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*65*83；穴数 -
+- `A-P IBI` 行 538-539：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 538：零件 24228W；模具 TYAP-Q0193-1；材料 SUS304 3/4H；TWP 0.5*95*63；穴数 -
+  - 行 539：零件 24228G；模具 TYAP-Q0193-2；材料 复合材料（REN50 55 11)；TWP 0.5*95*63；穴数 -
+- `A-P IBI` 行 542-543：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 542：零件 24226；模具 TYAP-Q0194-1；材料 SUS304 3/4H；TWP 0.5*98*98；穴数 -
+  - 行 543：零件 24226G；模具 TYAP-Q0194-2；材料 复合材料（REN50 55 11)；TWP 0.5*98*98；穴数 -
+- `A-P IBI` 行 548-550：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 548：零件 21072；模具 TYAP-Q0197-1；材料 SUS304 3/4H；TWP 0.4*70*81；穴数 -
+  - 行 549：零件 21072G；模具 TYAP-Q0197-2；材料 复合材料（REN50 54 11)；TWP 0.4*70*81；穴数 -
+  - 行 550：零件 21072V；模具 TYAP-Q0197-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*70*81；穴数 -
+- `A-P IBI` 行 553-555：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 553：零件 22232；模具 TYAP-Q0200-1；材料 SUS304 3/4H；TWP 0.4*80*51；穴数 -
+  - 行 554：零件 22232G；模具 TYAP-Q0200-2；材料 复合材料（REN50 54 11)；TWP 0.4*80*51；穴数 -
+  - 行 555：零件 22232V；模具 TYAP-Q0200-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*80*51；穴数 -
+- `A-P IBI` 行 560-562：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 560：零件 23350；模具 TYAP-Q0202-1；材料 SUS304 3/4H；TWP 0.4*92*68；穴数 -
+  - 行 561：零件 23350G；模具 TYAP-Q0202-2；材料 复合材料（REN50 54 11)；TWP 0.4*92*68；穴数 -
+  - 行 562：零件 23350V；模具 TYAP-Q0202-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*92*68；穴数 -
+- `A-P IBI` 行 563-564：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 563：零件 23402；模具 TYAP-Q0203-1；材料 SUS304 3/4H；TWP 0.4*70*58；穴数 -
+  - 行 564：零件 23402G；模具 TYAP-Q0203-2；材料 复合材料（REN50 54 11)；TWP 0.4*70*58；穴数 -
+- `A-P IBI` 行 565-566：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 565：零件 23402；模具 TYAP-Q0203-1；材料 SUS304 3/4H；TWP 0.4*80*70；穴数 -
+  - 行 566：零件 23402G；模具 TYAP-Q0203-2；材料 复合材料（REN50 54 11)；TWP 0.4*80*70；穴数 -
+- `A-P IBI` 行 572-573：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 572：零件 23516；模具 TYAP-Q0206-1；材料 SUS304 3/4H；TWP 0.4*96*58.5；穴数 -
+  - 行 573：零件 23516G；模具 TYAP-Q0206-2；材料 复合材料（REN50 54 11)；TWP 0.4*96*58.5；穴数 -
+- `A-P IBI` 行 574-576：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 574：零件 23516；模具 TYAP-Q0206-1；材料 SUS304 3/4H；TWP 0.4*102*62；穴数 -
+  - 行 575：零件 23516G；模具 TYAP-Q0206-2；材料 复合材料（REN50 54 11)；TWP 0.4*102*62；穴数 -
+  - 行 576：零件 23516V；模具 TYAP-Q0206-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*102*62；穴数 -
+- `A-P IBI` 行 578-579：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 578：零件 24054；模具 TYAP-Q0208-1；材料 SUS304 3/4H；TWP 0.4*108*83；穴数 -
+  - 行 579：零件 24054G；模具 TYAP-Q0208-2；材料 复合材料（REN50 54 11)；TWP 0.4*108*83；穴数 -
+- `A-P IBI` 行 580-582：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 580：零件 24054；模具 TYAP-Q0208-1；材料 SUS304 3/4H；TWP 0.4*114*84；穴数 -
+  - 行 581：零件 24054G；模具 TYAP-Q0208-2；材料 复合材料（REN50 54 11)；TWP 0.4*114*84；穴数 -
+  - 行 582：零件 24054V；模具 TYAP-Q0208-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*114*84；穴数 -
+- `A-P IBI` 行 583-584：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 583：零件 24782；模具 TYAP-Q0209-1；材料 SUS304 3/4H；TWP 0.5*83*23；穴数 -
+  - 行 584：零件 24782G；模具 TYAP-Q0209-2；材料 复合材料（REN50 55 11)；TWP 0.5*83*23；穴数 -
+- `A-P IBI` 行 585-586：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 585：零件 24782；模具 TYAP-Q0209-1；材料 SUS304 3/4H；TWP 0.5*90*23；穴数 -
+  - 行 586：零件 24782G；模具 TYAP-Q0209-2；材料 复合材料（REN50 55 11)；TWP 0.5*90*23；穴数 -
+- `A-P IBI` 行 600-602：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 600：零件 22409；模具 TYAP-Q0218-1；材料 SUS304 3/4H；TWP 0.5*90*56；穴数 -
+  - 行 601：零件 22409G；模具 TYAP-Q0218-2；材料 复合材料（REN50 55 11)；TWP 0.5*90*56；穴数 -
+  - 行 602：零件 22409V；模具 TYAP-Q0218-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*90*56；穴数 -
+- `A-P IBI` 行 603-605：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 603：零件 22410；模具 TYAP-Q0219-1；材料 SUS304 3/4H；TWP 0.5*94*55.5；穴数 -
+  - 行 604：零件 22410G；模具 TYAP-Q0219-2；材料 复合材料（REN50 55 11)；TWP 0.5*94*55.5；穴数 -
+  - 行 605：零件 22410V；模具 TYAP-Q0219-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*94*55.5；穴数 -
+- `A-P IBI` 行 609-610：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 609：零件 23501W；模具 TYAP-Q0223-1；材料 SUS304 3/4H；TWP 0.4*78*83；穴数 -
+  - 行 610：零件 23501G；模具 TYAP-Q0223-2；材料 复合材料（REN50 54 11)；TWP 0.4*78*83；穴数 -
+- `A-P IBI` 行 611-613：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 611：零件 23501W；模具 TYAP-Q0223-1；材料 SUS304 3/4H；TWP 0.4*88*84；穴数 -
+  - 行 612：零件 23501G；模具 TYAP-Q0223-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*84；穴数 -
+  - 行 613：零件 23501V；模具 TYAP-Q0223-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*88*84；穴数 -
+- `A-P IBI` 行 618-619：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 618：零件 23833；模具 TYAP-Q0226-1；材料 SUS304 3/4H；TWP 0.4*85*38；穴数 -
+  - 行 619：零件 23833G；模具 TYAP-Q0226-2；材料 复合材料（REN50 54 11)；TWP 0.4*85*38；穴数 -
+- `A-P IBI` 行 666-667：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 666：零件 25149；模具 TYAP-Q0250-1；材料 SUS301；TWP 0.4*60*48；穴数 -
+  - 行 667：零件 25149G；模具 TYAP-Q0250-2；材料 复合材料（REN50 54 11)；TWP 0.4*60*48；穴数 -
+- `A-P IBI` 行 675-677：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 675：零件 23628；模具 TYAP-Q0255-1；材料 SUS301；TWP 0.4*78*43；穴数 -
+  - 行 676：零件 23628G；模具 TYAP-Q0255-2；材料 复合材料（REN50 54 11)；TWP 0.4*78*43；穴数 -
+  - 行 677：零件 23628V；模具 TYAP-Q0255-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*78*43；穴数 -
+- `A-P IBI` 行 680-682：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 680：零件 23312；模具 TYAP-Q0258-1；材料 SUS304 3/4H；TWP 0.3*44*28；穴数 -
+  - 行 681：零件 23312G；模具 TYAP-Q0258-2；材料 复合材料（REN50 53 11)；TWP 0.3*44*28；穴数 -
+  - 行 682：零件 23312V；模具 TYAP-Q0258-3；材料 复合材料（REN50 53 11)(基材SUS201)；TWP 0.3*44*28；穴数 -
+- `A-P IBI` 行 685-686：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 685：零件 25150；模具 TYAP-Q0261-1；材料 SUS304 3/4H；TWP 0.4*60*48；穴数 -
+  - 行 686：零件 25150G；模具 TYAP-Q0261-2；材料 复合材料（REN50 54 11)；TWP 0.4*60*48；穴数 -
+- `A-P IBI` 行 709-711：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 709：零件 21664；模具 TYAP-Q0273-1；材料 SUS304 3/4H；TWP 0.4*94*97.5；穴数 -
+  - 行 710：零件 21664G；模具 TYAP-Q0273-2；材料 复合材料（REN50 54 11)；TWP 0.4*94*97.5；穴数 -
+  - 行 711：零件 21664V；模具 TYAP-Q0273-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*94*97.5；穴数 -
+- `A-P IBI` 行 715-716：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 715：零件 23713；模具 TYAP-Q0276-1；材料 SUS304 3/4H；TWP 0.4*88*68.5；穴数 -
+  - 行 716：零件 23713G；模具 TYAP-Q0276-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*68.5；穴数 -
+- `A-P IBI` 行 719-721：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 719：零件 20725；模具 TYAP-Q0277-1；材料 SUS304 3/4H；TWP 0.4*84*86；穴数 -
+  - 行 720：零件 20725G；模具 TYAP-Q0277-2；材料 复合材料（REN50 55 11)；TWP 0.4*84*86；穴数 -
+  - 行 721：零件 20725V；模具 TYAP-Q0277-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.4*84*86；穴数 -
+- `A-P IBI` 行 724-725：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 724：零件 23958；模具 TYAP-Q0278-1；材料 SUS304 3/4H；TWP 0.5*70*71；穴数 -
+  - 行 725：零件 23958G；模具 TYAP-Q0278-2；材料 复合材料（REN50 54 11)；TWP 0.5*70*71；穴数 -
+- `A-P IBI` 行 729-731：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 729：零件 24971；模具 TYAP-Q0280-1；材料 SUS304 3/4H；TWP 0.4*48*84；穴数 -
+  - 行 730：零件 24971G；模具 TYAP-Q0280-2；材料 复合材料（REN50 54 11)；TWP 0.4*48*84；穴数 -
+  - 行 731：零件 24971V；模具 TYAP-Q0280-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*48*84；穴数 -
+- `A-P IBI` 行 734-735：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 734：零件 23288；模具 TYAP-Q0282-1；材料 SUS304 3/4H；TWP 1*108*29.5；穴数 -
+  - 行 735：零件 23288G；模具 TYAP-Q0282-2；材料 复合材料；TWP 1*108*29.5；穴数 -
+- `A-P IBI` 行 736-738：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 736：零件 23288；模具 TYAP-Q0282-1；材料 SUS304 3/4H；TWP 1*112*30；穴数 -
+  - 行 737：零件 23288G；模具 TYAP-Q0282-2；材料 复合材料；TWP 1*112*30；穴数 -
+  - 行 738：零件 23288V；模具 TYAP-Q0282-3；材料 复合材料(基材SUS201)；TWP 1*112*30；穴数 -
+- `A-P IBI` 行 739-740：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 739：零件 23475；模具 TYAP-Q0283-1；材料 SUS304 3/4H；TWP 0.6*80*44；穴数 -
+  - 行 740：零件 23475G；模具 TYAP-Q0283-2；材料 复合材料（REN50 56 11)；TWP 0.6*80*44；穴数 -
+- `A-P IBI` 行 741-742：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 741：零件 25154；模具 TYAP-Q0284-1；材料 SUS304 3/4H；TWP 0.5*73*79；穴数 -
+  - 行 742：零件 25154G；模具 TYAP-Q0284-2；材料 复合材料；TWP 0.5*73*79；穴数 -
+- `A-P IBI` 行 743-745：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 743：零件 25154；模具 TYAP-Q0284-1；材料 SUS304 3/4H；TWP 0.5*78*83；穴数 -
+  - 行 744：零件 25154G；模具 TYAP-Q0284-2；材料 复合材料；TWP 0.5*78*83；穴数 -
+  - 行 745：零件 25154V；模具 TYAP-Q0284-3；材料 复合材料(基材SUS201)；TWP 0.5*78*83；穴数 -
+- `A-P IBI` 行 747-749：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 747：零件 23627；模具 TYAP-Q0286-1；材料 SUS304 3/4H；TWP 0.4*78*43；穴数 -
+  - 行 748：零件 23627G；模具 TYAP-Q0286-2；材料 复合材料（REN50 54 11)；TWP 0.4*78*43；穴数 -
+  - 行 749：零件 23627V；模具 TYAP-Q0286-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*78*43；穴数 -
+- `A-P IBI` 行 750-752：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 750：零件 23162；模具 TYAP-Q0287-1；材料 SUS304 3/4H；TWP 0.6*84*43；穴数 -
+  - 行 751：零件 23162G；模具 TYAP-Q0287-2；材料 复合材料（REN50 56 11)；TWP 0.6*84*43；穴数 -
+  - 行 752：零件 23162V；模具 TYAP-Q0287-3；材料 复合材料（REN50 56 11)(基材SUS201)；TWP 0.6*84*43；穴数 -
+- `A-P IBI` 行 755-756：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 755：零件 25333；模具 TYAP-Q0290-1；材料 SUS304 3/4H；TWP 0.5*83*78；穴数 -
+  - 行 756：零件 25333G；模具 TYAP-Q0290-2；材料 复合材料（REN50 55 11)；TWP 0.5*83*78；穴数 -
+- `A-P IBI` 行 757-759：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 757：零件 25333；模具 TYAP-Q0290-1；材料 SUS304 3/4H；TWP 0.5*90*83；穴数 -
+  - 行 758：零件 25333G；模具 TYAP-Q0290-2；材料 复合材料（REN50 55 11)；TWP 0.5*90*83；穴数 -
+  - 行 759：零件 25333V；模具 TYAP-Q0290-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*90*83；穴数 -
+- `A-P IBI` 行 760-761：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 760：零件 25337；模具 TYAP-Q0291-1；材料 SUS304 3/4H；TWP 0.5*75*71；穴数 -
+  - 行 761：零件 25337G；模具 TYAP-Q0291-2；材料 复合材料（REN50 55 11)；TWP 0.5*75*71；穴数 -
+- `A-P IBI` 行 762-764：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 762：零件 25337；模具 TYAP-Q0291-1；材料 SUS304 3/4H；TWP 0.5*81*75；穴数 -
+  - 行 763：零件 25337G；模具 TYAP-Q0291-2；材料 复合材料（REN50 55 11)；TWP 0.5*81*75；穴数 -
+  - 行 764：零件 25337V；模具 TYAP-Q0291-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*81*75；穴数 -
+- `A-P IBI` 行 765-766：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 765：零件 25341；模具 TYAP-Q0292-1；材料 SUS304 3/4H；TWP 0.5*65*61；穴数 -
+  - 行 766：零件 25341G；模具 TYAP-Q0292-2；材料 复合材料（REN50 55 11)；TWP 0.5*65*61；穴数 -
+- `A-P IBI` 行 767-769：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 767：零件 25341；模具 TYAP-Q0292-1；材料 SUS304 3/4H；TWP 0.5*72*61；穴数 -
+  - 行 768：零件 25341G；模具 TYAP-Q0292-2；材料 复合材料（REN50 55 11)；TWP 0.5*72*61；穴数 -
+  - 行 769：零件 25341V；模具 TYAP-Q0292-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*72*61；穴数 -
+- `A-P IBI` 行 793-795：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 793：零件 25432；模具 TYAP-Q0310-1；材料 SUS304 3/4H；TWP 0.4*88*58.5；穴数 -
+  - 行 794：零件 25432G；模具 TYAP-Q0310-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*58.5；穴数 -
+  - 行 795：零件 25432V；模具 TYAP-Q0310-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*88*58.5；穴数 -
+- `A-P IBI` 行 793-794：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 793：零件 25432；模具 TYAP-Q0310-1；材料 SUS304 3/4H；TWP 0.4*88*58.5；穴数 -
+  - 行 794：零件 25432G；模具 TYAP-Q0310-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*58.5；穴数 -
+- `A-P IBI` 行 796-798：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 796：零件 25433；模具 TYAP-Q0311-1；材料 SUS304 3/4H；TWP 0.4*88*58.5；穴数 -
+  - 行 797：零件 25433G；模具 TYAP-Q0311-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*58.5；穴数 -
+  - 行 798：零件 25433V；模具 TYAP-Q0311-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*88*58.5；穴数 -
+- `A-P IBI` 行 796-797：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 796：零件 25433；模具 TYAP-Q0311-1；材料 SUS304 3/4H；TWP 0.4*88*58.5；穴数 -
+  - 行 797：零件 25433G；模具 TYAP-Q0311-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*58.5；穴数 -
+- `A-P IBI` 行 852-853：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 852：零件 25764；模具 TYAP-Q0341-1；材料 SUS304-3/4H；TWP 0.4*45*65；穴数 -
+  - 行 853：零件 25764G；模具 TYAP-Q0341-2；材料 复合材料（REN50 54 11）；TWP 0.4*45*65；穴数 -
+- `A-P IBI` 行 854-855：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 854：零件 25765；模具 TYAP-Q0342-1；材料 SUS304-3/4H；TWP 0.4*45*65；穴数 -
+  - 行 855：零件 25765G；模具 TYAP-Q0342-2；材料 复合材料（REN50 54 11）；TWP 0.4*45*65；穴数 -
+- `A-P IBI` 行 874-876：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 874：零件 26006；模具 GBAP-Q0354-1；材料 SUS304-3/4H；TWP 0.5*74*70；穴数 -
+  - 行 875：零件 26006G；模具 GBAP-Q0354-2；材料 复合材料（REN50 55 11）；TWP 0.5*74*70；穴数 -
+  - 行 876：零件 26006V；模具 GBAP-Q0354-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*74*70；穴数 -
+- `A-P IBI` 行 877-879：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 877：零件 25994；模具 GBAP-Q0355-1；材料 SUS304-3/4H；TWP 0.5*65*67；穴数 -
+  - 行 878：零件 25994G；模具 GBAP-Q0355-2；材料 复合材料（REN50 55 11）；TWP 0.5*65*67；穴数 -
+  - 行 879：零件 25994V；模具 GBAP-Q0355-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*65*67；穴数 -
+- `A-P IBI` 行 894-895：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 894：零件 26099；模具 GBAP-Q0367-1；材料 SUS304-3/4H；TWP 0.5*78*67；穴数 -
+  - 行 895：零件 26099G；模具 GBAP-Q0367-2；材料 复合材料（REN50 55 11）；TWP 0.5*78*67；穴数 -
+- `A-P IBI` 行 925-926：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 925：零件 24886；模具 GBAP-Q0394-1；材料 SUS304-3/4H；TWP 0.4*84*67；穴数 -
+  - 行 926：零件 24886G；模具 GBAP-Q0394-2；材料 复合材料（REN50 54 11）；TWP 0.4*84*67；穴数 -
+- `B-B 大陆集团` 行 30-31：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs
+  - 行 30：零件 06.3281.1636.1；模具 左弹簧片；材料 -；TWP 用TYBB-Q0013-1/2模具更改，部分简易模新制；穴数 -
+  - 行 31：零件 06.3281.1637.1；模具 右弹簧片；材料 -；TWP 用TYBB-Q0013-1/2模具更改，部分简易模新制；穴数 -
+
+## MISSING_CAVITY_TWP · 缺少穴数证据且 TWP 缺失/不一致（30 组）
+
+决策问题：TWP 不一致时是否无条件拆分，还是允许按其他来源证据重新归组？
+
+- `浙江万宝机械有限公司(A)` 行 259-260：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 259：零件 SE00-3502113；模具 TYA-Q0154-1；材料 QSTE 420或SPFH590；TWP -；穴数 -
+  - 行 260：零件 SE00-3502213；模具 TYA-Q0154-2；材料 QSTE 420或SPFH590；TWP -；穴数 -
+- `浙江万宝机械有限公司(A)` 行 466-468：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 466：零件 VIE-ES8-3501-1A6-1；模具 TYA-Q0299-1；材料 SUS301-3/4H；TWP -；穴数 -
+  - 行 467：零件 VIE-ES8-3501-1A6-2；模具 TYA-Q0299-2；材料 SUS301-3/4H；TWP -；穴数 -
+  - 行 468：零件 VIE-ES8-3501-1A6-3；模具 TYA-Q0299-3；材料 SUS301-3/4H；TWP -；穴数 -
+- `湖北航特科技有限责任公司(G)` 行 216-217：湖北航特科技有限责任公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 216：零件 207050D00006；模具 TYG-M0089；材料 SUS301 3/4H；TWP 0.6*32*70.5；穴数 -
+  - 行 217：零件 207070M01141；模具 TYG-M0090；材料 SUS301 3/4H；TWP 0.4*30*24；穴数 -
+- `山东日信(Y) ` 行 120-121：日立安斯泰莫制动系统（山东）有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 120：零件 000-C30-146A；模具 TYY-M0114；材料 SUS301-CSP3/4H；TWP 0.8*42*48.5；穴数 -
+  - 行 121：零件 000-C30-147A；模具 TYY-M0115；材料 SUS301-CSP3/4H；TWP 0.8*42*55.5；穴数 -
+- `上海万向钱潮A-A` 行 104-105：万向钱潮（上海）汽车制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 104：零件 60008581X；模具 TYAA-Q0075；材料 SUS301-CSP 3/4H（JIS G4305）；TWP -；穴数 -
+  - 行 105：零件 60008582X；模具 TYAA-Q0076；材料 SUS301-CSP 3/4H（JIS G4305）；TWP -；穴数 -
+- `A-G沃富润` 行 10-15：沃富润；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 10：零件 BC470-XXX-00；模具 TYAG-Q0007-1；材料 复合材料（客户提供）；TWP -；穴数 -
+  - 行 11：零件 BC471-XXX-00；模具 TYAG-Q0007-2；材料 复合材料（客户提供）；TWP -；穴数 -
+  - 行 12：零件 BC470-XXX-00；模具 TYAG-Q0008-1；材料 复合材料（客户提供）；TWP -；穴数 -
+  - 行 13：零件 BC471-XXX-00；模具 TYAG-Q0008-2；材料 复合材料（客户提供）；TWP -；穴数 -
+  - 行 14：零件 BC470-A14-XX；模具 TYAG-Q0009-1；材料 复合材料（客户提供）；TWP -；穴数 -
+  - 行 15：零件 BC471-A14-XX；模具 TYAG-Q0009-2；材料 复合材料（客户提供）；TWP -；穴数 -
+- `ZF` 行 10-11：ZF；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 10：零件 19015001；模具 TYAI-Q0005；材料 SUS301-CSP3/4H；TWP -；穴数 -
+  - 行 11：零件 19015002；模具 TYAI-Q0006；材料 SUS301-CSP3/4H；TWP -；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 52-53：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 52：零件 3800 100-P02 101T；模具 TYAL-Q0047；材料 QStE 460TM；TWP -；穴数 -
+  - 行 53：零件 3800 100-P02 102T；模具 TYAL-Q0048；材料 QStE 460TM；TWP -；穴数 -
+- `A-P IBI` 行 969-971：安路驰；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 969：零件 H4283；模具 GBAP-Q0431；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 970：零件 H4283-1；模具 GBAP-Q0431-1；材料 SUS304 3/4H；TWP 1.0*11*152；穴数 -
+  - 行 971：零件 H4283-2；模具 GBAP-Q0431-2；材料 SUS304 3/4H；TWP 0.8*15*106；穴数 -
+- `A-P IBI` 行 979-981：安路驰；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 979：零件 H4306；模具 GBAP-Q0439；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 980：零件 H4306-1；模具 GBAP-Q0439-1；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 981：零件 H4306-2；模具 GBAP-Q0439-2；材料 SUS304 3/4H；TWP -；穴数 -
+- `A-P IBI` 行 1067-1069：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 1067：零件 24170；模具 GBAP-Q0520；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1068：零件 24170-1；模具 GBAP-Q0520-1；材料 SUS304 3/4H；TWP 1.0*14.7*105（分条不刮边，无毛刺）；穴数 -
+  - 行 1069：零件 24170-2；模具 GBAP-Q0520-2；材料 SUS304 3/4H；TWP 0.8*23*137（分条不刮边，无毛刺）；穴数 -
+- `A-P IBI` 行 1104-1109：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 1104：零件 25990；模具 GBAP-Q0551；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1105：零件 25990-1；模具 GBAP-Q0551-1；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1106：零件 25990-2；模具 GBAP-Q0551-2；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1107：零件 25989；模具 GBAP-Q0552；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1108：零件 25989-1；模具 GBAP-Q0552-1；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1109：零件 25989-2；模具 GBAP-Q0552-2；材料 SUS304 3/4H；TWP -；穴数 -
+- `A-P IBI` 行 1110-1111：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 1110：零件 26043；模具 GBAP-Q0553；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1111：零件 26044；模具 GBAP-Q0554；材料 SUS304 3/4H；TWP -；穴数 -
+- `A-P IBI` 行 1112-1114：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 1112：零件 25792；模具 GBAP-Q0555；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1113：零件 25792-1；模具 GBAP-Q0555-1；材料 SUS304 3/4H；TWP 1.0*14.7*137.5；穴数 -
+  - 行 1114：零件 25792-2；模具 GBAP-Q0555-2；材料 SUS304 3/4H；TWP 0.8*60*154；穴数 -
+- `A-P IBI` 行 1120-1122：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 1120：零件 25176；模具 GBAP-Q0559；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1121：零件 25176-1；模具 GBAP-Q0559-1；材料 SUS304 3/4H；TWP 1.0*14.7*127.5；穴数 -
+  - 行 1122：零件 25176-2；模具 GBAP-Q0559-2；材料 SUS304 3/4H；TWP 1.0*36*184；穴数 -
+- `A-X泛博` 行 5-6：泛博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 5：零件 0204C08191；模具 左转杆调节片；材料 0.6*55*61（一出二）；TWP -；穴数 -
+  - 行 6：零件 0204C08192；模具 右转杆调节片；材料 0.6*55*61（一出二）；TWP -；穴数 -
+- `B-B 大陆集团` 行 15-16：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 15：零件 11.8116-0802.1；模具 弹簧片I；材料 0.4*86*72（一出二）；TWP -；穴数 -
+  - 行 16：零件 11.8116-0803.1；模具 弹簧片II；材料 0.4*86*72（一出二）；TWP -；穴数 -
+- `B-B 大陆集团` 行 37-38：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 37：零件 11.8116.0581.1；模具 左弹簧片；材料 0.4*；TWP -；穴数 -
+  - 行 38：零件 11.8116.0582.1；模具 右弹簧片；材料 0.4*；TWP -；穴数 -
+- `B-B 大陆集团` 行 39-40：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 39：零件 11.8116.0581.1；模具 左弹簧片；材料 0.4*94*71.5(1出2，左右各1个）；TWP -；穴数 -
+  - 行 40：零件 11.8116.0582.1；模具 右弹簧片；材料 0.4*94*71.5(1出2，左右各1个）；TWP -；穴数 -
+- `B-B 大陆集团` 行 55-56：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 55：零件 06.3281-1657.1；模具 左弹簧片；材料 0.4*86*72(1出2，左右各1个）；TWP -；穴数 -
+  - 行 56：零件 06.3281-1658.1；模具 右弹簧片；材料 0.4*86*72(1出2，左右各1个）；TWP -；穴数 -
+- `B-B 大陆集团` 行 57-58：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 57：零件 06.3281-1659.1；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP -；穴数 -
+  - 行 58：零件 06.3281-1660.1；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP -；穴数 -
+- `B-B 大陆集团` 行 59-60：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 59：零件 06.3281-1659.1；模具 左弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP -；穴数 -
+  - 行 60：零件 06.3281-1660.1；模具 右弹簧片；材料 0.4*108*71.5(1出2，左右各1个）；TWP -；穴数 -
+- `B-B 大陆集团` 行 114-115：大陆集团；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 114：零件 06.9281-1641.1；模具 左弹簧片；材料 0.5*108*71.5(1出2，左右各1个）；TWP -；穴数 -
+  - 行 115：零件 06.9281-1642.1；模具 右弹簧片；材料 0.5*108*71.5(1出2，左右各1个）；TWP -；穴数 -
+- `B-C武汉万向汽车制动器有限公司 ` 行 17-18：武汉万向汽车制动器有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 17：零件 A00125983-03；模具 TYBC-Q0009-1；材料 SUS301-CSP3/4H；TWP -；穴数 -
+  - 行 18：零件 A00125983-04；模具 TYBC-Q0009-2；材料 SUS301-CSP3/4H；TWP -；穴数 -
+- `B-M布雷博` 行 151-152：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 151：零件 05.E443.82-1；模具 TYBM-Q0036-1；材料 SUS301 CSP-H(HV390~450)；TWP 0.8*；穴数 -
+  - 行 152：零件 05.E443.82-2；模具 TYBM-Q0036-2；材料 SUS301 CSP-H(HV390~450)；TWP 0.9*；穴数 -
+- `B-M布雷博` 行 159-160：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 159：零件 05.E443.95-1；模具 TYBM-Q0037-1；材料 SUS301 CSP-H(HV390~450)；TWP 0.8*；穴数 -
+  - 行 160：零件 05.E443.95-2；模具 TYBM-Q0037-2；材料 SUS301 CSP-H(HV390~450)；TWP 0.9*；穴数 -
+- `B-M布雷博` 行 196-197：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 196：零件 XC4.EU.S1-1；模具 TYBM-Q0054-1；材料 X10CrNi18-8(HV390~450)或
+SUS301 CSP(JIS G4313)(HV390~450)；TWP -；穴数 -
+  - 行 197：零件 XC4.EU.S2-1；模具 TYBM-Q0055-1；材料 X10CrNi18-8(HV390~450)或
+SUS301 CSP(JIS G4313)(HV390~450)；TWP -；穴数 -
+- `B-M布雷博` 行 203-204：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 203：零件 XC4.EU.S7-1；模具 TYBM-Q0056-1；材料 X10CrNi18-8(HV390~450)或
+SUS301 CSP(JIS G4313)(HV390~450)；TWP -；穴数 -
+  - 行 204：零件 XC4.EU.S8-1；模具 TYBM-Q0057-1；材料 X10CrNi18-8(HV390~450)或
+SUS301 CSP(JIS G4313)(HV390~450)；TWP -；穴数 -
+- `GBA 浙江盖博汽车零部件公司` 行 4-5：浙江盖博汽车零部件公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 4：零件 MT393(010)；模具 GBA-Q0001；材料 SUS304 3/4H；TWP 0.3*47*23；穴数 -
+  - 行 5：零件 MT393(015)；模具 GBA-Q0002；材料 SUS304 3/4H；TWP 0.4*47*23；穴数 -
+- `GBA 浙江盖博汽车零部件公司` 行 6-7：浙江盖博汽车零部件公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；TWP/spec is missing or differs
+  - 行 6：零件 MT393(020)；模具 GBA-Q0003；材料 SUS304 3/4H；TWP 0.5*47*23；穴数 -
+  - 行 7：零件 MT393(025)；模具 GBA-Q0004；材料 SUS304 3/4H；TWP 0.6*47*23；穴数 -
+
+## MISSING_CAVITY_MATERIAL_TWP · 缺少穴数证据且材料、TWP均缺失/不一致（37 组）
+
+决策问题：多个关键共享字段同时不可靠；通常应保持独立，是否需要人工补充来源？
+
+- `浙江万宝机械有限公司(A)` 行 107-115：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 107：零件 SDF-3507110；模具 TYA-Q0053；材料 -；TWP -；穴数 -
+  - 行 108：零件 SDF-3507111；模具 TYA-Q0053-1；材料 Q235B；TWP 7.0*145*155；穴数 -
+  - 行 109：零件 SDF-3507112；模具 TYA-Q0053-2；材料 -；TWP -；穴数 -
+  - 行 110：零件 SDF-3507113；模具 TYA-Q0053-3；材料 SECC；TWP 2.0*81.0*40；穴数 -
+  - 行 111：零件 SRV-3507113；模具 TYA-Q0053-4；材料 -；TWP -；穴数 -
+  - 行 112：零件 SRV-3507114；模具 TYA-Q0053-5；材料 -；TWP -；穴数 -
+  - 行 113：零件 SRV-3507114-1；模具 TYA-Q0053-5-1；材料 -；TWP -；穴数 -
+  - 行 114：零件 SDF-3507210；模具 TYA-Q0054；材料 -；TWP -；穴数 -
+  - 行 115：零件 SDF-3507212；模具 TYA-Q0054-2；材料 -；TWP -；穴数 -
+- `浙江万宝机械有限公司(A)` 行 227-235：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 227：零件 B35-3507110；模具 TYA-Q0136；材料 -；TWP -；穴数 -
+  - 行 228：零件 SDF-3507111；模具 TYA-Q0136-1；材料 Q235B；TWP 7.0*145*155；穴数 -
+  - 行 229：零件 SDF-3507112；模具 TYA-Q0136-2；材料 -；TWP -；穴数 -
+  - 行 230：零件 SDF-3507113；模具 TYA-Q0136-3；材料 SECC；TWP 2.0*81*40；穴数 -
+  - 行 231：零件 SRV-3507113；模具 TYA-Q0136-4；材料 -；TWP -；穴数 -
+  - 行 232：零件 SRV-3507114；模具 TYA-Q0136-5；材料 -；TWP -；穴数 -
+  - 行 233：零件 SRV-3507114-1；模具 TYA-Q0136-6；材料 -；TWP -；穴数 -
+  - 行 234：零件 B35-3507210；模具 TYA-Q0137；材料 -；TWP -；穴数 -
+  - 行 235：零件 SDF-3507212；模具 TYA-Q0137-2；材料 -；TWP -；穴数 -
+- `浙江万宝机械有限公司(A)` 行 293-294：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 293：零件 EK01-3507110；模具 TYA-Q0180；材料 -；TWP -；穴数 -
+  - 行 294：零件 EK01-3507210；模具 TYA-Q0181；材料 -；TWP -；穴数 -
+- `浙江万宝机械有限公司(A)` 行 414-415：浙江万宝机械有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 414：零件 B15-3507110-G；模具 TYA-Q0272；材料 -；TWP -；穴数 -
+  - 行 415：零件 B15-3507210-G；模具 TYA-Q0273；材料 -；TWP -；穴数 -
+- `安徽万安汽车零部件有限公司(C)` 行 18-26：安徽万安汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 18：零件 SRV-3507110；模具 TYC-Q0006；材料 SPCC；TWP -；穴数 -
+  - 行 19：零件 SRV-3507112；模具 TYC-Q0006-1；材料 SPCC；TWP 2.0*217*217；穴数 -
+  - 行 20：零件 SRV-3507111；模具 TYC-Q0006-2；材料 SPCC；TWP -；穴数 -
+  - 行 21：零件 SRV-3507113；模具 TYC-Q0006-3；材料 SPCC；TWP -；穴数 -
+  - 行 22：零件 SRV-3507114；模具 TYC-Q0006-4；材料 外加工；TWP -；穴数 -
+  - 行 23：零件 SRV-3507114-1；模具 TYC-Q0006-4-1；材料 -；TWP -；穴数 -
+  - 行 24：零件 SRV-3507115；模具 TYC-Q0006-5；材料 SPCC；TWP -；穴数 -
+  - 行 25：零件 SRV-3507210；模具 TYC-Q0007；材料 SPCC；TWP -；穴数 -
+  - 行 26：零件 SRV-3507212；模具 TYC-Q0007-1；材料 SPCC；TWP 2.0*217*217；穴数 -
+- `安徽万安汽车零部件有限公司(C)` 行 45-49：安徽万安汽车零部件有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 45：零件 B2-3501150；模具 TYC-Q0021；材料 -；TWP -；穴数 -
+  - 行 46：零件 B2-3501151；模具 TYC-Q0021-1；材料 冷轧板；TWP 0.8*150*300；穴数 -
+  - 行 47：零件 B2-3501152；模具 TYC-Q0021-2；材料 -；TWP 0.8*145；穴数 -
+  - 行 48：零件 B2-3501250；模具 TYC-Q0022；材料 -；TWP -；穴数 -
+  - 行 49：零件 B2-3501251；模具 TYC-Q0022-1；材料 冷轧板；TWP 0.8*150*300；穴数 -
+- `辉门摩擦产品有限公司(I)` 行 114-120：辉门摩擦产品有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 114：零件 GXCSP138100；模具 TYI-Q0094；材料 -；TWP -；穴数 -
+  - 行 115：零件 GXCSP041500；模具 TYI-Q0095；材料 -；TWP -；穴数 -
+  - 行 116：零件 GXCSP067600；模具 TYI-Q0096；材料 -；TWP -；穴数 -
+  - 行 117：零件 GXCSP113500；模具 TYI-Q0097；材料 -；TWP -；穴数 -
+  - 行 118：零件 GXCSP408600；模具 TYI-Q0098；材料 -；TWP -；穴数 -
+  - 行 119：零件 GXCCL167500K；模具 TYI-Q0099；材料 -；TWP -；穴数 -
+  - 行 120：零件 GXCCL167500K；模具 TYI-Q0100；材料 -；TWP -；穴数 -
+- `辉门摩擦产品有限公司(I)` 行 121-126：辉门摩擦产品有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 121：零件 GXCBAM8X1.25HC-1；模具 TYI-Q0101；材料 -；TWP -；穴数 -
+  - 行 122：零件 GXCRV410100；模具 TYI-Q0102；材料 -；TWP -；穴数 -
+  - 行 123：零件 GXCRV408600；模具 TYI-Q0103；材料 -；TWP -；穴数 -
+  - 行 124：零件 GXCBAM81TTQ-1；模具 TYI-Q0104；材料 -；TWP -；穴数 -
+  - 行 125：零件 GXCBAM8X1.25-1；模具 TYI-Q0105；材料 -；TWP -；穴数 -
+  - 行 126：零件 GXCBAM8XITQ-1；模具 TYI-Q0106；材料 -；TWP -；穴数 -
+- `厦门安思通制动系统有限公司(L)` 行 9-10：厦门安思通制动系统有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 9：零件 LMA02-0060-1；模具 TYL-Q0006-1；材料 -；TWP -；穴数 -
+  - 行 10：零件 LMA02-0061-1；模具 TYL-Q0006-2；材料 -；TWP -；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 30-31：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 30：零件 6000 240-P02 310；模具 TYAL-Q0027；材料 -；TWP -；穴数 -
+  - 行 31：零件 6000 240-P02 320；模具 TYAL-Q0028；材料 -；TWP -；穴数 -
+- `A-L 浙江亚太机电股份有限公司` 行 34-35：浙江亚太机电股份有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 34：零件 5200 160-P02 310；模具 TYAL-Q0031；材料 -；TWP -；穴数 -
+  - 行 35：零件 5200 160-P02 320；模具 TYAL-Q0032；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 461-463：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 461：零件 24193；模具 TYAP-Q0173-1；材料 SUS304 3/4H；TWP 0.4*88*60；穴数 -
+  - 行 462：零件 24193G；模具 TYAP-Q0173-2；材料 复合材料（REN50 54 11)；TWP 0.4*88*60；穴数 -
+  - 行 463：零件 24193V；模具 TYAP-Q0173-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP -；穴数 -
+- `A-P IBI` 行 722-723：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 722：零件 23958；模具 TYAP-Q0278-1；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 723：零件 23958G；模具 TYAP-Q0278-2；材料 复合材料（REN50 54 11)；TWP -；穴数 -
+- `A-P IBI` 行 1063-1065：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1063：零件 25101；模具 GBAP-Q0518；材料 SUS304 3/4H；TWP -；穴数 -
+  - 行 1064：零件 25101-1；模具 GBAP-Q0518-1；材料 SUS304 3/5H；TWP 1.0*14.7*117；穴数 -
+  - 行 1065：零件 25101-2；模具 GBAP-Q0518-2；材料 SUS304 3/6H；TWP 0.8*58*143；穴数 -
+- `A-P IBI` 行 1117-1119：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1117：零件 25719；模具 GBAP-Q0558；材料 SUS301- 3/4H；TWP -；穴数 -
+  - 行 1118：零件 25719-1；模具 GBAP-Q0558-1；材料 SUS304 3/4H；TWP 0.5*21*86；穴数 -
+  - 行 1119：零件 25719-2；模具 GBAP-Q0558-2；材料 SUS304 3/4H；TWP 0.6*24*118；穴数 -
+- `A-P IBI` 行 1160-1162：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1160：零件 23823；模具 GBAP-Q0595；材料 -；TWP -；穴数 -
+  - 行 1161：零件 23823-1；模具 GBAP-Q0595-1；材料 -；TWP -；穴数 -
+  - 行 1162：零件 23823-2；模具 GBAP-Q0595-2；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1171-1172：摩擦1号；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1171：零件 A001；模具 GBAP-Q0604；材料 -；TWP -；穴数 -
+  - 行 1172：零件 A002；模具 GBAP-Q0605；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1188-1189：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1188：零件 25438；模具 GBAP-Q0621；材料 -；TWP -；穴数 -
+  - 行 1189：零件 25439；模具 GBAP-Q0622；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1197-1199：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1197：零件 23802；模具 GBAP-Q0630；材料 -；TWP -；穴数 -
+  - 行 1198：零件 23802-1；模具 GBAP-Q0630-1；材料 -；TWP -；穴数 -
+  - 行 1199：零件 23802-2；模具 GBAP-Q0630-2；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1211-1212：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1211：零件 5070；模具 GBAP-Q0640；材料 -；TWP -；穴数 -
+  - 行 1212：零件 5071；模具 GBAP-Q0641；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1214-1215：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1214：零件 5264；模具 GBAP-Q0643；材料 -；TWP -；穴数 -
+  - 行 1215：零件 5325；模具 GBAP-Q0644；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1220-1221：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1220：零件 21015；模具 GBAP-Q0649；材料 -；TWP -；穴数 -
+  - 行 1221：零件 21705；模具 GBAP-Q0650；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1227-1228：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1227：零件 21164；模具 GBAP-Q0656；材料 -；TWP -；穴数 -
+  - 行 1228：零件 21167；模具 GBAP-Q0657；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1229-1230：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1229：零件 21481；模具 GBAP-Q0658；材料 -；TWP -；穴数 -
+  - 行 1230：零件 21497；模具 GBAP-Q0659；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1231-1232：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1231：零件 21927；模具 GBAP-Q0660；材料 -；TWP -；穴数 -
+  - 行 1232：零件 21928；模具 GBAP-Q0661；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1233-1234：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1233：零件 22351；模具 GBAP-Q0662；材料 -；TWP -；穴数 -
+  - 行 1234：零件 22352；模具 GBAP-Q0663；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1238-1239：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1238：零件 23718；模具 GBAP-Q0667；材料 -；TWP -；穴数 -
+  - 行 1239：零件 23719；模具 GBAP-Q0668；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1240-1241：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1240：零件 23874；模具 GBAP-Q0669；材料 -；TWP -；穴数 -
+  - 行 1241：零件 23875；模具 GBAP-Q0670；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1242-1243：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1242：零件 24006；模具 GBAP-Q0671；材料 -；TWP -；穴数 -
+  - 行 1243：零件 24007；模具 GBAP-Q0672；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1247-1248：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1247：零件 24328；模具 GBAP-Q0676；材料 -；TWP -；穴数 -
+  - 行 1248：零件 24332；模具 GBAP-Q0677；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1253-1254：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1253：零件 23634；模具 GBAP-Q0682；材料 -；TWP -；穴数 -
+  - 行 1254：零件 23635；模具 GBAP-Q0683；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1255-1256：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1255：零件 24825；模具 GBAP-Q0684；材料 -；TWP -；穴数 -
+  - 行 1256：零件 24826；模具 GBAP-Q0685；材料 -；TWP -；穴数 -
+- `A-P IBI` 行 1561-1562：IBI；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 1561：零件 25618；模具 GBAP-Q0956；材料 -；TWP -；穴数 -
+  - 行 1562：零件 25619；模具 GBAP-Q0957；材料 -；TWP -；穴数 -
+- `A-U比亚迪` 行 88-89：比亚迪汽车工业有限公司；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 88：零件 MRHB-6205371；模具 TYAU-Q0048-1；材料 -；TWP -；穴数 -
+  - 行 89：零件 MRHB-6205372；模具 TYAU-Q0048-2；材料 -；TWP -；穴数 -
+- `B-M布雷博` 行 59-62：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 59：零件 X.C2.D8.S0；模具 TYBM-Q0010；材料 -；TWP -；穴数 -
+  - 行 60：零件 无；模具 TYBM-Q0010-1；材料 SUS301 CSP-H(HV420~450)；TWP 1*；穴数 -
+  - 行 61：零件 无；模具 TYBM-Q0010-2；材料 SUS301 CSP-H(HV420~450)；TWP 0.8*；穴数 -
+  - 行 62：零件 A5.21.20.246；模具 TYBM-Q0010-3；材料 SUS 304；TWP -；穴数 -
+- `B-M布雷博` 行 194-195：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 194：零件 22.8589.61/XC4.EU.S1；模具 TYBM-Q0054；材料 -；TWP -；穴数 -
+  - 行 195：零件 22.8589.62/XC4.EU.S2；模具 TYBM-Q0055；材料 -；TWP -；穴数 -
+- `B-M布雷博` 行 201-202：布雷博；原因：no explicit 一出N/左右证据；cavity evidence is missing or inconsistent；material is missing or differs；TWP/spec is missing or differs
+  - 行 201：零件 XC4.EU.S7；模具 TYBM-Q0056；材料 -；TWP -；穴数 -
+  - 行 202：零件 XC4.EU.S8；模具 TYBM-Q0057；材料 -；TWP -；穴数 -
+
+## NO_SOURCE_ANCHOR · 有一出证据但没有 Excel 合并/来源锚点（43 组）
+
+决策问题：是否接受相邻行、相同客户、相同材料/TWP和明确一出文字作为来源块，而不要求合并单元格？
+
+- `浙江万宝机械有限公司(A)` 行 354-355：廊坊开发区瑞达汽车制动器公司；原因：no shared Excel merge/source anchor
+  - 行 354：零件 35011030G00；模具 TYA-Q0231-1；材料 SPCC；TWP 0.8*360*238；穴数 1
+  - 行 355：零件 35012040G00；模具 TYA-Q0231-2；材料 SPCC；TWP 0.8*360*238；穴数 1
+- `浙江万宝机械有限公司(A)` 行 493-494：浙江万宝机械有限公司；原因：no shared Excel merge/source anchor
+  - 行 493：零件 VIE_H01_3501_2A5；模具 TYA-Q0309-2；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*87*82（1出2）；穴数 2
+  - 行 494：零件 VIE_H01_3501_1A5；模具 TYA-Q0309-1-P2；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*87*82（1出2）；穴数 2
+- `浙江万宝机械有限公司(A)` 行 561-562：浙江万宝机械有限公司；原因：no shared Excel merge/source anchor
+  - 行 561：零件 VIE_CU1207_3501_2A5；模具 TYA-Q0331-2；材料 ANT S-S 4015；TWP 0.55*87*82(一出二,左右各一个)；穴数 2
+  - 行 562：零件 VIE_CU1207_3501_3A5；模具 TYA-Q0331-3；材料 ANT S-S 4015；TWP 0.55*87*82(一出二,左右各一个)；穴数 2
+- `浙江万宝机械有限公司(A)` 行 573-574：浙江万宝机械有限公司；原因：no shared Excel merge/source anchor
+  - 行 573：零件 VIE_SK85_3501_2A5；模具 TYA-Q0335-2；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*87*82（1出2）；穴数 2
+  - 行 574：零件 VIE_SK85_3501_3A5；模具 TYA-Q0336-1；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*87*82（1出2）；穴数 2
+- `浙江万宝机械有限公司(A)` 行 583-584：浙江万宝机械有限公司；原因：no shared Excel merge/source anchor
+  - 行 583：零件 VIE_H01_3501_2A5_XM；模具 TYA-Q0339-2；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*87*82（1出2）；穴数 2
+  - 行 584：零件 VIE_H01_3501_3A5_XM；模具 TYA-Q0339-3；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*87*82（1出2）；穴数 2
+- `安徽万安汽车零部件有限公司(C)` 行 4-5：安徽万安汽车零部件有限公司；原因：no shared Excel merge/source anchor
+  - 行 4：零件 SRV-3507153；模具 TYC-Q0001；材料 SPCC；TWP 3.8*125*37；穴数 1
+  - 行 5：零件 SRV-3507253；模具 TYC-Q0002；材料 SPCC；TWP 3.8*125*37；穴数 1
+- `厦门亨东制动系统有限公司(E)` 行 51-52：厦门亨东制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 51：零件 3A3Y-0063；模具 TYE-Q0041；材料 SAPH450；TWP 8.0*70*29；穴数 1
+  - 行 52：零件 3A3Y-0064；模具 TYE-Q0042；材料 SAPH450；TWP 8.0*70*29；穴数 1
+- `厦门亨东制动系统有限公司(E)` 行 139-140：厦门亨东制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 139：零件 3B5212；模具 TYE-Q0121；材料 SPCC；TWP 0.9*83；穴数 1
+  - 行 140：零件 3B5357-1；模具 TYE-Q0122；材料 SPCC；TWP 0.9*83；穴数 1
+- `厦门亨东制动系统有限公司(E)` 行 145-146：厦门亨东制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 145：零件 3Y8X-0039；模具 TYE-Q0125；材料 SPCC；TWP 2.0*147；穴数 1
+  - 行 146：零件 2B5457；模具 TYE-Q0126；材料 SPCC；TWP 2.0*147；穴数 1
+- `厦门亨东制动系统有限公司(E)` 行 146-147：厦门亨东制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 146：零件 2B5457；模具 TYE-Q0126；材料 SPCC；TWP 2.0*147；穴数 1
+  - 行 147：零件 2B5409-1；模具 TYE-Q0127；材料 SPCC；TWP 2.0*147；穴数 1
+- `厦门亨东制动系统有限公司(E)` 行 242-243：厦门亨东制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 242：零件 RB3809-0027-X；模具 TYE-Q0195-1；材料 SUS301-CSP1/2H；TWP 0.4*88*154.5 (1出2)；穴数 2
+  - 行 243：零件 RB3809-0027-Z；模具 TYE-Q0195-2；材料 SUS301-CSP1/2H；TWP 0.4*88*154.5 (1出2)；穴数 2
+- `60T 连续模` 行 72-73：丰铃公司；原因：no shared Excel merge/source anchor
+  - 行 72：零件 FLABS-03-01；模具 TYQ-M0001；材料 SUS201-3/4H；TWP 0.5*62*22；穴数 1
+  - 行 73：零件 FLABS-03-02；模具 TYQ-M0002；材料 SUS201-3/4H；TWP 0.5*62*22；穴数 1
+- `辉门摩擦产品有限公司(I)` 行 66-67：辉门摩擦产品有限公司；原因：no shared Excel merge/source anchor
+  - 行 66：零件 GXCHW138072(RH)；模具 TYI-Q0050；材料 Q235B；TWP 4.0*；穴数 2
+  - 行 67：零件 GXCHW119558(LH)；模具 TYI-Q0051；材料 Q235B；TWP 4.0*；穴数 2
+- `辉门摩擦产品有限公司(I)` 行 246-247：辉门摩擦产品有限公司；原因：no shared Excel merge/source anchor
+  - 行 246：零件 GXC501A1286N；模具 TYI-Q0184；材料 SUS201-CSP3/4H；TWP 0.4*112*87(1出2）；穴数 2
+  - 行 247：零件 GXC501A1509N；模具 TYI-Q0185-1；材料 SUS201-CSP3/4H；TWP 0.4*112*87(1出2）；穴数 2
+- `汽车部件苏州有限公司(东机工)(K)` 行 23-24：日立安斯泰莫底盘系统（苏州）有限公司；原因：no shared Excel merge/source anchor
+  - 行 23：零件 3A102554-1(RH)；模具 TYK-Q0013；材料 SAPH440；TWP 4.0*115*48；穴数 1
+  - 行 24：零件 3A102554-2(LH)；模具 TYK-Q0014；材料 SAPH440；TWP 4.0*115*48；穴数 1
+- `汽车部件苏州有限公司(东机工)(K)` 行 72-73：日立安斯泰莫底盘系统（苏州）有限公司；原因：no shared Excel merge/source anchor
+  - 行 72：零件 1B38097-1；模具 TYK-Q0042-1；材料 SUS301-CSP3/4H；TWP 0.5*75*33；穴数 1
+  - 行 73：零件 1B38097-2；模具 TYK-Q0042-2；材料 SUS301-CSP3/4H；TWP 0.5*75*33；穴数 1
+- `汽车部件苏州有限公司(东机工)(K)` 行 135-136：日立安斯泰莫底盘系统（苏州）有限公司；原因：no shared Excel merge/source anchor
+  - 行 135：零件 LA202300011；模具 TYK-Q0077；材料 SUS301 3/4H；TWP 0.5*122*187(1出2)；穴数 2
+  - 行 136：零件 LA202300016；模具 TYK-Q0078；材料 SUS301 3/4H；TWP 0.5*122*187(1出2)；穴数 2
+- `丰铃公司Q` 行 4-5：丰铃公司；原因：no shared Excel merge/source anchor
+  - 行 4：零件 FLABS-03-01；模具 TYQ-M0001；材料 SUS201-3/4H；TWP 0.5*62*22；穴数 1
+  - 行 5：零件 FLABS-03-02；模具 TYQ-M0002；材料 SUS201-3/4H；TWP 0.5*62*22；穴数 1
+- `山东日信(Y) ` 行 24-25：日立安斯泰莫制动系统（山东）有限公司；原因：no shared Excel merge/source anchor
+  - 行 24：零件 002-C22-8G7；模具 TYY-M0021；材料 SAPH440；TWP 3.2*95*39；穴数 1
+  - 行 25：零件 002-C23-792；模具 TYY-M0022；材料 SAPH440；TWP 3.2*95*39；穴数 1
+- `山东日信(Y) ` 行 37-38：日立安斯泰莫制动系统（山东）有限公司；原因：no shared Excel merge/source anchor
+  - 行 37：零件 002-C22-369；模具 TYY-M0033；材料 SAPH440；TWP 3.2*102*33.5；穴数 1
+  - 行 38：零件 002-C23-663；模具 TYY-M0034；材料 SAPH440；TWP 3.2*102*33.5；穴数 1
+- `上海万向钱潮A-A` 行 26-27：万向钱潮（上海）汽车制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 26：零件 60004310；模具 TYAA-Q0020；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*92*58.5(1出2)；穴数 2
+  - 行 27：零件 60004309；模具 TYAA-Q0019；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*92*58.5(1出2)；穴数 2
+- `上海万向钱潮A-A` 行 97-98：万向钱潮（上海）汽车制动系统有限公司；原因：no shared Excel merge/source anchor
+  - 行 97：零件 60010084；模具 TYAA-Q0069；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*116*59.5（1出2）；穴数 2
+  - 行 98：零件 60010681；模具 TYAA-Q0070；材料 SUS301-CSP 3/4H（JIS G4305）；TWP 0.4*116*59.5（1出2）；穴数 2
+- `ZF` 行 83-84：ZF；原因：no shared Excel merge/source anchor
+  - 行 83：零件 A008B621；模具 TYAI-Q0056-2；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*90*71（一出二）；穴数 2
+  - 行 84：零件 A008B620；模具 TYAI-Q0056-1（2线）；材料 SUS301-CSP 3/4H(实达)；TWP 0.4*90*71（一出二）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 143-144：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 143：零件 APG096-10B；模具 TYAL-Q0106-2；材料 SUS301-1/2H（实达）；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 144：零件 APG096-10A；模具 TYAL-Q0106-1-P2；材料 SUS301-1/2H（实达）；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 147-148：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 147：零件 APG096-10BST；模具 TYAL-Q0106-2ST；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 148：零件 APG096-10AST；模具 TYAL-Q0106-1ST-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 149-150：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 149：零件 APG096-10BST；模具 TYAL-Q0106-2ST-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 150：零件 APG096-10AT；模具 TYAL-Q0106-1T；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 151-152：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 151：零件 APG096-10BT；模具 TYAL-Q0106-2T；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 152：零件 APG096-10AT；模具 TYAL-Q0106-1T-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 157-158：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 157：零件 APG096-12B；模具 TYAL-Q0106-4；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 158：零件 APG096-12A；模具 TYAL-Q0106-3-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 159-160：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 159：零件 APG096-12B；模具 TYAL-Q0106-4-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 160：零件 APG096-12AST；模具 TYAL-Q0106-3ST；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 161-162：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 161：零件 APG096-12BST；模具 TYAL-Q0106-4ST；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 162：零件 APG096-12AST；模具 TYAL-Q0106-3ST-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 163-164：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 163：零件 APG096-12BST；模具 TYAL-Q0106-4ST-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 164：零件 APG096-12AT；模具 TYAL-Q0106-3T；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 165-166：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 165：零件 APG096-12BT；模具 TYAL-Q0106-4T；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+  - 行 166：零件 APG096-12AT；模具 TYAL-Q0106-3T-P2；材料 SUS301-1/2H；TWP 0.4*82*60（1出2，左右各1个）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 168-169：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 168：零件 L10027206-01；模具 TYAL-Q0107；材料 SUS301-1/2H；TWP 0.4*104*155(1出2)；穴数 2
+  - 行 169：零件 L10027206-02；模具 TYAL-Q0108；材料 SUS301-1/2H；TWP 0.4*104*155(1出2)；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 181-182：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 181：零件 APG098-B；模具 TYAL-Q0114-2；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+  - 行 182：零件 APG098-A；模具 TYAL-Q0114-1-P2；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 183-184：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 183：零件 APG098-B；模具 TYAL-Q0114-2-P2；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+  - 行 184：零件 APG098-AST；模具 TYAL-Q0114-1ST；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 185-186：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 185：零件 APG098-BST；模具 TYAL-Q0114-2ST；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+  - 行 186：零件 APG098-AST；模具 TYAL-Q0114-1ST-P2；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 187-188：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 187：零件 APG098-BST；模具 TYAL-Q0114-2ST-P2；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+  - 行 188：零件 APG098-AT；模具 TYAL-Q0114-1T；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 189-190：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 189：零件 APG098-BT；模具 TYAL-Q0114-2T；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+  - 行 190：零件 APG098-AT；模具 TYAL-Q0114-1T-P2；材料 SUS301CSP-3/4H（实达）；TWP 0.4*85*76（1出2）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 195-196：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 195：零件 APG099-B；模具 TYAL-Q0115-2；材料 SUS301-3/4H；TWP 0.4*83*75（1出2）；穴数 2
+  - 行 196：零件 APG099-AST；模具 TYAL-Q0115-1ST；材料 SUS301-3/4H；TWP 0.4*83*75（1出2）；穴数 2
+- `A-L 浙江亚太机电股份有限公司` 行 197-198：浙江亚太机电股份有限公司；原因：no shared Excel merge/source anchor
+  - 行 197：零件 APG099-BST；模具 TYAL-Q0115-2ST；材料 SUS301-3/4H；TWP 0.4*83*75（1出2）；穴数 2
+  - 行 198：零件 APG099-AT；模具 TYAL-Q0115-1T；材料 SUS301-3/4H；TWP 0.4*83*75（1出2）；穴数 2
+- `A-P IBI` 行 587-588：IBI；原因：no shared Excel merge/source anchor
+  - 行 587：零件 24865；模具 TYAP-Q0210-1；材料 SUS304 3/4H；TWP 0.5*81*170(1出2)；穴数 2
+  - 行 588：零件 24865W；模具 TYAP-Q0210-2；材料 SUS304 3/4H；TWP 0.5*81*170(1出2)；穴数 2
+- `A-P IBI` 行 1218-1219：IBI；原因：no shared Excel merge/source anchor
+  - 行 1218：零件 20942；模具 GBAP-Q0647；材料 SAEV1010-1018(SPCC)；TWP 1.8*85*78 (1出2，左右各1个)；穴数 2
+  - 行 1219：零件 20943；模具 GBAP-Q0648；材料 SAEV1010-1018(SPCC)；TWP 1.8*85*78 (1出2，左右各1个)；穴数 2
+- `A-U比亚迪` 行 31-32：比亚迪汽车工业有限公司；原因：no shared Excel merge/source anchor
+  - 行 31：零件 SA3H-3501116；模具 TYAU-Q0020-2；材料 SUS301 3/4H；TWP 0.5*54*74（一出二，左右各一个）；穴数 2
+  - 行 32：零件 SA3H-3501115；模具 TYAU-Q0020-1；材料 SUS301 3/4H；TWP 0.5*54*74（一出二，左右各一个）；穴数 2
+
+## MATERIAL_ONLY · 材料缺失/不一致（23 组）
+
+决策问题：穴数/TWP和来源块证据存在，但材料不一致或缺失；材料是否必须一致才可合并？
+
+- `天越五金(U)` 行 15-16：天越五金；原因：material is missing or differs
+  - 行 15：零件 FLWY-03-08；模具 TYU-M0012；材料 SUS201-3/4H；TWP 0.5*62*25.5；穴数 1
+  - 行 16：零件 -；模具 TYU-M0013；材料 -；TWP 0.5*62*25.5；穴数 1
+- `A-P IBI` 行 33-34：IBI；原因：material is missing or differs
+  - 行 33：零件 23280G；模具 TYAP-Q0010；材料 复合材料 （REN50 55 11）；TWP 0.5*63*186.5(1出2)；穴数 2
+  - 行 34：零件 23280V；模具 TYAP-Q0010-1；材料 复合材料（REN50 55 11)（基材SUS201）；TWP 0.5*63*186.5(1出2)；穴数 2
+- `A-P IBI` 行 64-65：IBI；原因：material is missing or differs
+  - 行 64：零件 23309；模具 TYAP-Q0021-1；材料 SUS304 3/4H；TWP 0.4*100*109（1出2）；穴数 2
+  - 行 65：零件 23309G；模具 TYAP-Q0021-2；材料 复合材料（REN50 54 11)；TWP 0.4*100*109（1出2）；穴数 2
+- `A-P IBI` 行 73-74：IBI；原因：material is missing or differs
+  - 行 73：零件 23794G；模具 TYAP-Q0024；材料 复合材料（REN50 55 11)；TWP 0.5*106*42 (1出2)；穴数 2
+  - 行 74：零件 23794V；模具 TYAP-Q0024-1；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*106*42 (1出2)；穴数 2
+- `A-P IBI` 行 78-83：IBI；原因：material is missing or differs
+  - 行 78：零件 24100；模具 TYAP-Q0026-1；材料 SUS304 3/4H；TWP 0.4*76*31（1出2）；穴数 2
+  - 行 79：零件 24100G；模具 TYAP-Q0026-2；材料 复合材料（REN50 54 11）；TWP 0.4*76*31（1出2）；穴数 2
+  - 行 80：零件 24100V；模具 TYAP-Q0026-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*31（1出2）；穴数 2
+  - 行 81：零件 24101；模具 TYAP-Q0027-1；材料 SUS304 3/4H；TWP 0.4*76*31（1出2）；穴数 2
+  - 行 82：零件 24101G；模具 TYAP-Q0027-2；材料 复合材料（REN50 54 11）；TWP 0.4*76*31（1出2）；穴数 2
+  - 行 83：零件 24101V；模具 TYAP-Q0027-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*31（1出2）；穴数 2
+- `A-P IBI` 行 107-110：IBI；原因：material is missing or differs
+  - 行 107：零件 23472G；模具 TYAP-Q0037；材料 复合材料（REN50 54 11）；TWP 0.4*76*31；穴数 2
+  - 行 108：零件 23472V；模具 TYAP-Q0037-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*31；穴数 2
+  - 行 109：零件 23473G；模具 TYAP-Q0038；材料 复合材料（REN50 54 11）；TWP 0.4*76*31；穴数 2
+  - 行 110：零件 23473V；模具 TYAP-Q0038-1；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*31；穴数 2
+- `A-P IBI` 行 118-120：IBI；原因：material is missing or differs
+  - 行 118：零件 22851；模具 TYAP-Q0041-1；材料 SUS304 3/4H；TWP 0.4*76*34.5（1出2）；穴数 2
+  - 行 119：零件 22851G；模具 TYAP-Q0041-2；材料 复合材料（REN50 54 11）；TWP 0.4*76*34.5（1出2）；穴数 2
+  - 行 120：零件 22851V；模具 TYAP-Q0041-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*34.5（1出2）；穴数 2
+- `A-P IBI` 行 121-123：IBI；原因：material is missing or differs
+  - 行 121：零件 22852；模具 TYAP-Q0042-1；材料 SUS304 3/4H；TWP 0.4*76*34.5（1出2）；穴数 2
+  - 行 122：零件 22852G；模具 TYAP-Q0042-2；材料 复合材料（REN50 54 11）；TWP 0.4*76*34.5（1出2）；穴数 2
+  - 行 123：零件 22852V；模具 TYAP-Q0042-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*76*34.5（1出2）；穴数 2
+- `A-P IBI` 行 156-157：IBI；原因：material is missing or differs
+  - 行 156：零件 23832；模具 TYAP-Q0055-1；材料 SUS304 3/4H；TWP 0.4*132*81；穴数 2
+  - 行 157：零件 23832G；模具 TYAP-Q0055-2；材料 复合材料（REN50 54 11)；TWP 0.4*132*81；穴数 2
+- `A-P IBI` 行 239-240：IBI；原因：material is missing or differs
+  - 行 239：零件 23741；模具 TYAP-Q0081-1；材料 SUS304 3/4H；TWP 0.4*108*113.5（1出2）；穴数 2
+  - 行 240：零件 23741G；模具 TYAP-Q0081-2；材料 复合材料（REN50 54 11)；TWP 0.4*108*113.5（1出2）；穴数 2
+- `A-P IBI` 行 244-245：IBI；原因：material is missing or differs
+  - 行 244：零件 24179；模具 TYAP-Q0082-1；材料 SUS304 3/4H；TWP 0.5*70*156.5（1出2）；穴数 2
+  - 行 245：零件 24179G；模具 TYAP-Q0082-2；材料 复合材料（REN50 55 11)；TWP 0.5*70*156.5（1出2）；穴数 2
+- `A-P IBI` 行 381-382：IBI；原因：material is missing or differs
+  - 行 381：零件 24357；模具 TYAP-Q0142-1；材料 SUS304 3/4H；TWP 0.4*115*79（1出2）；穴数 2
+  - 行 382：零件 24357G；模具 TYAP-Q0142-2；材料 复合材料（REN50 54 11)；TWP 0.4*115*79（1出2）；穴数 2
+- `A-P IBI` 行 491-493：IBI；原因：material is missing or differs
+  - 行 491：零件 22808；模具 TYAP-Q0179-1；材料 SUS304 3/4H；TWP 0.4*77*40 (1出2)；穴数 2
+  - 行 492：零件 22808G；模具 TYAP-Q0179-2；材料 复合材料（REN50 54 11)；TWP 0.4*77*40 (1出2)；穴数 2
+  - 行 493：零件 22808V；模具 TYAP-Q0179-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*77*40 (1出2)；穴数 2
+- `A-P IBI` 行 512-514：IBI；原因：material is missing or differs
+  - 行 512：零件 22574；模具 TYAP-Q0186-1；材料 SUS304 3/4H；TWP 0.4*103*76.5（1出2）；穴数 2
+  - 行 513：零件 22574G；模具 TYAP-Q0186-2；材料 复合材料（REN50 54 11)；TWP 0.4*103*76.5（1出2）；穴数 2
+  - 行 514：零件 22574V；模具 TYAP-Q0186-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*103*76.5（1出2）；穴数 2
+- `A-P IBI` 行 526-527：IBI；原因：material is missing or differs
+  - 行 526：零件 23966；模具 TYAP-Q0191-1；材料 SUS304 3/4H；TWP 0.5*105*90（1出2）；穴数 2
+  - 行 527：零件 23966G；模具 TYAP-Q0191-2；材料 复合材料（REN50 55 11)；TWP 0.5*105*90（1出2）；穴数 2
+- `A-P IBI` 行 536-537：IBI；原因：material is missing or differs
+  - 行 536：零件 24228W；模具 TYAP-Q0193-1；材料 SUS304 3/4H；TWP 0.5*116*86.5（1出2）；穴数 2
+  - 行 537：零件 24228G；模具 TYAP-Q0193-2；材料 复合材料（REN50 55 11)；TWP 0.5*116*86.5（1出2）；穴数 2
+- `A-P IBI` 行 620-621：IBI；原因：material is missing or differs
+  - 行 620：零件 23833；模具 TYAP-Q0226-1；材料 SUS304 3/4H；TWP 0.4*132*81；穴数 2
+  - 行 621：零件 23833G；模具 TYAP-Q0226-2；材料 复合材料（REN50 54 11)；TWP 0.4*132*81；穴数 2
+- `A-P IBI` 行 668-670：IBI；原因：material is missing or differs
+  - 行 668：零件 25149；模具 TYAP-Q0250-1；材料 SUS304 3/4H；TWP 0.4*109*61（一出二）；穴数 2
+  - 行 669：零件 25149G；模具 TYAP-Q0250-2；材料 复合材料（REN50 54 11)；TWP 0.4*109*61（一出二）；穴数 2
+  - 行 670：零件 25149V；模具 TYAP-Q0250-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*109*61（一出二）；穴数 2
+- `A-P IBI` 行 687-689：IBI；原因：material is missing or differs
+  - 行 687：零件 25150；模具 TYAP-Q0261-1；材料 SUS304 3/4H；TWP 0.4*109*61（一出二）；穴数 2
+  - 行 688：零件 25150G；模具 TYAP-Q0261-2；材料 复合材料（REN50 54 11)；TWP 0.4*109*61（一出二）；穴数 2
+  - 行 689：零件 25150V；模具 TYAP-Q0261-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*109*61（一出二）；穴数 2
+- `A-P IBI` 行 818-820：IBI；原因：material is missing or differs
+  - 行 818：零件 23793；模具 TYAP-Q0322-1；材料 SUS304 3/4H；TWP 0.5*106*42 (1出2)；穴数 2
+  - 行 819：零件 23793G；模具 TYAP-Q0322-2；材料 SUS304 3/4H；TWP 0.5*106*42 (1出2)；穴数 2
+  - 行 820：零件 23793V；模具 TYAP-Q0322-3；材料 复合材料（REN50 55 11)(基材SUS201)；TWP 0.5*106*42 (1出2)；穴数 2
+- `A-P IBI` 行 821-823：IBI；原因：material is missing or differs
+  - 行 821：零件 22809；模具 TYAP-Q0323-1；材料 SUS304 3/4H；TWP 0.4*77*40 (1出2)；穴数 2
+  - 行 822：零件 22809G；模具 TYAP-Q0323-2；材料 SUS304 3/4H；TWP 0.4*77*40 (1出2)；穴数 2
+  - 行 823：零件 22809V；模具 TYAP-Q0323-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*77*40 (1出2)；穴数 2
+- `A-P IBI` 行 856-861：IBI；原因：material is missing or differs
+  - 行 856：零件 25764；模具 TYAP-Q0341-1；材料 SUS304-3/4H；TWP 0.4*90*76(1出2，左右各1个）；穴数 2
+  - 行 857：零件 25764G；模具 TYAP-Q0341-2；材料 复合材料（REN50 54 11）；TWP 0.4*90*76(1出2，左右各1个）；穴数 2
+  - 行 858：零件 25764V；模具 TYAP-Q0341-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*90*76(1出2，左右各1个）；穴数 2
+  - 行 859：零件 25765；模具 TYAP-Q0342-1；材料 SUS304-3/4H；TWP 0.4*90*76(1出2，左右各1个）；穴数 2
+  - 行 860：零件 25765G；模具 TYAP-Q0342-2；材料 复合材料（REN50 54 11）；TWP 0.4*90*76(1出2，左右各1个）；穴数 2
+  - 行 861：零件 25765V；模具 TYAP-Q0342-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*90*76(1出2，左右各1个）；穴数 2
+- `A-T浙江万向系统有限公司` 行 11-12：浙江万向系统有限公司；原因：material is missing or differs
+  - 行 11：零件 69A-490-1-03；模具 TYAT-Q0005-1；材料 SUS301-3/4H；TWP 0.4*66*67（一出二，左右各一个）；穴数 2
+  - 行 12：零件 69A-490-1-04；模具 TYAT-Q0005-2；材料 -；TWP 0.4*66*67（一出二，左右各一个）；穴数 2
+
+## MATERIAL_TWP · 材料与 TWP 均缺失/不一致（1 组）
+
+决策问题：两个共享字段同时不可靠；是否直接列为独立模具/零件？
+
+- `A-P IBI` 行 380-381：IBI；原因：material is missing or differs；TWP/spec is missing or differs
+  - 行 380：零件 23739V；模具 TYAP-Q0141-3；材料 复合材料（REN50 54 11)(基材SUS201)；TWP 0.4*85*60；穴数 -
+  - 行 381：零件 24357；模具 TYAP-Q0142-1；材料 SUS304 3/4H；TWP 0.4*115*79（1出2）；穴数 2
