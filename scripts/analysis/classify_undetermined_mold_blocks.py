@@ -9,6 +9,7 @@ the business owner can choose a policy for each category.
 from __future__ import annotations
 
 import json
+from collections import Counter
 from pathlib import Path
 
 
@@ -48,6 +49,25 @@ CATEGORIES = {
     },
 }
 
+# A group is eligible only when every record is explicitly continuous.  Mixed
+# descriptions such as “连续模+工程模” are excluded because they contain a
+# non-continuous mold relationship that needs its own business decision.
+NON_CONTINUOUS_MARKERS = (
+    "工程模", "简易模", "线割", "激光", "下料模", "成型模", "成形模",
+    "复合模", "冲孔模", "铆接模", "焊接模", "老模具", "检具", "治具",
+    "切断模", "外购件",
+)
+
+
+def is_explicit_continuous_group(group: dict) -> bool:
+    mold_types = [str(part.get("mold_type") or "").strip() for part in group.get("parts", [])]
+    return bool(mold_types) and all(
+        "连续模" in mold_type
+        and "+" not in mold_type
+        and not any(marker in mold_type for marker in NON_CONTINUOUS_MARKERS)
+        for mold_type in mold_types
+    )
+
 
 def category_for(reasons: list[str]) -> str:
     reason_text = "; ".join(reasons)
@@ -73,7 +93,12 @@ def category_for(reasons: list[str]) -> str:
 
 def main() -> int:
     source = json.loads(SOURCE.read_text(encoding="utf-8"))
-    groups = [group for group in source.get("groups", []) if group.get("classification") == "undetermined"]
+    all_undetermined = [
+        group for group in source.get("groups", [])
+        if group.get("classification") == "undetermined"
+    ]
+    groups = [group for group in all_undetermined if is_explicit_continuous_group(group)]
+    excluded = [group for group in all_undetermined if group not in groups]
     categorized: dict[str, list[dict]] = {key: [] for key in CATEGORIES}
     categorized["OTHER"] = []
     for group in groups:
@@ -81,7 +106,15 @@ def main() -> int:
 
     report = {
         "source": str(SOURCE),
+        "scope": "only groups whose every mold type is explicitly continuous",
+        "total_undetermined_in_source": len(all_undetermined),
         "total_undetermined": len(groups),
+        "excluded_non_continuous_or_unknown": len(excluded),
+        "excluded_group_mold_type_counts": dict(Counter(
+            " / ".join(sorted({str(part.get('mold_type') or '未填写').strip() for part in group.get('parts', [])}))
+            or "未填写"
+            for group in excluded
+        )),
         "categories": {
             key: {
                 **CATEGORIES.get(key, {"label": "其他", "question": "需要人工确认"}),
@@ -99,9 +132,11 @@ def main() -> int:
         "",
         f"来源：`{SOURCE}`",
         "",
-        f"无法判定总数：**{len(groups)} 组**",
+        f"原始无法判定总数：**{len(all_undetermined)} 组**",
+        f"其中明确为连续模、进入本归类：**{len(groups)} 组**",
+        f"非连续模或模具类型未确认、排除：**{len(excluded)} 组**",
         "",
-        "本报告只做证据归类，不替业务规则做最终判定。",
+        "本报告只归类连续模，不替业务规则做最终判定。非连续模请回看原始审查报告。",
         "",
     ]
     for key, meta in report["categories"].items():
