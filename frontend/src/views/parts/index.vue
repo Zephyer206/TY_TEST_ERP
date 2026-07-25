@@ -28,9 +28,21 @@
       </el-form>
     </el-card>
 
-    <el-table :data="parts" :row-key="row => row._groupKey || row.id" v-loading="loading" stripe>
-      <el-table-column prop="part_number" label="零件编号" width="120" fixed />
-      <el-table-column prop="internal_name" label="零件名称" min-width="170" />
+    <el-table class="parts-table" :data="parts" :row-key="row => row._groupKey || row.id" v-loading="loading" border :span-method="spanMethod" :row-class-name="tableRowClassName">
+      <el-table-column label="零件编号" width="120" fixed>
+        <template #default="{ row }">
+          <span v-if="row.part_number">{{ row.part_number }}</span>
+          <span v-else-if="row.customer_product_no" class="customer-part-no">{{ row.customer_product_no }}</span>
+          <span v-else class="text-muted">暂无记录</span>
+        </template>
+      </el-table-column>
+      <el-table-column label="零件名称" min-width="170">
+        <template #default="{ row }">
+          <span v-if="row.internal_name">{{ row.internal_name }}</span>
+          <span v-else-if="row.customer_product_name" class="customer-part-name">{{ row.customer_product_name }}</span>
+          <span v-else class="text-muted">暂无记录</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="mold_number" label="模具号" width="180" />
       <el-table-column label="TWP规格" width="170">
         <template #default="{ row }">
@@ -60,14 +72,6 @@
       </el-table-column>
       <el-table-column prop="customer_name" label="客户" width="140" />
       <el-table-column prop="mold_type" label="模具类型" width="110" />
-      <el-table-column label="位置" width="60" align="center">
-        <template #default="{ row }">
-          <el-tag v-if="row.part_position === 'both'" type="info" size="small">左右</el-tag>
-          <el-tag v-else-if="row.part_position === 'left'" type="info" size="small">左</el-tag>
-          <el-tag v-else-if="row.part_position === 'right'" type="info" size="small">右</el-tag>
-          <span v-else class="text-muted">-</span>
-        </template>
-      </el-table-column>
       <el-table-column prop="stock_pcs" label="库存" width="110" align="right" />
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
@@ -246,7 +250,9 @@ const uniqueValues = (members, field) => [
 ]
 
 const formatPairName = members => {
-  const names = members.map(member => member.internal_name || '').filter(Boolean)
+  const names = members.map(member => {
+    return member.internal_name || member.customer_product_name || ''
+  }).filter(Boolean)
   const normalized = names.map(name => name.replace(/^[左右]\s*/, '').trim()).filter(Boolean)
   if (normalized.length && normalized.every(name => name === normalized[0])) {
     return `${normalized[0]}（左右件）`
@@ -271,13 +277,23 @@ const toDisplayRow = group => {
     .map(member => `${positionLabel(member.part_position)}${member.stock_pcs ?? 0}`)
     .join(' / ')
 
+  const partNumbers = uniqueValues(members, 'part_number')
+  const customerPartNos = uniqueValues(members, 'customer_product_no')
+  const displayPartNumber = partNumbers.length > 0
+    ? partNumbers.join(' / ')
+    : customerPartNos.length > 0
+      ? customerPartNos.join(' / ')
+      : null
+
   return {
     ...first,
     id: group.key,
     _groupKey: group.key,
     _isPair: true,
     _members: members,
-    part_number: uniqueValues(members, 'part_number').join(' / '),
+    part_number: displayPartNumber,
+    customer_product_no: customerPartNos.length > 0 ? customerPartNos.join(' / ') : null,
+    customer_product_name: uniqueValues(members, 'customer_product_name').join(' / ') || null,
     internal_name: formatPairName(members),
     mold_number: `${baseMoldNumber}（-1/-2）`,
     customer_name: uniqueValues(members, 'customer_name').join(' / '),
@@ -290,9 +306,96 @@ const toDisplayRow = group => {
     thickness: firstValue(members, 'thickness'),
     width: firstValue(members, 'width'),
     pitch: firstValue(members, 'pitch'),
-    cavity_count: 2,
+    cavity_count: firstValue(members, 'cavity_count'),
     part_position: 'both',
   }
+}
+
+const nonEmptyUnique = values => [
+  ...new Set(values
+    .map(value => typeof value === 'string' ? value.trim() : value)
+    .filter(value => value !== null && value !== undefined && value !== ''))
+]
+
+const memberTwpText = member => {
+  if (member.thickness !== null && member.thickness !== undefined
+    || member.width !== null && member.width !== undefined
+    || member.pitch !== null && member.pitch !== undefined) {
+    return formatTWP(member.thickness, member.width, member.pitch)
+  }
+  return member.spec_twph || null
+}
+
+const formatCavityCount = value => {
+  if (value === null || value === undefined || value === '') return null
+  return String(value)
+    .split('/')
+    .map(item => item.trim())
+    .filter(Boolean)
+    .map(item => `一出${item}`)
+    .join(' / ')
+}
+
+const partIdentity = member => {
+  const identity = member.part_number
+    || member.customer_product_no
+    || member.internal_name
+    || member.customer_product_name
+  return identity ? String(identity).trim().toLowerCase() : `id:${member.id}`
+}
+
+const toDisplayRows = group => {
+  const members = [...(group.members || [])].sort((a, b) => {
+    const order = { left: 0, right: 1 }
+    return (order[a.part_position] ?? 2) - (order[b.part_position] ?? 2)
+  })
+  if (!members.length) return []
+
+  const hasDifferentParts = new Set(members.map(partIdentity)).size > 1
+  const shouldMergeTwpAndCavity = (group.is_left_right_pair || group.is_shared_source_group)
+    && members.length > 1
+    && hasDifferentParts
+  const mergedTwpText = nonEmptyUnique(members.map(memberTwpText)).join(' / ') || null
+  return members.map((member, index) => {
+    // Never infer cavity count from a pair or from a -1/-2 identifier.
+    const cavity = member.cavity_count || null
+    const displayTwp = shouldMergeTwpAndCavity
+      ? mergedTwpText
+      : memberTwpText(member)
+
+    return {
+      ...member,
+      _groupKey: `${group.key}:${member.id}`,
+      _isPair: false,
+      _members: [member],
+      // The display row is intentionally flat; only the shared output columns use rowspan.
+      thickness: null,
+      width: null,
+      pitch: null,
+      spec_twph: displayTwp,
+      material_name: shouldMergeTwpAndCavity
+        ? nonEmptyUnique(members.map(item => item.material_name)).join(' / ') || null
+        : member.material_name,
+      material_name_full: shouldMergeTwpAndCavity
+        ? nonEmptyUnique(members.map(item => item.material_name_full)).join(' / ') || null
+        : member.material_name_full,
+      cavity_count: formatCavityCount(cavity),
+      _mergeTwpAndCavity: shouldMergeTwpAndCavity,
+      _mergeIndex: index,
+      _mergeSize: shouldMergeTwpAndCavity ? members.length : 1,
+    }
+  })
+}
+
+const spanMethod = ({ row, columnIndex }) => {
+  if (!row._mergeTwpAndCavity || ![3, 4, 5].includes(columnIndex)) return [1, 1]
+  if (row._mergeIndex === 0) return [row._mergeSize, 1]
+  return [0, 0]
+}
+
+const tableRowClassName = ({ row }) => {
+  if (!row._mergeTwpAndCavity) return 'parts-single-row'
+  return row._mergeIndex === 0 ? 'parts-group-start' : 'parts-group-member'
 }
 
 const fetchParts = async () => {
@@ -310,7 +413,7 @@ const fetchParts = async () => {
       ...filterParams,
     }
     const data = await get('/parts/grouped', params)
-    parts.value = (data.items || []).map(toDisplayRow)
+    parts.value = (data.items || []).flatMap(toDisplayRows)
     page.total = data.total || 0
   } catch (e) {
     ElMessage.error(e.message || '获取失败')
@@ -321,7 +424,9 @@ const fetchParts = async () => {
 
 const fetchCustomers = async () => {
   try {
-    customers.value = await get('/customers', { limit: 200, has_parts: true })
+    const data = await get('/customers', { limit: 200, has_parts: true })
+    // API returns CustomerListResponse{items, total}, extract items
+    customers.value = data.items || []
   } catch { /* silent */ }
 }
 
@@ -409,6 +514,31 @@ onMounted(() => { fetchParts(); fetchCustomers() })
 .twp-text { color: #409eff; font-weight: 500; }
 .spec-text { color: #909399; font-size: 13px; }
 .text-muted { color: #c0c4cc; }
+.customer-part-no { color: #67c23a; font-style: italic; }
+.customer-part-name { color: #67c23a; font-style: italic; }
 .twp-tag { margin-right: 8px; }
 :deep(.el-dropdown + .el-dropdown) { margin-left: 10px; }
+:deep(.parts-table) {
+  --el-table-border-color: #cbd5e1;
+  --el-table-row-hover-bg-color: #f5f8fc;
+  --el-table-tr-bg-color: #ffffff;
+}
+
+/*
+ * Keep every row on the same visual grid.  The TWP/material/cavity cells may
+ * use rowspan, so Element Plus correctly omits the internal line inside a
+ * merged cell; the remaining cells still use this same one-pixel separator.
+ */
+:deep(.parts-table td.el-table__cell) {
+  background-color: #ffffff;
+  border-bottom: 1px solid #cbd5e1;
+}
+
+/* Group boundaries use the same color and width as ordinary row separators. */
+:deep(.parts-table tr.parts-group-start > td.el-table__cell),
+:deep(.parts-table tr.parts-group-member > td.el-table__cell),
+:deep(.parts-table tr.parts-single-row > td.el-table__cell) {
+  border-top: 0;
+  border-bottom: 1px solid #cbd5e1;
+}
 </style>

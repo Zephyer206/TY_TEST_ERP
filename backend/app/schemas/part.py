@@ -74,6 +74,9 @@ class PartDisplayGroup(BaseModel):
 
     key: str
     is_left_right_pair: bool = False
+    # Source-block groups keep each mold/part row separate while allowing the
+    # frontend to rowspan only the shared material/TWP/cavity columns.
+    is_shared_source_group: bool = False
     members: list[PartResponse]
 
 
