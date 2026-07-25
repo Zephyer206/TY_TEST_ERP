@@ -16,6 +16,7 @@ from app.models.customer import Customer
 from app.models.part import Part
 from app.models.tooling import Tooling, ToolingPart
 from app.models.part_customer_alias import PartCustomerAlias
+from app.models.part_tooling_spec import PartToolingSpec
 from app.models.excel_import import ExcelImportRow
 from app.models.material_dict import MaterialDict
 from app.schemas.part import (
@@ -346,6 +347,16 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
             select(Tooling).where(Tooling.id.in_(tooling_ids))
         )).scalars()}
 
+    specs_by_part: dict[int, list[PartToolingSpec]] = {}
+    if part_ids:
+        specs_result = await db.execute(
+            select(PartToolingSpec)
+            .where(PartToolingSpec.part_id.in_(part_ids))
+            .order_by(PartToolingSpec.source_row, PartToolingSpec.id)
+        )
+        for spec in specs_result.scalars().all():
+            specs_by_part.setdefault(spec.part_id, []).append(spec)
+
     cavity_evidence = await _load_cavity_evidence(
         db,
         {
@@ -386,6 +397,11 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
         )
 
         tps = tooling_parts_map.get(p.id, [])
+        twp_options = specs_by_part.get(p.id, [])
+        primary_spec = next(
+            (spec for spec in twp_options if spec.is_primary),
+            None,
+        )
         mold_summary = None
         mold_type_summary = None
         cavity_count_summary = None
@@ -415,6 +431,13 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
                         [primary_tooling.cavity_count]
                     )
 
+        display_spec = primary_spec.spec_twph if primary_spec else p.spec_twph
+        display_thickness = (
+            primary_spec.thickness if primary_spec else p.thickness
+        )
+        display_width = primary_spec.width if primary_spec else p.width
+        display_pitch = primary_spec.pitch if primary_spec else p.pitch
+
         results.append(PartResponse(
             id=p.id,
             part_number=p.part_number,
@@ -432,10 +455,12 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
             mold_type=mold_type_summary or p.mold_type,
             press_tonnage=p.press_tonnage,
             ppap_no=p.ppap_no,
-            spec_twph=p.spec_twph,
-            thickness=p.thickness,
-            width=p.width,
-            pitch=p.pitch,
+            spec_twph=display_spec,
+            thickness=display_thickness,
+            width=display_width,
+            pitch=display_pitch,
+            twp_options_count=len(twp_options),
+            has_primary_twp=primary_spec is not None,
             height=p.height,
             gross_weight=p.gross_weight,
             net_weight=p.net_weight,

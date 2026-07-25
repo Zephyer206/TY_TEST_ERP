@@ -132,7 +132,11 @@
     </div>
 
     <!-- 零件详情对话框 -->
-    <PartDetailDialog v-model="detailVisible" :detail="detailData" />
+    <PartDetailDialog
+      v-model="detailVisible"
+      :detail="detailData"
+      @primary-spec-updated="handlePrimarySpecUpdated"
+    />
 
     <!-- 新增/编辑对话框 -->
     <el-dialog v-model="dialogVisible" :title="editId ? '编辑零件' : '新增零件'" width="520px">
@@ -443,6 +447,16 @@ const viewDetail = async (row) => {
     detailVisible.value = true
   } catch (e) {
     ElMessage.error('获取详情失败: ' + (e.message || '未知错误'))
+  }
+}
+
+const handlePrimarySpecUpdated = async () => {
+  if (!detailData.value?.id) return
+  try {
+    detailData.value = await get(`/parts/${detailData.value.id}/detail`)
+    await fetchParts()
+  } catch (e) {
+    ElMessage.error('刷新主规格失败: ' + (e.message || '未知错误'))
   }
 }
 

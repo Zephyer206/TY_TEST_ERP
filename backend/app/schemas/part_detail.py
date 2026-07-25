@@ -25,9 +25,27 @@ class PartCustomerAliasInfo(BaseModel):
     is_active: bool
 
 
+class PartToolingSpecInfo(BaseModel):
+    """One source-backed TWP option for a part-tooling record."""
+
+    id: int
+    part_id: int
+    tooling_id: int
+    spec_twph: Optional[str] = None
+    thickness: Optional[float] = None
+    width: Optional[float] = None
+    pitch: Optional[float] = None
+    is_primary: bool
+    source_sheet: Optional[str] = None
+    source_row: Optional[int] = None
+    source_note: Optional[str] = None
+
+
 class PartToolingInfo(BaseModel):
     """Tooling information for a part."""
     tooling_id: int
+    part_id: int
+    tooling_part_id: int
     tooling_number: Optional[str] = None
     tooling_name: Optional[str] = None
     mold_type: str
@@ -39,6 +57,7 @@ class PartToolingInfo(BaseModel):
     is_primary: bool
     steps: Optional[list[ToolingStepInfo]] = None
     tooling_customers: Optional[list[str]] = None
+    twp_options: list[PartToolingSpecInfo] = []
 
 
 class SharedToolingRelationInfo(BaseModel):

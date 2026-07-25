@@ -50,6 +50,8 @@ class PartResponse(BaseModel):
     thickness: Optional[float] = None
     width: Optional[float] = None
     pitch: Optional[float] = None
+    twp_options_count: int = 0
+    has_primary_twp: bool = False
     height: Optional[float] = None
     # 重量
     gross_weight: Optional[float] = None

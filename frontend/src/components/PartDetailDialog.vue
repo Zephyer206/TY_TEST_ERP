@@ -136,6 +136,48 @@
               </div>
 
               <!-- 非连续模步骤明细 -->
+              <div v-if="t.twp_options && t.twp_options.length" class="twp-options-panel">
+                <div class="subsection-title">TWP 规格选项</div>
+                <el-alert
+                  v-if="t.twp_options.length > 1 && !hasPrimarySpec(t.twp_options)"
+                  title="该模具存在多个 TWP 规格，请选择一个作为主规格"
+                  type="warning"
+                  :closable="false"
+                  show-icon
+                  style="margin-bottom: 8px"
+                />
+                <el-table :data="t.twp_options" size="small" border>
+                  <el-table-column label="TWP" min-width="180">
+                    <template #default="{ row }">{{ formatSpec(row) || '暂无记录' }}</template>
+                  </el-table-column>
+                  <el-table-column label="Excel 来源" min-width="170">
+                    <template #default="{ row }">
+                      {{ row.source_sheet || '-' }}<span v-if="row.source_row"> / 第 {{ row.source_row }} 行</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="状态" width="110" align="center">
+                    <template #default="{ row }">
+                      <el-tag v-if="row.is_primary" type="success" size="small">主规格</el-tag>
+                      <span v-else class="text-muted">未选择</span>
+                    </template>
+                  </el-table-column>
+                  <el-table-column label="操作" width="130" align="center">
+                    <template #default="{ row }">
+                      <el-button
+                        v-if="!row.is_primary"
+                        link
+                        type="primary"
+                        size="small"
+                        :loading="settingPrimaryId === row.id"
+                        @click="setPrimarySpec(row)"
+                      >
+                        设为主规格
+                      </el-button>
+                    </template>
+                  </el-table-column>
+                </el-table>
+              </div>
+
               <div v-if="!t.is_continuous && t.steps && t.steps.length" style="margin-top: 12px">
                 <div style="font-weight: 500; margin-bottom: 8px; color: #606266">工序步骤明细：</div>
                 <el-table :data="t.steps" size="small" border>
@@ -181,16 +223,19 @@
 
 <script setup>
 import { ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
+import apiClient from '@/utils/request'
 
 const props = defineProps({
   modelValue: Boolean,
   detail: Object,
 })
 
-const emit = defineEmits(['update:modelValue'])
+const emit = defineEmits(['update:modelValue', 'primary-spec-updated'])
 
 const visible = ref(props.modelValue)
 const activeTooling = ref(null)
+const settingPrimaryId = ref(null)
 
 const STATUS_MAP = {
   DRAFT: { label: '草稿', type: 'info' },
@@ -208,6 +253,29 @@ const formatDimension = (value) => {
   return String(value)
 }
 
+const formatSpec = (option) => {
+  if (option?.spec_twph) return option.spec_twph
+  const values = [option?.thickness, option?.width, option?.pitch]
+  return values.every(value => value === null || value === undefined || value === '')
+    ? ''
+    : values.map(value => value === null || value === undefined ? '-' : value).join('*')
+}
+
+const hasPrimarySpec = (options) => options?.some(option => option.is_primary)
+
+const setPrimarySpec = async (option) => {
+  settingPrimaryId.value = option.id
+  try {
+    await apiClient.patch(`/parts/tooling-specs/${option.id}/primary`)
+    ElMessage.success('主规格已更新')
+    emit('primary-spec-updated', { partId: option.part_id, specId: option.id })
+  } catch (error) {
+    ElMessage.error(error?.message || '主规格更新失败')
+  } finally {
+    settingPrimaryId.value = null
+  }
+}
+
 watch(() => props.modelValue, (val) => { visible.value = val })
 watch(visible, (val) => { emit('update:modelValue', val) })
 </script>
@@ -217,6 +285,8 @@ watch(visible, (val) => { emit('update:modelValue', val) })
 .section-card { margin-bottom: 16px; }
 .section-card:last-child { margin-bottom: 0; }
 .tooling-title { display: flex; align-items: center; width: 100%; }
+.twp-options-panel { margin-top: 14px; padding: 12px; border: 1px solid #ebeef5; border-radius: 4px; background: #fafcff; }
+.subsection-title { margin-bottom: 8px; color: #303133; font-weight: 600; }
 .media-content { display: flex; gap: 28px; align-items: flex-start; flex-wrap: wrap; }
 .part-image-panel { min-width: 280px; }
 .drawing-panel { min-width: 180px; padding-top: 4px; }

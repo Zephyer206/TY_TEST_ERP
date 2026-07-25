@@ -1,15 +1,17 @@
 """Parts detail API with proper relationship queries."""
 
+from datetime import datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import distinct, or_, select
+from sqlalchemy import distinct, or_, select, update
 from sqlalchemy.orm import selectinload
 
 from app.api.deps import CurrentUser, DbSession
 from app.models.customer import Customer
 from app.models.part import Part
 from app.models.part_customer_alias import PartCustomerAlias
+from app.models.part_tooling_spec import PartToolingSpec
 from app.models.tooling import Tooling, ToolingPart
 from app.models.tooling_shared_relation import ToolingSharedRelation
 from app.models.tooling_customer_link import ToolingCustomerLink
@@ -17,6 +19,7 @@ from app.models.tooling_step import ToolingStep
 from app.schemas.part_detail import (
     PartCustomerAliasInfo,
     PartDetailResponse,
+    PartToolingSpecInfo,
     PartToolingInfo,
     SharedToolingRelationInfo,
     ToolingStepInfo,
@@ -114,6 +117,15 @@ async def get_part_detail(
     )
     tooling_result = await db.execute(tooling_query)
     tooling_data = tooling_result.all()
+    specs_result = await db.execute(
+        select(PartToolingSpec)
+        .where(PartToolingSpec.part_id.in_(related_part_ids))
+        .order_by(PartToolingSpec.source_row, PartToolingSpec.id)
+    )
+    specs_by_key: dict[tuple[int, int], list[PartToolingSpec]] = {}
+    for spec in specs_result.scalars().all():
+        specs_by_key.setdefault((spec.part_id, spec.tooling_id), []).append(spec)
+
     primary_tooling = _select_primary_tooling(tooling_data)
     primary_tooling_part_id = primary_tooling[0].id if primary_tooling else None
 
@@ -129,6 +141,23 @@ async def get_part_detail(
 
     tooling_list = []
     for tp, tooling in tooling_data:
+        twp_options = [
+            PartToolingSpecInfo(
+                id=spec.id,
+                part_id=spec.part_id,
+                tooling_id=spec.tooling_id,
+                spec_twph=spec.spec_twph,
+                thickness=float(spec.thickness) if spec.thickness is not None else None,
+                width=float(spec.width) if spec.width is not None else None,
+                pitch=float(spec.pitch) if spec.pitch is not None else None,
+                is_primary=spec.is_primary,
+                source_sheet=spec.source_sheet,
+                source_row=spec.source_row,
+                source_note=spec.source_note,
+            )
+            for spec in specs_by_key.get((tp.part_id, tooling.id), [])
+        ]
+
         # Get steps for non-continuous molds
         steps = []
         if not tooling.is_continuous:
@@ -168,6 +197,8 @@ async def get_part_detail(
         tooling_list.append(
             PartToolingInfo(
                 tooling_id=tooling.id,
+                part_id=tp.part_id,
+                tooling_part_id=tp.id,
                 tooling_number=tooling.tooling_number or tooling.tooling_no,
                 tooling_name=tooling.tooling_name or tooling.name,
                 mold_type=tooling.mold_type,
@@ -179,6 +210,7 @@ async def get_part_detail(
                 is_primary=tp.id == primary_tooling_part_id,
                 steps=steps if steps else None,
                 tooling_customers=tooling_customer_names if tooling_customer_names else None,
+                twp_options=twp_options,
             )
         )
 
@@ -242,4 +274,46 @@ async def get_part_detail(
         customer_aliases=customer_aliases if customer_aliases else [],
         tooling=tooling_list if tooling_list else [],
         shared_tooling_relations=shared_relations,
+    )
+
+
+@router.patch("/tooling-specs/{spec_id}/primary", response_model=PartToolingSpecInfo)
+async def set_primary_tooling_spec(
+    spec_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> PartToolingSpecInfo:
+    """Set one TWP option as the list-display primary for its part."""
+    if current_user.role_level < 2:
+        raise HTTPException(
+            status_code=403,
+            detail="Minimum role level required: LV2",
+        )
+
+    spec = await db.get(PartToolingSpec, spec_id)
+    if not spec:
+        raise HTTPException(status_code=404, detail="TWP规格不存在")
+
+    await db.execute(
+        update(PartToolingSpec)
+        .where(PartToolingSpec.part_id == spec.part_id)
+        .values(is_primary=False, updated_at=datetime.utcnow())
+    )
+    spec.is_primary = True
+    spec.updated_at = datetime.utcnow()
+    await db.commit()
+    await db.refresh(spec)
+
+    return PartToolingSpecInfo(
+        id=spec.id,
+        part_id=spec.part_id,
+        tooling_id=spec.tooling_id,
+        spec_twph=spec.spec_twph,
+        thickness=float(spec.thickness) if spec.thickness is not None else None,
+        width=float(spec.width) if spec.width is not None else None,
+        pitch=float(spec.pitch) if spec.pitch is not None else None,
+        is_primary=spec.is_primary,
+        source_sheet=spec.source_sheet,
+        source_row=spec.source_row,
+        source_note=spec.source_note,
     )

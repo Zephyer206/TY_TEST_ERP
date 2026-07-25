@@ -7,6 +7,7 @@ from .die import Die
 from .machine import Machine, MachineState, MachineStatusLog
 from .part import Part, PartState
 from .part_customer_alias import PartCustomerAlias
+from .part_tooling_spec import PartToolingSpec
 from .price import (
     CustomerMaterialPrice,
     CustomerTreatmentPrice,
@@ -108,6 +109,7 @@ __all__ = [
     "PackagingStatus",
     "Part",
     "PartCustomerAlias",
+    "PartToolingSpec",
     "PartNameDict",
     "PartState",
     "PatrolInspection",
