@@ -85,7 +85,7 @@
 
 - [ ] T022 [US1] 在 backend/app/services/customer_price_service.py 中实现 get_material_price_history 方法（查询+排序+限制）
 - [ ] T023 [US1] 在 backend/app/services/customer_price_service.py 中实现兜底逻辑（无历史时返回 material_dict.default_price）
-- [ ] T024 [US1] 在 backend/app/api/customer_prices.py 中实现 GET /api/customer-prices/materials 端点（role_level >= 5）
+- [ ] T024 [US1] 在 backend/app/api/customer_prices.py 中实现 GET /api/customer-prices/materials 端点（role_level >= 2）
 - [ ] T025 [US1] 在 backend/app/api/customer_prices.py 中添加查询参数验证（customer_id, material_id, limit 默认3最大20）
 - [ ] T026 [US1] 在 backend/app/main.py 中注册 customer_prices 路由
 
@@ -107,7 +107,7 @@
 
 - [ ] T028 [US2] 在 backend/app/services/customer_price_service.py 中实现 create_material_price_record 方法（INSERT 操作）
 - [ ] T029 [US2] 在 backend/app/services/customer_price_service.py 中添加业务验证（unit_price > 0, customer/material 存在性检查）
-- [ ] T030 [US2] 在 backend/app/api/customer_prices.py 中实现 POST /api/customer-prices/materials 端点（role_level >= 5）
+- [ ] T030 [US2] 在 backend/app/api/customer_prices.py 中实现 POST /api/customer-prices/materials 端点（role_level >= 2）
 - [ ] T031 [US2] 在 backend/app/api/customer_prices.py 中添加请求校验和错误处理（404 客户不存在、400 价格无效）
 
 **Checkpoint**: US2 完成 - 业务经理可记录材料价格历史，配合 US1 形成完整价格参考流程
@@ -128,7 +128,7 @@
 
 - [ ] T033 [US3] 在 backend/app/services/customer_price_service.py 中实现 get_treatment_price_history 方法（查询+排序+限制）
 - [ ] T034 [US3] 在 backend/app/services/customer_price_service.py 中实现兜底逻辑（无历史时返回 treatment_dict.default_rate）
-- [ ] T035 [US3] 在 backend/app/api/customer_prices.py 中实现 GET /api/customer-prices/treatments 端点（role_level >= 5）
+- [ ] T035 [US3] 在 backend/app/api/customer_prices.py 中实现 GET /api/customer-prices/treatments 端点（role_level >= 2）
 - [ ] T036 [US3] 在 backend/app/api/customer_prices.py 中添加查询参数验证（customer_id, treatment_id, limit）
 
 **Checkpoint**: US3 完成 - 业务经理可查询工序价格历史
@@ -149,7 +149,7 @@
 
 - [ ] T038 [US4] 在 backend/app/services/customer_price_service.py 中实现 create_treatment_price_record 方法（INSERT + 快照逻辑）
 - [ ] T039 [US4] 在 backend/app/services/customer_price_service.py 中实现快照机制（从 treatment_dict 自动获取 calc_mode 和 unit）
-- [ ] T040 [US4] 在 backend/app/api/customer_prices.py 中实现 POST /api/customer-prices/treatments 端点（role_level >= 5）
+- [ ] T040 [US4] 在 backend/app/api/customer_prices.py 中实现 POST /api/customer-prices/treatments 端点（role_level >= 2）
 - [ ] T041 [US4] 在 backend/app/api/customer_prices.py 中添加快照字段验证（calc_mode_snapshot, unit_snapshot）
 
 **Checkpoint**: US4 完成 - 工序价格历史记录功能完整，快照机制保护历史真实性
@@ -196,10 +196,10 @@
 - [ ] T052 [P] [US6] 在 backend/app/services/price_adjustment_service.py 中实现 get_pending_adjustments 方法（待审批列表）
 - [ ] T053 [US6] 在 backend/app/services/price_adjustment_service.py 中实现 approve_adjustment 方法（审批通过 + 事务原子性）
 - [ ] T054 [US6] 在 backend/app/services/price_adjustment_service.py 中实现 reject_adjustment 方法（审批驳回）
-- [ ] T055 [US6] 在 backend/app/api/price_adjustments.py 中实现 POST /api/price-adjustments 端点（role_level >= 5）
-- [ ] T056 [US6] 在 backend/app/api/price_adjustments.py 中实现 GET /api/price-adjustments/pending 端点（role_level >= 9）
-- [ ] T057 [US6] 在 backend/app/api/price_adjustments.py 中实现 POST /api/price-adjustments/{id}/approve 端点（role_level >= 9）
-- [ ] T058 [US6] 在 backend/app/api/price_adjustments.py 中实现 POST /api/price-adjustments/{id}/reject 端点（role_level >= 9）
+- [ ] T055 [US6] 在 backend/app/api/price_adjustments.py 中实现 POST /api/price-adjustments 端点（role_level >= 2）
+- [ ] T056 [US6] 在 backend/app/api/price_adjustments.py 中实现 GET /api/price-adjustments/pending 端点（role_level >= 3）
+- [ ] T057 [US6] 在 backend/app/api/price_adjustments.py 中实现 POST /api/price-adjustments/{id}/approve 端点（role_level >= 3）
+- [ ] T058 [US6] 在 backend/app/api/price_adjustments.py 中实现 POST /api/price-adjustments/{id}/reject 端点（role_level >= 3）
 - [ ] T059 [US6] 在 backend/app/main.py 中注册 price_adjustments 路由
 - [ ] T060 [US6] 在审批服务中添加状态机验证（pending → approved/rejected，禁止其他转换）
 - [ ] T061 [US6] 在审批服务中添加并发控制（使用行锁防止重复审批）
@@ -246,9 +246,9 @@
 - [ ] T070 [P] [US8] 在 backend/app/services/treatment_service.py 中实现 deactivate_treatment 方法（is_active = false）
 - [ ] T071 [P] [US8] 在 backend/app/services/treatment_service.py 中实现 get_active_treatments 方法（查询激活的工序）
 - [ ] T072 [US8] 在 backend/app/api/treatments.py 中实现 GET /api/treatments 端点（role_level >= 1，所有人可查询）
-- [ ] T073 [US8] 在 backend/app/api/treatments.py 中实现 POST /api/treatments 端点（role_level >= 10）
-- [ ] T074 [US8] 在 backend/app/api/treatments.py 中实现 PUT /api/treatments/{id} 端点（role_level >= 10）
-- [ ] T075 [US8] 在 backend/app/api/treatments.py 中实现 PATCH /api/treatments/{id} 停用端点（role_level >= 10）
+- [ ] T073 [US8] 在 backend/app/api/treatments.py 中实现 POST /api/treatments 端点（role_level >= 4）
+- [ ] T074 [US8] 在 backend/app/api/treatments.py 中实现 PUT /api/treatments/{id} 端点（role_level >= 4）
+- [ ] T075 [US8] 在 backend/app/api/treatments.py 中实现 PATCH /api/treatments/{id} 停用端点（role_level >= 4）
 - [ ] T076 [US8] 在 backend/app/main.py 中注册 treatments 路由
 - [ ] T077 [US8] 在工序服务中添加唯一性验证（工序名称不能重复）
 

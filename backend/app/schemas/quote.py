@@ -80,7 +80,7 @@ class QuoteListResponse(BaseModel):
     id: int
     quote_no: str
     part_name: str
-    part_number: str
+    customer_part_no: Optional[str] = None
     customer_name: Optional[str] = None
     customer_product_no: Optional[str] = None
     vehicle_model: Optional[str] = None
@@ -99,7 +99,7 @@ class QuoteResponse(BaseModel):
     quote_no: str
     part_id: int
     part_name: Optional[str] = None
-    part_number: Optional[str] = None
+    customer_part_no: Optional[str] = None
     customer_id: Optional[int] = None
     customer_name: Optional[str] = None
     customer_product_no: Optional[str] = None

@@ -84,8 +84,8 @@ async def create_price_account(
     db: DbSession,
     current_user: CurrentUser,
 ) -> PriceAccountResponse:
-    """Create a new price account (role_level >= 5)."""
-    require_role(current_user, min_level=5)
+    """Create a new price account - LV2: business staff."""
+    require_role(current_user, min_level=2)
 
     existing = await price_service.get_price_account_by_part_customer(
         db, data.part_id, data.customer_id
@@ -137,7 +137,7 @@ async def get_price_accounts_by_part(
             id=a.id,
             part_id=a.part_id,
             part_no=a.part.part_no if a.part else None,
-            part_name=a.part.part_name if a.part else None,
+            part_name=a.part.internal_name if a.part else None,
             customer_id=a.customer_id,
             customer_name=a.customer.name if a.customer else None,
             current_price=a.current_price,
@@ -157,8 +157,8 @@ async def update_price_account(
     db: DbSession,
     current_user: CurrentUser,
 ) -> PriceAccountResponse:
-    """Update price account fields."""
-    require_role(current_user, min_level=5)
+    """Update price account fields - LV2: business staff."""
+    require_role(current_user, min_level=2)
 
     account = await price_service.get_price_account_by_id(db, account_id)
     if not account:
@@ -177,8 +177,8 @@ async def add_annual_price(
     db: DbSession,
     current_user: CurrentUser,
 ) -> AnnualPriceRecordResponse:
-    """Add annual price record (role_level >= 5)."""
-    require_role(current_user, min_level=5)
+    """Add annual price record - LV2: business staff."""
+    require_role(current_user, min_level=2)
 
     account = await price_service.get_price_account_by_id(db, account_id)
     if not account:
@@ -261,8 +261,8 @@ async def create_price_adjustment(
     db: DbSession,
     current_user: CurrentUser,
 ) -> PriceAdjustmentResponse:
-    """Record a manual price adjustment (role_level >= 5)."""
-    require_role(current_user, min_level=5)
+    """Record a manual price adjustment - LV2: business staff."""
+    require_role(current_user, min_level=2)
 
     account = await price_service.get_price_account_by_id(db, account_id)
     if not account:

@@ -1,12 +1,39 @@
 """SQLAlchemy models."""
 
 from .admin import AdminContextSwitch, ContextSwitchType
+from .after_sales import (
+    AfterSalesInstallationKit,
+    AfterSalesKitChangeLog,
+    AfterSalesKitComponent,
+    AfterSalesKitComponentAnnotation,
+)
+from .gaibo import (
+    GaiboAfterSalesCustomer,
+    GaiboChangeLog,
+    GaiboCustomerRequirement,
+    GaiboCustomerWorkspace,
+    GaiboDocumentStatus,
+    GaiboDrawing,
+    GaiboInstallationPackage,
+    GaiboPackageItem,
+    GaiboProcessRoute,
+    GaiboProcessStep,
+    GaiboSinglePart,
+    GaiboViewPreference,
+)
 from .audit import AuditLog
 from .customer import Customer
 from .die import Die
 from .machine import Machine, MachineState, MachineStatusLog
 from .part import Part, PartState
 from .part_customer_alias import PartCustomerAlias
+from .part_identity_issue import PartIdentityMigrationIssue
+from .part_display_group import (
+    PartDisplayGroupDef,
+    PartDisplayGroupMember,
+    SharedFieldGroupDef,
+    SharedFieldGroupMember,
+)
 from .part_tooling_spec import PartToolingSpec
 from .price import (
     CustomerMaterialPrice,
@@ -71,6 +98,22 @@ from .mold_type_dict import MoldTypeDict
 
 __all__ = [
     "AdminContextSwitch",
+    "AfterSalesInstallationKit",
+    "AfterSalesKitChangeLog",
+    "AfterSalesKitComponent",
+    "AfterSalesKitComponentAnnotation",
+    "GaiboAfterSalesCustomer",
+    "GaiboChangeLog",
+    "GaiboCustomerRequirement",
+    "GaiboCustomerWorkspace",
+    "GaiboDocumentStatus",
+    "GaiboDrawing",
+    "GaiboInstallationPackage",
+    "GaiboPackageItem",
+    "GaiboProcessRoute",
+    "GaiboProcessStep",
+    "GaiboSinglePart",
+    "GaiboViewPreference",
     "AuditLog",
     "CustomerMaterialPrice",
     "CustomerTreatmentPrice",
@@ -109,6 +152,9 @@ __all__ = [
     "PackagingStatus",
     "Part",
     "PartCustomerAlias",
+    "PartIdentityMigrationIssue",
+    "PartDisplayGroupDef",
+    "PartDisplayGroupMember",
     "PartToolingSpec",
     "PartNameDict",
     "PartState",
@@ -134,6 +180,8 @@ __all__ = [
     "ScanOperation",
     "ScanType",
     "SessionStatus",
+    "SharedFieldGroupDef",
+    "SharedFieldGroupMember",
     "Supplier",
     "SurfaceTreatment",
     "Tooling",

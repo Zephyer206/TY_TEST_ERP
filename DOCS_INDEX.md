@@ -62,7 +62,7 @@
 
 | 文档 | 用途 |
 |---|---|
-| [验收测试报告](ACCEPTANCE_TEST_REPORT.md) | 价格管理系统验收测试报告 |
+| [验收测试报告](docs/archive/completion-reports/ACCEPTANCE_TEST_REPORT.md) | 价格管理系统验收测试报告 |
 | [验收测试截图](screenshots/acceptance-test/) | 功能截图和测试证据 |
 
 ## 开发阅读顺序

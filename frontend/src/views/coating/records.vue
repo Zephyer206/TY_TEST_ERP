@@ -399,7 +399,7 @@ watch(() => completeForm.qualifiedQuantity, () => {
   }
 })
 
-const handleStart = async (row: any) => {
+const handleStart = async (_row: any) => {
   try {
     // TODO: API
     ElMessage.success('已开始喷涂')
@@ -416,7 +416,7 @@ const handleComplete = (row: any) => {
   showCompleteDialog.value = true
 }
 
-const viewDetail = (row: any) => {
+const viewDetail = (_row: any) => {
   ElMessage.info('详情功能')
 }
 

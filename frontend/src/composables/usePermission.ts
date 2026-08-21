@@ -1,159 +1,149 @@
 /**
- * 前端权限控制模块
- * 提供基于 role_level 的动态按钮权限控制
+ * Frontend permission control module with canonical LV1-LV4 system
+ * Based on specs/001-erp-system-architecture/plan.md lines 198-202
  */
 
-import { computed, Ref } from 'vue'
+import { computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { usePermissionStore } from '@/stores/permission'
 
-// 角色级别定义
+// Canonical 4-level role system
 export enum RoleLevel {
-  WORKER = 1,           // 操作工
-  TECHNICIAN = 2,       // 技术员/模具工程师
-  SUPERVISOR = 3,       // 组长/主管
-  ENGINEER = 4,         // 工程师
-  MANAGER = 5,          // 经理/业务经理
-  SENIOR_MANAGER = 7,   // 高级经理
-  BOSS = 9,             // 老板
-  ADMIN = 10,           // 超级管理员
+  ORDINARY_STAFF = 1,      // LV1: operators, warehouse, QC, spray workers, maintenance
+  MANAGER_TECHNICAL = 2,   // LV2: managers, business staff, technical staff, supervisors
+  BOSS = 3,                // LV3: boss - final approval, global visibility
+  SUPER_ADMIN = 4,         // LV4: super administrator - system management, context switching
 }
 
-// 角色名称映射
+// Role names mapping
 export const RoleNames: Record<number, string> = {
-  [RoleLevel.WORKER]: '操作工',
-  [RoleLevel.TECHNICIAN]: '技术员',
-  [RoleLevel.SUPERVISOR]: '主管',
-  [RoleLevel.ENGINEER]: '工程师',
-  [RoleLevel.MANAGER]: '经理',
-  [RoleLevel.SENIOR_MANAGER]: '高级经理',
+  [RoleLevel.ORDINARY_STAFF]: '普通员工',
+  [RoleLevel.MANAGER_TECHNICAL]: '管理人员/业务技术',
   [RoleLevel.BOSS]: '老板',
-  [RoleLevel.ADMIN]: '管理员',
+  [RoleLevel.SUPER_ADMIN]: '超级管理员',
 }
 
-// 权限配置
+// Permission configuration
 export interface PermissionConfig {
-  // 基础权限
-  canView: boolean           // 查看权限
-  canCreate: boolean         // 创建权限
-  canEdit: boolean           // 编辑权限
-  canDelete: boolean         // 删除权限
-  canApprove: boolean        // 审批权限
-  canExport: boolean         // 导出权限
-  canImport: boolean         // 导入权限
+  // Basic permissions
+  canView: boolean           // View permission
+  canCreate: boolean         // Create permission
+  canEdit: boolean           // Edit permission
+  canDelete: boolean         // Delete permission
+  canApprove: boolean        // Approval permission
+  canExport: boolean         // Export permission
+  canImport: boolean         // Import permission
 
-  // 业务权限
-  canSubmitQuote: boolean    // 提交报价
-  canApproveQuote: boolean   // 审批报价
-  canCreatePlan: boolean      // 创建生产计划
-  canReportProduction: boolean // 生产报工
-  canInspect: boolean         // 质量检验
-  canManageStock: boolean     // 库存管理
-  canManageUser: boolean     // 用户管理
-  canViewCost: boolean        // 查看成本
-  canViewReports: boolean     // 查看报表
+  // Business permissions
+  canSubmitQuote: boolean    // Submit quote
+  canApproveQuote: boolean   // Boss approve quote
+  canCreatePlan: boolean      // Create production plan
+  canReportProduction: boolean // Production reporting
+  canInspect: boolean         // Quality inspection
+  canManageStock: boolean     // Stock management
+  canManageUser: boolean     // User management
+  canViewCost: boolean        // View cost
+  canViewReports: boolean     // View reports
 }
 
-// 获取基础权限配置
+// Get base permissions configuration
 export function getBasePermissions(roleLevel: number): PermissionConfig {
-  const isAdmin = roleLevel >= RoleLevel.ADMIN
+  const isSuperAdmin = roleLevel >= RoleLevel.SUPER_ADMIN
   const isBoss = roleLevel >= RoleLevel.BOSS
-  const isManager = roleLevel >= RoleLevel.MANAGER
-  const isSupervisor = roleLevel >= RoleLevel.SUPERVISOR
-  const isTechnician = roleLevel >= RoleLevel.TECHNICIAN
-  const isWorker = roleLevel >= RoleLevel.WORKER
+  const isManager = roleLevel >= RoleLevel.MANAGER_TECHNICAL
+  const isOrdinaryStaff = roleLevel >= RoleLevel.ORDINARY_STAFF
 
   return {
-    // 基础权限
-    canView: isWorker,
-    canCreate: isSupervisor,
-    canEdit: isSupervisor,
-    canDelete: isSupervisor,
+    // Basic permissions
+    canView: isOrdinaryStaff,
+    canCreate: isManager,
+    canEdit: isManager,
+    canDelete: isManager,
     canApprove: isBoss,
-    canExport: isSupervisor,
+    canExport: isManager,
     canImport: isManager,
 
-    // 业务权限
+    // Business permissions
     canSubmitQuote: isManager,
     canApproveQuote: isBoss,
-    canCreatePlan: isSupervisor,
-    canReportProduction: isWorker,
-    canInspect: isTechnician,
-    canManageStock: isSupervisor,
-    canManageUser: isAdmin,
+    canCreatePlan: isManager,
+    canReportProduction: isOrdinaryStaff,
+    canInspect: isOrdinaryStaff,
+    canManageStock: isOrdinaryStaff,
+    canManageUser: isSuperAdmin,
     canViewCost: isManager,
-    canViewReports: isSupervisor,
+    canViewReports: isManager,
   }
 }
 
-// 获取报价审批权限
+// Get quote approval permission
 export function canApproveQuote(roleLevel: number): boolean {
   return roleLevel >= RoleLevel.BOSS
 }
 
-// 获取生产报工权限
+// Get production reporting permission
 export function canReportProduction(roleLevel: number): boolean {
-  return roleLevel >= RoleLevel.WORKER
+  return roleLevel >= RoleLevel.ORDINARY_STAFF
 }
 
-// 获取质量检验权限
+// Get quality inspection permission
 export function canInspect(roleLevel: number): boolean {
-  return roleLevel >= RoleLevel.TECHNICIAN
+  return roleLevel >= RoleLevel.ORDINARY_STAFF
 }
 
-// 获取用户管理权限
+// Get user management permission
 export function canManageUser(roleLevel: number): boolean {
-  return roleLevel >= RoleLevel.ADMIN
+  return roleLevel >= RoleLevel.SUPER_ADMIN
 }
 
-// 获取成本查看权限
+// Get cost view permission
 export function canViewCost(roleLevel: number): boolean {
-  return roleLevel >= RoleLevel.MANAGER
+  return roleLevel >= RoleLevel.MANAGER_TECHNICAL
 }
 
-// 检查是否应该隐藏老板按钮
+// Check if boss button should be hidden
 export function shouldHideBossButton(roleLevel: number, isSwitched: boolean): boolean {
-  // 当超级管理员切换到其他视角时，隐藏老板按钮
-  if (isSwitched && roleLevel >= RoleLevel.ADMIN) {
+  // When super admin switches to other perspective, hide boss buttons
+  if (isSwitched && roleLevel >= RoleLevel.SUPER_ADMIN) {
     return true
   }
   return roleLevel < RoleLevel.BOSS
 }
 
-// Vue 组合式 API 权限钩子
+// Vue composable permission hook
 export function usePermission() {
   const userStore = useUserStore()
   const permissionStore = usePermissionStore()
 
-  // 获取当前有效的角色级别
+  // Get current effective role level
   const effectiveRoleLevel = computed(() => {
     return permissionStore.effectiveRoleLevel || userStore.userInfo?.role_level || 0
   })
 
-  // 获取当前是否切换视角
+  // Get current switch status
   const isSwitched = computed(() => permissionStore.isSwitched)
 
-  // 获取权限配置
+  // Get permission configuration
   const permissions = computed(() => getBasePermissions(effectiveRoleLevel.value))
 
-  // 检查是否有指定级别的权限
+  // Check if has specified level permission
   const hasPermission = (minLevel: number): boolean => {
     return effectiveRoleLevel.value >= minLevel
   }
 
-  // 检查特定权限
+  // Check specific permission
   const can = (permission: keyof PermissionConfig): boolean => {
     return permissions.value[permission]
   }
 
-  // 检查是否应该显示老板按钮
+  // Check if should show boss button
   const showBossButton = computed(() => {
     return !shouldHideBossButton(effectiveRoleLevel.value, isSwitched.value)
   })
 
-  // 检查是否应该显示管理员按钮
+  // Check if should show admin button
   const showAdminButton = computed(() => {
-    return effectiveRoleLevel.value >= RoleLevel.ADMIN && !isSwitched.value
+    return effectiveRoleLevel.value >= RoleLevel.SUPER_ADMIN && !isSwitched.value
   })
 
   return {
@@ -169,14 +159,14 @@ export function usePermission() {
   }
 }
 
-// 权限指令
+// Permission directive
 export const permissionDirective = {
   mounted(el: HTMLElement, binding: any) {
     const { value } = binding
     const userStore = useUserStore()
     const roleLevel = userStore.userInfo?.role_level || 0
 
-    // value 可以是数字(最低角色级别)或权限键名
+    // value can be number (minimum role level) or permission key name
     if (typeof value === 'number') {
       if (roleLevel < value) {
         el.style.display = 'none'
@@ -190,7 +180,7 @@ export const permissionDirective = {
   },
 }
 
-// 导出权限检查工具
+// Export permission check utilities
 export default {
   RoleLevel,
   RoleNames,

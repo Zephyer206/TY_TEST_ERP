@@ -16,24 +16,24 @@
 ### 1. 创建测试用户
 
 ```bash
-# 业务经理（role_level = 5）
+# 业务经理（role_level = 2）
 curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "sales_manager",
     "password": "test123",
     "full_name": "张经理",
-    "role_level": 5
+    "role_level": 2
   }'
 
-# 老板（role_level = 9）
+# 老板（role_level = 3）
 curl -X POST http://localhost:8000/api/auth/register \
   -H "Content-Type: application/json" \
   -d '{
     "username": "boss",
     "password": "test123",
     "full_name": "李老板",
-    "role_level": 9
+    "role_level": 3
   }'
 
 # 保存返回的 token 用于后续请求
@@ -580,7 +580,7 @@ curl -X POST http://localhost:8000/api/price-adjustments \
 **Expected Response**:
 ```json
 {
-  "detail": "权限不足：需要 role_level >= 5"
+  "detail": "权限不足：需要 role_level >= 2"
 }
 ```
 **Status Code**: 403 Forbidden
@@ -595,7 +595,7 @@ curl -X POST http://localhost:8000/api/price-adjustments/<adjustment_id>/approve
 **Expected Response**:
 ```json
 {
-  "detail": "权限不足：需要 role_level >= 9"
+  "detail": "权限不足：需要 role_level >= 3"
 }
 ```
 **Status Code**: 403 Forbidden

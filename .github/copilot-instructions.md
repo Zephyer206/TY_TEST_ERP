@@ -1,22 +1,7 @@
 <!-- SPECKIT START -->
-**Current Active Feature**: `003-price-management-system`
-**Plan**: `specs/003-price-management-system/plan.md`
-**Data Model**: `specs/003-price-management-system/data-model.md`
-**Research**: `specs/003-price-management-system/research.md`
-**Tasks**: `specs/003-price-management-system/tasks.md`
-**Quickstart**: `specs/003-price-management-system/quickstart.md`
-
-**Feature Summary**: 价格管理系统后端 - 客户材料/工序价格历史、工序字典管理、价格调整审批流程
-**Branch**: `003-price-management-system`
-**Tech Stack**: Python 3.11 + FastAPI + asyncpg + PostgreSQL 15 + Pydantic v2 + Alembic
-**Key Components**: 
-- 4张新表：customer_material_prices, customer_treatment_prices, treatment_dict, price_adjustments
-- 7个数据库迁移脚本（废弃旧表 material_base_prices 等）
-- 完整 CRUD API（遵循项目现有风格）
-- 审批工作流（业务经理申请 → 老板审批 → 价格自动更新）
-**Constitution**: ✅ asyncpg（非 psycopg2）、✅ SQL 聚合、✅ @require_role、✅ 审计完整性
-
-Read the plan and tasks before implementing. All code under `backend/app/`, migrations under `backend/scripts/migrations/`, tests under `backend/tests/`.
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+at specs/005-gaibo-after-sales/plan.md
 <!-- SPECKIT END -->
 
 ---
@@ -142,7 +127,7 @@ quotes → parts 同步写入：
 ### 10. 超级管理员视角切换
 
 - 切换时原始 `role_level` 存入数据库
-- 切换期间 `role_level >= 9` 按钮必须隐藏
+- 切换期间 `role_level >= 3` 按钮必须隐藏
 - 切换有效期 1 小时
 - 切换历史可追溯
 

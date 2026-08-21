@@ -1,4 +1,4 @@
-"""Security utilities: JWT tokens and password hashing."""
+"""Security utilities: JWT tokens and password hashing with LV1-LV4 permission system."""
 
 from datetime import datetime, timedelta
 from typing import Any, Optional
@@ -7,7 +7,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 
 from app.core.config import settings
-from app.models.user import User, UserRole
+from app.models.user import User
 
 # Password hashing context using bcrypt
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -90,14 +90,14 @@ def decode_token(token: str) -> Optional[dict[str, Any]]:
 def create_tokens(user: User) -> dict[str, str]:
     """Create access and refresh tokens for a user.
 
-    注意：使用数据库实际存在的字段
+    JWT payload uses canonical LV1-LV4 role_level field.
     """
     token_data = {
         "sub": str(user.id),
         "username": user.username,
-        "role_level": user.role_level,  # 使用 role_level 而不是 role.value
-        "dept": user.dept,  # 部门代码字符串
-        "is_superadmin": bool(user.is_superadmin) if user.is_superadmin else False,
+        "role_level": user.role_level,  # LV1-LV4 only
+        "dept": user.dept,  # department code string
+        "is_tech": user.is_tech,  # orthogonal business metadata
     }
 
     access_token = create_access_token(token_data)
@@ -110,30 +110,17 @@ def create_tokens(user: User) -> dict[str, str]:
     }
 
 
-def verify_role(user: User, required_roles: list[UserRole]) -> bool:
-    """Verify if user has one of the required roles."""
-    if user.is_superuser:
-        return True
-    return user.role in required_roles
+def verify_min_role_level(user: User, min_level: int) -> bool:
+    """Verify if user has at least the minimum required role level.
 
+    Args:
+        user: User object with role_level (1-4)
+        min_level: Minimum required level (1-4)
 
-def verify_min_role(user: User, min_role: UserRole) -> bool:
-    """Verify if user has at least the minimum required role."""
-    if user.is_superuser:
-        return True
+    Returns:
+        True if user.role_level >= min_level
+    """
+    if not (1 <= min_level <= 4):
+        raise ValueError(f"Invalid min_level {min_level}, must be 1-4")
 
-    role_hierarchy = {
-        UserRole.VIEWER: 0,
-        UserRole.WAREHOUSE: 1,
-        UserRole.QC: 2,
-        UserRole.PRODUCTION: 3,
-        UserRole.TECH: 4,
-        UserRole.SALES: 5,
-        UserRole.MANAGER: 6,
-        UserRole.ADMIN: 7,
-    }
-
-    user_level = role_hierarchy.get(user.role, 0)
-    required_level = role_hierarchy.get(min_role, 0)
-
-    return user_level >= required_level
+    return user.role_level >= min_level

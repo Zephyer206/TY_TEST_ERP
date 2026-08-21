@@ -16,7 +16,7 @@
             @keyup.enter="handleScan"
           >
             <template #prepend>
-              <el-icon><Barcode /></el-icon>
+          <el-icon><Tickets /></el-icon>
             </template>
           </el-input>
         </el-form-item>
@@ -66,7 +66,7 @@
           default-expand-all
           node-key="id"
         >
-          <template #default="{ node, data }">
+          <template #default="{ data }">
             <div class="tree-node">
               <el-tag :type="getNodeType(data.type)" size="small">
                 {{ getNodeTypeText(data.type) }}
@@ -200,7 +200,7 @@
                 {{ traceData.packaging.quantity }} 个
               </el-descriptions-item>
               <el-descriptions-item label="状态">
-                <el-tag :type="traceData.packaging.status === 'in_stock' ? 'success' : ''">
+                <el-tag :type="traceData.packaging.status === 'in_stock' ? 'success' : undefined">
                   {{ traceData.packaging.status === 'in_stock' ? '已入库' : '待入库' }}
                 </el-tag>
               </el-descriptions-item>
@@ -243,7 +243,7 @@
     <!-- 空状态 -->
     <el-empty v-else description="请扫描批次号或包装号开始追溯" :image-size="200">
       <template #image>
-        <el-icon :size="100"><Barcode /></el-icon>
+        <el-icon :size="100"><Tickets /></el-icon>
       </template>
     </el-empty>
   </div>
@@ -252,7 +252,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Barcode, Search, Box, Tickets, Operation } from '@element-plus/icons-vue'
+import { Search, Box, Tickets, Operation } from '@element-plus/icons-vue'
 
 const loading = ref(false)
 

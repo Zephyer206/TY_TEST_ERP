@@ -126,9 +126,9 @@ async def create_first_piece_inspection(
     """Create a first piece inspection record.
 
     Used by quality personnel or production supervisors to inspect the first piece
-    before mass production starts.
+    before mass production starts. Requires LV2 (supervisor/technical).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     # Verify part exists
     result = await db.execute(select(Part).where(Part.id == data.part_id))
@@ -193,8 +193,9 @@ async def create_oqc_inspection(
     """Create an OQC (Outgoing Quality Control) inspection record.
 
     Used by quality personnel to inspect products before shipment.
+    Requires LV2 (quality supervisor/manager).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     # Verify part exists
     result = await db.execute(select(Part).where(Part.id == data.part_id))
@@ -347,8 +348,9 @@ async def create_patrol_inspection(
     """Create a patrol inspection record.
 
     Used by quality personnel to perform regular inspections during production.
+    Requires LV2 (quality supervisor/manager).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     inspection = await quality_service.create_patrol_inspection(
         db,

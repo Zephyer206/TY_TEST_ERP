@@ -291,7 +291,6 @@ const loadToolingInfo = async () => {
 const loadRecords = async () => {
   loading.value = true
   try {
-    const id = route.params.id
     // TODO: 调用 API
     maintenanceRecords.value = [
       {
@@ -341,7 +340,7 @@ const submitReport = async () => {
 }
 
 // 开始维修
-const handleStart = async (record: any) => {
+const handleStart = async (_record: any) => {
   try {
     // TODO: 调用 API
     // await api.tooling.startMaintenance(record.id)
@@ -382,7 +381,7 @@ const submitComplete = async () => {
 }
 
 // 查看详情
-const viewDetail = (record: any) => {
+const viewDetail = (_record: any) => {
   ElMessage.info('详情功能')
 }
 

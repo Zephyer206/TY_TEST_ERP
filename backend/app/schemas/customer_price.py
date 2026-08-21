@@ -7,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 
 class PartAlias(BaseModel):
     """Single part alias (customer part number and name)."""
-    customer_part_no: str
+    customer_part_no: Optional[str] = None
     customer_part_name: Optional[str] = None
     revision: Optional[str] = None
 
@@ -16,7 +16,7 @@ class CustomerPartPriceInfo(BaseModel):
     """Customer part with price information."""
     part_id: int
     internal_name: Optional[str] = None
-    customer_part_no: str
+    customer_part_no: Optional[str] = None
     customer_part_name: Optional[str] = None
     aliases: list[PartAlias] = []
     material_name: Optional[str] = None
@@ -54,5 +54,33 @@ class PriceAdjustmentInfo(BaseModel):
     reviewed_at: Optional[datetime] = None
     review_notes: Optional[str] = None
     effective_date: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CustomerPartYearPrice(BaseModel):
+    """Customer part with year-over-year price comparison."""
+    part_id: int
+    display_name: str
+    customer_part_no: Optional[str] = None
+    image_url: Optional[str] = None
+    aliases: list[PartAlias] = []
+    current_year: int
+    previous_year: int
+    current_year_price: Optional[float] = None
+    previous_year_price: Optional[float] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class CustomerPartsYearPricesResponse(BaseModel):
+    """Response for customer parts with year-over-year prices."""
+    customer_id: int
+    customer_name: str
+    customer_code: Optional[str] = None
+    current_year: int
+    previous_year: int
+    parts_count: int
+    parts: list[CustomerPartYearPrice]
 
     model_config = ConfigDict(from_attributes=True)

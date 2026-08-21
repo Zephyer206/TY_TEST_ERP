@@ -35,9 +35,13 @@ import xlrd
 
 # Import header detection from authoritative importer
 try:
-    from scripts.import_excel_authoritative import detect_headers, parse_combined_spec
+    from scripts.import_excel_authoritative import (
+        detect_headers,
+        parse_combined_spec,
+        parse_cavity_count,
+    )
 except ImportError:
-    from import_excel_authoritative import detect_headers, parse_combined_spec
+    from import_excel_authoritative import detect_headers, parse_combined_spec, parse_cavity_count
 
 
 def safe_numeric_compare(val1, val2, tolerance=None):
@@ -214,28 +218,12 @@ def extract_excel_row_data(sheet, header_row_idx: int, column_map: Dict[str, int
                 except:
                     pass
 
-        # Parse cavity count from explicit expressions
-        cavity_count = None
-        combined_text = f"{spec_str or ''} {remark or ''} {cavity_raw or ''}"
-
-        if '左右各一个' in combined_text or '左右各一' in combined_text:
-            cavity_count = 2
-        else:
-            # Check for explicit "1出N" patterns
-            patterns = [
-                r'1\s*出\s*(\d+)',
-                r'一\s*出\s*(\d+)',
-                r'\(\s*1\s*出\s*(\d+)\s*\)',
-                r'\(\s*一\s*出\s*(\d+)\s*\)',
-            ]
-            for pattern in patterns:
-                match = re.search(pattern, combined_text)
-                if match:
-                    try:
-                        cavity_count = int(match.group(1))
-                        break
-                    except:
-                        pass
+        # Only explicit 1出N/一出N text is cavity evidence.  Wording such as
+        # 左右各一套 describes separate tooling and must not become 1出2.
+        cavity_count = parse_cavity_count(
+            f"{spec_str or ''} {cavity_raw or ''}",
+            remark or '',
+        )
 
         return {
             'material': material,

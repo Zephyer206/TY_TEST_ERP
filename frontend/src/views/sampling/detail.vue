@@ -233,18 +233,18 @@ const assignForm = reactive({
 
 // 权限判断
 const canApprove = computed(() => {
-  // 老板才能审批
-  return userStore.user?.roleLevel >= 10
+  // 老板才能审批 (LV3: Boss)
+  return (userStore.userInfo?.role_level ?? 0) >= 3
 })
 
 const canAssign = computed(() => {
-  // 组长才能分配机台
-  return userStore.user?.roleLevel >= 5
+  // 组长才能分配机台 (LV2: Managers)
+  return (userStore.userInfo?.role_level ?? 0) >= 2
 })
 
 const canReview = computed(() => {
   // 业务、品质、开发可以评审
-  return ['business', 'quality', 'tech'].includes(userStore.user?.department)
+  return ['business', 'quality', 'tech'].includes(userStore.userInfo?.dept ?? '')
 })
 
 // 加载详情
@@ -317,7 +317,7 @@ const handleApprove = async () => {
 // 拒绝
 const handleReject = async () => {
   try {
-    const { value } = await ElMessageBox.prompt('请输入拒绝理由', '拒绝打样任务', {
+    await ElMessageBox.prompt('请输入拒绝理由', '拒绝打样任务', {
       confirmButtonText: '确认',
       cancelButtonText: '取消',
       inputPattern: /.+/,

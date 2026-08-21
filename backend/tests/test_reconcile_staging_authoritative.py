@@ -36,7 +36,7 @@ class TestPureFunctions:
 
     def test_expected_sha256_constant(self):
         """Verify the expected SHA256 constant is defined correctly."""
-        assert rsa.EXPECTED_SHA256 == "ca35e3e654bfb9b2ce68e220904d8b9ca48f91f978029ed2df7fcba1374cf117"
+        assert rsa.EXPECTED_SHA256 == "f9ba5dc0602d7828e10e194646e5733c7782d700b06aea10f007aa6d7b818e74"
         assert len(rsa.EXPECTED_SHA256) == 64  # SHA256 is 64 hex chars
 
     def test_canonical_tables_list(self):

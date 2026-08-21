@@ -76,8 +76,9 @@ async def create_recipe(
     """Create a new coating recipe.
 
     Used by coating supervisors to configure spray painting formulas.
+    Requires LV2 (manager/technical staff).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     recipe = await coating_service.create_recipe(
         db,
@@ -141,7 +142,7 @@ async def update_recipe(
     current_user: CurrentUser,
 ) -> CoatingRecipeResponse:
     """Update a coating recipe."""
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     recipe = await coating_service.get_recipe(db, recipe_id)
     if not recipe:

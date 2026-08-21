@@ -19,7 +19,6 @@
 | 数据库驱动 | asyncpg + PostgreSQL | `create_async_engine`，`AsyncSession` |
 | Schema 验证 | Pydantic v2 | 所有入参/出参必须有 Schema |
 | 认证 | JWT Bearer Token | `core/security.py` + `api/deps.py` |
-| 权限 | `@require_role(min_level)` | `core/permissions.py`，禁止路由内硬编码 |
 | 迁移 | Alembic | 版本在 `alembic/versions/` |
 | 前端 | Vue 3 + Element Plus | `frontend/src/`，禁止 Jinja2 新页面 |
 
@@ -65,7 +64,7 @@ main.py         项目入口（sys.path 指向 backend/）
 ### 3.2 关键规则
 
 - 用户表字段：`users.dept`（不是 `department`），`users.is_tech`
-- admin 切换业务视角时，必须隐藏所有 role_level >= 9 按钮
+- admin 切换业务视角时，必须隐藏所有 role_level >= 3 按钮
 - 权限检查统一通过 `@require_role`，不得在路由内写 `if current_user.role_level >= X`
 
 ---

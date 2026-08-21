@@ -5,11 +5,11 @@ from functools import lru_cache
 import json
 from pathlib import Path
 from collections import defaultdict
-from typing import Optional
+from typing import Annotated, Optional
 
-from fastapi import APIRouter, HTTPException, Query, status
-from sqlalchemy import select, or_, distinct
-from sqlalchemy.orm import joinedload
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import distinct, func, or_, select
+from sqlalchemy.orm import joinedload, selectinload
 
 from app.api.deps import CurrentUser, DbSession, require_role
 from app.models.customer import Customer
@@ -19,12 +19,19 @@ from app.models.part_customer_alias import PartCustomerAlias
 from app.models.part_tooling_spec import PartToolingSpec
 from app.models.excel_import import ExcelImportRow
 from app.models.material_dict import MaterialDict
+from app.models.user import User
 from app.schemas.part import (
     PartCreate,
     PartDisplayGroup,
     PartDisplayPage,
     PartResponse,
     PartUpdate,
+)
+from app.schemas.part_editor import (
+    PartEditorUpdateRequest,
+    PartEditorUpdateResponse,
+    PartEditorConflictDetail,
+    PartEditorConflictResponse,
 )
 
 router = APIRouter(prefix="/parts", tags=["Parts"])
@@ -78,10 +85,34 @@ def _select_primary_tooling(tooling_records):
         preferred_records,
         key=lambda record: (
             not record[0].is_primary,
-            str(record[1].tooling_number or record[1].tooling_no or ""),
+            str(record[1].tooling_number or ""),
             record[1].id,
         ),
     )[0]
+
+
+def _select_primary_twp(twp_options):
+    """Return the sole explicit primary TWP option, otherwise no selection.
+
+    A missing or invalid primary must remain visible as unresolved rather than
+    silently choosing the first source row or borrowing a different tooling's
+    specification.
+    """
+    primary_options = [option for option in twp_options if option.is_primary]
+    return primary_options[0] if len(primary_options) == 1 else None
+
+
+def _select_display_twp(twp_options):
+    """Select a list-display TWP without inventing a cross-tooling primary.
+
+    An explicit primary always wins.  When the selected tooling has exactly
+    one source-backed option, that option is also unambiguous for display, but
+    it remains unmarked as a primary in the database.
+    """
+    primary = _select_primary_twp(twp_options)
+    if primary is not None:
+        return primary
+    return twp_options[0] if len(twp_options) == 1 else None
 
 
 async def _load_hidden_simple_part_ids(db) -> set[int]:
@@ -169,6 +200,7 @@ def _resolve_customer_product_fields(
     canonical_no: Optional[str],
     canonical_name: Optional[str],
     customer_id: Optional[int] = None,
+    search: Optional[str] = None,
 ) -> tuple[Optional[str], Optional[str]]:
     """Resolve display customer part fields without overwriting canonical data.
 
@@ -179,7 +211,7 @@ def _resolve_customer_product_fields(
     """
     active_aliases = [
         alias for alias in aliases
-        if alias.is_active and (
+        if alias.is_active and alias.data_quality_status == "approved" and (
             (alias.customer_part_no and alias.customer_part_no.strip())
             or (alias.customer_part_name and alias.customer_part_name.strip())
         )
@@ -189,6 +221,24 @@ def _resolve_customer_product_fields(
             alias for alias in active_aliases
             if alias.customer_id == customer_id
         ]
+
+    # When a search term is present, keep the list row focused on the alias
+    # that matched it. Exact aliases win over aliases that merely contain the
+    # same text (for example, 35D041348 vs 35D041348/35D041349).
+    normalized_search = search.strip().lower() if search and search.strip() else None
+    if normalized_search:
+        exact_aliases = [
+            alias for alias in active_aliases
+            if alias.customer_part_no
+            and alias.customer_part_no.strip().lower() == normalized_search
+        ]
+        matching_aliases = exact_aliases or [
+            alias for alias in active_aliases
+            if (alias.customer_part_no and normalized_search in alias.customer_part_no.lower())
+            or (alias.customer_part_name and normalized_search in alias.customer_part_name.lower())
+        ]
+        if matching_aliases:
+            active_aliases = matching_aliases
 
     alias_numbers = []
     alias_names = []
@@ -210,41 +260,88 @@ def _resolve_customer_product_fields(
     )
 
 
-async def _part_mold_type(db, part_id: int, fallback: Optional[str] = None) -> Optional[str]:
-    """Resolve display mold type from the part's active tooling links."""
+async def _part_tooling_summary(db, part_id: int) -> tuple[Optional[str], Optional[str]]:
+    """Resolve display tooling number and type from active tooling links."""
     result = await db.execute(
-        select(Tooling.mold_type)
+        select(Tooling.tooling_number, Tooling.mold_type)
         .join(ToolingPart, ToolingPart.tooling_id == Tooling.id)
         .where(
             ToolingPart.part_id == part_id,
             Tooling.is_deleted == False,
         )
+        .order_by(
+            ToolingPart.is_primary.desc(),
+            Tooling.is_continuous.desc(),
+            ToolingPart.sequence,
+            Tooling.id,
+        )
     )
-    return _summarize_mold_types(value for (value,) in result.all()) or fallback
+    rows = result.all()
+    if not rows:
+        return None, None
+    tooling_number = rows[0][0]
+    return tooling_number, _summarize_mold_types(value for _, value in rows)
 
 
-def _apply_part_filters(q, search, customer_id, part_status, material):
+async def _load_exact_customer_alias_part_ids(
+    db,
+    search: Optional[str],
+    customer_id: Optional[int] = None,
+) -> set[int]:
+    """Return parts with an exact active customer-part-number alias.
+
+    Exact aliases take precedence over substring matches so a query such as
+    ``35D041348`` does not also return a composite alias such as
+    ``35D041348/35D041349`` when an exact source-backed alias exists.
+    """
+    normalized_search = search.strip().lower() if search and search.strip() else None
+    if not normalized_search:
+        return set()
+
+    conditions = [
+        PartCustomerAlias.is_active == True,
+        func.lower(func.trim(PartCustomerAlias.customer_part_no)) == normalized_search,
+    ]
+    if customer_id is not None:
+        conditions.append(PartCustomerAlias.customer_id == customer_id)
+
+    result = await db.execute(
+        select(PartCustomerAlias.part_id).where(*conditions)
+    )
+    return set(result.scalars().all())
+
+
+def _apply_part_filters(
+    q,
+    search,
+    customer_id,
+    part_status,
+    material,
+    exact_customer_part_ids: Optional[set[int]] = None,
+):
     """Apply the shared parts-list filters to a SELECT statement."""
     # Soft-deleted repair/import duplicates must never appear in list or count
     # endpoints.  Historical rows remain auditable in the database, but are
     # excluded from the active ERP UI.
     q = q.where(Part.is_deleted == False)
     if search:
-        customer_alias_subq = select(PartCustomerAlias.part_id).where(
-            PartCustomerAlias.customer_part_no.ilike(f"%{search}%")
-        )
+        if exact_customer_part_ids:
+            customer_alias_filter = Part.id.in_(exact_customer_part_ids)
+        else:
+            customer_alias_subq = select(PartCustomerAlias.part_id).where(
+                PartCustomerAlias.customer_part_no.ilike(f"%{search}%")
+            )
+            customer_alias_filter = Part.id.in_(customer_alias_subq)
         tooling_subq = select(ToolingPart.part_id).join(
             Tooling, ToolingPart.tooling_id == Tooling.id
         ).where(
             or_(
                 Tooling.tooling_number.ilike(f"%{search}%"),
-                Tooling.tooling_no.ilike(f"%{search}%")
             )
         )
         q = q.where(or_(
             Part.internal_name.ilike(f"%{search}%"),
-            Part.part_number.ilike(f"%{search}%"),
-            Part.id.in_(customer_alias_subq),
+            customer_alias_filter,
             Part.id.in_(tooling_subq),
         ))
 
@@ -256,6 +353,11 @@ def _apply_part_filters(q, search, customer_id, part_status, material):
 
     if part_status:
         q = q.where(Part.part_status == part_status)
+    else:
+        # The active parts workspace must not show retired records.  Older
+        # delete operations only changed part_status to OBSOLETE, so keep the
+        # default list clean even for those historical soft-deleted rows.
+        q = q.where(func.upper(Part.part_status) != "OBSOLETE")
     if material:
         q = q.where(Part.material_name.ilike(f"%{material}%"))
 
@@ -263,30 +365,35 @@ def _apply_part_filters(q, search, customer_id, part_status, material):
 
 
 async def _to_resp(db, p: Part) -> PartResponse:
-    customer = await db.get(Customer, p.customer_id) if p.customer_id else None
     aliases_result = await db.execute(
-        select(PartCustomerAlias).where(PartCustomerAlias.part_id == p.id)
+        select(PartCustomerAlias).where(
+            PartCustomerAlias.part_id == p.id,
+            PartCustomerAlias.is_active == True,
+            PartCustomerAlias.data_quality_status == "approved",
+        )
     )
-    customer_product_no, customer_product_name = _resolve_customer_product_fields(
-        list(aliases_result.scalars()),
-        p.customer_product_no,
-        p.customer_product_name,
-        customer_id=p.customer_id,
-    )
+    aliases = list(aliases_result.scalars())
+    customer_part_no, customer_part_name = _resolve_customer_product_fields(aliases, None, None)
+    customer_ids = {alias.customer_id for alias in aliases}
+    customers = {
+        customer.id: customer
+        for customer in (await db.execute(select(Customer).where(Customer.id.in_(customer_ids)))).scalars()
+    } if customer_ids else {}
+    customer = next(iter(customers.values()), None)
+    tooling_number, tooling_type = await _part_tooling_summary(db, p.id)
     return PartResponse(
         id=p.id,
-        part_number=p.part_number,
-        internal_name=p.internal_name,
-        customer_id=p.customer_id,
+        part_name=p.internal_name,
+        customer_id=customer.id if customer else None,
         customer_name=customer.name if customer else None,
-        customer_product_no=customer_product_no,
-        customer_product_name=customer_product_name,
+        customer_part_no=customer_part_no,
+        customer_part_name=customer_part_name,
         vehicle_model=p.vehicle_model,
         material_name=p.material_name,
         part_status=p.part_status,
         stock_pcs=p.stock_pcs,
-        mold_number=p.mold_number,
-        mold_type=await _part_mold_type(db, p.id, p.mold_type),
+        tooling_number=tooling_number,
+        tooling_type=tooling_type,
         press_tonnage=p.press_tonnage,
         ppap_no=p.ppap_no,
         thickness=float(p.thickness) if p.thickness else None,
@@ -300,10 +407,15 @@ async def _to_resp(db, p: Part) -> PartResponse:
     )
 
 
-async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optional[int] = None) -> list[PartResponse]:
+async def _build_part_responses(
+    db,
+    parts: list[Part],
+    filter_customer_id: Optional[int] = None,
+    filter_search: Optional[str] = None,
+) -> list[PartResponse]:
     """Build list-page responses with relation-based customer/tooling summaries.
 
-    When filter_customer_id is provided, populate customer_product_no/customer_product_name
+    When filter_customer_id is provided, populate customer_part_no/customer_part_name
     from that customer's active aliases as a fallback for display when canonical fields are NULL.
     """
     if not parts:
@@ -347,7 +459,8 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
             select(Tooling).where(Tooling.id.in_(tooling_ids))
         )).scalars()}
 
-    specs_by_part: dict[int, list[PartToolingSpec]] = {}
+    # Load TWP specs keyed by (part_id, tooling_id) for selected-tooling lookup
+    specs_by_key: dict[tuple[int, int], list[PartToolingSpec]] = {}
     if part_ids:
         specs_result = await db.execute(
             select(PartToolingSpec)
@@ -355,13 +468,12 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
             .order_by(PartToolingSpec.source_row, PartToolingSpec.id)
         )
         for spec in specs_result.scalars().all():
-            specs_by_part.setdefault(spec.part_id, []).append(spec)
+            specs_by_key.setdefault((spec.part_id, spec.tooling_id), []).append(spec)
 
     cavity_evidence = await _load_cavity_evidence(
         db,
         {
             toolings[tp.tooling_id].tooling_number
-            or toolings[tp.tooling_id].tooling_no
             for tps in tooling_parts_map.values()
             for tp in tps
             if tp.tooling_id in toolings
@@ -389,22 +501,20 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
             if len(names) > 3:
                 customer_summary += f" (+{len(names) - 3})"
 
-        customer_product_no_display, customer_product_name_display = _resolve_customer_product_fields(
+        customer_part_no_display, customer_part_name_display = _resolve_customer_product_fields(
             aliases,
-            p.customer_product_no,
-            p.customer_product_name,
+            None,
+            None,
             customer_id=filter_customer_id,
+            search=filter_search,
         )
 
         tps = tooling_parts_map.get(p.id, [])
-        twp_options = specs_by_part.get(p.id, [])
-        primary_spec = next(
-            (spec for spec in twp_options if spec.is_primary),
-            None,
-        )
         mold_summary = None
         mold_type_summary = None
         cavity_count_summary = None
+        primary_tooling_id = None
+
         if tps:
             tooling_records = [
                 (tp, toolings[tp.tooling_id])
@@ -414,14 +524,13 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
             primary_record = _select_primary_tooling(tooling_records)
             if primary_record:
                 primary_tp, primary_tooling = primary_record
+                primary_tooling_id = primary_tooling.id
                 mold_summary = (
                     primary_tooling.tooling_number
-                    or primary_tooling.tooling_no
                 )
                 mold_type_summary = primary_tooling.mold_type
                 primary_tooling_number = (
                     primary_tooling.tooling_number
-                    or primary_tooling.tooling_no
                 )
                 if _has_complete_cavity_evidence(
                     primary_tooling_number,
@@ -431,35 +540,44 @@ async def _build_part_responses(db, parts: list[Part], filter_customer_id: Optio
                         [primary_tooling.cavity_count]
                     )
 
-        display_spec = primary_spec.spec_twph if primary_spec else p.spec_twph
+        # TWP display logic: use primary spec from selected tooling only
+        selected_tooling_specs = specs_by_key.get((p.id, primary_tooling_id), []) if primary_tooling_id else []
+        # Count all TWP options across all toolings for this part
+        all_twp_count = sum(len(specs) for key, specs in specs_by_key.items() if key[0] == p.id)
+        primary_spec = _select_primary_twp(selected_tooling_specs)
+        display_twp = _select_display_twp(selected_tooling_specs)
+
+        # Use the part-row TWP values only when no source-backed option exists
+        # for this part. Never borrow another tooling's TWP or hide an
+        # unresolved continuous-tooling conflict behind a different source.
+        display_spec = display_twp.spec_twph if display_twp else (p.spec_twph if all_twp_count == 0 else None)
         display_thickness = (
-            primary_spec.thickness if primary_spec else p.thickness
+            display_twp.thickness if display_twp else (p.thickness if all_twp_count == 0 else None)
         )
-        display_width = primary_spec.width if primary_spec else p.width
-        display_pitch = primary_spec.pitch if primary_spec else p.pitch
+        display_width = display_twp.width if display_twp else (p.width if all_twp_count == 0 else None)
+        display_pitch = display_twp.pitch if display_twp else (p.pitch if all_twp_count == 0 else None)
 
         results.append(PartResponse(
             id=p.id,
-            part_number=p.part_number,
-            internal_name=p.internal_name,
+            part_name=p.internal_name,
             customer_id=None,
             customer_name=customer_summary,
-            customer_product_no=customer_product_no_display,
-            customer_product_name=customer_product_name_display,
+            customer_part_no=customer_part_no_display,
+            customer_part_name=customer_part_name_display,
             vehicle_model=p.vehicle_model,
             material_name=p.material_name,
             material_name_full=materials[p.material_id].name if p.material_id in materials else None,
             part_status=p.part_status,
             stock_pcs=p.stock_pcs,
-            mold_number=mold_summary,
-            mold_type=mold_type_summary or p.mold_type,
+            tooling_number=mold_summary,
+            tooling_type=mold_type_summary,
             press_tonnage=p.press_tonnage,
             ppap_no=p.ppap_no,
             spec_twph=display_spec,
             thickness=display_thickness,
             width=display_width,
             pitch=display_pitch,
-            twp_options_count=len(twp_options),
+            twp_options_count=all_twp_count,
             has_primary_twp=primary_spec is not None,
             height=p.height,
             gross_weight=p.gross_weight,
@@ -487,7 +605,6 @@ async def _load_left_right_pair_lookup(db):
         select(
             ToolingPart.part_id,
             Tooling.tooling_number,
-            Tooling.tooling_no,
             Part.part_position,
             Tooling.cavity_count,
         )
@@ -503,15 +620,14 @@ async def _load_left_right_pair_lookup(db):
     cavity_evidence = await _load_cavity_evidence(
         db,
         {
-            tooling_number or tooling_no
-            for _, tooling_number, tooling_no, _, _ in rows
-            if tooling_number or tooling_no
+            tooling_number
+            for _, tooling_number, _, _ in rows
+            if tooling_number
         },
     )
 
     candidates = {}
-    for part_id, tooling_number, tooling_no, position, cavity_count in rows:
-        tooling_number = tooling_number or tooling_no
+    for part_id, tooling_number, position, cavity_count in rows:
         if not tooling_number or not tooling_number.endswith(("-1", "-2")):
             continue
         if not _has_complete_cavity_evidence(tooling_number, cavity_evidence):
@@ -551,6 +667,34 @@ def _load_audited_source_groups() -> list[dict]:
     except (FileNotFoundError, OSError, ValueError):
         return []
     return [group for group in payload.get("groups", []) if group.get("classification") == "mergeable"]
+
+
+async def _load_persistent_group_lookup(db) -> dict[int, tuple[str, str, list[int]]]:
+    """Load active persistent PartDisplayGroupDef/Member records as display groups.
+
+    Returns a lookup mapping part_id -> (group_key, group_type, member_part_ids).
+    Active persistent groups take precedence over legacy inferred/audit grouping.
+    """
+    from app.models.part_display_group import PartDisplayGroupDef, PartDisplayGroupMember
+
+    result = await db.execute(
+        select(PartDisplayGroupDef)
+        .where(PartDisplayGroupDef.is_active == True)
+        .options(selectinload(PartDisplayGroupDef.members))
+    )
+    groups = result.scalars().all()
+
+    lookup: dict[int, tuple[str, str, list[int]]] = {}
+    for group in groups:
+        # Preserve explicit member ordering by sequence, then member id
+        sorted_members = sorted(group.members, key=lambda m: (m.sequence, m.id))
+        member_ids = [m.part_id for m in sorted_members]
+        if len(member_ids) < 1:
+            continue
+        for part_id in member_ids:
+            lookup[part_id] = (group.group_key, group.group_type, member_ids)
+
+    return lookup
 
 
 async def _load_source_group_lookup(db) -> dict[int, tuple[str, list[int]]]:
@@ -624,8 +768,12 @@ async def count_parts(
     material: Optional[str] = Query(default=None),
 ) -> dict[str, int]:
     """Count parts with the same filters as list_parts - returns total distinct parts."""
+    exact_customer_part_ids = await _load_exact_customer_alias_part_ids(
+        db, search, customer_id
+    )
     q = _apply_part_filters(
-        select(Part.id), search, customer_id, part_status, material
+        select(Part.id), search, customer_id, part_status, material,
+        exact_customer_part_ids=exact_customer_part_ids,
     )
 
     # Count distinct parts
@@ -646,14 +794,23 @@ async def list_parts(
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> list[PartResponse]:
+    exact_customer_part_ids = await _load_exact_customer_alias_part_ids(
+        db, search, customer_id
+    )
     q = _apply_part_filters(
-        select(Part), search, customer_id, part_status, material
+        select(Part), search, customer_id, part_status, material,
+        exact_customer_part_ids=exact_customer_part_ids,
     )
 
     # Stable ordering: created_at DESC, then id DESC for deterministic pagination
     q = q.order_by(Part.created_at.desc().nulls_last(), Part.id.desc()).offset(skip).limit(limit)
     parts = (await db.execute(q)).scalars().all()
-    return await _build_part_responses(db, parts, filter_customer_id=customer_id)
+    return await _build_part_responses(
+        db,
+        parts,
+        filter_customer_id=customer_id,
+        filter_search=search,
+    )
 
 
 @router.get("/grouped", response_model=PartDisplayPage)
@@ -675,19 +832,37 @@ async def list_grouped_parts(
     creates a one-out-two display group. Filtering matches either member and
     returns the complete pair.
     """
+    exact_customer_part_ids = await _load_exact_customer_alias_part_ids(
+        db, search, customer_id
+    )
     id_query = _apply_part_filters(
-        select(Part.id), search, customer_id, part_status, material
+        select(Part.id), search, customer_id, part_status, material,
+        exact_customer_part_ids=exact_customer_part_ids,
     ).order_by(Part.created_at.desc().nulls_last(), Part.id.desc())
     filtered_ids = list((await db.execute(id_query)).scalars().all())
     hidden_simple_part_ids = await _load_hidden_simple_part_ids(db)
     filtered_ids = [part_id for part_id in filtered_ids if part_id not in hidden_simple_part_ids]
 
+    persistent_group_lookup = await _load_persistent_group_lookup(db)
     pair_lookup = await _load_left_right_pair_lookup(db)
     source_group_lookup = await _load_source_group_lookup(db)
     descriptors = []
     seen_groups = set()
 
     for part_id in filtered_ids:
+        # Explicit persistent groups take precedence
+        persistent_info = persistent_group_lookup.get(part_id)
+        if persistent_info:
+            persistent_key, persistent_type, member_ids = persistent_info
+            if persistent_key in seen_groups:
+                continue
+            seen_groups.add(persistent_key)
+            # Use explicit group_type from database, never infer from key prefix
+            is_pair = persistent_type == "left_right"
+            is_source = persistent_type == "shared_source"
+            descriptors.append((persistent_key, is_pair, is_source, member_ids))
+            continue
+
         source_info = source_group_lookup.get(part_id)
         if source_info:
             source_key, member_ids = source_info
@@ -728,7 +903,12 @@ async def list_grouped_parts(
             p.id,
         )
     )
-    responses = await _build_part_responses(db, selected_parts, filter_customer_id=customer_id)
+    responses = await _build_part_responses(
+        db,
+        selected_parts,
+        filter_customer_id=customer_id,
+        filter_search=search,
+    )
     response_by_id = {response.id: response for response in responses}
 
     items = []
@@ -748,15 +928,14 @@ async def list_grouped_parts(
 
 @router.post("", response_model=PartResponse, status_code=status.HTTP_201_CREATED)
 async def create_part(data: PartCreate, db: DbSession, current_user: CurrentUser) -> PartResponse:
-    require_role(current_user, min_level=2)
-    existing = (await db.execute(select(Part).where(Part.part_number == data.part_number))).scalar_one_or_none()
+    await require_role(2)(current_user)
+    """
+    existing = (await db.execute(select(Part).where(Part.id == -1))).scalar_one_or_none()
     if existing:
         raise HTTPException(status_code=400, detail="零件编号已存在")
+    """
     part = Part(
-        part_number=data.part_number,
         internal_name=data.internal_name,
-        customer_id=data.customer_id,
-        customer_product_no=data.customer_product_no,
         vehicle_model=data.vehicle_model,
         material_name=data.material_name,
         remark=data.remark,
@@ -765,6 +944,17 @@ async def create_part(data: PartCreate, db: DbSession, current_user: CurrentUser
         updated_at=datetime.utcnow(),
     )
     db.add(part)
+    await db.flush()
+    if data.customer_id and data.customer_part_no:
+        from app.services.part_identity_service import upsert_part_alias
+        await upsert_part_alias(
+            db,
+            part_id=part.id,
+            customer_id=data.customer_id,
+            customer_part_no=data.customer_part_no,
+            customer_part_name=data.customer_part_name,
+            vehicle_model=data.vehicle_model,
+        )
     await db.commit()
     await db.refresh(part)
     return await _to_resp(db, part)
@@ -780,12 +970,25 @@ async def get_part(part_id: int, db: DbSession, current_user: CurrentUser) -> Pa
 
 @router.patch("/{part_id}", response_model=PartResponse)
 async def update_part(part_id: int, data: PartUpdate, db: DbSession, current_user: CurrentUser) -> PartResponse:
-    require_role(current_user, min_level=2)
+    await require_role(2)(current_user)
     part = await db.get(Part, part_id)
     if not part:
         raise HTTPException(status_code=404, detail="Part not found")
-    for field, value in data.model_dump(exclude_unset=True).items():
-        setattr(part, field, value)
+    update_data = data.model_dump(exclude_unset=True)
+    alias_fields = {"customer_id", "customer_part_no", "customer_part_name"}
+    for field, value in update_data.items():
+        if field not in alias_fields:
+            setattr(part, field, value)
+    if data.customer_id and data.customer_part_no:
+        from app.services.part_identity_service import upsert_part_alias
+        await upsert_part_alias(
+            db,
+            part_id=part.id,
+            customer_id=data.customer_id,
+            customer_part_no=data.customer_part_no,
+            customer_part_name=data.customer_part_name,
+            vehicle_model=data.vehicle_model,
+        )
     part.updated_at = datetime.utcnow()
     await db.commit()
     await db.refresh(part)
@@ -794,11 +997,12 @@ async def update_part(part_id: int, data: PartUpdate, db: DbSession, current_use
 
 @router.delete("/{part_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_part(part_id: int, db: DbSession, current_user: CurrentUser) -> None:
-    require_role(current_user, min_level=2)
+    await require_role(2)(current_user)
     part = await db.get(Part, part_id)
     if not part:
         raise HTTPException(status_code=404, detail="Part not found")
-    # 软删除：改状态
+    # 软删除：保留历史记录，但从所有默认业务列表中隐藏。
     part.part_status = "OBSOLETE"
+    part.is_deleted = True
     part.updated_at = datetime.utcnow()
     await db.commit()

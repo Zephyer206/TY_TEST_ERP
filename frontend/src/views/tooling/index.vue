@@ -1,49 +1,26 @@
 <template>
   <div class="tooling-container">
-    <el-card class="header-card">
-      <div class="header-content">
-        <h2>模具管理</h2>
+    <div class="list-view-toolbar">
+      <div class="list-title-block">
         <el-button type="primary" @click="showCreateDialog = true">
           <el-icon><Plus /></el-icon>
           新增模具
         </el-button>
+        <h1>模具</h1>
       </div>
-    </el-card>
-
-    <!-- 筛选条件 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filters">
-        <el-form-item label="模具状态">
-          <el-select v-model="filters.status" placeholder="全部状态" clearable style="width: 150px">
-            <el-option label="可用" value="available" />
-            <el-option label="使用中" value="in_use" />
-            <el-option label="维修中" value="maintenance" />
-            <el-option label="报废" value="scrapped" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="客户">
-          <el-input v-model="filters.customer" placeholder="客户名称" clearable style="width: 150px" />
-        </el-form-item>
-        <el-form-item label="模具号">
-          <el-input v-model="filters.toolingNo" placeholder="模具号" clearable style="width: 150px" />
-        </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="filters.type" placeholder="全部类型" clearable style="width: 120px">
-            <el-option label="单工序" value="single" />
-            <el-option label="连续模" value="progressive" />
-            <el-option label="复合模" value="compound" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="resetFilters">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+      <div class="search-control"><el-icon><Search /></el-icon><el-input v-model="filters.toolingNo" placeholder="搜索模具号" clearable @keyup.enter="loadData" /></div>
+      <div class="filter-controls">
+        <el-select v-model="filters.status" placeholder="状态" clearable><el-option label="可用" value="available" /><el-option label="使用中" value="in_use" /><el-option label="维修中" value="maintenance" /><el-option label="报废" value="scrapped" /></el-select>
+        <el-input v-model="filters.customer" placeholder="客户" clearable @keyup.enter="loadData" />
+        <el-select v-model="filters.type" placeholder="类型" clearable><el-option label="单工序" value="single" /><el-option label="连续模" value="progressive" /><el-option label="复合模" value="compound" /></el-select>
+        <el-button @click="loadData">筛选</el-button><el-button text @click="resetFilters">重置</el-button>
+        <el-button class="view-toggle" text circle aria-label="列表视图" title="列表视图"><el-icon><Menu /></el-icon></el-button>
+      </div>
+    </div>
+    <div class="table-meta"><span>{{ pagination.total }} 条记录</span><span>点击详情继续查看模具生命周期</span></div>
 
     <!-- 模具列表 -->
-    <el-card>
-      <el-table :data="toolingList" v-loading="loading" border stripe>
+    <el-table :data="toolingList" v-loading="loading">
         <el-table-column prop="toolingNo" label="模具号" width="140" fixed="left" />
         <el-table-column prop="customerName" label="客户" width="150" />
         <el-table-column prop="customerPartNo" label="客户产品号" width="150" />
@@ -88,9 +65,8 @@
             </el-button>
           </template>
         </el-table-column>
-      </el-table>
+    </el-table>
 
-      <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
           v-model:current-page="pagination.page"
@@ -102,7 +78,6 @@
           @current-change="loadData"
         />
       </div>
-    </el-card>
 
     <!-- 新增/编辑模具对话框 -->
     <el-dialog
@@ -194,7 +169,7 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Menu, Plus, Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 
@@ -361,7 +336,7 @@ const handleEdit = (row: any) => {
 }
 
 // 报废
-const handleScrap = async (id: number) => {
+const handleScrap = async (_id: number) => {
   try {
     await ElMessageBox.confirm('确认报废此模具吗？报废后将无法恢复。', '确认报废', {
       confirmButtonText: '确认',
@@ -409,33 +384,12 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-.tooling-container {
-  padding: 20px;
-
-  .header-card {
-    margin-bottom: 20px;
-  }
-
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 500;
-    }
-  }
-
-  .filter-card {
-    margin-bottom: 20px;
-  }
-
-  .pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
+.tooling-container { min-width: 0; }
+.list-view-toolbar { display: grid; grid-template-columns: auto minmax(220px, 1fr) auto; align-items: center; gap: 14px; min-height: 58px; margin-bottom: 10px; padding: 8px 0; }
+.list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
+.search-control { display: flex; align-items: center; gap: 8px; width: min(480px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
+.filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.filter-controls :deep(.el-select) { width: 118px; }.filter-controls :deep(.el-input) { width: 124px; }.view-toggle { color: #625780; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.table-meta span:last-child { color: #96939e; }
+.pagination-container { display: flex; justify-content: flex-end; margin-top: 12px; }
+@media (max-width: 1040px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; flex-wrap: wrap; } }
 </style>

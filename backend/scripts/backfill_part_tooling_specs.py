@@ -1,9 +1,9 @@
 """Backfill source-backed TWP options without overwriting legacy part fields.
 
 The dry-run mode is the default.  ``--apply`` inserts one option per imported
-source row and automatically marks a part's sole option as primary.  Parts with
-multiple distinct options remain unselected until a user chooses the primary
-specification in the ERP UI.
+source row.  Partial T/W/P tuples are valid source-backed options: at least one
+of thickness, width, or pitch must be present and missing values remain NULL.
+Primary selection is intentionally not changed by this import.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ from decimal import Decimal
 from pathlib import Path
 from typing import Any
 
-from sqlalchemy import select, text
+from sqlalchemy import or_, select, text
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 import sys
@@ -56,9 +56,19 @@ def format_decimal(value: Decimal | None) -> str | None:
 
 def format_spec(row: ExcelImportRow) -> str | None:
     values = (row.parsed_thickness, row.parsed_width, row.parsed_pitch)
-    if any(value is None for value in values):
+    if all(value is None for value in values):
         return None
-    return "*".join(format_decimal(value) or "" for value in values)
+    thickness, width, pitch = (format_decimal(value) for value in values)
+    parts: list[str] = []
+    if thickness is not None:
+        parts.append(thickness)
+    if width is not None:
+        parts.append(width)
+    elif pitch is not None:
+        parts.append("-")
+    if pitch is not None:
+        parts.append(pitch)
+    return "*".join(parts)
 
 
 async def build_report() -> dict[str, Any]:
@@ -70,9 +80,11 @@ async def build_report() -> dict[str, Any]:
                     ExcelImportRow.validation_status == "IMPORTED",
                     ExcelImportRow.resolved_part_id.is_not(None),
                     ExcelImportRow.resolved_tooling_id.is_not(None),
-                    ExcelImportRow.parsed_thickness.is_not(None),
-                    ExcelImportRow.parsed_width.is_not(None),
-                    ExcelImportRow.parsed_pitch.is_not(None),
+                    or_(
+                        ExcelImportRow.parsed_thickness.is_not(None),
+                        ExcelImportRow.parsed_width.is_not(None),
+                        ExcelImportRow.parsed_pitch.is_not(None),
+                    ),
                 )
                 .order_by(ExcelImportRow.id)
             )
@@ -89,9 +101,9 @@ async def build_report() -> dict[str, Any]:
             spec.tooling_id,
             spec.source_sheet,
             spec.source_row,
-            str(spec.thickness),
-            str(spec.width),
-            str(spec.pitch),
+            format_decimal(spec.thickness),
+            format_decimal(spec.width),
+            format_decimal(spec.pitch),
         )
         for spec in existing_rows
     }
@@ -103,14 +115,14 @@ async def build_report() -> dict[str, Any]:
             row.resolved_tooling_id,
             row.source_sheet,
             row.source_row,
-            str(row.parsed_thickness),
-            str(row.parsed_width),
-            str(row.parsed_pitch),
+            format_decimal(row.parsed_thickness),
+            format_decimal(row.parsed_width),
+            format_decimal(row.parsed_pitch),
         )
         option_key = (
-            str(row.parsed_thickness),
-            str(row.parsed_width),
-            str(row.parsed_pitch),
+            format_decimal(row.parsed_thickness),
+            format_decimal(row.parsed_width),
+            format_decimal(row.parsed_pitch),
         )
         distinct_by_part[row.resolved_part_id].add(option_key)
         if key in existing_keys:
@@ -120,9 +132,9 @@ async def build_report() -> dict[str, Any]:
                 "part_id": row.resolved_part_id,
                 "tooling_id": row.resolved_tooling_id,
                 "spec_twph": format_spec(row),
-                "thickness": str(row.parsed_thickness),
-                "width": str(row.parsed_width),
-                "pitch": str(row.parsed_pitch),
+                "thickness": format_decimal(row.parsed_thickness),
+                "width": format_decimal(row.parsed_width),
+                "pitch": format_decimal(row.parsed_pitch),
                 "source_sheet": row.source_sheet,
                 "source_row": row.source_row,
             }
@@ -156,18 +168,11 @@ async def apply_report(report: dict[str, Any]) -> dict[str, int]:
                 "ON part_tooling_specs (tooling_id)"
             )
         )
-        await session.execute(
-            text(
-                "CREATE UNIQUE INDEX IF NOT EXISTS uq_part_tooling_specs_primary "
-                "ON part_tooling_specs (part_id) WHERE is_primary"
-            )
-        )
-
         inserted = 0
         for item in report["candidates"]:
-            thickness = Decimal(item["thickness"])
-            width = Decimal(item["width"])
-            pitch = Decimal(item["pitch"])
+            thickness = Decimal(item["thickness"]) if item["thickness"] is not None else None
+            width = Decimal(item["width"]) if item["width"] is not None else None
+            pitch = Decimal(item["pitch"]) if item["pitch"] is not None else None
             exists = await session.scalar(
                 select(PartToolingSpec.id).where(
                     PartToolingSpec.part_id == item["part_id"],
@@ -195,25 +200,8 @@ async def apply_report(report: dict[str, Any]) -> dict[str, int]:
             )
             inserted += 1
 
-        await session.flush()
-        grouped = defaultdict(list)
-        for spec in (await session.execute(select(PartToolingSpec))).scalars().all():
-            grouped[spec.part_id].append(spec)
-
-        primary_assigned = 0
-        for specs in grouped.values():
-            if any(spec.is_primary for spec in specs):
-                continue
-            distinct = {
-                (str(spec.thickness), str(spec.width), str(spec.pitch))
-                for spec in specs
-            }
-            if len(distinct) == 1 and len(specs) >= 1:
-                specs[0].is_primary = True
-                primary_assigned += 1
-
         await session.commit()
-        return {"inserted": inserted, "primary_assigned": primary_assigned}
+        return {"inserted": inserted, "primary_assigned": 0}
 
 
 async def main() -> int:

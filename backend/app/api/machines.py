@@ -118,8 +118,9 @@ async def report_fault(
     """Report a fault on a machine.
 
     Machine enters FAULT state, waiting for first scan confirmation.
+    Requires LV2 (supervisor/maintenance manager).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     result = await db.execute(
         select(Machine).where(Machine.id == machine_id, Machine.is_deleted == False)

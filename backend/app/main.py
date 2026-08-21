@@ -1,12 +1,14 @@
 """Main FastAPI application with middleware and exception handling."""
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, Request, status
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -97,6 +99,8 @@ async def health_check() -> dict[str, Any]:
 
 # Include routers
 from app.api.admin import router as admin_router
+from app.api.after_sales import router as after_sales_router
+from app.api.gaibo_after_sales import router as gaibo_after_sales_router
 from app.api.auth import router as auth_router
 from app.api.coating import router as coating_router
 from app.api.customer_prices import router as customer_prices_router
@@ -106,6 +110,9 @@ from app.api.migrations import router as migrations_router
 from app.api.packaging import router as packaging_router
 from app.api.parts import router as parts_router
 from app.api.parts_detail import router as parts_detail_router
+from app.api.part_editor import router as part_editor_router
+from app.api.part_editor_relationships import router as part_editor_relationships_router
+from app.api.part_display_groups import router as part_display_groups_router
 from app.api.price_accounts import router as price_accounts_router
 from app.api.price_adjustments import router as price_adjustments_router
 from app.api.production import router as production_router
@@ -124,6 +131,8 @@ from app.api.machine_tonnages import router as machine_tonnages_router
 from app.api.mold_types import router as mold_types_router
 
 app.include_router(admin_router, prefix=settings.API_V1_PREFIX)
+app.include_router(after_sales_router, prefix=settings.API_V1_PREFIX)
+app.include_router(gaibo_after_sales_router, prefix=settings.API_V1_PREFIX)
 app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(coating_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customer_prices_router, prefix=settings.API_V1_PREFIX)
@@ -133,6 +142,9 @@ app.include_router(migrations_router, prefix=settings.API_V1_PREFIX)
 app.include_router(packaging_router, prefix=settings.API_V1_PREFIX)
 app.include_router(parts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(parts_detail_router, prefix=settings.API_V1_PREFIX)
+app.include_router(part_editor_router, prefix=settings.API_V1_PREFIX)
+app.include_router(part_editor_relationships_router, prefix=settings.API_V1_PREFIX)
+app.include_router(part_display_groups_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_accounts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_adjustments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(production_router, prefix=settings.API_V1_PREFIX)
@@ -149,6 +161,12 @@ app.include_router(part_names_extra_router, prefix=settings.API_V1_PREFIX)
 app.include_router(materials_router, prefix=settings.API_V1_PREFIX)
 app.include_router(machine_tonnages_router, prefix=settings.API_V1_PREFIX)
 app.include_router(mold_types_router, prefix=settings.API_V1_PREFIX)
+
+
+# Mount static files directory
+static_dir = Path(__file__).parent.parent.parent / "static"
+if static_dir.exists():
+    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 
 # ---- Customers endpoint ----

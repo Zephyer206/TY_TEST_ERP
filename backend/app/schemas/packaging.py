@@ -31,6 +31,7 @@ class PackagingRecordResponse(BaseModel):
     id: int
     package_no: str
     part_id: int
+    part_name: Optional[str] = None
     session_id: Optional[int] = None
     package_qty: int
     box_no: Optional[str] = None
@@ -64,7 +65,6 @@ class InventoryResponse(BaseModel):
 class InventoryDetailResponse(InventoryResponse):
     """Schema for inventory detail with part info."""
 
-    part_no: Optional[str] = None
     part_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

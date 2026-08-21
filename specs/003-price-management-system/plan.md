@@ -168,18 +168,18 @@ backend/
 
 | API | 路由 | 方法 | 权限 | 契约文件 |
 |-----|------|------|------|----------|
-| 查询客户材料价格历史 | /api/customer-prices/materials | GET | role_level >= 5 | customer-material-prices.md |
-| 新增客户材料价格记录 | /api/customer-prices/materials | POST | role_level >= 5 | customer-material-prices.md |
-| 查询客户工序价格历史 | /api/customer-prices/treatments | GET | role_level >= 5 | customer-treatment-prices.md |
-| 新增客户工序价格记录 | /api/customer-prices/treatments | POST | role_level >= 5 | customer-treatment-prices.md |
+| 查询客户材料价格历史 | /api/customer-prices/materials | GET | role_level >= 2 | customer-material-prices.md |
+| 新增客户材料价格记录 | /api/customer-prices/materials | POST | role_level >= 2 | customer-material-prices.md |
+| 查询客户工序价格历史 | /api/customer-prices/treatments | GET | role_level >= 2 | customer-treatment-prices.md |
+| 新增客户工序价格记录 | /api/customer-prices/treatments | POST | role_level >= 2 | customer-treatment-prices.md |
 | 查询工序字典列表 | /api/treatments | GET | role_level >= 1 | treatment-dict.md |
-| 新增工序 | /api/treatments | POST | role_level >= 10 | treatment-dict.md |
-| 更新工序 | /api/treatments/{id} | PUT | role_level >= 10 | treatment-dict.md |
-| 停用工序 | /api/treatments/{id} | PATCH | role_level >= 10 | treatment-dict.md |
-| 提交调价申请 | /api/price-adjustments | POST | role_level >= 5 | price-adjustments.md |
-| 查询待审批列表 | /api/price-adjustments/pending | GET | role_level >= 9 | price-adjustments.md |
-| 审批调价申请 | /api/price-adjustments/{id}/approve | POST | role_level >= 9 | price-adjustments.md |
-| 驳回调价申请 | /api/price-adjustments/{id}/reject | POST | role_level >= 9 | price-adjustments.md |
+| 新增工序 | /api/treatments | POST | role_level >= 4 | treatment-dict.md |
+| 更新工序 | /api/treatments/{id} | PUT | role_level >= 4 | treatment-dict.md |
+| 停用工序 | /api/treatments/{id} | PATCH | role_level >= 4 | treatment-dict.md |
+| 提交调价申请 | /api/price-adjustments | POST | role_level >= 2 | price-adjustments.md |
+| 查询待审批列表 | /api/price-adjustments/pending | GET | role_level >= 3 | price-adjustments.md |
+| 审批调价申请 | /api/price-adjustments/{id}/approve | POST | role_level >= 3 | price-adjustments.md |
+| 驳回调价申请 | /api/price-adjustments/{id}/reject | POST | role_level >= 3 | price-adjustments.md |
 
 ### 1.3 快速入门指南
 

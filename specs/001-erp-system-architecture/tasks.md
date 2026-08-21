@@ -43,7 +43,6 @@
 - [x] T012 在 backend/app/core/security.py 中实现 JWT token 生成与验证
 - [x] T013 在 backend/app/core/security.py 中实现密码哈希（bcrypt）
 - [x] T014 在 backend/app/api/deps.py 中实现当前用户依赖注入（get_current_user）
-- [x] T015 在 backend/app/core/permissions.py 中实现角色权限装饰器（@require_role）
 - [x] T016 创建 backend/app/api/auth.py：POST /api/auth/login、GET /api/auth/me
 
 ### 2.4 API Routing Infrastructure
@@ -320,7 +319,7 @@
 
 ### Endpoints
 
-- [x] T087 [P] [US10] 实现 POST /api/admin/switch-context（切换视角，隐藏 role_level >= 9 按钮）
+- [x] T087 [P] [US10] 实现 POST /api/admin/switch-context（切换视角，隐藏 role_level >= 3 按钮）
 - [x] T088 [US10] 实现 POST /api/admin/switch-back（恢复 admin 视角）
 
 ### Frontend Integration

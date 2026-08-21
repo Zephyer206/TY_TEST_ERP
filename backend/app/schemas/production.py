@@ -1,7 +1,7 @@
 """Pydantic schemas for production planning and reporting."""
 
 from datetime import datetime
-from typing import Optional
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,6 +34,148 @@ class ProductionPlanUpdate(BaseModel):
     priority: Optional[int] = Field(default=None, ge=0, le=1)
     notes: Optional[str] = None
     status: Optional[PlanStatus] = None
+    is_urgent: Optional[bool] = None
+    material_calculation_mode: Optional[Literal["auto", "manual"]] = None
+
+
+class TWPManualOverride(BaseModel):
+    """An explicit T/W/P change for one production-plan line."""
+
+    thickness: float = Field(gt=0)
+    width: float = Field(gt=0)
+    pitch: float = Field(gt=0)
+
+
+class ProductionPlanBatchLine(BaseModel):
+    part_id: int
+    total_qty: int = Field(ge=1)
+    twp_source_spec_id: int
+    manual_twp: Optional[TWPManualOverride] = None
+    is_urgent: bool = False
+    notes: Optional[str] = Field(default=None, max_length=2000)
+    acknowledge_twp_change: bool = False
+
+
+class ProductionPlanBatchCreate(BaseModel):
+    lines: list[ProductionPlanBatchLine] = Field(min_length=1, max_length=100)
+
+
+class ProductionPlanTWPOption(BaseModel):
+    id: int
+    tooling_number: Optional[str] = None
+    value: Optional[str] = None
+    thickness: Optional[float] = None
+    width: Optional[float] = None
+    pitch: Optional[float] = None
+    cavity_count: Optional[int] = None
+    is_primary: bool = False
+
+
+class ProductionPlanPartOptionBase(BaseModel):
+    id: int
+    customer_part_no: Optional[str] = None
+    part_name: Optional[str] = None
+    material_name: Optional[str] = None
+    material_density: Optional[float] = None
+    twp_options: list[ProductionPlanTWPOption] = []
+
+
+class ProductionPlanPairedPartOption(ProductionPlanPartOptionBase):
+    """The counterpart of an active left/right part pair."""
+    tooling_number: Optional[str] = None
+
+
+class ProductionPlanPartOption(ProductionPlanPartOptionBase):
+    left_right_partner: Optional[ProductionPlanPairedPartOption] = None
+    left_right_tooling_number: Optional[str] = None
+
+
+class ProductionPlanWorkbenchItem(BaseModel):
+    id: int
+    part_id: Optional[int] = None
+    customer_part_no: Optional[str] = None
+    part_name: Optional[str] = None
+    paired_part_id: Optional[int] = None
+    paired_customer_part_no: Optional[str] = None
+    paired_part_name: Optional[str] = None
+    is_left_right_pair: bool = False
+    material_name: Optional[str] = None
+    total_qty: int
+    completed_qty: int
+    remaining_qty: int
+    is_urgent: bool
+    status: str
+    material_status: Literal["pending", "ready"]
+    material_confirmed_qty: Optional[int] = None
+    material_confirmed_by: Optional[int] = None
+    material_confirmed_at: Optional[datetime] = None
+    material_confirmation_note: Optional[str] = None
+    material_calculation_mode: Literal["auto", "manual"]
+    twp_value: Optional[str] = None
+    twp_manual_override: bool
+    material_density: Optional[float] = None
+    estimated_material_weight_kg: Optional[float] = None
+    confirmation_increment: int = 0
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
+class ProductionPlanWorkbenchPage(BaseModel):
+    items: list[ProductionPlanWorkbenchItem]
+    total: int
+    active_items: list[ProductionPlanWorkbenchItem] = Field(default_factory=list)
+
+
+class ProductionSchedulingPlan(BaseModel):
+    """Compact scheduling card shown in the manufacturing console."""
+
+    id: int
+    customer_part_no: Optional[str] = None
+    paired_customer_part_no: Optional[str] = None
+    tooling_number: Optional[str] = None
+    minimum_tonnage: Optional[float] = None
+    total_qty: int
+    is_urgent: bool = False
+    material_status: Literal["pending", "ready"]
+    status: str
+    machine_id: Optional[int] = None
+    plan_order: Optional[int] = None
+
+
+class ProductionSchedulingMachine(BaseModel):
+    """Fixed machine master data plus its current scheduling queue."""
+
+    id: int
+    machine_no: str
+    name: str
+    tonnage: Optional[float] = None
+    state: str
+    location: Optional[str] = None
+    queue: list[ProductionSchedulingPlan] = Field(default_factory=list)
+
+
+class ProductionSchedulingWorkbench(BaseModel):
+    pending: list[ProductionSchedulingPlan]
+    machines: list[ProductionSchedulingMachine]
+
+
+class ProductionScheduleAssignment(BaseModel):
+    machine_id: int
+    confirm_missing_tonnage: bool = False
+
+
+class ProductionScheduleReorder(BaseModel):
+    machine_id: int
+    plan_ids: list[int] = Field(min_length=1, max_length=200)
+
+
+class MaterialConfirmationBatch(BaseModel):
+    plan_ids: list[int] = Field(min_length=1, max_length=100)
+    note: Optional[str] = Field(default=None, max_length=2000)
+
+
+class ProductionPlanCancelRequest(BaseModel):
+    reason: str = Field(min_length=1, max_length=2000)
 
 
 class MachineAssignmentCreate(BaseModel):
@@ -174,7 +316,7 @@ class ProcessFlowCardResponse(BaseModel):
     machine_id: int
     machine_no: Optional[str] = None
     tooling_id: Optional[int] = None
-    tooling_no: Optional[str] = None
+    tooling_number: Optional[str] = None
     material_batch_no: Optional[str] = None
     planned_qty: int
     actual_output: int
@@ -200,6 +342,6 @@ class MaterialMatchResult(BaseModel):
     is_match: bool
     message: str
     tooling_id: Optional[int] = None
-    tooling_no: Optional[str] = None
+    tooling_number: Optional[str] = None
     expected_material: Optional[str] = None
     actual_material: Optional[str] = None

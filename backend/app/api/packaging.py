@@ -29,10 +29,14 @@ router = APIRouter(prefix="/packaging", tags=["Packaging"])
 
 def _record_to_response(record: PackagingRecord) -> PackagingRecordResponse:
     """Convert PackagingRecord to response."""
+    # List/detail service calls eagerly load the part. Avoid an async lazy-load
+    # on create responses, where the relationship is intentionally not loaded.
+    part = record.__dict__.get("part")
     return PackagingRecordResponse(
         id=record.id,
         package_no=record.package_no,
         part_id=record.part_id,
+        part_name=part.internal_name if part else None,
         session_id=record.session_id,
         package_qty=record.package_qty,
         box_no=record.box_no,
@@ -66,7 +70,6 @@ def _inventory_detail_to_response(inventory: Inventory) -> InventoryDetailRespon
     return InventoryDetailResponse(
         id=inventory.id,
         part_id=inventory.part_id,
-        part_no=inventory.part.part_number if inventory.part else None,
         part_name=inventory.part.internal_name if inventory.part else None,
         stock_qty=inventory.stock_qty,
         reserved_qty=inventory.reserved_qty,
@@ -119,8 +122,9 @@ async def inspect_packaging(
     """Perform full inspection (全检) on packaging and update inventory if passed.
 
     Used by inspection personnel to verify packaged goods before stock-in.
+    Requires LV2 (quality supervisor).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     record = await packaging_service.get_packaging_record(db, record_id)
     if not record:
@@ -218,6 +222,7 @@ async def adjust_inventory(
     """Manually adjust inventory quantity.
 
     Used by authorized personnel to correct inventory discrepancies.
+    Requires LV3 (boss approval for inventory adjustments).
     """
     require_role(current_user, min_level=3)
 

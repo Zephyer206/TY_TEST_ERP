@@ -79,7 +79,7 @@ from app.models.user import User; \
 from app.database import SessionLocal; \
 db = SessionLocal(); \
 db.add(User(username='admin', password_hash=hash_password('admin123'), \
-           real_name='系统管理员', role_level=10)); \
+           real_name='系统管理员', role_level=4)); \
 db.commit()"
 
 # 7. 启动后端
@@ -96,11 +96,11 @@ cd frontend && npm install && npm run dev
 
 | Username | Password | Role |
 |----------|---------|------|
-| admin | admin123 | 超级管理员 (role_level=10) |
-| boss | boss123 | 老板 (role_level=9) |
-| sales_mgr | sales123 | 业务经理 (role_level=5) |
-| engineer | eng123 | 设计工程师 (role_level=4) |
-|组长 | leader123 | 生产组长 (role_level=3) |
+| admin | admin123 | 超级管理员 (role_level=4) |
+| boss | boss123 | 老板 (role_level=3) |
+| sales_mgr | sales123 | 业务经理 (role_level=2) |
+| engineer | eng123 | 设计工程师 (role_level=2) |
+|组长 | leader123 | 生产组长 (role_level=2) |
 | operator | op123 | 操作工 (role_level=1) |
 
 ---
@@ -118,7 +118,7 @@ cd frontend && npm install && npm run dev
 curl -X POST http://localhost:8000/api/auth/login \
   -H "Content-Type: application/json" \
   -d '{"username": "sales_mgr", "password": "sales123"}'
-# Response: {"access_token": "xxx", "user": {"role_level": 5, ...}}
+# Response: {"access_token": "xxx", "user": {"role_level": 2, ...}}
 
 # 2. 创建报价单（带 JWT token）
 curl -X POST http://localhost:8000/api/quotes \
@@ -306,7 +306,7 @@ curl -POST http://localhost:8000/api/admin/switch-back \
 # Expected: 恢复全部权限
 ```
 
-**Success Criteria**: 切换视角后 role_level >= 9 的 API 全部返回 403
+**Success Criteria**: 切换视角后 role_level >= 3 的 API 全部返回 403
 
 ---
 
@@ -316,14 +316,14 @@ curl -POST http://localhost:8000/api/admin/switch-back \
 |----------|--------|------|-------------|
 | `/api/auth/login` | POST | None | 用户登录 |
 | `/api/auth/me` | GET | JWT | 获取当前用户 |
-| `/api/quotes` | POST | role >= 5 | 创建报价单 |
+| `/api/quotes` | POST | role >= 2 | 创建报价单 |
 | `/api/quotes/{id}` | GET | role >= 1 | 获取报价单详情 |
 | `/api/quotes/{id}/tech-review` | PUT | role >= 4 | 技术审核 |
-| `/api/quotes/{id}/submit-boss` | PUT | role >= 5 | 提交老板审批 |
-| `/api/quotes/{id}/boss-approve` | PUT | role >= 9 | 老板审批 |
-| `/api/quotes/{id}/fix` | POST | role >= 5 | 定点确认 |
+| `/api/quotes/{id}/submit-boss` | PUT | role >= 2 | 提交老板审批 |
+| `/api/quotes/{id}/boss-approve` | PUT | role >= 3 | 老板审批 |
+| `/api/quotes/{id}/fix` | POST | role >= 2 | 定点确认 |
 | `/api/sampling-tasks` | POST | role >= 3 | 创建打样任务 |
-| `/api/sampling-tasks/{id}/boss-approve` | PUT | role >= 9 | 老板审核打样 |
+| `/api/sampling-tasks/{id}/boss-approve` | PUT | role >= 3 | 老板审核打样 |
 | `/api/sampling-tasks/{id}/review` | PUT | role >= 3 | 评审打样 |
 | `/api/production/plans` | POST | role >= 3 | 创建生产计划 |
 | `/api/production/plans/{id}/assign-machine` | POST | role >= 3 | 分配机台 |
@@ -331,8 +331,8 @@ curl -POST http://localhost:8000/api/admin/switch-back \
 | `/api/production/reports` | POST | role >= 1 | 提交报工 |
 | `/api/warehouse/material-batches` | POST | role >= 3 | 登记原材料 |
 | `/api/warehouse/material-batches/{id}/split` | POST | role >= 3 | 分条操作 |
-| `/api/admin/switch-context` | POST | role >= 10 | 切换视角 |
-| `/api/admin/switch-back` | POST | role >= 10 | 恢复视角 |
+| `/api/admin/switch-context` | POST | role >= 4 | 切换视角 |
+| `/api/admin/switch-back` | POST | role >= 4 | 恢复视角 |
 
 ---
 

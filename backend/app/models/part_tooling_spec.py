@@ -14,9 +14,9 @@ class PartToolingSpec(Base):
     """A source-backed T/W/P option for one part-tooling combination.
 
     A single part can legitimately have multiple TWP tuples when the source
-    workbook documents multiple mold sets or revisions.  ``is_primary`` is a
-    user-selectable display preference and does not overwrite the source data
-    or the legacy fields on ``parts``.
+    workbook documents multiple mold sets or revisions.  ``is_primary`` is
+    scoped to (part_id, tooling_id) so each tooling can have one primary spec.
+    The list display uses the primary spec from the selected tooling only.
     """
 
     __tablename__ = "part_tooling_specs"

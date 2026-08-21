@@ -1,17 +1,17 @@
 """Customer price history API endpoints."""
 
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select, desc
+from sqlalchemy import select, desc, distinct
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import CurrentUser, DbSession
 from app.models.customer import Customer
 from app.models.part import Part
 from app.models.part_customer_alias import PartCustomerAlias
-from app.models.price import CustomerMaterialPrice, CustomerTreatmentPrice, PriceAccount, PriceAdjustment
+from app.models.price import CustomerMaterialPrice, CustomerTreatmentPrice, PriceAccount, PriceAdjustment, PriceYear
 from app.schemas.price import (
     CustomerMaterialPriceCreate,
     CustomerMaterialPriceResponse,
@@ -22,6 +22,9 @@ from app.schemas.customer_price import (
     CustomerPartsWithPricesResponse,
     CustomerPartPriceInfo,
     PriceAdjustmentInfo,
+    CustomerPartsYearPricesResponse,
+    CustomerPartYearPrice,
+    PartAlias,
 )
 
 router = APIRouter(prefix="/customer-prices", tags=["Customer Prices"])
@@ -332,3 +335,134 @@ async def get_part_price_history(
         )
         for adj in adjustments
     ]
+
+
+@router.get("/customers/{customer_id}/year-prices", response_model=CustomerPartsYearPricesResponse)
+async def get_customer_year_prices(
+    customer_id: int,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> CustomerPartsYearPricesResponse:
+    """获取指定客户的年度价格对比。
+
+    返回每个零件的当前年和前一年价格，display_name优先使用internal_name，
+    image_url从parts.drawing_url获取。仅查询price_years表中存在的确切年份，
+    不跨年回退。按drawing_url排序保持左右产品相邻。
+    """
+    # Get customer
+    customer = await db.get(Customer, customer_id)
+    if not customer:
+        raise HTTPException(status_code=404, detail="客户不存在")
+
+    # Calculate current and previous year
+    current_year = datetime.now().year
+    previous_year = current_year - 1
+
+    # Query parts with aliases, joining to PriceAccount by part_id AND customer_id
+    query = (
+        select(
+            Part.id.label('part_id'),
+            Part.internal_name,
+            Part.drawing_url,
+            PartCustomerAlias.customer_part_no,
+            PartCustomerAlias.customer_part_name,
+            PartCustomerAlias.revision,
+            PriceAccount.id.label('price_account_id'),
+        )
+        .select_from(PartCustomerAlias)
+        .join(Part, PartCustomerAlias.part_id == Part.id)
+        .outerjoin(
+            PriceAccount,
+            (PriceAccount.part_id == Part.id) & (PriceAccount.customer_id == customer_id)
+        )
+        .where(PartCustomerAlias.customer_id == customer_id)
+        .where(PartCustomerAlias.is_active == True)
+        .order_by(Part.drawing_url.nulls_last(), Part.internal_name, PartCustomerAlias.customer_part_no)
+    )
+
+    result = await db.execute(query)
+    rows = result.all()
+
+    # Collect PriceAccount.id values
+    price_account_ids = list(set(row.price_account_id for row in rows if row.price_account_id is not None))
+
+    # Query PriceYear only by price_id and exact years
+    year_prices = []
+    if price_account_ids:
+        year_prices_query = (
+            select(PriceYear)
+            .where(PriceYear.price_id.in_(price_account_ids))
+            .where(PriceYear.year.in_([current_year, previous_year]))
+        )
+        year_result = await db.execute(year_prices_query)
+        year_prices = year_result.scalars().all()
+
+    # Build price lookup: {price_id: {year: price}}
+    price_lookup = {}
+    for price in year_prices:
+        if price.price_id not in price_lookup:
+            price_lookup[price.price_id] = {}
+        price_lookup[price.price_id][price.year] = float(price.unit_price)
+
+    # Group aliases by part_id and map price_account_id back to part
+    from collections import defaultdict
+    parts_dict = defaultdict(lambda: {
+        'aliases': [],
+        'internal_name': None,
+        'customer_part_name': None,
+        'drawing_url': None,
+        'price_account_id': None,
+    })
+
+    for row in rows:
+        part_data = parts_dict[row.part_id]
+
+        part_data['aliases'].append({
+            'customer_part_no': row.customer_part_no,
+            'customer_part_name': row.customer_part_name,
+            'revision': row.revision,
+        })
+
+        if part_data['internal_name'] is None:
+            part_data['internal_name'] = row.internal_name
+            part_data['customer_part_name'] = row.customer_part_name
+            part_data['drawing_url'] = row.drawing_url
+            part_data['price_account_id'] = row.price_account_id
+
+    # Build response list
+    parts_list = []
+    for part_id, part_data in parts_dict.items():
+        first_alias = part_data['aliases'][0]
+
+        # display_name: internal_name when nonempty, otherwise customer_part_name
+        display_name = part_data['internal_name'] if part_data['internal_name'] else part_data['customer_part_name']
+
+        # Get prices from lookup using price_account_id
+        current_year_price = None
+        previous_year_price = None
+        if part_data['price_account_id']:
+            part_prices = price_lookup.get(part_data['price_account_id'], {})
+            current_year_price = part_prices.get(current_year)
+            previous_year_price = part_prices.get(previous_year)
+
+        parts_list.append(CustomerPartYearPrice(
+            part_id=part_id,
+            display_name=display_name or "",
+            customer_part_no=first_alias['customer_part_no'],
+            image_url=part_data['drawing_url'],
+            aliases=[PartAlias(**alias) for alias in part_data['aliases']],
+            current_year=current_year,
+            previous_year=previous_year,
+            current_year_price=current_year_price,
+            previous_year_price=previous_year_price,
+        ))
+
+    return CustomerPartsYearPricesResponse(
+        customer_id=customer.id,
+        customer_name=customer.name,
+        customer_code=customer.customer_code,
+        current_year=current_year,
+        previous_year=previous_year,
+        parts_count=len(parts_list),
+        parts=parts_list,
+    )

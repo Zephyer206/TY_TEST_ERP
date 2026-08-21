@@ -5,7 +5,7 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, JSON, Numeric, String, Text)
+from sqlalchemy import (Boolean, CheckConstraint, DateTime, Enum, Float, ForeignKey, Integer, JSON, Numeric, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -32,18 +32,15 @@ class Part(Base):
     """Part (finished product) model."""
 
     __tablename__ = "parts"
+    __table_args__ = (
+        CheckConstraint(
+            "is_deleted OR NULLIF(BTRIM(internal_name), '') IS NOT NULL",
+            name="ck_parts_internal_name_nonempty",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
-    part_number: Mapped[Optional[str]] = mapped_column(
-        String(50), unique=True, nullable=True, index=True
-    )
     internal_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-    internal_part_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, index=True)
-
-    # DEPRECATED: Use part_customer_aliases instead
-    customer_id: Mapped[Optional[int]] = mapped_column(
-        Integer, nullable=True, index=True, comment='DEPRECATED: Use part_customer_aliases instead'
-    )
 
     # Drawing and spec
     drawing_url: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -64,9 +61,6 @@ class Part(Base):
     spray_stamped_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Part identity
-    customer_product_no: Mapped[Optional[str]] = mapped_column(
-        String(100), nullable=True, index=True
-    )
     vehicle_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
     # Material
@@ -74,7 +68,6 @@ class Part(Base):
     material_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # TWP规格字段
-    customer_product_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
     spec_twph: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     thickness: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
     width: Mapped[Optional[Decimal]] = mapped_column(Numeric(10, 3), nullable=True)
@@ -102,9 +95,7 @@ class Part(Base):
     stock_pcs: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     remark: Mapped[Optional[str]] = mapped_column(String(500), default='', nullable=True)
 
-    # Mold info
-    mold_number: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    mold_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    # Mold identity and type are maintained by tooling/tooling_parts.
     press_tonnage: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     ppap_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 
@@ -117,4 +108,4 @@ class Part(Base):
     )
 
     def __repr__(self) -> str:
-        return f"<Part {self.part_number}>"
+        return f"<Part {self.id}: {self.internal_name}>"

@@ -418,7 +418,7 @@ const submitIQC = async () => {
   })
 }
 
-const viewDetail = (row: any) => {
+const viewDetail = (_row: any) => {
   ElMessage.info('详情功能')
 }
 

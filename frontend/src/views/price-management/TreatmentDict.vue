@@ -26,7 +26,7 @@
         </el-table-column>
         <el-table-column label="Actions" width="150" fixed="right">
           <template #default="{ row }">
-            <el-button size="small" @click="editTreatment(row)">Edit</el-button>
+            <el-button size="small" @click="editTreatment(row as Treatment)">Edit</el-button>
           </template>
         </el-table-column>
       </el-table>

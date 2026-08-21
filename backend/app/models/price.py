@@ -141,3 +141,20 @@ class PriceAdjustment(Base):
 
     def __repr__(self) -> str:
         return f"<PriceAdjustment {self.id} {self.status}>"
+
+
+class PriceYear(Base):
+    """年度价格表 - maps price_years table."""
+
+    __tablename__ = "price_years"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    price_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    annual_sales: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def __repr__(self) -> str:
+        return f"<PriceYear {self.price_id}-{self.year}>"

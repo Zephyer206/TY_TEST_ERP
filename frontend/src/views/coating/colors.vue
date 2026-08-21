@@ -298,7 +298,7 @@ const handleEdit = (row: any) => {
   showCreateDialog.value = true
 }
 
-const handleDelete = async (row: any) => {
+const handleDelete = async (_row: any) => {
   try {
     await ElMessageBox.confirm('确认删除此颜色吗？', '提示', {
       confirmButtonText: '确认',
@@ -313,7 +313,7 @@ const handleDelete = async (row: any) => {
   }
 }
 
-const viewRecipes = async (row: any) => {
+const viewRecipes = async (_row: any) => {
   try {
     // TODO: API
     relatedRecipes.value = [
@@ -331,7 +331,7 @@ const viewRecipes = async (row: any) => {
   }
 }
 
-const goToRecipe = (row: any) => {
+const goToRecipe = (_row: any) => {
   router.push('/coating/recipes')
 }
 

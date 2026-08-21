@@ -4,7 +4,7 @@ from datetime import date, datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, Numeric, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -56,6 +56,12 @@ class ProductionPlan(Base):
     part_id: Mapped[Optional[int]] = mapped_column(
         ForeignKey("parts.id"), nullable=True, index=True
     )
+    paired_part_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("parts.id"), nullable=True, index=True
+    )
+    is_left_right_pair: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    paired_customer_part_no_snapshot: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    paired_part_name_snapshot: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # Plan details
     total_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -74,12 +80,41 @@ class ProductionPlan(Base):
 
     # Priority/Urgency
     urgency: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
+    is_urgent: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Material-readiness workflow. This remains separate from ``status`` so a
+    # plan can be ready for scheduling without pretending that production ran.
+    material_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", index=True
+    )
+    material_confirmed_qty: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    material_confirmed_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    material_confirmed_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    material_confirmation_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    material_calculation_mode: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="manual"
+    )
+
+    # Source-backed T/W/P snapshot used by purchasing. Manual plan overrides
+    # are deliberate business input and must never overwrite the part record.
+    twp_source_spec_id: Mapped[Optional[int]] = mapped_column(
+        ForeignKey("part_tooling_specs.id", ondelete="SET NULL"), nullable=True, index=True
+    )
+    twp_value: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    twp_thickness: Mapped[Optional[float]] = mapped_column(Numeric(10, 3), nullable=True)
+    twp_width: Mapped[Optional[float]] = mapped_column(Numeric(10, 3), nullable=True)
+    twp_pitch: Mapped[Optional[float]] = mapped_column(Numeric(10, 3), nullable=True)
+    twp_cavity_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    twp_manual_override: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    material_name_snapshot: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    material_density_snapshot: Mapped[Optional[float]] = mapped_column(Numeric(10, 4), nullable=True)
 
     # Status
     status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
 
     # Notes
     remark: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    cancellation_reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # Creator
     created_by: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
@@ -90,6 +125,10 @@ class ProductionPlan(Base):
     )
     updated_at: Mapped[Optional[datetime]] = mapped_column(
         DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow
+    )
+
+    assignments: Mapped[list["PlanMachineAssignment"]] = relationship(
+        "PlanMachineAssignment", back_populates="plan", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -105,6 +144,7 @@ class PlanMachineAssignment(Base):
     plan_id: Mapped[int] = mapped_column(
         ForeignKey("production_plans.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    plan: Mapped["ProductionPlan"] = relationship("ProductionPlan", back_populates="assignments")
 
     machine_id: Mapped[int] = mapped_column(
         ForeignKey("machines.id"), nullable=False, index=True

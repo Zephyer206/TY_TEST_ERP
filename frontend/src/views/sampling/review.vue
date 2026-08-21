@@ -184,7 +184,7 @@ const historyReviews = ref<any[]>([])
 // 评审表单
 const reviewFormRef = ref<FormInstance>()
 const reviewForm = reactive({
-  passed: null as boolean | null,
+  passed: undefined as boolean | undefined,
   comment: '',
   photoList: [] as UploadFile[],
   photos: [] as string[],
@@ -232,7 +232,7 @@ const loadTaskInfo = async () => {
 }
 
 // 照片变化
-const handlePhotoChange = (file: UploadFile) => {
+const handlePhotoChange = (_file: UploadFile) => {
   // 这里可以实现即时上传到服务器
   // 或者在提交时统一上传
 }

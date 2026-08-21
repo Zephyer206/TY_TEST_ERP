@@ -93,7 +93,7 @@ async def create_machine_tonnage(
     current_user: CurrentUser
 ) -> MachineTonnageResponse:
     """Create a new machine tonnage."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     # Check for duplicate combination
     existing = (await db.execute(
@@ -143,7 +143,7 @@ async def update_machine_tonnage(
     current_user: CurrentUser
 ) -> MachineTonnageResponse:
     """Update a machine tonnage."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(MachineTonnageDict, item_id)
     if not item:
@@ -181,7 +181,7 @@ async def delete_machine_tonnage(
     current_user: CurrentUser
 ) -> None:
     """Delete a machine tonnage."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(MachineTonnageDict, item_id)
     if not item:

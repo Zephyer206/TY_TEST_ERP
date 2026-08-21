@@ -19,7 +19,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision = '20260707_customer_price_system'
-down_revision = None  # TODO: 设置为最新的 revision ID
+down_revision = '20260722_null_cust_part_no'
 branch_labels = None
 depends_on = None
 

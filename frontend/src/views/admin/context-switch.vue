@@ -5,7 +5,7 @@
         <div class="card-header">
           <span>超级管理员视角切换</span>
           <el-tag v-if="isSwitched" type="warning" size="large">
-            已切换至: {{ contextStatus?.current_role_name }}
+            已切换至: LV{{ contextStatus?.current_role_level }} {{ contextStatus?.current_dept }}
           </el-tag>
         </div>
       </template>
@@ -15,14 +15,14 @@
         <el-alert
           title="视角切换中"
           type="info"
-          :description="`已切换至 ${contextStatus?.current_role_name}，剩余 ${contextStatus?.remaining_minutes} 分钟`"
+          :description="`已切换至 LV${contextStatus?.current_role_level} ${contextStatus?.current_dept}，到期时间 ${formatTime(contextStatus?.expires_at || undefined)}`"
           show-icon
           :closable="false"
         />
         <div class="status-info">
-          <p>原始角色: {{ contextStatus?.original_role_name }}</p>
-          <p>切换时间: {{ formatTime(contextStatus?.switched_at) }}</p>
-          <p>到期时间: {{ formatTime(contextStatus?.expires_at) }}</p>
+          <p>原始角色: LV{{ contextStatus?.original_role_level }} / {{ contextStatus?.original_dept }}</p>
+          <p>切换时间: {{ formatTime(contextStatus?.switched_at || undefined) }}</p>
+          <p>到期时间: {{ formatTime(contextStatus?.expires_at || undefined) }}</p>
         </div>
         <el-button type="primary" @click="handleSwitchBack" :loading="switching">
           恢复超级管理员视角
@@ -37,11 +37,8 @@
         <el-form :model="form" label-width="120px">
           <el-form-item label="目标角色">
             <el-select v-model="form.target_role" placeholder="请选择角色">
-              <el-option label="操作工 (role_level=1)" value="operator" />
-              <el-option label="模具工程师 (role_level=2)" value="mold_engineer" />
-              <el-option label="组长/主管 (role_level=3)" value="supervisor" />
-              <el-option label="设计工程师 (role_level=4)" value="design_engineer" />
-              <el-option label="业务经理 (role_level=5)" value="sales_manager" />
+              <el-option label="生产操作工 (LV1)" value="production" />
+              <el-option label="业务人员 (LV2)" value="sales" />
             </el-select>
           </el-form-item>
           <el-form-item label="切换时长">
@@ -86,10 +83,10 @@ const form = reactive({
 const switching = ref(false)
 
 const isSwitched = computed(() => permissionStore.isSwitched)
-const contextStatus = computed(() => permissionStore.contextStatus)
+const contextStatus = computed(() => permissionStore.contextSwitch)
 
 onMounted(async () => {
-  await permissionStore.fetchContextStatus()
+  await permissionStore.fetchContextInfo()
 })
 
 const handleSwitch = async () => {
@@ -100,32 +97,9 @@ const handleSwitch = async () => {
 
   switching.value = true
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/v1/admin/switch-context', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`,
-      },
-      body: JSON.stringify(form),
-    })
-
-    if (response.ok) {
-      const data = await response.json()
-      permissionStore.setSwitchContext(data.switch_token, {
-        is_switched: true,
-        current_role_level: data.switched_role_level,
-        current_role_name: data.switched_role_name,
-        original_role_level: data.original_role_level,
-        expires_at: data.expires_at,
-      })
-      ElMessage.success(data.message)
-      // Reload to apply new context
-      window.location.reload()
-    } else {
-      const error = await response.json()
-      ElMessage.error(error.detail || '切换失败')
-    }
+    await permissionStore.switchContext(form.target_role)
+    ElMessage.success('已完成视角切换')
+    window.location.reload()
   } catch (err) {
     ElMessage.error('网络错误，请重试')
   } finally {
@@ -136,22 +110,9 @@ const handleSwitch = async () => {
 const handleSwitchBack = async () => {
   switching.value = true
   try {
-    const token = localStorage.getItem('token')
-    const response = await fetch('/api/v1/admin/switch-back', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-
-    if (response.ok) {
-      permissionStore.clearSwitchContext()
-      ElMessage.success('已恢复超级管理员视角')
-      window.location.reload()
-    } else {
-      const error = await response.json()
-      ElMessage.error(error.detail || '恢复失败')
-    }
+    await permissionStore.switchBack()
+    ElMessage.success('已恢复超级管理员视角')
+    window.location.reload()
   } catch (err) {
     ElMessage.error('网络错误，请重试')
   } finally {

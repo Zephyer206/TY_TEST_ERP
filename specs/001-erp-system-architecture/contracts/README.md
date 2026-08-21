@@ -31,7 +31,7 @@
     "id": 1,
     "username": "string",
     "real_name": "string",
-    "role_level": 5,
+    "role_level": 2,
     "department": {
       "id": 1,
       "name": "string"
@@ -147,7 +147,7 @@
 
 #### POST /api/quotes
 
-**Auth**: role >= 5
+**Auth**: role >= 2
 
 **Request**:
 ```json
@@ -193,7 +193,7 @@
 
 #### PUT /api/quotes/{id}/boss-approve
 
-**Auth**: role >= 9
+**Auth**: role >= 3
 
 **Response** (200):
 ```json
@@ -213,7 +213,7 @@
 
 #### POST /api/quotes/{id}/fix
 
-**Auth**: role >= 5
+**Auth**: role >= 2
 
 **Request**:
 ```json

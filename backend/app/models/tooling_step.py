@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String
+from sqlalchemy import DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -13,6 +13,9 @@ class ToolingStep(Base):
     """Tooling step model - represents individual steps in multi-step molds."""
 
     __tablename__ = "tooling_steps"
+    __table_args__ = (
+        UniqueConstraint("tooling_id", "step_no", name="uq_tooling_steps_tooling_step_no"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(

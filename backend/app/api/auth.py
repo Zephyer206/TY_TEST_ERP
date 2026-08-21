@@ -1,7 +1,7 @@
 """Authentication API endpoints."""
 
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, EmailStr
@@ -32,15 +32,16 @@ class TokenResponse(BaseModel):
 
 
 class UserResponse(BaseModel):
-    """User response schema."""
+    """Canonical LV1-LV4 user response schema."""
 
     id: int
     username: str
-    email: str
-    full_name: str
-    role: str
-    department_id: int | None
-    is_active: bool
+    real_name: Optional[str] = None
+    dept: str
+    role_level: int
+    position: Optional[str] = None
+    is_tech: bool
+    created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 
@@ -71,14 +72,10 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    # 注意：数据库中没有 is_active 字段，使用 is_superadmin 作为活跃状态判断
-    # if not user.is_active:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="User account is disabled",
-    #     )
+    # All users are active by default in canonical LV1-LV4 system
+    # No is_active field in database
 
-    # Update last login (注意：数据库中也没有 last_login 字段)
+    # Update last login (database doesn't have last_login field)
     # user.last_login = datetime.utcnow()
     await db.commit()
 

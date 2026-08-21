@@ -237,7 +237,12 @@ def parse_mold_type(value: str) -> Tuple[Optional[str], bool]:
 def parse_cavity_count(spec: str, remark: str) -> Optional[int]:
     """
     Parse cavity count from spec and remark fields.
-    ONLY matches explicit cavity expressions like "1出2", "一出2", "(1出2)", "左右各一个".
+    ONLY matches explicit cavity expressions like "1出2", "一出2", "一出二".
+
+    Phrases such as "左右各一套" and "左右各一条料带" describe separate
+    tooling/material arrangements.  They are not cavity evidence and must not
+    be converted to a cavity count.
+
     Does NOT match T*W*P dimensions like "1*90*88" or "0.8*71*98".
     """
     # Combine spec and remark
@@ -246,24 +251,35 @@ def parse_cavity_count(spec: str, remark: str) -> Optional[int]:
     if not combined.strip():
         return None
 
-    # Check for "左右各一个" pattern - means cavity_count = 2
-    if '左右各一个' in combined or '左右各一' in combined:
-        return 2
-
-    # ONLY match explicit "1出N" or "一出N" patterns
-    # DO NOT match plain "1*N" as it could be dimensions
+    # ONLY match explicit "1出N" or "一出N" patterns.  The output number
+    # may be Arabic or a common Chinese numeral (e.g. 一出二/一出三).
+    # DO NOT match plain "1*N" as it could be dimensions.
     patterns = [
-        r'1\s*出\s*(\d+)',           # 1出2
-        r'一\s*出\s*(\d+)',           # 一出2
-        r'\(\s*1\s*出\s*(\d+)\s*\)', # (1出2)
-        r'\(\s*一\s*出\s*(\d+)\s*\)', # (一出2)
+        r'1\s*出\s*(\d+|[一二三四五六七八九十两]+)',
+        r'一\s*出\s*(\d+|[一二三四五六七八九十两]+)',
     ]
 
     for pattern in patterns:
         match = re.search(pattern, combined)
         if match:
             try:
-                count = int(match.group(1))
+                raw_count = match.group(1)
+                if raw_count.isdigit():
+                    count = int(raw_count)
+                else:
+                    chinese_digits = {
+                        '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
+                        '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+                    }
+                    if raw_count == '十':
+                        count = 10
+                    elif len(raw_count) == 1 and raw_count in chinese_digits:
+                        count = chinese_digits[raw_count]
+                    else:
+                        # Keep the parser conservative for compound Chinese
+                        # numerals until they are explicitly represented in
+                        # the source data.
+                        continue
                 if 1 <= count <= 100:  # Reasonable range
                     return count
             except:
@@ -318,6 +334,25 @@ def parse_numeric(value: Any) -> Optional[float]:
     return None
 
 
+def normalize_customer_part_no(value: Any) -> Optional[str]:
+    """Canonicalize numeric Excel identifiers without altering real IDs."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, bool):
+        return str(value)
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float):
+        if value != value:
+            return None
+        return str(int(value)) if value.is_integer() else format(value, ".15g")
+    text_value = str(value).strip()
+    if not text_value:
+        return None
+    match = re.fullmatch(r"([+-]?\d+)\.0+", text_value)
+    return match.group(1) if match else text_value
+
+
 def parse_position(value: str) -> Optional[str]:
     """Parse position (左/右/上/下)."""
     if not value:
@@ -343,6 +378,32 @@ def parse_position(value: str) -> Optional[str]:
     return None
 
 
+_SPEC_PREFIX_RE = re.compile(
+    r"^\s*(?:[（(【\[]\s*)?"
+    r"(?:连续模(?:具)?规格|用料规格|材料规格|TWP规格|T/W/P规格|规格)"
+    r"\s*[:：]\s*"
+)
+
+
+def _strip_outer_brackets(value: str) -> str:
+    """Remove balanced display brackets without changing identifiers."""
+    matching_brackets = {"(": ")", "（": "）", "[": "]", "【": "】"}
+    text = value.strip()
+    while len(text) >= 2 and text[0] in matching_brackets and text[-1] == matching_brackets[text[0]]:
+        text = text[1:-1].strip()
+    return text
+
+
+def _strip_known_spec_prefix(value: str) -> str:
+    """Strip only an explicit, known Chinese T/W/P label prefix.
+
+    The allow-list is intentional: arbitrary text before a number can be a
+    customer part number or a material code and must not be treated as a
+    specification prefix.
+    """
+    return _SPEC_PREFIX_RE.sub("", value, count=1).strip()
+
+
 def parse_combined_spec(spec_str: str) -> Tuple[Optional[float], Optional[float], Optional[float]]:
     """
     Parse combined T*W*P spec string with strict dimension parsing.
@@ -352,12 +413,12 @@ def parse_combined_spec(spec_str: str) -> Tuple[Optional[float], Optional[float]
     - Partial: "0.4*" -> (0.4, None, None), "0.4*92" -> (0.4, 92.0, None)
     - With prefixes: "T1.2*W50*P40" -> (1.2, 50.0, 40.0)
     - Separators: *, ×, x, X (ASCII and full-width)
+    - Multiple consecutive asterisks: "1.0**36*32" -> (1.0, 36.0, 32.0)
     - Brackets: () and （）
-    - Trailing patterns: (1出2), （一出二）, 左右各一个
+    - Trailing patterns: (1出2), （一出二个产品）, 左右各一个
     - Tolerance: "0.8±0.01*34*34.5"
 
     Rejects:
-    - Double separators: "4.0**155*43" -> (None, None, None)
     - Letter prefixes not T/W/P: "XC2.39", "SUS301" -> (None, None, None)
 
     Range validation: T: 0.1-10mm, W/P: 1-1000mm
@@ -367,14 +428,17 @@ def parse_combined_spec(spec_str: str) -> Tuple[Optional[float], Optional[float]
     if not spec_str or not isinstance(spec_str, str):
         return None, None, None
 
-    spec_str = spec_str.strip()
+    spec_str = _strip_outer_brackets(spec_str)
+    spec_str = _strip_known_spec_prefix(spec_str)
     if not spec_str:
         return None, None, None
 
-    # Remove trailing cavity patterns before parsing dimensions
-    # Patterns: (1出2), （一出二）, 左右各一个, etc.
+    # Remove trailing cavity/note patterns before parsing dimensions
+    # Patterns: (1出2), （一出二个产品）, (一出2个产品), 左右各一个, etc.
+    # Support both full-width and ASCII parentheses
     cavity_patterns = [
-        r'\s*[（(]\s*[1一]\s*出\s*\d+\s*[)）]',  # (1出2), （一出二）
+        r'\s*[（(]\s*[1一]\s*出\s*[0-9一二三四五六七八九十两]+\s*个?产品\s*[)）]',  # （一出二个产品）
+        r'\s*[（(]\s*[1一]\s*出\s*[0-9一二三四五六七八九十两]+\s*[)）]',  # (1出2), （一出二）
         r'\s*[（(]\s*左右各一(个)?\s*[)）]',  # （左右各一个）
         r'\s*左右各一(个)?$',  # 左右各一个 at end
     ]
@@ -392,9 +456,9 @@ def parse_combined_spec(spec_str: str) -> Tuple[Optional[float], Optional[float]
     spec_str = re.sub(r'\s*mm\s*', '', spec_str, flags=re.IGNORECASE)
     spec_str = spec_str.strip()
 
-    # Check for double separators (ambiguous format like "4.0**155")
-    if '**' in spec_str:
-        return None, None, None
+    # Normalize consecutive asterisks (2 or more) to single asterisk separator
+    # This handles cases like "1.0**36*32" or "0.4*44**41"
+    spec_str = re.sub(r'\*{2,}', '*', spec_str)
 
     # Check if string starts with letters (reject material/part codes)
     # Allow only T/W/P prefixes
@@ -406,32 +470,60 @@ def parse_combined_spec(spec_str: str) -> Tuple[Optional[float], Optional[float]
     # Split by * separator
     parts = spec_str.split('*')
 
-    # Parse each part
-    parsed_values = []
-    for part in parts:
+    # A non-empty first component must itself be a dimension.  This prevents
+    # strings such as "客户件号：0.5*70*70" or "35D041348*70*70" from
+    # leaking their later numbers into W/P.  An empty first component remains
+    # valid for an explicitly partial "*70*70" source value.
+    dimension_pattern = re.compile(
+        r'^[TWPtwp]?\s*\d+\.?\d*'
+        r'(?:\s*[±+\-]\s*[\d.]+)?\s*$'
+    )
+    if parts[0].strip() and not dimension_pattern.fullmatch(parts[0].strip()):
+        return None, None, None
+
+    # Parse each part.  Explicit T/W/P labels determine the axis; unlabeled
+    # values remain positional.  This makes W70*P70 unambiguous while keeping
+    # the historical positional forms such as 0.4*92.
+    parsed_values = [None, None, None]
+    used_axes = set()
+    for position, part in enumerate(parts):
         part = part.strip()
         if not part:
-            # Empty part (trailing * or consecutive *)
-            parsed_values.append(None)
             continue
 
         # Extract number with optional T/W/P prefix and tolerance
         # Pattern: optional [TWP], whitespace, number with decimal, optional tolerance
-        match = re.match(r'^[TWPtwp]?\s*(\d+\.?\d*)(?:\s*[±+\-]\s*[\d.]+)?', part)
+        match = re.fullmatch(
+            r'([TWPtwp])?\s*(\d+\.?\d*)'
+            r'(?:\s*[±+\-]\s*[\d.]+)?\s*',
+            part,
+        )
         if match:
             try:
-                value = float(match.group(1))
-                parsed_values.append(value)
+                value = float(match.group(2))
+                axis = ({'T': 0, 'W': 1, 'P': 2}[match.group(1).upper()]
+                        if match.group(1)
+                        else position)
+                if axis > 2 or axis in used_axes:
+                    return None, None, None
+                parsed_values[axis] = value
+                used_axes.add(axis)
             except:
-                parsed_values.append(None)
+                return None, None, None
         else:
             # No valid number found
-            parsed_values.append(None)
+            return None, None, None
+
+    # A non-labelled first number outside the thickness range is ambiguous
+    # (for example, "70*70" could be W/P).  Do not silently turn it into a
+    # partial W/P tuple; callers must provide *70*70 or W70*P70.
+    if parts[0].strip() and not re.match(r'^[TWPtwp]', parts[0].strip()):
+        first_value = parsed_values[0]
+        if first_value is not None and not (0.1 <= first_value <= 10.0):
+            return None, None, None
 
     # Extract T, W, P (up to 3 values)
-    thickness = parsed_values[0] if len(parsed_values) > 0 else None
-    width = parsed_values[1] if len(parsed_values) > 1 else None
-    pitch = parsed_values[2] if len(parsed_values) > 2 else None
+    thickness, width, pitch = parsed_values
 
     # Validate ranges
     if thickness is not None and not (0.1 <= thickness <= 10.0):
@@ -457,12 +549,16 @@ def parse_row(row_values: List[Any], column_map: Dict[str, int], sheet_name: str
         sheet_name: Name of the sheet (for customer inheritance)
         last_customer: Last non-empty customer from previous rows
     """
-    def get_cell(field: str) -> Any:
+    def get_raw_cell(field: str) -> Any:
         col_idx = column_map.get(field)
         if col_idx is not None and col_idx < len(row_values):
             val = row_values[col_idx]
-            return str(val).strip() if val else None
+            return val
         return None
+
+    def get_cell(field: str) -> Any:
+        value = get_raw_cell(field)
+        return str(value).strip() if value else None
 
     # Extract raw values
     customer_name = get_cell('customer_name')
@@ -479,7 +575,7 @@ def parse_row(row_values: List[Any], column_map: Dict[str, int], sheet_name: str
             if match:
                 customer_name = match.group(1).strip()
 
-    customer_part_no = get_cell('customer_part_no')
+    customer_part_no = normalize_customer_part_no(get_raw_cell('customer_part_no'))
     customer_part_name = get_cell('customer_part_name')
     tooling_number = get_cell('tooling_number')
     internal_name = get_cell('internal_name')
@@ -698,10 +794,13 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
         # Create new batch
         cur.execute("""
             INSERT INTO import_batches
-            (file_name, file_hash, file_size, total_sheets, status, started_at)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            (file_name, file_hash, file_size, total_sheets,
+             data_sheets, total_rows, valid_rows, failed_rows,
+             status, started_at, created_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             RETURNING id
-        """, (file_name, file_hash, file_size, total_sheets, 'PROCESSING', datetime.now()))
+        """, (file_name, file_hash, file_size, total_sheets,
+              0, 0, 0, 0, 'PROCESSING', datetime.now(), datetime.now()))
 
         batch_id = cur.fetchone()[0]
         conn.commit()
@@ -803,10 +902,10 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
                             parsed_process_step_count, parsed_cavity_count,
                             parsed_material, parsed_thickness, parsed_width,
                             parsed_pitch, parsed_gross_weight, parsed_net_weight,
-                            parsed_position
+                            parsed_position, created_at
                         ) VALUES (
                             %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s,
-                            %s, %s, %s, %s, %s, %s, %s, %s, %s
+                            %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
                         )
                     """, (
                         batch_id, sheet_name, row_idx + 1,
@@ -828,6 +927,7 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
                         parsed_data.get('parsed_gross_weight'),
                         parsed_data.get('parsed_net_weight'),
                         parsed_data.get('parsed_position'),
+                        datetime.now(),
                     ))
 
                 except Exception as e:
@@ -838,12 +938,12 @@ def process_excel(excel_path: Path, db_config: Dict[str, Any]):
                     cur.execute("""
                         INSERT INTO excel_import_rows (
                             batch_id, source_sheet, source_row, raw_data,
-                            validation_status, validation_errors
-                        ) VALUES (%s, %s, %s, %s, %s, %s)
+                            validation_status, validation_errors, created_at
+                        ) VALUES (%s, %s, %s, %s, %s, %s, %s)
                     """, (
                         batch_id, sheet_name, row_idx + 1,
                         psycopg2.extras.Json([str(v) for v in row_values]),
-                        'ERROR', str(e)
+                        'ERROR', str(e), datetime.now()
                     ))
 
                 # Commit every 500 rows

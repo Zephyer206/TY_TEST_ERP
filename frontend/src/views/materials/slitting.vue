@@ -13,7 +13,7 @@
           <el-descriptions-item label="物料编码">
             <el-text tag="b">{{ materialInfo.materialCode }}</el-text>
           </el-descriptions-item>
-          <el-descriptions-item label="材质">{{ materialInfo.materialName }}</el-text>
+          <el-descriptions-item label="材质">{{ materialInfo.materialName }}</el-descriptions-item>
           <el-descriptions-item label="规格">
             {{ materialInfo.thickness }}×{{ materialInfo.width }}mm
           </el-descriptions-item>
@@ -364,7 +364,7 @@ const submitSlitting = async () => {
   })
 }
 
-const handleStart = async (row: any) => {
+const handleStart = async (_row: any) => {
   try {
     // TODO: API
     ElMessage.success('已开始分条')
@@ -399,7 +399,7 @@ const submitComplete = async () => {
   })
 }
 
-const viewDetail = (row: any) => {
+const viewDetail = (_row: any) => {
   ElMessage.info('详情功能')
 }
 

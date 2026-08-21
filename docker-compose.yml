@@ -6,19 +6,16 @@ services:
       context: .
       dockerfile: Dockerfile
     environment:
-      # Database - 使用腾讯云服务器上的 PostgreSQL
-      DB_HOST: 124.222.29.229
-      DB_PORT: 5432
-      DB_NAME: stamping_system
-      DB_USER: postgres
-      DB_PASSWORD: thehaoshi5DE
+      # Database - set DATABASE_URL in the deployment environment; never commit credentials.
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY must be set}
       # Redis
       REDIS_URL: redis://redis:6379/0
       # Server
       SERVER_HOST: 0.0.0.0
       SERVER_PORT: 8000
       # CORS
-      CORS_ORIGINS: "*"
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       # 腾讯云 COS
       COS_ENABLED: "true"
       COS_SECRET_ID: ${COS_SECRET_ID}

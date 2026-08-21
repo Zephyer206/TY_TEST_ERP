@@ -6,10 +6,10 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class PartCreate(BaseModel):
-    part_number: str = Field(max_length=50)
-    internal_name: Optional[str] = Field(default=None, max_length=200)
+    customer_part_no: Optional[str] = Field(default=None, max_length=150)
+    customer_part_name: Optional[str] = Field(default=None, max_length=200)
+    internal_name: str = Field(max_length=200)
     customer_id: Optional[int] = None
-    customer_product_no: Optional[str] = Field(default=None, max_length=100)
     vehicle_model: Optional[str] = Field(default=None, max_length=100)
     material_name: Optional[str] = Field(default=None, max_length=100)
     remark: Optional[str] = Field(default=None, max_length=500)
@@ -18,11 +18,10 @@ class PartCreate(BaseModel):
 class PartUpdate(BaseModel):
     internal_name: Optional[str] = Field(default=None, max_length=200)
     customer_id: Optional[int] = None
-    customer_product_no: Optional[str] = Field(default=None, max_length=100)
+    customer_part_no: Optional[str] = Field(default=None, max_length=150)
+    customer_part_name: Optional[str] = Field(default=None, max_length=200)
     vehicle_model: Optional[str] = Field(default=None, max_length=100)
     material_name: Optional[str] = Field(default=None, max_length=100)
-    mold_number: Optional[str] = Field(default=None, max_length=50)
-    mold_type: Optional[str] = Field(default=None, max_length=50)
     press_tonnage: Optional[str] = Field(default=None, max_length=50)
     ppap_no: Optional[str] = Field(default=None, max_length=100)
     remark: Optional[str] = Field(default=None, max_length=500)
@@ -30,19 +29,18 @@ class PartUpdate(BaseModel):
 
 class PartResponse(BaseModel):
     id: int
-    part_number: Optional[str] = None
-    internal_name: Optional[str] = None
+    part_name: Optional[str] = None
     customer_id: Optional[int] = None
     customer_name: Optional[str] = None
-    customer_product_no: Optional[str] = None
-    customer_product_name: Optional[str] = None
+    customer_part_no: Optional[str] = None
+    customer_part_name: Optional[str] = None
     vehicle_model: Optional[str] = None
     material_name: Optional[str] = None
     material_name_full: Optional[str] = None  # 完整材料名称
     part_status: str
     stock_pcs: int = 0
-    mold_number: Optional[str] = None
-    mold_type: Optional[str] = None
+    tooling_number: Optional[str] = None
+    tooling_type: Optional[str] = None
     press_tonnage: Optional[str] = None
     ppap_no: Optional[str] = None
     # TWP字段

@@ -87,7 +87,7 @@ async def create_mold_type(
     current_user: CurrentUser
 ) -> MoldTypeResponse:
     """Create a new mold type."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     # Check for duplicate code
     existing = (await db.execute(
@@ -133,7 +133,7 @@ async def update_mold_type(
     current_user: CurrentUser
 ) -> MoldTypeResponse:
     """Update a mold type."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(MoldTypeDict, item_id)
     if not item:
@@ -163,7 +163,7 @@ async def delete_mold_type(
     current_user: CurrentUser
 ) -> None:
     """Delete a mold type."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(MoldTypeDict, item_id)
     if not item:

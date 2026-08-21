@@ -1,23 +1,14 @@
 <template>
   <div class="customers-container">
-    <div class="page-header">
-      <h2>客户管理</h2>
-      <el-button type="primary" @click="openCreate" v-if="userStore.userInfo?.role_level >= 4">
-        <el-icon><Plus /></el-icon>新增客户
-      </el-button>
+    <div class="list-view-toolbar">
+      <div class="list-title-block">
+        <el-button type="primary" @click="openCreate" v-if="userStore.userInfo?.role_level >= 4"><el-icon><Plus /></el-icon>新增</el-button>
+        <h1>客户</h1>
+      </div>
+      <div class="search-control"><el-icon><Search /></el-icon><el-input v-model="filter.search" placeholder="搜索客户名称" clearable @keyup.enter="fetchCustomers" /></div>
+      <div class="filter-controls"><el-button @click="fetchCustomers">筛选</el-button><el-button text @click="resetFilter">重置</el-button><el-button class="view-toggle" text circle aria-label="列表视图" title="列表视图"><el-icon><Menu /></el-icon></el-button></div>
     </div>
-
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filter">
-        <el-form-item label="搜索">
-          <el-input v-model="filter.search" placeholder="客户名称" clearable style="width:200px" />
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="fetchCustomers">搜索</el-button>
-          <el-button @click="resetFilter">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <div class="table-meta"><span>{{ page.total }} 条记录</span><span>客户主数据列表</span></div>
 
     <el-table :data="customers" v-loading="loading" stripe>
       <el-table-column prop="name" label="客户名称" min-width="200" />
@@ -68,7 +59,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Menu, Plus, Search } from '@element-plus/icons-vue'
 import { get, post } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import apiClient from '@/utils/request'
@@ -110,10 +101,21 @@ const fetchCustomers = async () => {
       ...(filter.search && { search: filter.search }),
     }
     const data = await get('/customers', params)
-    customers.value = Array.isArray(data) ? data : (data.items || [])
-    page.total = data.total || customers.value.length
+    // Handle both old list format and new paginated format
+    if (data && typeof data === 'object' && 'items' in data) {
+      customers.value = data.items || []
+      page.total = data.total || 0
+    } else if (Array.isArray(data)) {
+      customers.value = data
+      page.total = data.length
+    } else {
+      customers.value = []
+      page.total = 0
+    }
   } catch (e) {
-    ElMessage.error(e.message || '获取失败')
+    ElMessage.error(e.message || '获取客户列表失败')
+    customers.value = []
+    page.total = 0
   } finally {
     loading.value = false
   }
@@ -176,8 +178,12 @@ onMounted(() => { fetchCustomers() })
 
 <style scoped>
 .customers-container { padding: 20px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.page-header h2 { margin: 0; }
-.filter-card { margin-bottom: 16px; }
+.customers-container { min-width: 0; }
+.list-view-toolbar { display: grid; grid-template-columns: auto minmax(240px, 1fr) auto; align-items: center; gap: 14px; min-height: 58px; margin-bottom: 10px; padding: 8px 0; }
+.list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
+.search-control { display: flex; align-items: center; gap: 8px; width: min(480px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
+.filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.view-toggle { color: #625780; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.table-meta span:last-child { color: #96939e; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 900px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; } }
 </style>

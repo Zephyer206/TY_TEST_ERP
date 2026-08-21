@@ -42,7 +42,7 @@ def _select_primary_tooling(tooling_data):
         preferred_data,
         key=lambda record: (
             not record[0].is_primary,
-            str(record[1].tooling_number or record[1].tooling_no or ""),
+            str(record[1].tooling_number or ""),
             record[1].id,
         ),
     )[0]
@@ -134,7 +134,7 @@ async def get_part_detail(
         key=lambda record: (
             record[0].id != primary_tooling_part_id,
             not record[1].is_continuous,
-            str(record[1].tooling_number or record[1].tooling_no or ""),
+            str(record[1].tooling_number or ""),
             record[1].id,
         ),
     )
@@ -199,8 +199,8 @@ async def get_part_detail(
                 tooling_id=tooling.id,
                 part_id=tp.part_id,
                 tooling_part_id=tp.id,
-                tooling_number=tooling.tooling_number or tooling.tooling_no,
-                tooling_name=tooling.tooling_name or tooling.name,
+                tooling_number=tooling.tooling_number,
+                tooling_name=tooling.tooling_name,
                 mold_type=tooling.mold_type,
                 is_continuous=tooling.is_continuous,
                 cavity_count=tooling.cavity_count,
@@ -238,10 +238,10 @@ async def get_part_detail(
         }
         other_result = await db.execute(select(Tooling).where(Tooling.id.in_(other_ids))) if other_ids else None
         number_by_id = {
-            tooling.id: tooling.tooling_number or tooling.tooling_no
+            tooling.id: tooling.tooling_number
             for tooling in (other_result.scalars().all() if other_result else [])
         }
-        number_by_id.update({tooling.id: tooling.tooling_number or tooling.tooling_no for _tp, tooling in tooling_data})
+        number_by_id.update({tooling.id: tooling.tooling_number for _tp, tooling in tooling_data})
         shared_relations = [
             SharedToolingRelationInfo(
                 relation_id=relation.id,
@@ -260,8 +260,7 @@ async def get_part_detail(
 
     return PartDetailResponse(
         id=part.id,
-        internal_name=part.internal_name,
-        internal_part_no=part.internal_part_no,
+        part_name=part.internal_name,
         drawing_url=part.drawing_url,
         material_name=part.material_name,
         thickness=float(part.thickness) if part.thickness else None,
@@ -283,7 +282,7 @@ async def set_primary_tooling_spec(
     db: DbSession,
     current_user: CurrentUser,
 ) -> PartToolingSpecInfo:
-    """Set one TWP option as the list-display primary for its part."""
+    """Set one TWP option as primary for its (part_id, tooling_id) scope."""
     if current_user.role_level < 2:
         raise HTTPException(
             status_code=403,
@@ -294,9 +293,13 @@ async def set_primary_tooling_spec(
     if not spec:
         raise HTTPException(status_code=404, detail="TWP规格不存在")
 
+    # Clear is_primary for other specs on the same (part_id, tooling_id)
     await db.execute(
         update(PartToolingSpec)
-        .where(PartToolingSpec.part_id == spec.part_id)
+        .where(
+            PartToolingSpec.part_id == spec.part_id,
+            PartToolingSpec.tooling_id == spec.tooling_id,
+        )
         .values(is_primary=False, updated_at=datetime.utcnow())
     )
     spec.is_primary = True

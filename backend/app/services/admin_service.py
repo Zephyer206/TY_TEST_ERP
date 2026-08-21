@@ -47,9 +47,9 @@ async def switch_context(
     Raises:
         ValueError: If user is not admin or department is invalid
     """
-    # Verify user is admin (role_level >= 10)
-    if user.role_level < 10:
-        raise ValueError("Only super admin can switch context")
+    # Verify user is LV4 admin
+    if user.role_level < 4:
+        raise ValueError("Only super admin (LV4) can switch context")
 
     # Deactivate any existing active switches for this user
     await db.execute(
@@ -217,7 +217,7 @@ def get_effective_role(user: User, context_switch: Optional[AdminContextSwitch] 
 def can_access_boss_button(role_level: int) -> bool:
     """Check if user can access boss-only buttons.
 
-    Boss buttons (role_level >= 9) should be hidden when admin
-    is switched to another perspective.
+    Boss buttons (LV3) should be hidden when admin is switched
+    to another perspective.
     """
-    return role_level >= 9
+    return role_level >= 3

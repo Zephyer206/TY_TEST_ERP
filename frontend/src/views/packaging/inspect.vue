@@ -15,7 +15,7 @@
         <el-descriptions :column="3" border>
           <el-descriptions-item label="包装号" :span="1">
             <div style="display: flex; align-items: center; gap: 8px">
-              <el-icon><Barcode /></el-icon>
+          <el-icon><Tickets /></el-icon>
               <el-text tag="b" size="large">{{ packagingInfo.packagingNo }}</el-text>
             </div>
           </el-descriptions-item>
@@ -157,7 +157,7 @@
 import { ref, reactive, onMounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Barcode, Plus, Check } from '@element-plus/icons-vue'
+import { Tickets, Plus, Check } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules, UploadFile } from 'element-plus'
 
 const route = useRoute()
@@ -239,7 +239,7 @@ const getPassRate = () => {
 // 监听合格数量变化，自动判断结果
 watch(
   () => inspectForm.qualifiedQuantity,
-  (newVal) => {
+  () => {
     const passRate = getPassRate()
     if (passRate >= 95) {
       inspectForm.result = 'pass'

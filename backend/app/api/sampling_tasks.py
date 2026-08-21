@@ -58,11 +58,11 @@ async def create_sampling_task(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Create a new sampling task.
+    """Create a new sampling task - LV2: business/technical staff.
 
     Task starts in PENDING_APPROVAL state.
     """
-    require_role(current_user, min_level=5)
+    require_role(current_user, min_level=2)
 
     from app.models.part import Part, PartState
 
@@ -124,7 +124,7 @@ async def list_sampling_tasks(
             task_no=t.task_no,
             part_id=t.part_id,
             part_no=t.part.part_no if t.part else None,
-            part_name=t.part.part_name if t.part else None,
+            part_name=t.part.internal_name if t.part else None,
             customer_id=t.customer_id,
             customer_name=t.customer.name if t.customer else None,
             state=t.state,
@@ -146,8 +146,8 @@ async def update_sampling_task(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Update sampling task fields."""
-    require_role(current_user, min_level=5)
+    """Update sampling task fields - LV2: business/technical staff."""
+    require_role(current_user, min_level=2)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -169,8 +169,8 @@ async def boss_approve_task(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Boss approval of sampling task (role_level >= 9)."""
-    require_role(current_user, min_level=9)
+    """Boss approval of sampling task - LV3: boss final approval."""
+    require_role(current_user, min_level=3)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -192,8 +192,8 @@ async def start_production(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Start sampling production (after boss approval)."""
-    require_role(current_user, min_level=3)
+    """Start sampling production (after boss approval). Requires LV2 (manager/supervisor)."""
+    require_role(current_user, min_level=2)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -213,8 +213,8 @@ async def complete_production(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Mark sampling production as complete, ready for review."""
-    require_role(current_user, min_level=3)
+    """Mark sampling production as complete, ready for review. Requires LV2 (manager/supervisor)."""
+    require_role(current_user, min_level=2)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -235,12 +235,11 @@ async def submit_review(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Submit review result (passed/failed).
+    """Submit review result (passed/failed) - LV2: business/technical staff.
 
     On pass: part transitions from SAMPLING to MASSPRODUCTION.
-    业务经理（role_level >= 5）才能最终批准评审结果（澄清 2026-06-20 #2）。
     """
-    require_role(current_user, min_level=5)
+    require_role(current_user, min_level=2)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -262,8 +261,8 @@ async def toggle_urgent(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Toggle urgent flag on a sampling task."""
-    require_role(current_user, min_level=5)
+    """Toggle urgent flag on a sampling task - LV2: business/technical staff."""
+    require_role(current_user, min_level=2)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -280,8 +279,8 @@ async def cancel_task(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SamplingTaskResponse:
-    """Cancel a sampling task."""
-    require_role(current_user, min_level=5)
+    """Cancel a sampling task - LV2: business/technical staff."""
+    require_role(current_user, min_level=2)
 
     task = await sampling_service.get_sampling_task_by_id(db, task_id)
     if not task:
@@ -327,7 +326,7 @@ async def get_sampling_kanban(
             task_no=t.task_no,
             part_id=t.part_id,
             part_no=t.part.part_no if t.part else None,
-            part_name=t.part.part_name if t.part else None,
+            part_name=t.part.internal_name if t.part else None,
             customer_id=t.customer_id,
             customer_name=t.customer.name if t.customer else None,
             state=t.state,

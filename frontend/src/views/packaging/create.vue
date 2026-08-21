@@ -26,7 +26,7 @@
                 style="width: 400px"
               >
                 <template #prepend>
-                  <el-icon><Barcode /></el-icon>
+          <el-icon><Tickets /></el-icon>
                 </template>
                 <template #append>
                   <el-button @click="handleScan">扫描</el-button>
@@ -135,7 +135,7 @@
               <div class="qr-code-section">
                 <h3>包装号二维码</h3>
                 <div class="qr-code-placeholder">
-                  <el-icon :size="120"><Barcode /></el-icon>
+          <el-icon :size="120"><Tickets /></el-icon>
                   <div class="qr-code-text">{{ generatedPackagingNo }}</div>
                 </div>
                 <div class="qr-actions">
@@ -183,10 +183,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Barcode, Printer, Download } from '@element-plus/icons-vue'
+import { Tickets, Printer, Download } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()

@@ -7,6 +7,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.part import Part, PartState
+from app.models.part_customer_alias import PartCustomerAlias
 
 
 async def get_part_by_id(
@@ -26,9 +27,14 @@ async def get_parts_by_customer(
 ) -> Sequence[Part]:
     """Get all parts for a customer."""
     result = await db.execute(
-        select(Part).where(
-            Part.customer_id == customer_id,
-        ).order_by(Part.created_at.desc())
+        select(Part)
+        .join(PartCustomerAlias, PartCustomerAlias.part_id == Part.id)
+        .where(
+            PartCustomerAlias.customer_id == customer_id,
+            PartCustomerAlias.is_active == True,
+            PartCustomerAlias.data_quality_status == "approved",
+        )
+        .order_by(Part.created_at.desc())
     )
     return result.scalars().all()
 

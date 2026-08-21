@@ -1,384 +1,237 @@
 <template>
   <div class="materials-container">
-    <el-card class="header-card">
-      <div class="header-content">
-        <h2>原材料管理</h2>
-        <el-button type="primary" @click="showCreateDialog = true">
-          <el-icon><Plus /></el-icon>
-          新增原材料
-        </el-button>
+    <div class="list-view-toolbar">
+      <div class="list-title-block">
+        <el-button type="primary" @click="openCreate"><el-icon><Plus /></el-icon>新增</el-button>
+        <h1>材料</h1>
       </div>
-    </el-card>
 
-    <!-- 筛选条件 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filters">
-        <el-form-item label="材质">
-          <el-select v-model="filters.material" placeholder="全部材质" clearable style="width: 150px">
-            <el-option label="SPCC" value="SPCC" />
-            <el-option label="SECC" value="SECC" />
-            <el-option label="不锈钢" value="stainless" />
-            <el-option label="铝合金" value="aluminum" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="规格">
-          <el-input v-model="filters.spec" placeholder="如：1.0×1000" clearable style="width: 150px" />
-        </el-form-item>
-        <el-form-item label="供应商">
-          <el-input v-model="filters.supplier" placeholder="供应商名称" clearable style="width: 150px" />
-        </el-form-item>
-        <el-form-item label="库存预警">
-          <el-select v-model="filters.stockAlert" placeholder="全部" clearable style="width: 120px">
-            <el-option label="库存充足" value="normal" />
-            <el-option label="库存预警" value="warning" />
-            <el-option label="库存不足" value="shortage" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="loadData">查询</el-button>
-          <el-button @click="resetFilters">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-
-    <!-- 原材料列表 -->
-    <el-card>
-      <el-table :data="materialList" v-loading="loading" border stripe>
-        <el-table-column prop="materialCode" label="物料编码" width="130" fixed="left" />
-        <el-table-column prop="materialName" label="材质" width="120" />
-        <el-table-column prop="specification" label="规格" width="150">
-          <template #default="{ row }">
-            {{ row.thickness }}×{{ row.width }}mm
-          </template>
-        </el-table-column>
-        <el-table-column prop="supplierName" label="供应商" width="150" />
-        <el-table-column prop="stockQuantity" label="库存数量" width="120" align="right">
-          <template #default="{ row }">
-            <el-text :type="getStockColor(row.stockQuantity, row.safetyStock)">
-              {{ row.stockQuantity.toFixed(2) }} {{ row.unit }}
-            </el-text>
-          </template>
-        </el-table-column>
-        <el-table-column prop="safetyStock" label="安全库存" width="120" align="right">
-          <template #default="{ row }">
-            {{ row.safetyStock }} {{ row.unit }}
-          </template>
-        </el-table-column>
-        <el-table-column prop="unit" label="单位" width="80" align="center" />
-        <el-table-column prop="unitPrice" label="单价" width="100" align="right">
-          <template #default="{ row }">
-            ¥{{ row.unitPrice.toFixed(2) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="库存状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="getStockAlertType(row.stockQuantity, row.safetyStock)">
-              {{ getStockAlertText(row.stockQuantity, row.safetyStock) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="lastPurchaseDate" label="最近采购" width="110" />
-        <el-table-column label="操作" width="220" fixed="right">
-          <template #default="{ row }">
-            <el-button type="primary" link @click="viewBatches(row.id)">批次管理</el-button>
-            <el-button type="success" link @click="handlePurchase(row)">采购</el-button>
-            <el-button type="warning" link @click="handleEdit(row)">编辑</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-
-      <!-- 分页 -->
-      <div class="pagination-container">
-        <el-pagination
-          v-model:current-page="pagination.page"
-          v-model:page-size="pagination.pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
-          @size-change="loadData"
-          @current-change="loadData"
-        />
+      <div class="search-control">
+        <el-icon><Search /></el-icon>
+        <el-input v-model="filter.search" placeholder="搜索材料代码、牌号或中文名称" clearable @keyup.enter="fetchMaterials" />
       </div>
-    </el-card>
 
-    <!-- 新增/编辑原材料对话框 -->
-    <el-dialog
-      v-model="showCreateDialog"
-      :title="editMode ? '编辑原材料' : '新增原材料'"
-      width="700px"
-      :close-on-click-modal="false"
-    >
-      <el-form :model="materialForm" :rules="materialRules" ref="materialFormRef" label-width="120px">
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="物料编码" prop="materialCode">
-              <el-input v-model="materialForm.materialCode" placeholder="如：MAT-2026-001" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="材质" prop="materialName">
-              <el-select v-model="materialForm.materialName" placeholder="选择材质" style="width: 100%">
-                <el-option label="SPCC" value="SPCC" />
-                <el-option label="SECC" value="SECC" />
-                <el-option label="不锈钢" value="不锈钢" />
-                <el-option label="铝合金" value="铝合金" />
-              </el-select>
-            </el-form-item>
-          </el-col>
+      <div class="filter-controls">
+        <el-select v-model="filter.category" placeholder="分类" clearable @change="fetchMaterials">
+          <el-option v-for="category in categories" :key="category" :label="category" :value="category" />
+        </el-select>
+        <el-select v-model="filter.active" placeholder="状态" clearable @change="fetchMaterials">
+          <el-option label="已启用" value="true" />
+          <el-option label="已停用" value="false" />
+        </el-select>
+        <el-button @click="fetchMaterials">筛选</el-button>
+        <el-button text @click="resetFilter">重置</el-button>
+        <el-button class="view-toggle" text circle aria-label="列表视图" title="列表视图"><el-icon><Menu /></el-icon></el-button>
+      </div>
+    </div>
+
+    <div class="table-meta"><span>{{ filteredMaterials.length }} 条记录</span><span>材料主数据列表</span></div>
+
+    <el-table :data="pagedMaterials" v-loading="loading" stripe>
+      <el-table-column prop="code" label="材料代码" min-width="150" />
+      <el-table-column label="材料牌号" min-width="150">
+        <template #default="{ row }">{{ row.name_cn || row.name || '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="name" label="标准名称" min-width="140" />
+      <el-table-column prop="category" label="分类" width="130">
+        <template #default="{ row }">{{ row.category || '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="standard" label="执行标准" min-width="140">
+        <template #default="{ row }">{{ row.standard || '-' }}</template>
+      </el-table-column>
+      <el-table-column prop="thickness_range" label="常用厚度" width="120">
+        <template #default="{ row }">{{ row.thickness_range || '-' }}</template>
+      </el-table-column>
+      <el-table-column label="密度" width="100" align="right">
+        <template #default="{ row }">{{ formatDecimal(row.density, 4) }}</template>
+      </el-table-column>
+      <el-table-column label="参考价" width="120" align="right">
+        <template #default="{ row }">{{ formatCurrency(row.default_price) }}</template>
+      </el-table-column>
+      <el-table-column label="状态" width="100" align="center">
+        <template #default="{ row }"><el-tag :type="row.is_active ? 'success' : 'info'">{{ row.is_active ? '已启用' : '已停用' }}</el-tag></template>
+      </el-table-column>
+      <el-table-column label="操作" width="92" fixed="right">
+        <template #default="{ row }"><el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button></template>
+      </el-table-column>
+    </el-table>
+
+    <div class="pagination">
+      <el-pagination
+        v-model:current-page="page.current"
+        v-model:page-size="page.size"
+        :total="filteredMaterials.length"
+        :page-sizes="[20, 50, 100]"
+        layout="total, sizes, prev, pager, next"
+        @size-change="page.current = 1"
+      />
+    </div>
+
+    <el-dialog v-model="dialogVisible" :title="editId ? '编辑材料' : '新增材料'" width="620px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="92px">
+        <el-row :gutter="16">
+          <el-col :span="12"><el-form-item label="材料代码" prop="code"><el-input v-model="form.code" placeholder="例如 SPCC" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="标准名称" prop="name"><el-input v-model="form.name" placeholder="例如 SPCC" /></el-form-item></el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="8">
-            <el-form-item label="厚度(mm)" prop="thickness">
-              <el-input-number v-model="materialForm.thickness" :min="0.1" :max="10" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="宽度(mm)" prop="width">
-              <el-input-number v-model="materialForm.width" :min="10" :max="2000" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="8">
-            <el-form-item label="单位" prop="unit">
-              <el-select v-model="materialForm.unit" style="width: 100%">
-                <el-option label="吨" value="吨" />
-                <el-option label="公斤" value="公斤" />
-                <el-option label="米" value="米" />
-              </el-select>
-            </el-form-item>
-          </el-col>
+        <el-row :gutter="16">
+          <el-col :span="12"><el-form-item label="材料牌号"><el-input v-model="form.name_cn" placeholder="中文牌号或俗称" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="分类"><el-select v-model="form.category" filterable allow-create default-first-option placeholder="选择或输入分类" style="width: 100%"><el-option v-for="category in categories" :key="category" :label="category" :value="category" /></el-select></el-form-item></el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="供应商" prop="supplierId">
-              <el-select v-model="materialForm.supplierId" placeholder="选择供应商" style="width: 100%">
-                <el-option
-                  v-for="supplier in suppliersList"
-                  :key="supplier.id"
-                  :label="supplier.name"
-                  :value="supplier.id"
-                />
-              </el-select>
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="单价(元)" prop="unitPrice">
-              <el-input-number v-model="materialForm.unitPrice" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
+        <el-row :gutter="16">
+          <el-col :span="12"><el-form-item label="执行标准"><el-input v-model="form.standard" placeholder="例如 JIS G 3141" /></el-form-item></el-col>
+          <el-col :span="12"><el-form-item label="常用厚度"><el-input v-model="form.thickness_range" placeholder="例如 0.4-2.0 mm" /></el-form-item></el-col>
         </el-row>
-        <el-row :gutter="20">
-          <el-col :span="12">
-            <el-form-item label="当前库存">
-              <el-input-number v-model="materialForm.stockQuantity" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
-          <el-col :span="12">
-            <el-form-item label="安全库存" prop="safetyStock">
-              <el-input-number v-model="materialForm.safetyStock" :min="0" :precision="2" style="width: 100%" />
-            </el-form-item>
-          </el-col>
+        <el-row :gutter="16">
+          <el-col :span="8"><el-form-item label="密度"><el-input-number v-model="form.density" :min="0" :precision="4" controls-position="right" style="width: 100%" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="参考价"><el-input-number v-model="form.default_price" :min="0" :precision="4" controls-position="right" style="width: 100%" /></el-form-item></el-col>
+          <el-col :span="8"><el-form-item label="废料价"><el-input-number v-model="form.scrap_price" :min="0" :precision="4" controls-position="right" style="width: 100%" /></el-form-item></el-col>
         </el-row>
-        <el-form-item label="备注">
-          <el-input v-model="materialForm.notes" type="textarea" :rows="2" />
-        </el-form-item>
+        <el-form-item label="状态"><el-switch v-model="form.is_active" active-text="启用" inactive-text="停用" /></el-form-item>
       </el-form>
-      <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitMaterial" :loading="submitting">
-          {{ editMode ? '保存' : '创建' }}
-        </el-button>
-      </template>
+      <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveMaterial">保存</el-button></template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
-import { useRouter } from 'vue-router'
-import type { FormInstance, FormRules } from 'element-plus'
+import { Menu, Plus, Search } from '@element-plus/icons-vue'
+import { get } from '@/utils/request'
+import apiClient from '@/utils/request'
 
-const router = useRouter()
-
-const loading = ref(false)
-const showCreateDialog = ref(false)
-const submitting = ref(false)
-const editMode = ref(false)
-
-const filters = reactive({
-  material: '',
-  spec: '',
-  supplier: '',
-  stockAlert: ''
-})
-
-const pagination = reactive({
-  page: 1,
-  pageSize: 20,
-  total: 0
-})
-
-const materialList = ref<any[]>([])
-const suppliersList = ref<any[]>([])
-
-const materialFormRef = ref<FormInstance>()
-const materialForm = reactive({
-  id: null as any,
-  materialCode: '',
-  materialName: '',
-  thickness: 1.0,
-  width: 1000,
-  unit: '公斤',
-  supplierId: null as any,
-  unitPrice: 0,
-  stockQuantity: 0,
-  safetyStock: 500,
-  notes: ''
-})
-
-const materialRules: FormRules = {
-  materialCode: [{ required: true, message: '请输入物料编码', trigger: 'blur' }],
-  materialName: [{ required: true, message: '请选择材质', trigger: 'change' }],
-  thickness: [{ required: true, message: '请输入厚度', trigger: 'blur' }],
-  width: [{ required: true, message: '请输入宽度', trigger: 'blur' }],
-  unit: [{ required: true, message: '请选择单位', trigger: 'change' }],
-  supplierId: [{ required: true, message: '请选择供应商', trigger: 'change' }],
-  unitPrice: [{ required: true, message: '请输入单价', trigger: 'blur' }],
-  safetyStock: [{ required: true, message: '请输入安全库存', trigger: 'blur' }]
+type Material = {
+  id: number
+  code: string
+  name: string
+  name_cn?: string | null
+  density?: number | null
+  thickness_range?: string | null
+  category?: string | null
+  standard?: string | null
+  default_price?: number | null
+  scrap_price?: number | null
+  is_active: boolean
 }
 
-const loadData = async () => {
+const loading = ref(false)
+const saving = ref(false)
+const dialogVisible = ref(false)
+const editId = ref<number | null>(null)
+const formRef = ref()
+const materials = ref<Material[]>([])
+const filter = reactive({ search: '', category: '', active: '' })
+const page = reactive({ current: 1, size: 20 })
+const form = reactive({
+  code: '', name: '', name_cn: '', density: undefined as number | undefined,
+  thickness_range: '', category: '', standard: '', default_price: undefined as number | undefined,
+  scrap_price: undefined as number | undefined, is_active: true,
+})
+
+const rules = {
+  code: [{ required: true, message: '请输入材料代码', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入标准名称', trigger: 'blur' }],
+}
+
+const categories = computed(() => [...new Set(materials.value.map(item => item.category).filter((item): item is string => Boolean(item)))].sort())
+const filteredMaterials = computed(() => materials.value)
+const pagedMaterials = computed(() => {
+  const start = (page.current - 1) * page.size
+  return filteredMaterials.value.slice(start, start + page.size)
+})
+
+const normalizeNullable = (value: string | number | undefined) => value === '' || value === undefined ? null : value
+const formatDecimal = (value: number | null | undefined, digits: number) => value == null ? '-' : Number(value).toFixed(digits)
+const formatCurrency = (value: number | null | undefined) => value == null ? '-' : `¥${Number(value).toFixed(4)}`
+
+const fetchMaterials = async () => {
   loading.value = true
   try {
-    // TODO: API
-    materialList.value = [
-      {
-        id: 1,
-        materialCode: 'MAT-2026-001',
-        materialName: 'SPCC',
-        thickness: 1.0,
-        width: 1000,
-        unit: '公斤',
-        supplierName: '供应商A',
-        stockQuantity: 1500,
-        safetyStock: 500,
-        unitPrice: 8.5,
-        lastPurchaseDate: '2026-06-15'
-      }
-    ]
-    pagination.total = 1
-  } catch (error) {
-    ElMessage.error('加载失败')
+    const data = await get<Material[]>('/materials', {
+      search: filter.search || undefined,
+      category: filter.category || undefined,
+      is_active: filter.active || undefined,
+      skip: 0,
+      limit: 500,
+    })
+    materials.value = Array.isArray(data) ? data : []
+    page.current = 1
+  } catch (error: any) {
+    materials.value = []
+    ElMessage.error(error?.message || '获取材料列表失败')
   } finally {
     loading.value = false
   }
 }
 
-const loadSuppliers = async () => {
+const resetFilter = () => {
+  Object.assign(filter, { search: '', category: '', active: '' })
+  fetchMaterials()
+}
+
+const resetForm = () => Object.assign(form, {
+  code: '', name: '', name_cn: '', density: undefined, thickness_range: '', category: '',
+  standard: '', default_price: undefined, scrap_price: undefined, is_active: true,
+})
+
+const openCreate = () => {
+  editId.value = null
+  resetForm()
+  dialogVisible.value = true
+}
+
+const openEdit = (row: Material) => {
+  editId.value = row.id
+  Object.assign(form, {
+    code: row.code, name: row.name, name_cn: row.name_cn || '', density: row.density ?? undefined,
+    thickness_range: row.thickness_range || '', category: row.category || '', standard: row.standard || '',
+    default_price: row.default_price ?? undefined, scrap_price: row.scrap_price ?? undefined, is_active: row.is_active,
+  })
+  dialogVisible.value = true
+}
+
+const saveMaterial = async () => {
+  await formRef.value?.validate()
+  saving.value = true
+  const payload = {
+    code: form.code.trim(), name: form.name.trim(), name_cn: normalizeNullable(form.name_cn.trim()),
+    density: form.density ?? null, thickness_range: normalizeNullable(form.thickness_range.trim()),
+    category: normalizeNullable(form.category.trim()), standard: normalizeNullable(form.standard.trim()),
+    default_price: form.default_price ?? null, scrap_price: form.scrap_price ?? null, is_active: form.is_active,
+  }
   try {
-    suppliersList.value = [
-      { id: 1, name: '供应商A' },
-      { id: 2, name: '供应商B' }
-    ]
-  } catch (error) {
-    ElMessage.error('加载供应商失败')
+    if (editId.value) {
+      await apiClient.patch(`/materials/${editId.value}`, payload)
+      ElMessage.success('材料已更新')
+    } else {
+      const { is_active, ...createPayload } = payload
+      await apiClient.post('/materials', createPayload)
+      ElMessage.success('材料已创建')
+    }
+    dialogVisible.value = false
+    await fetchMaterials()
+  } catch (error: any) {
+    ElMessage.error(error?.message || '保存材料失败')
+  } finally {
+    saving.value = false
   }
 }
 
-const resetFilters = () => {
-  filters.material = ''
-  filters.spec = ''
-  filters.supplier = ''
-  filters.stockAlert = ''
-  loadData()
-}
-
-const getStockColor = (current: number, safety: number) => {
-  if (current < safety * 0.5) return 'danger'
-  if (current < safety) return 'warning'
-  return 'success'
-}
-
-const getStockAlertType = (current: number, safety: number) => {
-  if (current < safety * 0.5) return 'danger'
-  if (current < safety) return 'warning'
-  return 'success'
-}
-
-const getStockAlertText = (current: number, safety: number) => {
-  if (current < safety * 0.5) return '库存不足'
-  if (current < safety) return '库存预警'
-  return '库存充足'
-}
-
-const viewBatches = (id: number) => {
-  router.push(`/materials/batches/${id}`)
-}
-
-const handlePurchase = (row: any) => {
-  ElMessage.info('采购功能')
-}
-
-const handleEdit = (row: any) => {
-  editMode.value = true
-  Object.assign(materialForm, row)
-  showCreateDialog.value = true
-}
-
-const submitMaterial = async () => {
-  if (!materialFormRef.value) return
-  await materialFormRef.value.validate(async (valid) => {
-    if (valid) {
-      submitting.value = true
-      try {
-        // TODO: API
-        ElMessage.success(editMode.value ? '保存成功' : '创建成功')
-        showCreateDialog.value = false
-        loadData()
-      } catch (error) {
-        ElMessage.error(editMode.value ? '保存失败' : '创建失败')
-      } finally {
-        submitting.value = false
-      }
-    }
-  })
-}
-
-onMounted(() => {
-  loadData()
-  loadSuppliers()
-})
+onMounted(fetchMaterials)
 </script>
 
-<style scoped lang="scss">
-.materials-container {
-  padding: 20px;
-
-  .header-card {
-    margin-bottom: 20px;
-  }
-
-  .header-content {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-
-    h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 500;
-    }
-  }
-
-  .filter-card {
-    margin-bottom: 20px;
-  }
-
-  .pagination-container {
-    margin-top: 20px;
-    display: flex;
-    justify-content: flex-end;
-  }
-}
+<style scoped>
+.materials-container { min-width: 0; padding: 20px; }
+.list-view-toolbar { display: grid; grid-template-columns: auto minmax(240px, 1fr) auto; align-items: center; gap: 14px; min-height: 58px; margin-bottom: 10px; padding: 8px 0; }
+.list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
+.search-control { display: flex; align-items: center; gap: 8px; width: min(480px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }
+.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
+.filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.filter-controls :deep(.el-select) { width: 110px; }
+.view-toggle { color: #625780; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }
+.table-meta span:last-child { color: #96939e; }
+.pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 1040px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; flex-wrap: wrap; } }
 </style>

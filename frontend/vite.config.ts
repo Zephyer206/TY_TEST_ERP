@@ -11,11 +11,13 @@ export default defineConfig({
     AutoImport({
       resolvers: [ElementPlusResolver()],
       imports: ['vue', 'vue-router', 'pinia'],
-      dts: 'src/auto-imports.d.ts',
+      // The declarations are committed. Rewriting them while Vite is running
+      // causes intermittent Windows file locks during local builds.
+      dts: false,
     }),
     Components({
       resolvers: [ElementPlusResolver()],
-      dts: 'src/components.d.ts',
+      dts: false,
     }),
   ],
   resolve: {
@@ -27,6 +29,10 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+      },
+      '/static': {
         target: 'http://localhost:8000',
         changeOrigin: true,
       },

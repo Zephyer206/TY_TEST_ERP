@@ -75,14 +75,14 @@ def generate_process_flow_qr(card_id: int, card_no: str) -> str:
     return generate_qr_content(QRCodePrefix.PROCESS_FLOW, card_id, card_no=card_no)
 
 
-def generate_part_qr(part_id: int, part_no: str) -> str:
+def generate_part_qr(part_id: int, customer_part_no: str) -> str:
     """Generate QR content for part."""
-    return generate_qr_content(QRCodePrefix.PART, part_id, part_no=part_no)
+    return generate_qr_content(QRCodePrefix.PART, part_id, customer_part_no=customer_part_no)
 
 
-def generate_tooling_qr(tooling_id: int, tooling_no: str) -> str:
+def generate_tooling_qr(tooling_id: int, tooling_number: str) -> str:
     """Generate QR content for tooling."""
-    return generate_qr_content(QRCodePrefix.TOOLING, tooling_id, tooling_no=tooling_no)
+    return generate_qr_content(QRCodePrefix.TOOLING, tooling_id, tooling_number=tooling_number)
 
 
 def generate_package_qr(package_id: int, package_no: str) -> str:

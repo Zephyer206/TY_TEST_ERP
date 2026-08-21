@@ -1,4 +1,4 @@
-"""Pydantic schemas for admin and context switch management."""
+"""Pydantic schemas for admin and context switch management with canonical LV1-LV4 system."""
 
 from datetime import datetime
 from typing import Optional
@@ -73,23 +73,27 @@ class ContextSwitchRecordResponse(BaseModel):
 
 
 class DeptRoleMapping(BaseModel):
-    """Mapping of departments to role levels."""
+    """Mapping of departments to role levels using canonical LV1-LV4 system."""
 
     department: str
     role_level: int
     role_name: str
 
 
-# Predefined department role mappings
+# Predefined department role mappings with canonical LV1-LV4 levels
 SESSION_EXPIRY_SECONDS = 3600  # 1 hour
 
+# Context switch department role mappings:
+# - LV1: warehouse, spray, production operators
+# - LV2: technical staff, team leaders, business staff
+# - LV3: department supervisors (not boss approval - that remains LV3 in main identity)
 DEPT_ROLE_MAPPINGS = {
-    "sales": {"role_level": 5, "role_name": "业务经理"},
-    "production": {"role_level": 3, "role_name": "生产主管"},
-    "quality": {"role_level": 3, "role_name": "质检主管"},
-    "warehouse": {"role_level": 3, "role_name": "仓库主管"},
-    "design": {"role_level": 4, "role_name": "设计工程师"},
-    "mold": {"role_level": 2, "role_name": "模具工程师"},
-    "packaging": {"role_level": 3, "role_name": "包装主管"},
-    "spray": {"role_level": 3, "role_name": "喷涂主管"},
+    "sales": {"role_level": 2, "role_name": "业务人员"},  # Business staff -> LV2
+    "production": {"role_level": 1, "role_name": "生产操作工"},  # Production operator -> LV1
+    "quality": {"role_level": 2, "role_name": "质检主管"},  # QC supervisor -> LV2
+    "warehouse": {"role_level": 1, "role_name": "仓库管理员"},  # Warehouse staff -> LV1
+    "design": {"role_level": 2, "role_name": "设计工程师"},  # Design engineer -> LV2
+    "mold": {"role_level": 2, "role_name": "模具工程师"},  # Mold engineer -> LV2
+    "packaging": {"role_level": 2, "role_name": "包装主管"},  # Packaging supervisor -> LV2
+    "spray": {"role_level": 1, "role_name": "喷涂工"},  # Spray worker -> LV1
 }

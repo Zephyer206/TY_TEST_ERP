@@ -166,11 +166,11 @@
 - **FR-005**: 数据迁移脚本必须将 material_base_prices 表中的14行数据迁移到 material_dict 表，按 material_name 匹配，只插入 material_dict 中不存在的材质
 - **FR-006**: 数据迁移脚本必须清理 treatment_dicts 表，只迁移10条真实工序（热处理、电镀锌、发黑、喷涂、贴胶、阳极氧化、磷化、压铸镀层、电镀镍、达克罗涂装），丢弃测试脏数据
 - **FR-007**: 数据迁移完成后，必须删除以下旧表：material_base_prices、material_cost_history、treatment_dicts、treatment_cost_history
-- **FR-008**: 系统必须提供 price_adjustments 表的创建API，业务经理（role_level >= 5）提交调价申请，包含 price_account_id、old_price、new_price、reason、adjustment_type（上涨/下降）
-- **FR-009**: 系统必须提供价格调整审批列表API，老板（role_level >= 9）查看所有待审批的调价申请，按申请时间倒序排列
+- **FR-008**: 系统必须提供 price_adjustments 表的创建API，业务经理（role_level >= 2）提交调价申请，包含 price_account_id、old_price、new_price、reason、adjustment_type（上涨/下降）
+- **FR-009**: 系统必须提供价格调整审批列表API，老板（role_level >= 3）查看所有待审批的调价申请，按申请时间倒序排列
 - **FR-010**: 系统必须提供价格调整审批API，老板可以通过或驳回申请，通过时自动更新 price_accounts 表的 current_price，记录审批人和审批时间
 - **FR-011**: 价格调整驳回时，必须填写驳回原因，price_accounts 价格不变，price_adjustments 状态改为"已驳回"
-- **FR-012**: 系统必须提供 treatment_dict 表的 CRUD API，超级管理员（role_level >= 10）可以新增、修改、停用工序，修改默认费率和计价方式
+- **FR-012**: 系统必须提供 treatment_dict 表的 CRUD API，超级管理员（role_level >= 4）可以新增、修改、停用工序，修改默认费率和计价方式
 - **FR-013**: 查询客户材料价格历史时，如果客户从未使用过该材质，系统返回空列表，并在响应中提示使用 material_dict 的 default_price 作为参考
 - **FR-014**: 查询客户工序价格历史时，如果客户从未使用过该工序，系统返回空列表，并在响应中提示使用 treatment_dict 的 default_rate 作为参考
 - **FR-015**: price_accounts 表的批量查询API必须支持按客户ID、零件ID、材质、价格区间（min_price、max_price）筛选，支持分页（page、page_size）
@@ -199,7 +199,7 @@
 ## Assumptions
 
 - **数据库连接**: 假设现有 asyncpg 连接池配置足够支持新增的价格历史查询，无需调整连接数
-- **权限模型**: 假设业务经理（role_level >= 5）有权查询和新增价格历史，老板（role_level >= 9）有权审批调价，超级管理员（role_level >= 10）有权管理工序字典
+- **权限模型**: 假设业务经理（role_level >= 2）有权查询和新增价格历史，老板（role_level >= 3）有权审批调价，超级管理员（role_level >= 4）有权管理工序字典
 - **报价单集成**: 假设报价单定点时会触发价格历史记录的自动写入（需要在报价API中集成，但不在本功能范围内实现，由后续任务处理）
 - **数据量级**: 假设 customer_material_prices 和 customer_treatment_prices 表在第一年内各有1000-5000条记录，查询性能设计按1万条记录优化
 - **旧表状态**: 假设 material_base_prices 表有14行数据无脏数据，treatment_dicts 表有28行数据其中18行是测试脏数据（需清理）

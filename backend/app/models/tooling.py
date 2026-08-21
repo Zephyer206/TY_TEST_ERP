@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
+from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text, UniqueConstraint)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -59,6 +59,8 @@ class ToolingMaintenanceLog(Base):
         DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False
     )
 
+    tooling: Mapped["Tooling"] = relationship("Tooling", back_populates="maintenance_logs")
+
     def __repr__(self) -> str:
         return f"<ToolingMaintenanceLog {self.id}>"
 
@@ -71,15 +73,8 @@ class Tooling(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
 
     # 基本信息
-    tooling_no: Mapped[Optional[str]] = mapped_column(String(50), nullable=True, index=True)
-    tooling_number: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, unique=True, index=True)
-    name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
+    tooling_number: Mapped[str] = mapped_column(String(100), nullable=False, unique=True, index=True)
     tooling_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
-
-    # DEPRECATED: Use tooling_customer_links instead
-    customer_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, comment='DEPRECATED: Use tooling_customer_links instead')
-    customer_product_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
-    customer_product_name: Mapped[Optional[str]] = mapped_column(String(200), nullable=True)
 
     # 模具信息
     mold_type: Mapped[str] = mapped_column(String(50), nullable=False, default='unknown')
@@ -120,14 +115,21 @@ class Tooling(Base):
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.utcnow)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    maintenance_logs: Mapped[list[ToolingMaintenanceLog]] = relationship(
+        "ToolingMaintenanceLog", back_populates="tooling", cascade="all, delete-orphan"
+    )
+
     def __repr__(self) -> str:
-        return f"<Tooling {self.tooling_number or self.tooling_no or self.id}>"
+        return f"<Tooling {self.tooling_number}>"
 
 
 class ToolingPart(Base):
     """Association table between tooling and parts."""
 
     __tablename__ = "tooling_parts"
+    __table_args__ = (
+        UniqueConstraint("tooling_id", "part_id", "position", name="uq_tooling_parts_business_key"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(

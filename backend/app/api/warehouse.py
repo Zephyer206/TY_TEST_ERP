@@ -121,8 +121,8 @@ async def create_material_batch(
     db: DbSession,
     current_user: CurrentUser,
 ) -> MaterialBatchResponse:
-    """Create a new material batch (register incoming material)."""
-    require_role(current_user, min_level=3)
+    """Create a new material batch (register incoming material). Requires LV2 (warehouse manager)."""
+    require_role(current_user, min_level=2)
 
     # Verify material exists
     result = await db.execute(select(Material).where(Material.id == data.material_id))
@@ -203,8 +203,8 @@ async def perform_iqc(
     db: DbSession,
     current_user: CurrentUser,
 ) -> MaterialBatchResponse:
-    """Perform IQC inspection on a material batch."""
-    require_role(current_user, min_level=3)
+    """Perform IQC inspection on a material batch. Requires LV2 (quality supervisor)."""
+    require_role(current_user, min_level=2)
 
     batch = await material_batch_service.get_batch_by_id(db, batch_id)
     if not batch:
@@ -230,8 +230,9 @@ async def split_material_batch(
     """Split a material batch into child batches (each with unique QR code).
 
     T015: 扫码母卷后执行分条，返回各子卷的 qr_code 供打印标签。
+    Requires LV2 (warehouse manager).
     """
-    require_role(current_user, min_level=3)
+    require_role(current_user, min_level=2)
 
     batch = await material_batch_service.get_batch_by_id(db, batch_id)
     if not batch:
@@ -320,7 +321,7 @@ async def scrap_material_batch(
     db: DbSession,
     current_user: CurrentUser,
 ) -> MaterialBatchResponse:
-    """Scrap a material batch."""
+    """Scrap a material batch. Requires LV3 (boss approval for material write-off)."""
     require_role(current_user, min_level=3)
 
     batch = await material_batch_service.get_batch_by_id(db, batch_id)
@@ -604,8 +605,8 @@ async def create_supplier(
     db: DbSession,
     current_user: CurrentUser,
 ) -> SupplierResponse:
-    """Create a new supplier."""
-    require_role(current_user, min_level=5)
+    """Create a new supplier - LV2: warehouse/business staff."""
+    require_role(current_user, min_level=2)
 
     supplier = await material_batch_service.create_supplier(
         db,
@@ -667,7 +668,7 @@ async def create_material(
     current_user: CurrentUser,
 ) -> MaterialResponse:
     """Create a new material in the catalog."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     material = await material_batch_service.create_material(
         db,

@@ -1,47 +1,43 @@
-"""Pydantic schemas for tooling/mold management."""
+"""Pydantic schemas for the canonical tooling model."""
 
 from datetime import datetime
 from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.tooling import ToolingState
-
 
 class ToolingBase(BaseModel):
-    """Base schema for tooling."""
-
-    name: str
-    customer_product_no: Optional[str] = None
-    cavity_count: Optional[int] = None
-    tonnage: Optional[float] = None
-    ppap_no: Optional[str] = None
-    vehicle_model: Optional[str] = None
-    spec_data: Optional[str] = None
-    parent_id: Optional[int] = None
+    tooling_number: Optional[str] = Field(default=None, max_length=100)
+    tooling_name: Optional[str] = Field(default=None, max_length=200)
+    mold_type: str = Field(default="unknown", max_length=50)
+    is_continuous: bool = False
+    cavity_count: int = Field(default=1, ge=0)
+    process_step_count: Optional[int] = Field(default=None, ge=0)
+    status: str = Field(default="DRAFT", max_length=30)
+    press_tonnage: Optional[str] = Field(default=None, max_length=50)
+    ppap_no: Optional[str] = Field(default=None, max_length=100)
+    vehicle_model: Optional[str] = Field(default=None, max_length=100)
+    remark: Optional[str] = None
 
 
 class ToolingCreate(ToolingBase):
-    """Schema for creating a tooling."""
-
     pass
 
 
 class ToolingUpdate(BaseModel):
-    """Schema for updating tooling info."""
-
-    name: Optional[str] = None
-    customer_product_no: Optional[str] = None
-    cavity_count: Optional[int] = None
-    tonnage: Optional[float] = None
-    ppap_no: Optional[str] = None
-    vehicle_model: Optional[str] = None
-    spec_data: Optional[str] = None
+    tooling_name: Optional[str] = Field(default=None, max_length=200)
+    mold_type: Optional[str] = Field(default=None, max_length=50)
+    is_continuous: Optional[bool] = None
+    cavity_count: Optional[int] = Field(default=None, ge=0)
+    process_step_count: Optional[int] = Field(default=None, ge=0)
+    status: Optional[str] = Field(default=None, max_length=30)
+    press_tonnage: Optional[str] = Field(default=None, max_length=50)
+    ppap_no: Optional[str] = Field(default=None, max_length=100)
+    vehicle_model: Optional[str] = Field(default=None, max_length=100)
+    remark: Optional[str] = None
 
 
 class ToolingMaintenanceLogResponse(BaseModel):
-    """Schema for maintenance log response."""
-
     id: int
     tooling_id: int
     machine_id: Optional[int] = None
@@ -54,66 +50,43 @@ class ToolingMaintenanceLogResponse(BaseModel):
     is_active: bool
     notes: Optional[str] = None
     created_at: datetime
-
     model_config = ConfigDict(from_attributes=True)
 
 
 class ToolingResponse(ToolingBase):
-    """Schema for tooling response."""
-
     id: int
-    tooling_no: str
-    state: ToolingState
-    parent_id: Optional[int] = None
-    drawing_path: Optional[str] = None
-    sdr_drawing_path: Optional[str] = None
-    active_maintenance_id: Optional[int] = None
     is_deleted: bool
-    created_at: datetime
-    updated_at: datetime
-
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    maintenance_logs: list[ToolingMaintenanceLogResponse] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
 
 
 class ToolingDetailResponse(ToolingResponse):
-    """Schema for tooling detail with parent-child and maintenance logs."""
-
-    children: list["ToolingResponse"] = []
-    parent: Optional["ToolingResponse"] = None
-    maintenance_logs: list[ToolingMaintenanceLogResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
+    pass
 
 
 class ToolingListResponse(BaseModel):
-    """Schema for tooling list (summary)."""
-
     id: int
-    tooling_no: str
-    name: str
-    customer_product_no: Optional[str] = None
-    state: ToolingState
-    cavity_count: Optional[int] = None
-    tonnage: Optional[float] = None
-    parent_id: Optional[int] = None
-    created_at: datetime
-
+    tooling_number: str
+    tooling_name: Optional[str] = None
+    mold_type: str
+    is_continuous: bool
+    cavity_count: int
+    process_step_count: Optional[int] = None
+    status: str
+    press_tonnage: Optional[str] = None
+    created_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 
 class FaultReport(BaseModel):
-    """Schema for reporting a machine fault."""
-
     reason: Optional[str] = Field(default=None, max_length=500)
 
 
 class SecondScanAction(BaseModel):
-    """Schema for second scan action."""
-
     action: str = Field(..., pattern="^(complete|dismount)$")
 
 
 class MaintenanceComplete(BaseModel):
-    """Schema for completing tooling maintenance."""
-
     notes: Optional[str] = Field(default=None, max_length=500)

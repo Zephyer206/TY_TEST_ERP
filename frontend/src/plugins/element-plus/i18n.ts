@@ -2,8 +2,6 @@
  * Element Plus i18n configuration for Chinese localization.
  */
 
-import { ElMessage } from 'element-plus'
-
 const zhCN = {
   name: 'zh-CN',
   el: {
@@ -119,17 +117,6 @@ export const statusLabels: Record<string, string> = {
   PENDING: '待处理',
   IN_PROGRESS: '进行中',
   COMPLETED: '已完成',
-}
-
-// Role labels
-export const roleLabels: Record<number, string> = {
-  1: '操作工',
-  2: '模具工程师',
-  3: '组长/主管',
-  4: '设计工程师',
-  5: '业务经理',
-  9: '老板',
-  10: '超级管理员',
 }
 
 // Department labels

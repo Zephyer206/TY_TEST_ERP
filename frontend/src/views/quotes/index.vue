@@ -1,26 +1,11 @@
 <template>
   <div class="quotes-container">
-    <div class="page-header">
-      <h2>报价管理</h2>
-      <el-button type="primary" @click="openCreateDialog" v-if="userStore.isManager">
-        <el-icon><Plus /></el-icon>新建报价
-      </el-button>
+    <div class="list-view-toolbar">
+      <div class="list-title-block"><el-button type="primary" @click="openCreateDialog" v-if="userStore.isManager"><el-icon><Plus /></el-icon>新建</el-button><h1>报价</h1></div>
+      <div class="search-control"><el-icon><Search /></el-icon><el-input v-model="filter.search" placeholder="搜索报价单号、零件或客户" clearable @keyup.enter="fetchQuotes" /></div>
+      <div class="filter-controls"><el-select v-model="filter.approval_status" placeholder="状态" clearable><el-option v-for="s in STATUS_LIST" :key="s.value" :label="s.label" :value="s.value" /></el-select><el-button @click="fetchQuotes">筛选</el-button><el-button text @click="resetFilter">重置</el-button><el-button class="view-toggle" text circle aria-label="列表视图" title="列表视图"><el-icon><Menu /></el-icon></el-button></div>
     </div>
-
-    <!-- 筛选 -->
-    <el-card class="filter-card">
-      <el-form :inline="true" :model="filter">
-        <el-form-item label="状态">
-          <el-select v-model="filter.approval_status" placeholder="全部" clearable style="width:160px">
-            <el-option v-for="s in STATUS_LIST" :key="s.value" :label="s.label" :value="s.value" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="fetchQuotes">搜索</el-button>
-          <el-button @click="resetFilter">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
+    <div class="table-meta"><span>{{ page.total }} 条记录</span><span>从列表进入报价、定价与审批流程</span></div>
 
     <!-- 列表 -->
     <el-table :data="quotes" v-loading="loading" stripe>
@@ -311,7 +296,7 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Plus } from '@element-plus/icons-vue'
+import { Menu, Plus, Search } from '@element-plus/icons-vue'
 import { get, post } from '@/utils/request'
 import { formatDate } from '@/utils/format'
 import { useUserStore } from '@/stores/user'
@@ -331,7 +316,7 @@ const primaryCategories = ref([])
 const currentQuote = ref(null)
 const activeId = ref(null)
 
-const filter = reactive({ approval_status: '' })
+const filter = reactive({ approval_status: '', search: '' })
 const page = reactive({ current: 1, size: 20, total: 0 })
 
 // dialogs
@@ -396,6 +381,7 @@ const fetchQuotes = async () => {
       skip: (page.current - 1) * page.size,
       limit: page.size,
       ...(filter.approval_status && { approval_status: filter.approval_status }),
+      ...(filter.search && { search: filter.search }),
     }
     const data = await get('/quotes', params)
     quotes.value = Array.isArray(data) ? data : (data.items || [])
@@ -495,7 +481,7 @@ const loadDetail = async (id) => {
 }
 
 // ---- handlers ----
-const resetFilter = () => { filter.approval_status = ''; page.current = 1; fetchQuotes() }
+const resetFilter = () => { filter.approval_status = ''; filter.search = ''; page.current = 1; fetchQuotes() }
 
 const openCreateDialog = () => {
   Object.assign(createForm, { part_name_id: null, customer_id: null, customer_product_no: '', vehicle_model: '', annual_usage: 0 })
@@ -730,11 +716,14 @@ onMounted(() => { fetchQuotes(); fetchCustomers(); fetchPartNames() })
 </script>
 
 <style scoped>
-.quotes-container { padding: 20px; }
-.page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.page-header h2 { margin: 0; }
-.filter-card { margin-bottom: 16px; }
+.quotes-container { min-width: 0; }
+.list-view-toolbar { display: grid; grid-template-columns: auto minmax(240px, 1fr) auto; align-items: center; gap: 14px; min-height: 58px; margin-bottom: 10px; padding: 8px 0; }
+.list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
+.search-control { display: flex; align-items: center; gap: 8px; width: min(500px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
+.filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.filter-controls :deep(.el-select) { width: 128px; }.view-toggle { color: #625780; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.table-meta span:last-child { color: #96939e; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
 .text-gray { color: #999; }
 .text-danger { color: #f56c6c; }
+@media (max-width: 900px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; } }
 </style>

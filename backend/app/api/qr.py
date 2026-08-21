@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import CurrentUser, DbSession
 from app.models.machine import Machine
 from app.models.part import Part
+from app.models.part_customer_alias import PartCustomerAlias
 from app.models.production import ProcessFlowCard
 from app.models.tooling import Tooling
 from app.schemas.qr import (
@@ -116,8 +117,13 @@ async def _manual_lookup(
             }
 
     elif entity_type == "PRT":
-        result = await db.execute(select(Part).where(Part.part_number == code))
-        part = result.scalar_one_or_none()
+        result = await db.execute(select(PartCustomerAlias).where(
+            PartCustomerAlias.customer_part_no == code,
+            PartCustomerAlias.is_active == True,
+            PartCustomerAlias.data_quality_status == "approved",
+        ))
+        alias = result.scalars().first()
+        part = await db.get(Part, alias.part_id) if alias else None
         if not part:
             try:
                 pid = int(code)
@@ -131,14 +137,14 @@ async def _manual_lookup(
                 "entity_type": "part",
                 "entity_data": {
                     "part_id": part.id,
-                    "part_number": part.part_number,
-                    "internal_name": part.part_name,
+                    "customer_part_no": alias.customer_part_no if alias else None,
+                    "part_name": part.internal_name,
                 },
             }
 
     elif entity_type == "TLG":
         result = await db.execute(
-            select(Tooling).where(Tooling.tooling_no == code)
+            select(Tooling).where(Tooling.tooling_number == code)
         )
         tooling = result.scalar_one_or_none()
         if not tooling:
@@ -156,8 +162,8 @@ async def _manual_lookup(
                 "entity_type": "tooling",
                 "entity_data": {
                     "tooling_id": tooling.id,
-                    "tooling_no": tooling.tooling_no,
-                    "tooling_name": tooling.name,
+                    "tooling_number": tooling.tooling_number,
+                    "tooling_name": tooling.tooling_name,
                 },
             }
 
@@ -237,8 +243,7 @@ async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
                 "entity_type": "part",
                 "entity_data": {
                     "part_id": part.id,
-                    "part_no": part.part_number,
-                    "internal_name": part.part_name,
+                    "part_name": part.internal_name,
                 },
             }
 
@@ -252,9 +257,9 @@ async def lookup_entity(db: AsyncSession, prefix: str, entity_id: int) -> dict:
                 "entity_type": "tooling",
                 "entity_data": {
                     "tooling_id": tooling.id,
-                    "tooling_no": tooling.tooling_no,
-                    "tooling_name": tooling.name,
-                    "status": tooling.state.value if tooling.state else None,
+                    "tooling_number": tooling.tooling_number,
+                    "tooling_name": tooling.tooling_name,
+                    "status": tooling.status,
                 },
             }
 
@@ -453,12 +458,19 @@ async def get_part_qr(
     if not part:
         raise HTTPException(status_code=404, detail="Part not found")
 
-    content = qr_service.generate_part_qr(part.id, part.part_number)
+    alias = (await db.execute(select(PartCustomerAlias).where(
+        PartCustomerAlias.part_id == part.id,
+        PartCustomerAlias.is_active == True,
+        PartCustomerAlias.data_quality_status == "approved",
+    ).order_by(PartCustomerAlias.id))).scalars().first()
+    if not alias:
+        raise HTTPException(status_code=409, detail="Part has no approved customer part number")
+    content = qr_service.generate_part_qr(part.id, alias.customer_part_no)
     image_base64 = qr_service.generate_qr_base64(content)
 
     return {
         "part_id": part.id,
-        "part_number": part.part_number,
+        "customer_part_no": alias.customer_part_no,
         "qr_content": content,
         "image_base64": image_base64,
     }

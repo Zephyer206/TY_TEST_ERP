@@ -94,7 +94,7 @@ async def create_material(
     current_user: CurrentUser
 ) -> MaterialResponse:
     """Create a new material."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     # Check for duplicate code
     existing = (await db.execute(
@@ -143,7 +143,7 @@ async def update_material(
     current_user: CurrentUser
 ) -> MaterialResponse:
     """Update a material."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(MaterialDict, item_id)
     if not item:
@@ -173,7 +173,7 @@ async def delete_material(
     current_user: CurrentUser
 ) -> None:
     """Delete a material."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(MaterialDict, item_id)
     if not item:

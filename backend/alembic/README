@@ -1,0 +1,5 @@
+This directory is retained for historical compatibility only.
+
+The canonical Alembic migration chain is the repository-level `alembic/`
+directory. `backend/alembic.ini` points there so commands run from `backend/`
+use the same revision history as the project root.

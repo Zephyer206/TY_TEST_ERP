@@ -31,7 +31,7 @@ from psycopg2.extras import RealDictCursor
 BACKEND_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BACKEND_DIR.parent
 EXCEL_PATH = PROJECT_ROOT / "excel" / "五金模具及产品清单表.xls"
-EXPECTED_SHA256 = "ca35e3e654bfb9b2ce68e220904d8b9ca48f91f978029ed2df7fcba1374cf117"
+EXPECTED_SHA256 = "f9ba5dc0602d7828e10e194646e5733c7782d700b06aea10f007aa6d7b818e74"
 
 # Customer alias mapping (唯一别名)
 CUSTOMER_ALIASES = {

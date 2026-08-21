@@ -33,51 +33,44 @@
     <el-card v-if="customerData" class="result-card">
       <template #header>
         <div class="card-header">
-          <span>
-            <strong>{{ customerData.customer_name }}</strong>
-            <el-tag v-if="customerData.customer_code" type="primary" size="small" style="margin-left: 8px">
-              {{ customerData.customer_code }}
-            </el-tag>
-          </span>
           <span style="color: #909399">共 {{ customerData.parts_count }} 个零件</span>
         </div>
       </template>
 
-      <el-table :data="customerData.parts" v-loading="loading" stripe border max-height="600">
-        <el-table-column prop="part_id" label="零件ID" width="100" fixed />
-        <el-table-column prop="internal_name" label="内部零件名称" min-width="160" fixed />
+      <el-table :data="customerData.parts" v-loading="loading" stripe border max-height="600" :span-method="spanMethod">
+        <el-table-column label="图片" width="100" align="center">
+          <template #default="{ row }">
+            <el-image
+              v-if="row.image_url"
+              :src="row.image_url"
+              fit="contain"
+              style="width: 60px; height: 60px"
+              :preview-src-list="[row.image_url]"
+              preview-teleported
+            >
+              <template #error>
+                <div class="image-placeholder">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
+            <div v-else class="image-placeholder">
+              <el-icon><Picture /></el-icon>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column prop="display_name" label="零件名称" min-width="160" />
         <el-table-column prop="customer_part_no" label="客户件号" width="140" />
-        <el-table-column prop="customer_part_name" label="客户件名" min-width="140" />
-        <el-table-column prop="material_name" label="材料" width="120" />
-        <el-table-column label="价格状态" width="100" align="center">
+        <el-table-column :label="`${customerData.current_year}年售价`" width="140" align="right">
           <template #default="{ row }">
-            <el-tag :type="row.has_price_account ? 'success' : 'info'" size="small">
-              {{ row.has_price_account ? '有价格' : '暂无价格' }}
-            </el-tag>
+            <span v-if="row.current_year_price !== null">¥{{ row.current_year_price.toFixed(4) }}</span>
+            <span v-else class="no-price">暂无价格</span>
           </template>
         </el-table-column>
-        <el-table-column label="材料单价" width="120" align="right">
+        <el-table-column :label="`${customerData.previous_year}年售价`" width="140" align="right">
           <template #default="{ row }">
-            <span v-if="row.material_unit_price !== null">¥{{ row.material_unit_price.toFixed(4) }}</span>
-            <span v-else class="no-price">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="废料单价" width="120" align="right">
-          <template #default="{ row }">
-            <span v-if="row.scrap_price !== null">¥{{ row.scrap_price.toFixed(4) }}</span>
-            <span v-else class="no-price">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="表面处理" width="120" align="right">
-          <template #default="{ row }">
-            <span v-if="row.surface_treatment_cost !== null">¥{{ row.surface_treatment_cost.toFixed(4) }}</span>
-            <span v-else class="no-price">-</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="材料成本" width="120" align="right">
-          <template #default="{ row }">
-            <span v-if="row.material_cost !== null">¥{{ row.material_cost.toFixed(4) }}</span>
-            <span v-else class="no-price">-</span>
+            <span v-if="row.previous_year_price !== null">¥{{ row.previous_year_price.toFixed(4) }}</span>
+            <span v-else class="no-price">暂无价格</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
@@ -92,14 +85,11 @@
 
     <el-empty v-else-if="!loading" description="请选择客户查询零件价格" :image-size="120" />
 
-    <!-- 调价历史对话框 -->
     <el-dialog v-model="historyVisible" title="调价历史" width="800px">
       <div v-if="currentPart" style="margin-bottom: 16px">
         <el-descriptions :column="2" border size="small">
-          <el-descriptions-item label="零件ID">{{ currentPart.part_id }}</el-descriptions-item>
-          <el-descriptions-item label="内部名称">{{ currentPart.internal_name }}</el-descriptions-item>
+          <el-descriptions-item label="零件名称">{{ currentPart.display_name }}</el-descriptions-item>
           <el-descriptions-item label="客户件号">{{ currentPart.customer_part_no }}</el-descriptions-item>
-          <el-descriptions-item label="客户件名">{{ currentPart.customer_part_name || '-' }}</el-descriptions-item>
         </el-descriptions>
       </div>
 
@@ -143,6 +133,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
+import { Picture } from '@element-plus/icons-vue'
 import { get } from '@/utils/request'
 
 const customers = ref([])
@@ -170,7 +161,8 @@ const statusLabelMap = {
 
 const fetchCustomers = async () => {
   try {
-    customers.value = await get('/customers', { limit: 200, has_parts: true })
+    const data = await get('/customers', { limit: 200, has_parts: true })
+    customers.value = Array.isArray(data) ? data : (data.items || [])
   } catch (e) {
     ElMessage.error('获取客户列表失败: ' + (e.message || '未知错误'))
   }
@@ -185,13 +177,45 @@ const fetchCustomerParts = async () => {
 
   loading.value = true
   try {
-    const data = await get(`/customer-prices/customers/${selectedCustomerId.value}/parts-with-prices`)
+    const data = await get(`/customer-prices/customers/${selectedCustomerId.value}/year-prices`)
     customerData.value = data
   } catch (e) {
     ElMessage.error('获取客户零件价格失败: ' + (e.message || '未知错误'))
   } finally {
     loading.value = false
   }
+}
+
+const spanMethod = ({ row, column, rowIndex, columnIndex }) => {
+  if (columnIndex === 0) {
+    const parts = customerData.value?.parts || []
+    const currentImageUrl = row.image_url
+
+    if (!currentImageUrl) {
+      return { rowspan: 1, colspan: 1 }
+    }
+
+    if (rowIndex > 0) {
+      const prevRow = parts[rowIndex - 1]
+      if (prevRow.image_url === currentImageUrl) {
+        const prevPrevRow = rowIndex > 1 ? parts[rowIndex - 2] : null
+        if (prevPrevRow && prevPrevRow.image_url === currentImageUrl) {
+          return { rowspan: 1, colspan: 1 }
+        }
+        return { rowspan: 0, colspan: 0 }
+      }
+    }
+
+    if (rowIndex < parts.length - 1) {
+      const nextRow = parts[rowIndex + 1]
+      if (nextRow.image_url === currentImageUrl) {
+        return { rowspan: 2, colspan: 1 }
+      }
+    }
+
+    return { rowspan: 1, colspan: 1 }
+  }
+  return { rowspan: 1, colspan: 1 }
 }
 
 const viewPriceHistory = async (part) => {
@@ -228,4 +252,16 @@ onMounted(() => {
 .result-card { margin-bottom: 16px; }
 .card-header { display: flex; justify-content: space-between; align-items: center; }
 .no-price { color: #c0c4cc; }
+.image-placeholder {
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f5f7fa;
+  border: 1px dashed #dcdfe6;
+  border-radius: 4px;
+  color: #c0c4cc;
+  font-size: 24px;
+}
 </style>

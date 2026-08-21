@@ -45,8 +45,8 @@ export const usePermissionStore = defineStore('permission', () => {
       // No switch, use original role from user store
       return true
     }
-    // When switched, boss buttons should be hidden (role < 9)
-    return contextSwitch.value.current_role_level >= 9
+    // When switched, boss buttons (LV3) should be hidden
+    return contextSwitch.value.current_role_level >= 3
   })
 
   // Fetch current context info
@@ -118,8 +118,8 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // Check if button should be visible based on role
   const isButtonVisible = (buttonRoleLevel: number): boolean => {
-    // When switched, hide buttons requiring role >= 9
-    if (isSwitched.value && buttonRoleLevel >= 9) {
+    // When switched, hide buttons requiring LV3 or higher
+    if (isSwitched.value && buttonRoleLevel >= 3) {
       return false
     }
     return effectiveRoleLevel.value >= buttonRoleLevel

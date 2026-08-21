@@ -83,7 +83,7 @@ async def create_part_name(
     current_user: CurrentUser
 ) -> PartNameResponse:
     """Create a new part name."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     # Check for duplicate (same primary, secondary, customer combination)
     existing = (await db.execute(
@@ -131,7 +131,7 @@ async def update_part_name(
     current_user: CurrentUser
 ) -> PartNameResponse:
     """Update a part name."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(PartNameDict, item_id)
     if not item:
@@ -171,7 +171,7 @@ async def delete_part_name(
     current_user: CurrentUser
 ) -> None:
     """Delete a part name."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     item = await db.get(PartNameDict, item_id)
     if not item:

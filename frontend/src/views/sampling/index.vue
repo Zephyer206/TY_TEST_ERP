@@ -312,7 +312,7 @@ const viewDetail = (id: number) => {
 }
 
 // 开始打样
-const startSampling = async (id: number) => {
+const startSampling = async (_id: number) => {
   try {
     await ElMessageBox.confirm('确认开始打样吗？', '提示', {
       confirmButtonText: '确认',
@@ -334,7 +334,7 @@ const goToReview = (id: number) => {
 }
 
 // 取消任务
-const cancelTask = async (id: number) => {
+const cancelTask = async (_id: number) => {
   try {
     await ElMessageBox.confirm('确认取消此打样任务吗？', '提示', {
       confirmButtonText: '确认',
@@ -372,7 +372,7 @@ const submitCreate = async () => {
 }
 
 // 上传成功
-const handleUploadSuccess = (response: any, file: any) => {
+const handleUploadSuccess = (_response: any, file: any) => {
   createForm.attachments.push(file)
 }
 

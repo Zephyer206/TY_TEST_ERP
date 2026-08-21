@@ -78,8 +78,7 @@ class SharedToolingRelationInfo(BaseModel):
 class PartDetailResponse(BaseModel):
     """Part detail response with all relationships."""
     id: int
-    internal_name: Optional[str] = None
-    internal_part_no: Optional[str] = None
+    part_name: Optional[str] = None
     drawing_url: Optional[str] = None
     material_name: Optional[str] = None
     thickness: Optional[float] = None

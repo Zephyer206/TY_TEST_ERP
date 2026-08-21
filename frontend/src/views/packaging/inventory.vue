@@ -215,7 +215,7 @@ const resetFilters = () => {
   loadData()
 }
 
-const viewFlow = async (row: any) => {
+const viewFlow = async (_row: any) => {
   try {
     // TODO: API
     flowRecords.value = [

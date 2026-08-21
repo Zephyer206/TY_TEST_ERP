@@ -25,6 +25,9 @@ uploads/
 # Node
 node_modules/
 frontend/node_modules/
+.runtime312/
+backend/.runtime312/
+backend/.pytest_cache/
 
 # Backend logs
 backend/*.log

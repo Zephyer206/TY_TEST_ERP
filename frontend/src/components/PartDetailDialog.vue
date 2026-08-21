@@ -42,8 +42,8 @@
       <el-card class="section-card" shadow="never">
         <template #header><strong>基本信息</strong></template>
         <el-descriptions :column="2" border>
-          <el-descriptions-item label="内部零件ID">{{ detail.id }}</el-descriptions-item>
-          <el-descriptions-item label="内部零件名称">{{ detail.internal_name || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="零件编号">{{ detail.part_number || detail.internal_part_no || '-' }}</el-descriptions-item>
+          <el-descriptions-item label="零件名称">{{ detail.internal_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="材料">{{ detail.material_name || '-' }}</el-descriptions-item>
           <el-descriptions-item label="状态">
             <el-tag :type="statusType(detail.part_status)">{{ statusLabel(detail.part_status) }}</el-tag>
@@ -55,47 +55,6 @@
           <el-descriptions-item label="毛重">{{ detail.gross_weight ? detail.gross_weight + 'g' : '-' }}</el-descriptions-item>
           <el-descriptions-item label="净重">{{ detail.net_weight ? detail.net_weight + 'g' : '-' }}</el-descriptions-item>
         </el-descriptions>
-      </el-card>
-
-      <!-- 关联客户 -->
-      <el-card class="section-card" shadow="never">
-        <template #header><strong>关联客户 ({{ detail.customer_aliases?.length || 0 }})</strong></template>
-        <el-table :data="detail.customer_aliases" stripe max-height="300" v-if="detail.customer_aliases?.length">
-          <el-table-column prop="customer_name" label="客户名称" width="160" />
-          <el-table-column prop="customer_code" label="客户代号" width="100">
-            <template #default="{ row }">
-              {{ row.customer_code || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="customer_part_no" label="客户件号" width="140">
-            <template #default="{ row }">
-              {{ row.customer_part_no || '' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="customer_part_name" label="客户件名" min-width="140">
-            <template #default="{ row }">
-              {{ row.customer_part_name || '' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="vehicle_model" label="车型" width="100">
-            <template #default="{ row }">
-              {{ row.vehicle_model || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="revision" label="版本" width="80">
-            <template #default="{ row }">
-              {{ row.revision || '-' }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="is_active" label="有效" width="60" align="center">
-            <template #default="{ row }">
-              <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
-                {{ row.is_active ? '是' : '否' }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
-        <el-empty v-else description="暂无关联客户" :image-size="80" />
       </el-card>
 
       <!-- 关联模具 -->
@@ -216,6 +175,7 @@
     </div>
 
     <template #footer>
+      <el-button type="primary" :disabled="!detail" @click="emit('edit', detail)">编辑零件</el-button>
       <el-button @click="visible = false">关闭</el-button>
     </template>
   </el-dialog>
@@ -231,7 +191,7 @@ const props = defineProps({
   detail: Object,
 })
 
-const emit = defineEmits(['update:modelValue', 'primary-spec-updated'])
+const emit = defineEmits(['update:modelValue', 'primary-spec-updated', 'edit'])
 
 const visible = ref(props.modelValue)
 const activeTooling = ref(null)

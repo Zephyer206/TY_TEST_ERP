@@ -111,6 +111,15 @@ export const put = <T = any>(
   return apiClient.put(url, data, config).then((res) => res.data)
 }
 
+// 通用 PATCH 请求
+export const patch = <T = any>(
+  url: string,
+  data?: any,
+  config?: AxiosRequestConfig
+): Promise<T> => {
+  return apiClient.patch(url, data, config).then((res) => res.data)
+}
+
 // 通用 DELETE 请求
 export const del = <T = any>(
   url: string,

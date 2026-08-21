@@ -3,7 +3,7 @@
 from datetime import date, datetime
 from typing import Optional
 
-from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -13,6 +13,9 @@ class ToolingCustomerLink(Base):
     """Tooling customer link - represents relationships between tooling and customers."""
 
     __tablename__ = "tooling_customer_links"
+    __table_args__ = (
+        UniqueConstraint("tooling_id", "customer_id", "relation_type", name="uq_tooling_customer_links_business_key"),
+    )
 
     id: Mapped[int] = mapped_column(primary_key=True)
     tooling_id: Mapped[int] = mapped_column(

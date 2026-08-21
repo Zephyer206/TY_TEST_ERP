@@ -66,7 +66,7 @@
           <el-table-column prop="partNo" label="零件号" width="150" />
           <el-table-column prop="status" label="状态" width="100" align="center">
             <template #default="{ row }">
-              <el-tag :type="row.status === 'active' ? 'success' : ''">
+              <el-tag :type="row.status === 'active' ? 'success' : undefined">
                 {{ row.status === 'active' ? '量产中' : '已停产' }}
               </el-tag>
             </template>
@@ -276,7 +276,7 @@ const getTypeText = (type: string) => {
 
 const getStatusType = (status: string) => {
   const typeMap: any = { available: 'success', in_use: 'warning', maintenance: 'info', scrapped: 'danger' }
-  return typeMap[status] || ''
+  return typeMap[status] || undefined
 }
 
 const getStatusText = (status: string) => {
@@ -327,7 +327,7 @@ const submitBind = async () => {
 }
 
 // 解除绑定
-const handleUnbind = async (partId: number) => {
+const handleUnbind = async (_partId: number) => {
   try {
     await ElMessageBox.confirm('确认解除零件绑定吗？', '提示', {
       confirmButtonText: '确认',

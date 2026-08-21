@@ -63,10 +63,10 @@ async def switch_context(
 ) -> SwitchContextResponse:
     """Switch admin context to another department perspective.
 
-    This endpoint allows super admins (role_level >= 10) to temporarily
-    view the system from another department's perspective. When switched,
-    the admin's effective role will be changed to the target department's
-    role level, and boss-only buttons (role_level >= 9) will be hidden.
+    This endpoint allows super admins (LV4) to temporarily view the system
+    from another department's perspective. When switched, the admin's
+    effective role will be changed to the target department's role level,
+    and boss-only buttons (LV3) will be hidden.
 
     The switch expires after 1 hour and must be explicitly switched back.
     """
@@ -150,7 +150,7 @@ async def get_context_switch_history(
 ) -> list[ContextSwitchRecordResponse]:
     """Get context switch history for the current admin."""
     # Only admins can see their own history
-    if current_user.role_level < 10:
+    if current_user.role_level < 4:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only super admin can view context switch history",

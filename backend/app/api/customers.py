@@ -35,24 +35,29 @@ class CustomerResponse(BaseModel):
         from_attributes = True
 
 
-@router.get("", response_model=list[CustomerResponse])
+class CustomerListResponse(BaseModel):
+    items: list[CustomerResponse]
+    total: int
+
+
+@router.get("", response_model=CustomerListResponse)
 async def list_customers(
     db: DbSession,
     current_user: CurrentUser,
     search: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
-    is_active: Optional[bool] = Query(default=True, description="Filter by active status"),
+    is_active: Optional[bool] = Query(default=None, description="Filter by active status (null=all, true=active only)"),
     has_parts: Optional[bool] = Query(default=None, description="Filter customers with parts"),
     include_part_count: bool = Query(default=False, description="Include part count in response"),
-) -> list[CustomerResponse]:
+) -> CustomerListResponse:
     """List customers with optional search and filters."""
     from sqlalchemy import func, exists
     from app.models.part_customer_alias import PartCustomerAlias
 
     q = select(Customer)
 
-    # Filter by active status
+    # Filter by active status - changed default to None to show all customers
     if is_active is not None:
         q = q.where(Customer.is_active == is_active)
 
@@ -74,6 +79,11 @@ async def list_customers(
             (Customer.customer_code.ilike(f"%{search}%"))
         )
 
+    # Get total count before pagination
+    count_q = select(func.count()).select_from(q.alias())
+    total = (await db.execute(count_q)).scalar()
+
+    # Apply pagination
     q = q.order_by(Customer.name).offset(skip).limit(limit)
     customers = (await db.execute(q)).scalars().all()
 
@@ -90,7 +100,7 @@ async def list_customers(
             data.part_count = count
         result.append(data)
 
-    return result
+    return CustomerListResponse(items=result, total=total)
 
 
 @router.post("", response_model=CustomerResponse, status_code=status.HTTP_201_CREATED)
@@ -100,7 +110,7 @@ async def create_customer(
     current_user: CurrentUser
 ) -> CustomerResponse:
     """Create a new customer."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     # Check for duplicate name
     existing = (await db.execute(
@@ -141,7 +151,7 @@ async def update_customer(
     current_user: CurrentUser
 ) -> CustomerResponse:
     """Update a customer."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     customer = await db.get(Customer, customer_id)
     if not customer:
@@ -170,7 +180,7 @@ async def delete_customer(
     current_user: CurrentUser
 ) -> None:
     """Delete a customer. Only newly created customers (ID > 89) can be deleted."""
-    require_role(current_user, min_level=4)
+    require_role(current_user, min_level=2)
 
     customer = await db.get(Customer, customer_id)
     if not customer:

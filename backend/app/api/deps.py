@@ -1,4 +1,4 @@
-"""API dependency injection functions."""
+"""API dependency injection functions with canonical LV1-LV4 permission system."""
 
 from typing import Annotated, Optional
 
@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import settings
 from app.core.security import decode_token
 from app.database import get_db
-from app.models.user import User, UserRole
+from app.models.user import User
 
 # Security scheme
 security = HTTPBearer()
@@ -54,67 +54,53 @@ async def get_current_active_user(
     return current_user
 
 
-def require_roles(roles: list[UserRole]):
-    """Dependency factory for role-based access control."""
-    async def role_checker(
-        current_user: Annotated[User, Depends(get_current_user)],
-    ) -> User:
-        # Check if user is superadmin (role_level 10+)
-        if getattr(current_user, "is_superadmin", False) or getattr(current_user, "role_level", 0) >= 10:
-            return current_user
+def require_role(current_user=None, min_level: Optional[int] = None):
+    """Dependency factory for minimum role level check with canonical LV1-LV4 system.
 
-        # Note: role field might not exist in database, use role_level instead
-        if hasattr(current_user, 'role') and current_user.role not in roles:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Required roles: {[r.value for r in roles]}",
-            )
-        return current_user
-
-    return role_checker
-
-
-def require_role(min_level: int):
-    """Dependency factory for minimum role level check.
+    Canonical 4-level permission system:
+    - LV1 (min_level=1): Ordinary staff - operators, warehouse staff, QC staff, spray workers, maintenance
+    - LV2 (min_level=2): Managers & business/technical staff - team leaders, technical, business, supervisors
+    - LV3 (min_level=3): Boss - final approval, global data visibility
+    - LV4 (min_level=4): Super administrator - system management, context switching
 
     Args:
-        min_level: Minimum role level required (0-10 scale).
-            1=操作工, 2=发货员/仓库, 3=组长/主管,
-            4=工程师, 5=业务经理, 9=老板, 10+=超级管理员
-    """
-    async def level_checker(
-        current_user: Annotated[User, Depends(get_current_user)],
-    ) -> User:
-        # Check if user is superadmin
-        if getattr(current_user, "is_superadmin", False):
-            return current_user
+        min_level: Minimum role level required (1-4 only).
 
-        user_level = getattr(current_user, "role_level", 0)
+    Returns:
+        Dependency function that checks user.role_level >= min_level
+    """
+    # Two call styles exist in the migrated API surface:
+    #   * ``Depends(require_role(min_level=2))`` (dependency factory)
+    #   * ``require_role(current_user, min_level=2)`` (direct route guard)
+    # Keep both forms valid while routes are migrated incrementally.
+    if min_level is None:
+        min_level = current_user
+        current_user = None
+
+    if not isinstance(min_level, int) or not (1 <= min_level <= 4):
+        raise ValueError(f"Invalid min_level {min_level}, must be 1-4")
+
+    if current_user is not None:
+        user_level = current_user.role_level
         if user_level < min_level:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Minimum role level required: {min_level}",
+                detail=f"Minimum role level required: LV{min_level}, you have LV{user_level}",
+            )
+        return current_user
+
+    async def level_checker(
+        current_user: Annotated[User, Depends(get_current_user)],
+    ) -> User:
+        user_level = current_user.role_level
+        if user_level < min_level:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Minimum role level required: LV{min_level}, you have LV{user_level}",
             )
         return current_user
 
     return level_checker
-
-
-def require_min_role(min_role: UserRole):
-    """Dependency factory for minimum role level check."""
-    from app.core.security import verify_min_role
-
-    async def min_role_checker(
-        current_user: Annotated[User, Depends(get_current_user)],
-    ) -> User:
-        if not verify_min_role(current_user, min_role):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail=f"Minimum required role: {min_role.value}",
-            )
-        return current_user
-
-    return min_role_checker
 
 
 # Type aliases for common dependencies

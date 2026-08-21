@@ -80,9 +80,9 @@ pending → rejected (记录驳回原因)
 
 ### 7. 权限级别
 **决策**: 
-- 业务经理 (role_level >= 5): 查询、创建价格历史、申请调价
-- 老板 (role_level >= 9): 审批调价
-- 管理员 (role_level >= 10): 所有操作
+- 业务经理 (role_level >= 2): 查询、创建价格历史、申请调价
+- 老板 (role_level >= 3): 审批调价
+- 管理员 (role_level >= 4): 所有操作
 
 **原因**: 遵循项目宪法 IV（RBAC 权限）
 
