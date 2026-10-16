@@ -18,7 +18,7 @@ class PartEditorUpdateRequest(BaseModel):
     - Drawing: drawing_url
     - Weights: gross_weight, net_weight
     - Position: part_position
-    - Status: part_status, status
+    - Status: part_status
     - Remark: remark
     - Press/quality fields: press_tonnage, ppap_no
 
@@ -60,7 +60,6 @@ class PartEditorUpdateRequest(BaseModel):
 
     # Status
     part_status: Optional[str] = Field(default=None, max_length=50)
-    status: Optional[str] = Field(default=None, max_length=50)
 
     # Remark
     remark: Optional[str] = Field(default=None, max_length=500)

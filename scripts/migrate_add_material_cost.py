@@ -2,7 +2,7 @@
 """迁移：为 prices 表添加 material_cost 字段"""
 import psycopg2
 
-conn = psycopg2.connect(host='localhost', dbname='stamping_system', user='postgres', password='thehaoshi5DE', port='5432')
+conn = psycopg2.connect(host='localhost', dbname='stamping_system', user='postgres', password='__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")', port='5432')
 cur = conn.cursor()
 
 # 1. 添加 material_cost 列（如果不存在）

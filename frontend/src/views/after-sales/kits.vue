@@ -327,7 +327,7 @@
 import { computed, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
 import { ArrowRight, Check, Clock, Close, Edit, Refresh, Search } from '@element-plus/icons-vue'
-import { get, put } from '@/utils/request'
+import { afterSalesApi } from '@/api/afterSales'
 
 interface InstallationKitComponent {
   source_kind: 'ibi' | 'internal'
@@ -487,10 +487,7 @@ const saveEditing = async () => {
     remark: draft.remark,
   }
   try {
-    const updated = await put<InstallationKitDetail>(
-      `/after-sales/installation-kits/${encodeURIComponent(original.fmg_code)}`,
-      mainPayload,
-    )
+    const updated = await afterSalesApi.updateInstallationKit<InstallationKitDetail>(original.fmg_code, mainPayload)
     const originalComponents = new Map(
       original.components.map(component => [`${component.source_kind}-${component.sequence}`, component]),
     )
@@ -502,19 +499,14 @@ const saveEditing = async () => {
         || component.quantity !== previous.quantity
         || component.raw_text !== previous.raw_text
       if (!componentChanged) continue
-      await put<InstallationKitComponent>(
-        `/after-sales/installation-kits/${encodeURIComponent(updated.fmg_code)}/components/${component.source_kind}/${component.sequence}`,
-        {
+      await afterSalesApi.updateInstallationKitComponent<InstallationKitComponent>(updated.fmg_code, component.source_kind, component.sequence, {
           part_number: component.part_number,
           description: component.description,
           quantity: component.quantity,
           raw_text: component.raw_text,
-        },
-      )
+        })
     }
-    selectedKit.value = await get<InstallationKitDetail>(
-      `/after-sales/installation-kits/${encodeURIComponent(updated.fmg_code)}`,
-    )
+    selectedKit.value = await afterSalesApi.getInstallationKit<InstallationKitDetail>(updated.fmg_code)
     editDraft.value = null
     Object.keys(componentDrafts).forEach(key => delete componentDrafts[key])
     editing.value = false
@@ -531,7 +523,7 @@ const loadData = async () => {
   loading.value = true
   loadError.value = ''
   try {
-    const response = await get<InstallationKitPage>('/after-sales/installation-kits', {
+    const response = await afterSalesApi.listInstallationKits<InstallationKitPage>({
       search: filters.search.trim() || undefined,
       priority: filters.priority || undefined,
       document_status: filters.documentStatus || undefined,
@@ -569,9 +561,7 @@ const openDetail = async (row: InstallationKitListItem) => {
   detailLoading.value = true
   selectedKit.value = null
   try {
-    selectedKit.value = await get<InstallationKitDetail>(
-      `/after-sales/installation-kits/${encodeURIComponent(row.fmg_code)}`
-    )
+    selectedKit.value = await afterSalesApi.getInstallationKit<InstallationKitDetail>(row.fmg_code)
   } catch (error) {
     drawerOpen.value = false
     ElMessage.error(error instanceof Error ? error.message : '安装包详情加载失败')
@@ -617,10 +607,7 @@ const handleComponentStatusChange = (pair: InstallationKitComponentPair, value: 
 const updateComponentStatus = async (pair: InstallationKitComponentPair, value: ComponentStatus | null) => {
   statusSaving[pair.sequence] = true
   try {
-    const updated = await put<InstallationKitComponentPair>(
-      `/after-sales/installation-kits/${encodeURIComponent(selectedKit.value!.fmg_code)}/component-pairs/${pair.sequence}`,
-      { status: value || null },
-    )
+    const updated = await afterSalesApi.updateInstallationKitComponentPair<InstallationKitComponentPair>(selectedKit.value!.fmg_code, pair.sequence, { status: value || null })
     Object.assign(pair, updated)
     ElMessage.success(value ? `已标注：${componentStatuses.find(item => item.value === value)?.label}` : '已清除状态标注')
   } catch (error) {
@@ -716,7 +703,7 @@ onBeforeUnmount(() => {
 .installation-kits-container {
   min-width: 0;
   padding-top: 12px;
-  color: var(--zephyr-ink, #26353a);
+  color: var(--zephyr-ink, var(--zephyr-ink));
   font-size: 13px;
   letter-spacing: 0;
 }
@@ -729,9 +716,9 @@ onBeforeUnmount(() => {
   margin-bottom: 4px;
   border-bottom: 1px solid #e6ebe9;
 }
-.kit-subnav-parent { margin-right: 8px; color: #718086; font-size: 11px; font-weight: 650; }
-.kit-subnav-item { height: 30px; padding: 0 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: #68747b; font: inherit; font-size: 12px; cursor: default; }
-.kit-subnav-item.active { border-bottom-color: var(--zephyr-primary, #176b5a); color: var(--zephyr-primary, #176b5a); font-weight: 650; }
+.kit-subnav-parent { margin-right: 8px; color: var(--zephyr-muted); font-size: 11px; font-weight: 650; }
+.kit-subnav-item { height: 30px; padding: 0 9px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--zephyr-muted); font: inherit; font-size: 12px; cursor: default; }
+.kit-subnav-item.active { border-bottom-color: var(--zephyr-primary, var(--zephyr-primary)); color: var(--zephyr-primary, var(--zephyr-primary)); font-weight: 650; }
 
 .archive-toolbar {
   display: grid;
@@ -745,15 +732,15 @@ onBeforeUnmount(() => {
 .archive-heading { min-width: 0; }
 .archive-heading h1 { margin: 0; font-size: 20px; font-weight: 650; line-height: 1.25; letter-spacing: 0; }
 .archive-heading span { color: #7b898e; font-size: 11px; }
-.archive-search { display: flex; align-items: center; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--zephyr-border, #d8e1df); border-radius: 4px; background: #fff; color: #7b898e; }
-.archive-search:focus-within { border-color: var(--zephyr-primary, #176b5a); box-shadow: 0 0 0 3px rgba(23, 107, 90, .1); }
+.archive-search { display: flex; align-items: center; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--zephyr-border, var(--zephyr-border)); border-radius: 4px; background: #fff; color: #7b898e; }
+.archive-search:focus-within { border-color: var(--zephyr-primary, var(--zephyr-primary)); box-shadow: 0 0 0 3px rgba(86, 101, 168, .1); }
 .archive-search :deep(.el-input__wrapper) { padding: 0 0 0 7px; box-shadow: none; }
 .archive-filters { display: flex; align-items: center; gap: 8px; }
 .archive-filters .el-select { width: 112px; }
-.archive-filters :deep(.el-select__wrapper) { min-height: 32px; border-radius: 4px; box-shadow: 0 0 0 1px var(--zephyr-border, #d8e1df) inset; }
+.archive-filters :deep(.el-select__wrapper) { min-height: 32px; border-radius: 4px; box-shadow: 0 0 0 1px var(--zephyr-border, var(--zephyr-border)) inset; }
 .icon-button { width: 32px; height: 32px; padding: 0; border-radius: 4px; }
 
-.archive-summary { display: flex; align-items: center; gap: 18px; min-height: 28px; color: #718086; font-size: 11px; font-variant-numeric: tabular-nums; }
+.archive-summary { display: flex; align-items: center; gap: 18px; min-height: 28px; color: var(--zephyr-muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .archive-summary strong { color: #435158; font-weight: 650; }
 .archive-summary .pending-price, .price-pending { color: #a26b1c; }
 .archive-summary .status-summary-ok { color: #2f8768; }
@@ -767,8 +754,8 @@ onBeforeUnmount(() => {
 .priority-text { color: #4f5e64; font-weight: 700; font-variant-numeric: tabular-nums; }
 .mono { font-family: "IBM Plex Mono", "Cascadia Mono", Consolas, monospace; font-variant-numeric: tabular-nums slashed-zero; }
 .numeric { font-variant-numeric: tabular-nums; }
-.code-link { padding: 5px 0; border: 0; background: transparent; color: var(--zephyr-primary, #176b5a); font-size: 12px; font-weight: 650; cursor: pointer; text-decoration: none; }
-.code-link:focus-visible { outline: 2px solid rgba(23, 107, 90, .45); outline-offset: 2px; }
+.code-link { padding: 5px 0; border: 0; background: transparent; color: var(--zephyr-primary, var(--zephyr-primary)); font-size: 12px; font-weight: 650; cursor: pointer; text-decoration: none; }
+.code-link:focus-visible { outline: 2px solid rgba(86, 101, 168, .45); outline-offset: 2px; }
 .cell-ellipsis { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .component-inline { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .component-token-external_purchase { color: #2f73b6; }
@@ -786,7 +773,7 @@ onBeforeUnmount(() => {
 .price-value.price-mismatch, .dossier-price.mismatch, .price-field dd.mismatch { color: #d33b35; }
 .price-pending { display: block; font-size: 11px; text-align: center; }
 .price-column-heading { display: inline-grid; justify-items: center; gap: 1px; line-height: 1.15; white-space: nowrap; text-align: center; }
-.price-column-heading small { color: #718086; font-size: 10px; font-weight: 600; }
+.price-column-heading small { color: var(--zephyr-muted); font-size: 10px; font-weight: 600; }
 
 .archive-pagination { display: flex; align-items: center; justify-content: space-between; min-height: 42px; color: #758389; font-size: 11px; font-variant-numeric: tabular-nums; }
 .archive-pagination :deep(.el-pagination) { padding: 0; }
@@ -794,8 +781,8 @@ onBeforeUnmount(() => {
 
 :global(.installation-kit-drawer .el-drawer__body) { padding: 0; overflow: hidden; background: #f5f7f6; }
 .drawer-loading { padding: 24px; }
-.dossier-header { display: flex; align-items: center; justify-content: space-between; min-height: 86px; padding: 12px 20px; border-bottom: 1px solid #d8e1df; background: #fff; }
-.dossier-kicker { margin-bottom: 2px; color: #718086; font-size: 11px; }
+.dossier-header { display: flex; align-items: center; justify-content: space-between; min-height: 86px; padding: 12px 20px; border-bottom: 1px solid var(--zephyr-border); background: #fff; }
+.dossier-kicker { margin-bottom: 2px; color: var(--zephyr-muted); font-size: 11px; }
 .dossier-header h2 { margin: 0; color: #25363b; font-size: 20px; font-weight: 650; letter-spacing: 0; }
 .dossier-header p { margin: 3px 0 0; color: #6f7e84; font-size: 12px; }
 .dossier-header-meta { display: flex; align-items: center; gap: 16px; }
@@ -804,12 +791,12 @@ onBeforeUnmount(() => {
 .dossier-price small { color: #7b898e; font-size: 10px; font-weight: 500; }
 .dossier-price.missing { color: #a26b1c; }
 .dossier-layout { display: grid; grid-template-columns: 148px minmax(0, 1fr) 252px; height: calc(100dvh - 86px); min-height: 0; }
-.dossier-section-nav { padding: 16px 10px; border-right: 1px solid #d8e1df; background: #f8faf9; }
+.dossier-section-nav { padding: 16px 10px; border-right: 1px solid var(--zephyr-border); background: var(--zephyr-surface-muted); }
 .dossier-section-nav button { display: flex; align-items: center; justify-content: space-between; width: 100%; min-height: 34px; padding: 0 9px; border: 0; border-left: 2px solid transparent; background: transparent; color: #637278; font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
-.dossier-section-nav button:hover, .dossier-section-nav button:focus-visible { border-left-color: #176b5a; background: #eaf2ef; color: #176b5a; outline: none; }
+.dossier-section-nav button:hover, .dossier-section-nav button:focus-visible { border-left-color: var(--zephyr-primary); background: #eaf2ef; color: var(--zephyr-primary); outline: none; }
 .dossier-section-nav .el-icon { font-size: 11px; }
 .dossier-content { min-width: 0; padding: 16px; overflow-y: auto; scrollbar-gutter: stable; scroll-behavior: smooth; }
-.dossier-section { scroll-margin-top: 12px; margin-bottom: 12px; padding: 14px 16px; border: 1px solid #d8e1df; border-radius: 5px; background: #fff; }
+.dossier-section { scroll-margin-top: 12px; margin-bottom: 12px; padding: 14px 16px; border: 1px solid var(--zephyr-border); border-radius: 5px; background: #fff; }
 .dossier-section h3 { margin: 0 0 12px; color: #2e4046; font-size: 14px; font-weight: 650; letter-spacing: 0; }
 .field-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin: 0; background: #e0e6e4; }
 .field-grid div { min-width: 0; min-height: 62px; padding: 9px 10px; background: #fff; }
@@ -827,7 +814,7 @@ onBeforeUnmount(() => {
 .annotation-hint { color: #839095; font-size: 10px; }
 .component-pair-table { border-top: 1px solid #dce4e2; }
 .component-pair-head, .component-pair-row { display: grid; grid-template-columns: 28px minmax(150px, 1fr) minmax(180px, 1.1fr) 116px; gap: 8px; min-height: 46px; align-items: center; padding: 0 8px; border-bottom: 1px solid #e3e9e7; }
-.component-pair-head { min-height: 30px; background: #edf2f1; color: #718086; font-size: 10px; font-weight: 600; }
+.component-pair-head { min-height: 30px; background: var(--zephyr-surface-muted); color: var(--zephyr-muted); font-size: 10px; font-weight: 600; }
 .component-pair-row { font-size: 12px; }
 .component-pair-row > span { min-width: 0; }
 .component-pair-row.match-non_part, .component-pair-row.match-unmatched { background: #fafbfa; color: #879398; }
@@ -839,7 +826,7 @@ onBeforeUnmount(() => {
 .component-edit-meta :deep(.el-input__wrapper) { min-height: 26px; padding: 0 6px; border-radius: 3px; box-shadow: 0 0 0 1px #d4dfdc inset; }
 .pair-status { display: flex; min-width: 0; justify-content: flex-end; }
 .component-status-select { width: 108px; }
-.component-status-select :deep(.el-select__wrapper) { min-height: 28px; border-radius: 4px; box-shadow: 0 0 0 1px #d8e1df inset; }
+.component-status-select :deep(.el-select__wrapper) { min-height: 28px; border-radius: 4px; box-shadow: 0 0 0 1px var(--zephyr-border) inset; }
 .status-option { display: inline-flex; align-items: center; gap: 6px; }
 .status-dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; }
 .status-external_purchase { background: #3e82c4; }
@@ -854,12 +841,12 @@ onBeforeUnmount(() => {
 .status-list div { display: grid; grid-template-columns: 110px minmax(0, 1fr); min-height: 42px; align-items: center; border-bottom: 1px solid #e1e7e5; }
 .status-list dt { margin: 0; }
 .remark-content { min-height: 32px; margin: 0; color: #44565c; line-height: 1.6; white-space: pre-wrap; }
-.change-history-rail { margin: 0; padding: 16px 14px; border: 0; border-left: 1px solid #d8e1df; background: #f8faf9; overflow-y: auto; scrollbar-gutter: stable; }
+.change-history-rail { margin: 0; padding: 16px 14px; border: 0; border-left: 1px solid var(--zephyr-border); background: var(--zephyr-surface-muted); overflow-y: auto; scrollbar-gutter: stable; }
 .history-heading { display: flex; align-items: center; gap: 7px; margin-bottom: 14px; color: #405158; }
 .history-heading h3 { margin: 0; font-size: 13px; font-weight: 650; }
 .history-list { margin: 0; padding: 0 0 0 13px; list-style: none; border-left: 1px solid #cbd7d4; }
 .history-list li { position: relative; display: grid; gap: 3px; padding: 0 0 18px 13px; }
-.history-list li::before { position: absolute; top: 3px; left: -4px; width: 7px; height: 7px; border: 2px solid #f8faf9; border-radius: 50%; background: #176b5a; content: ''; }
+.history-list li::before { position: absolute; top: 3px; left: -4px; width: 7px; height: 7px; border: 2px solid var(--zephyr-surface-muted); border-radius: 50%; background: var(--zephyr-primary); content: ''; }
 .history-list time { color: #7d8a8f; font-size: 10px; font-variant-numeric: tabular-nums; }
 .history-list strong { color: #405158; font-size: 11px; font-weight: 600; }
 .history-list span, .history-empty { color: #829095; font-size: 10px; }
@@ -882,11 +869,11 @@ onBeforeUnmount(() => {
   .archive-summary { gap: 12px; overflow-x: auto; white-space: nowrap; }
   .archive-summary span:nth-child(2), .archive-summary span:nth-child(3) { display: none; }
   .desktop-table { display: none; }
-  .mobile-kit-list { display: grid; border-top: 1px solid #d8e1df; }
+  .mobile-kit-list { display: grid; border-top: 1px solid var(--zephyr-border); }
   .mobile-kit-row { display: grid; grid-template-columns: minmax(0, 1fr) auto 18px; align-items: center; gap: 8px; min-height: 66px; padding: 8px 4px; border: 0; border-bottom: 1px solid #dfe6e4; background: transparent; color: #35464c; font: inherit; text-align: left; }
-  .mobile-kit-row:focus-visible { outline: 2px solid rgba(23, 107, 90, .5); outline-offset: -2px; }
+  .mobile-kit-row:focus-visible { outline: 2px solid rgba(86, 101, 168, .5); outline-offset: -2px; }
   .mobile-kit-main, .mobile-kit-meta { display: grid; min-width: 0; gap: 3px; }
-  .mobile-kit-main span:first-child { color: #176b5a; font-weight: 650; }
+  .mobile-kit-main span:first-child { color: var(--zephyr-primary); font-weight: 650; }
   .mobile-kit-main span:last-child, .mobile-kit-meta span:first-child { overflow: hidden; color: #748288; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
   .mobile-kit-meta { justify-items: end; font-size: 11px; }
   .archive-pagination { align-items: flex-start; flex-direction: column; gap: 4px; padding: 8px 0; }
@@ -897,9 +884,9 @@ onBeforeUnmount(() => {
   .dossier-header-meta { gap: 8px; }
   .dossier-price { font-size: 14px; }
   .dossier-layout { display: block; height: calc(100dvh - 106px); overflow-y: auto; }
-  .dossier-section-nav { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 8px; border-right: 0; border-bottom: 1px solid #d8e1df; overflow: visible; }
+  .dossier-section-nav { position: sticky; top: 0; z-index: 2; display: flex; flex-wrap: wrap; gap: 2px; padding: 6px 8px; border-right: 0; border-bottom: 1px solid var(--zephyr-border); overflow: visible; }
   .dossier-section-nav button { flex: 1 1 calc(25% - 2px); justify-content: center; min-height: 36px; border-left: 0; border-bottom: 2px solid transparent; }
-  .dossier-section-nav button:hover, .dossier-section-nav button:focus-visible { border-left-color: transparent; border-bottom-color: #176b5a; }
+  .dossier-section-nav button:hover, .dossier-section-nav button:focus-visible { border-left-color: transparent; border-bottom-color: var(--zephyr-primary); }
   .dossier-section-nav .el-icon { display: none; }
   .dossier-content { padding: 8px; overflow: visible; }
   .dossier-section { padding: 12px; }
@@ -914,7 +901,7 @@ onBeforeUnmount(() => {
   .component-status-select { width: 84px; }
   .component-status-select :deep(.el-select__wrapper) { padding: 0 6px; }
   .raw-spec-pair p { grid-template-columns: 88px minmax(0, 1fr); }
-  .change-history-rail { margin: 0 8px 12px; padding: 14px; border: 1px solid #d8e1df; }
+  .change-history-rail { margin: 0 8px 12px; padding: 14px; border: 1px solid var(--zephyr-border); }
 }
 
 @media (prefers-reduced-motion: reduce) {

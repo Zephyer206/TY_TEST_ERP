@@ -4,7 +4,7 @@
  */
 
 import { computed } from 'vue'
-import { useUserStore } from '@/stores/user'
+import { AUTH_DISABLED, useUserStore } from '@/stores/user'
 import { usePermissionStore } from '@/stores/permission'
 
 // Canonical 4-level role system
@@ -103,6 +103,10 @@ export function canViewCost(roleLevel: number): boolean {
 
 // Check if boss button should be hidden
 export function shouldHideBossButton(roleLevel: number, isSwitched: boolean): boolean {
+  if (AUTH_DISABLED) {
+    return false
+  }
+
   // When super admin switches to other perspective, hide boss buttons
   if (isSwitched && roleLevel >= RoleLevel.SUPER_ADMIN) {
     return true
@@ -117,6 +121,9 @@ export function usePermission() {
 
   // Get current effective role level
   const effectiveRoleLevel = computed(() => {
+    if (AUTH_DISABLED) {
+      return RoleLevel.SUPER_ADMIN
+    }
     return permissionStore.effectiveRoleLevel || userStore.userInfo?.role_level || 0
   })
 
@@ -162,6 +169,10 @@ export function usePermission() {
 // Permission directive
 export const permissionDirective = {
   mounted(el: HTMLElement, binding: any) {
+    if (AUTH_DISABLED) {
+      return
+    }
+
     const { value } = binding
     const userStore = useUserStore()
     const roleLevel = userStore.userInfo?.role_level || 0

@@ -12,6 +12,7 @@ qr003_fix_missing_columns
 """
 
 from alembic import op
+from alembic import context
 import sqlalchemy as sa
 
 revision = "qr003_fix_missing_columns"
@@ -108,6 +109,8 @@ def downgrade():
 
 
 def _get_columns(conn, table: str) -> set:
+    if context.is_offline_mode():
+        return set()
     result = conn.execute(
         sa.text(f"""
             SELECT column_name FROM information_schema.columns
@@ -118,6 +121,8 @@ def _get_columns(conn, table: str) -> set:
 
 
 def _table_exists(conn, table: str) -> bool:
+    if context.is_offline_mode():
+        return False
     result = conn.execute(
         sa.text(f"""
             SELECT 1 FROM information_schema.tables

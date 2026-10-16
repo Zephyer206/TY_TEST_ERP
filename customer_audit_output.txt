@@ -1,0 +1,482 @@
+================================================================================
+CUSTOMER SOURCE AUDIT - EXCEL ANALYSIS
+================================================================================
+
+[INFO] Reading: 五金模具及产品清单表.xls
+[INFO] Total sheets: 95
+
+================================================================================
+PROCESSING SHEETS
+================================================================================
+
+[SPECIAL] 客户名称代号 - Customer code mapping sheet
+
+================================================================================
+SUMMARY
+================================================================================
+From sheet names:        67
+From customer columns:   78
+From code sheet:         27
+B-* codes (excluded):    26
+Total unique customers:  133
+After normalization:     132
+
+================================================================================
+ALL UNIQUE CUSTOMERS (sorted)
+================================================================================
+
+1. 60T 连续模
+   └─ Sheet name: 1 sheet(s)
+
+2. A-D武汉元丰
+   └─ Sheet name: 1 sheet(s)
+
+3. A-E龙港工艺品厂
+   └─ Sheet name: 1 sheet(s)
+
+4. A-F日立高新
+   └─ Sheet name: 1 sheet(s)
+
+5. A-G沃富润
+   └─ Sheet name: 1 sheet(s)
+
+6. A-H泰明顿
+   └─ Sheet name: 1 sheet(s)
+
+7. A-J湖北悦达科技有限公司
+   └─ Sheet name: 1 sheet(s)
+
+8. A-K 一汽东机工减振器有限公司
+   └─ Sheet name: 1 sheet(s)
+
+9. A-L 浙江亚太机电股份有限公司
+   └─ Sheet name: 1 sheet(s)
+
+10. A-M 宁波双林
+   └─ Sheet name: 1 sheet(s)
+
+11. A-N 京西重工
+   └─ Sheet name: 1 sheet(s)
+
+12. A-O 南方天合
+   └─ Sheet name: 1 sheet(s)
+
+13. A-P IBI
+   └─ Sheet name: 1 sheet(s)
+
+14. A-Q江苏恒义汽配制造有限公司
+   └─ Sheet name: 1 sheet(s)
+
+15. A-R莆田荣兴机械有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 9 row(s)
+
+16. A-S江西江铃集团博亚制动系统有限公司
+   └─ Sheet name: 1 sheet(s)
+
+17. A-T浙江万向系统有限公司
+   └─ Sheet name: 1 sheet(s)
+
+18. A-U比亚迪
+   └─ Sheet name: 1 sheet(s)
+
+19. A-V精诚工科汽车系统有限公司
+   └─ Sheet name: 1 sheet(s)
+
+20. A-W大工科技
+   └─ Sheet name: 1 sheet(s)
+
+21. A-X泛博
+   └─ Sheet name: 1 sheet(s)
+
+22. A-Y瑞立
+   └─ Sheet name: 1 sheet(s)
+
+23. A-Z柳州五菱
+   └─ Sheet name: 1 sheet(s)
+
+24. BBB
+   └─ Column data: 4 row(s)
+
+25. CA 重庆三友
+   └─ Sheet name: 1 sheet(s)
+
+26. CB英创
+   └─ Sheet name: 1 sheet(s)
+
+27. CC扬州敦煌
+   └─ Sheet name: 1 sheet(s)
+
+28. CD嘉默传感技术
+   └─ Sheet name: 1 sheet(s)
+
+29. CE领联（上海）
+   └─ Sheet name: 1 sheet(s)
+
+30. CF柳州三立
+   └─ Sheet name: 1 sheet(s)
+
+31. CG耐世特
+   └─ Sheet name: 1 sheet(s)
+
+32. CH谋行科技
+   └─ Sheet name: 1 sheet(s)
+
+33. CI上海奥林
+   └─ Sheet name: 1 sheet(s)
+
+34. CJ江苏炬瑞
+   └─ Sheet name: 1 sheet(s)
+
+35. GBA 浙江盖博汽车零部件公司
+   └─ Sheet name: 1 sheet(s)
+
+36. GBC浙江隆中
+   └─ Sheet name: 1 sheet(s)
+
+37. H4287
+   └─ Column data: 1 row(s)
+
+38. IBI
+   └─ Column data: 1634 row(s)
+
+39. ITT
+   └─ Column data: 1 row(s)
+
+40. Sheet2
+   └─ Sheet name: 1 sheet(s)
+
+41. ZF
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 234 row(s)
+
+42. 一汽东机工减振器有限公司
+   └─ Column data: 18 row(s)
+
+43. 万向钱潮（上海）汽车制动系统有限公司
+   └─ Column data: 139 row(s)
+
+44. 上海万向钱潮A-A
+   └─ Sheet name: 1 sheet(s)
+
+45. 上海奥林
+   └─ Column data: 14 row(s)
+
+46. 上海拿森汽车电子有限公司
+   └─ Code sheet
+
+47. 上海汇众汽车制造有限公司
+   └─ Code sheet
+
+48. 东营信义汽车配件有限公司
+   └─ Code sheet
+
+49. 丰铃公司
+   └─ Column data: 43 row(s)
+   └─ Code sheet
+
+50. 丰铃公司Q
+   └─ Sheet name: 1 sheet(s)
+
+51. 五金模具进度一览表
+   └─ Sheet name: 1 sheet(s)
+
+52. 亨国(厦门)精机工业有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 106 row(s)
+   └─ Code sheet
+
+53. 京西重工
+   └─ Column data: 90 row(s)
+
+54. 力邦合信
+   └─ Column data: 427 row(s)
+
+55. 南方天合底盘系统有限公司
+   └─ Column data: 1 row(s)
+
+56. 厦门亨东制动系统有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 507 row(s)
+   └─ Code sheet
+
+57. 厦门和利多卫浴科技有限公司
+   └─ Column data: 3 row(s)
+   └─ Code sheet
+
+58. 厦门和利多卫浴科技有限公司（X）
+   └─ Sheet name: 1 sheet(s)
+
+59. 厦门安思通制动系统有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 37 row(s)
+   └─ Code sheet
+
+60. 厦门永裕机械工业有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 38 row(s)
+   └─ Code sheet
+
+61. 台湾贺安贸易有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 29 row(s)
+   └─ Code sheet
+
+62. 嘉默传感技术
+   └─ Column data: 9 row(s)
+
+63. 大工科技
+   └─ Column data: 8 row(s)
+
+64. 大陆集团
+   └─ Column data: 6 row(s)
+
+65. 天越
+   └─ Column data: 4 row(s)
+
+66. 天越五金
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 54 row(s)
+
+67. 宁波双林
+   └─ Column data: 1 row(s)
+
+68. 安徽万安汽车零部件有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 20 row(s)
+   └─ Code sheet
+
+69. 安路驰
+   └─ Column data: 19 row(s)
+
+70. 展翔
+   └─ Column data: 4 row(s)
+
+71. 展翔A-C
+   └─ Sheet name: 1 sheet(s)
+
+72. 山东日信
+   └─ Sheet name: 1 sheet(s)
+
+73. 山东日信工业有限公司
+   └─ Code sheet
+
+74. 布雷博
+   └─ Column data: 1 row(s)
+
+75. 常州泰山弹簧有限公司
+   └─ Column data: 1 row(s)
+
+76. 常州泰山弹簧有限公司（Z）
+   └─ Sheet name: 1 sheet(s)
+
+77. 广东中博汽车零部件有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 99 row(s)
+   └─ Code sheet
+
+78. 广州曙光制动器有限公司
+   └─ Column data: 79 row(s)
+
+79. 广州曙光制动系统有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Code sheet
+
+80. 廊坊开发区瑞达汽车制动器公司
+   └─ Column data: 2 row(s)
+
+81. 扬州敦煌
+   └─ Column data: 9 row(s)
+
+82. 摩擦1号
+   └─ Column data: 3 row(s)
+
+83. 日立安斯泰莫制动系统（山东）有限公司
+   └─ Column data: 135 row(s)
+
+84. 日立安斯泰莫底盘系统（武汉）有限公司
+   └─ Column data: 39 row(s)
+
+85. 日立安斯泰莫底盘系统（苏州）有限公司
+   └─ Column data: 166 row(s)
+
+86. 昊辉
+   └─ Column data: 2 row(s)
+
+87. 柳州三立
+   └─ Column data: 14 row(s)
+
+88. 柳州五菱汽车工业有限公司
+   └─ Column data: 10 row(s)
+
+89. 正凌制动器有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 41 row(s)
+   └─ Code sheet
+
+90. 武汉万向汽车制动器有限公司
+   └─ Code sheet
+
+91. 武汉元丰
+   └─ Column data: 37 row(s)
+
+92. 比亚迪汽车工业有限公司
+   └─ Column data: 265 row(s)
+
+93. 江苏恒义汽配制造有限公司
+   └─ Column data: 9 row(s)
+
+94. 江苏恒力
+   └─ Column data: 1 row(s)
+
+95. 江苏炬瑞
+   └─ Column data: 14 row(s)
+
+96. 江西江铃集团博亚制动系统有限公司
+   └─ Column data: 4 row(s)
+
+97. 汽车部件苏州有限公司(东机工)
+   └─ Sheet name: 1 sheet(s)
+   └─ Code sheet
+
+98. 沃富润
+   └─ Column data: 14 row(s)
+
+99. 泛博
+   └─ Column data: 64 row(s)
+
+100. 泰明顿
+   └─ Column data: 3 row(s)
+
+101. 浙江万向系统有限公司
+   └─ Column data: 34 row(s)
+   └─ Code sheet
+
+102. 浙江万安科技股份有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 37 row(s)
+   └─ Code sheet
+
+103. 浙江万宝机械有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 595 row(s)
+   └─ Code sheet
+
+104. 浙江亚太机电股份有限公司
+   └─ Column data: 241 row(s)
+
+105. 浙江盖博汽车零部件公司
+   └─ Column data: 12 row(s)
+
+106. 浙江精科汽车零件部件有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 80 row(s)
+
+107. 浙江精科汽车零部件有限公司
+   └─ Code sheet
+
+108. 浙江钱江摩托股份有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 36 row(s)
+
+109. 浙江钱江摩托股份有限公司机械分公司
+   └─ Code sheet
+
+110. 浙江隆中
+   └─ Column data: 9 row(s)
+
+111. 温州力邦企业
+   └─ Column data: 153 row(s)
+
+112. 温州力邦企业有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Code sheet
+
+113. 湖北悦达科技有限公司
+   └─ Column data: 10 row(s)
+
+114. 湖北航特科技有限责任公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 295 row(s)
+   └─ Code sheet
+
+115. 湖南运达机械制造有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 53 row(s)
+   └─ Code sheet
+
+116. 爱得利
+   └─ Column data: 6 row(s)
+
+117. 爱得利A-B
+   └─ Sheet name: 1 sheet(s)
+
+118. 玉环万建机械有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 2 row(s)
+   └─ Code sheet
+
+119. 珠海格莱利
+   └─ Column data: 1 row(s)
+
+120. 瑞立集团
+   └─ Column data: 24 row(s)
+
+121. 石家庄泰明顿摩擦材料有限公司
+   └─ Sheet name: 1 sheet(s)
+
+122. 福州新信制动系统有限公司
+   └─ Sheet name: 1 sheet(s)
+   └─ Column data: 39 row(s)
+   └─ Code sheet
+
+123. 精诚工科汽车系统有限公司
+   └─ Column data: 17 row(s)
+
+124. 耐世特
+   └─ Column data: 14 row(s)
+
+125. 芜湖伯特利
+   └─ Column data: 1 row(s)
+
+126. 英创汇智汽车技术有限公司
+   └─ Column data: 9 row(s)
+
+127. 谋行科技
+   └─ Column data: 14 row(s)
+
+128. 辉门摩擦产品有限公司
+   └─ Sheet name: 1 sheet(s)
+
+129. 辰致（重庆）制动系统有限公司
+   └─ Column data: 61 row(s)
+
+130. 重庆三友机器制造有限责任公司
+   └─ Column data: 14 row(s)
+
+131. 铭泰
+   └─ Column data: 5 row(s)
+
+132. 领联汽车零部件制造（上海）有限公司
+   └─ Column data: 14 row(s)
+
+133. 龙港工艺品厂
+   └─ Column data: 2 row(s)
+
+================================================================================
+SPECIFIC CHECKS
+================================================================================
+
+H4287 customer: ['H4287']
+
+================================================================================
+DATABASE COMPARISON
+================================================================================
+Database connection not available.
+Excel found 133 unique customers.
+User reports database has 101 customers.
+Potential missing: 32 = 32 customers
+
+================================================================================
+AUDIT COMPLETE
+================================================================================

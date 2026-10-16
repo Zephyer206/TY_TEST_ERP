@@ -1,6 +1,6 @@
 import psycopg2
 DB_CONFIG = {'dbname': 'stamping_system', 'user': 'postgres',
-             'password': 'thehaoshi5DE', 'host': 'localhost', 'port': '5432'}
+             'password': '__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")', 'host': 'localhost', 'port': '5432'}
 with psycopg2.connect(**DB_CONFIG) as conn:
     with conn.cursor() as cur:
         cur.execute("""

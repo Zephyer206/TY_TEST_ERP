@@ -22,56 +22,35 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-    
-    # ─────────────────────────────────────────────────────────────
-    # 1. 检查 users 表是否有 dept 字段（兼容旧迁移）
-    # ─────────────────────────────────────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'dept'
-    """)).fetchone()
-    
-    if not result:
-        # 添加 dept 字段
-        op.add_column('users', sa.Column('dept', sa.String(50), nullable=True))
-    
-    # 检查是否有 position 字段
-    result2 = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'position'
-    """)).fetchone()
-    
-    if not result2:
-        op.add_column('users', sa.Column('position', sa.String(100), nullable=True))
-    
-    # 检查是否有 is_tech 字段
-    result3 = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'users' AND column_name = 'is_tech'
-    """)).fetchone()
-    
-    if not result3:
-        op.add_column('users', sa.Column('is_tech', sa.Boolean(), server_default='false', nullable=False))
+    # Use PostgreSQL's idempotent DDL so the migration works both online and
+    # when Alembic renders offline SQL.  The former implementation queried
+    # information_schema and called fetchone(), which has no result in an
+    # offline migration context.
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS dept VARCHAR(50)")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS position VARCHAR(100)")
+    op.execute(
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS is_tech BOOLEAN NOT NULL DEFAULT false"
+    )
 
     # ─────────────────────────────────────────────────────────────
     # 2. 扩展 machines 表：增加维修责任人字段
     # ─────────────────────────────────────────────────────────────
-    result4 = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns 
-        WHERE table_name = 'machines' AND column_name = 'tech_user_id'
-    """)).fetchone()
-    
-    if not result4:
-        op.add_column('machines', sa.Column('tech_user_id', sa.Integer(), nullable=True))
-        # 添加外键约束
-        op.create_foreign_key(
-            'fk_machines_tech_user',
-            'machines', 'users',
-            ['tech_user_id'], ['id'],
-            onupdate='SET NULL',
-            ondelete='SET NULL'
-        )
+    op.execute("ALTER TABLE machines ADD COLUMN IF NOT EXISTS tech_user_id INTEGER")
+    op.execute(
+        """
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_machines_tech_user'
+            ) THEN
+                ALTER TABLE machines
+                ADD CONSTRAINT fk_machines_tech_user
+                FOREIGN KEY (tech_user_id) REFERENCES users(id)
+                ON UPDATE SET NULL ON DELETE SET NULL;
+            END IF;
+        END $$;
+        """
+    )
     
     # ─────────────────────────────────────────────────────────────
     # 3. 创建 mold_offline_records 表：记录下线模具的维修节点追踪

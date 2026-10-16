@@ -3,7 +3,7 @@
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -39,6 +39,17 @@ class MachineResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class MachineUpdateRequest(BaseModel):
+    """Editable machine master-data fields shown in the scheduling detail."""
+
+    name: Optional[str] = Field(default=None, min_length=1, max_length=200)
+    machine_type: Optional[str] = Field(default=None, max_length=50)
+    tonnage: Optional[float] = Field(default=None, ge=0, le=2000)
+    max_stroke: Optional[float] = Field(default=None, ge=0, le=10000)
+    bed_size: Optional[str] = Field(default=None, max_length=100)
+    location: Optional[str] = Field(default=None, max_length=200)
 
 
 def _machine_to_response(machine: Machine) -> MachineResponse:
@@ -100,6 +111,30 @@ async def list_machines(
     result = await db.execute(query)
     machines = result.scalars().all()
     return [_machine_to_response(m) for m in machines]
+
+
+@router.patch("/{machine_id}", response_model=MachineResponse)
+async def update_machine(
+    machine_id: int,
+    data: MachineUpdateRequest,
+    db: DbSession,
+    current_user: CurrentUser,
+) -> MachineResponse:
+    """Update editable machine master data."""
+    require_role(current_user, min_level=2)
+
+    result = await db.execute(
+        select(Machine).where(Machine.id == machine_id, Machine.is_deleted == False)
+    )
+    machine = result.scalar_one_or_none()
+    if not machine:
+        raise HTTPException(status_code=404, detail="Machine not found")
+
+    for field, value in data.model_dump(exclude_unset=True).items():
+        setattr(machine, field, value)
+    await db.flush()
+    await db.refresh(machine)
+    return _machine_to_response(machine)
 
 
 class FaultReportRequest(BaseModel):

@@ -46,10 +46,9 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { listParts } from '@/api/parts'
 
 const router = useRouter()
-const serverUrl = localStorage.getItem('server_url') || 'http://124.222.29.229:8000'
-
 const loading = ref(false)
 const refreshing = ref(false)
 const finished = ref(false)
@@ -72,20 +71,16 @@ const getStatusType = (status) => {
 
 const onLoad = async () => {
   try {
-    const response = await fetch(`${serverUrl}/api/parts?page=${page.value}&limit=20`, {
-      credentials: 'include',
-    })
-    if (response.ok) {
-      const data = await response.json()
-      if (data.items) {
-        partsList.value.push(...data.items)
-        page.value++
-        if (data.items.length < 20) {
-          finished.value = true
-        }
-      } else {
+    const data = await listParts({ skip: (page.value - 1) * 20, limit: 20 })
+    const items = Array.isArray(data) ? data : data?.items || []
+    if (items.length) {
+      partsList.value.push(...items)
+      page.value++
+      if (items.length < 20) {
         finished.value = true
       }
+    } else {
+      finished.value = true
     }
   } catch (error) {
     console.error('加载零件失败:', error)

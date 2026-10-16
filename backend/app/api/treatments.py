@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, require_role
 from app.models.price import TreatmentDict
 from app.schemas.treatment import (
     TreatmentDictCreate,
@@ -24,6 +24,7 @@ async def create_treatment(
     db: DbSession,
 ) -> TreatmentDict:
     """Create a new treatment in dictionary."""
+    require_role(current_user, min_level=4)
 
     # Check for duplicate name
     existing = await db.execute(
@@ -44,11 +45,13 @@ async def create_treatment(
 @router.get("", response_model=list[TreatmentDictResponse])
 async def list_treatments(
     db: DbSession,
+    current_user: CurrentUser,
     is_active: Optional[bool] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, le=1000),
 ) -> list[TreatmentDict]:
     """Get all treatments from dictionary."""
+    require_role(current_user, min_level=1)
 
     query = select(TreatmentDict)
 
@@ -65,8 +68,10 @@ async def list_treatments(
 async def get_treatment(
     treatment_id: int,
     db: DbSession,
+    current_user: CurrentUser,
 ) -> TreatmentDict:
     """Get a specific treatment by ID."""
+    require_role(current_user, min_level=1)
 
     result = await db.execute(
         select(TreatmentDict).where(TreatmentDict.id == treatment_id)
@@ -87,6 +92,7 @@ async def update_treatment(
     db: DbSession,
 ) -> TreatmentDict:
     """Update a treatment in dictionary."""
+    require_role(current_user, min_level=4)
 
     result = await db.execute(
         select(TreatmentDict).where(TreatmentDict.id == treatment_id)
@@ -122,6 +128,7 @@ async def delete_treatment(
     db: DbSession,
 ) -> dict:
     """Delete (deactivate) a treatment from dictionary."""
+    require_role(current_user, min_level=4)
 
     result = await db.execute(
         select(TreatmentDict).where(TreatmentDict.id == treatment_id)

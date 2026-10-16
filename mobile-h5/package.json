@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "check:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/check_api_usage.ps1 -FailOnViolation"
   },
   "dependencies": {
     "vue": "^3.4.0",

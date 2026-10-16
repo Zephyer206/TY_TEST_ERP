@@ -1,7 +1,10 @@
 /* Global Styles for H5 */
 :root {
-  --van-primary-color: #667eea;
-  --van-blue: #667eea;
+  --van-primary-color: #176b5a;
+  --van-blue: #176b5a;
+  --van-success-color: #2f8065;
+  --van-warning-color: #a56b12;
+  --van-danger-color: #c4433e;
 }
 
 body {

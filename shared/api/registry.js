@@ -1,0 +1,571 @@
+/**
+ * Shared API contract metadata.
+ *
+ * Both frontends consume this registry before issuing a request.  The request
+ * clients own transport and authentication details; this file is deliberately
+ * limited to endpoint identity and lifecycle information.
+ */
+export const apiRegistry = Object.freeze({
+  'auth.login': {
+    key: 'auth.login',
+    method: 'POST',
+    path: '/auth/login',
+    auth: false,
+    lifecycle: 'active',
+    description: 'Authenticate a user and return access and refresh tokens',
+  },
+  'auth.me': {
+    key: 'auth.me',
+    method: 'GET',
+    path: '/auth/me',
+    auth: true,
+    lifecycle: 'active',
+    description: 'Return the authenticated user profile',
+  },
+  'auth.logout': {
+    key: 'auth.logout',
+    method: 'POST',
+    path: '/auth/logout',
+    auth: true,
+    lifecycle: 'active',
+    description: 'Invalidate the current authentication session',
+  },
+  'machines.list': {
+    key: 'machines.list', method: 'GET', path: '/machines', auth: true, lifecycle: 'active',
+    description: 'List active production machines',
+  },
+  'machines.detail': {
+    key: 'machines.detail', method: 'GET', path: '/machines/{machine_id}', auth: true, lifecycle: 'active',
+    description: 'Load production machine detail',
+  },
+  'machines.update': {
+    key: 'machines.update', method: 'PATCH', path: '/machines/{machine_id}', auth: true, lifecycle: 'active',
+    description: 'Update editable production machine master data',
+  },
+  'admin.contextInfo': {
+    key: 'admin.contextInfo', method: 'GET', path: '/admin/context-info', auth: true, lifecycle: 'active',
+    description: 'Return the current administration context switch',
+  },
+  'admin.departments': {
+    key: 'admin.departments', method: 'GET', path: '/admin/departments', auth: true, lifecycle: 'active',
+    description: 'List departments available for context switching',
+  },
+  'admin.switchContext': {
+    key: 'admin.switchContext', method: 'POST', path: '/admin/switch-context', auth: true, lifecycle: 'active',
+    description: 'Switch the current administrator context',
+  },
+  'admin.switchBack': {
+    key: 'admin.switchBack', method: 'POST', path: '/admin/switch-back', auth: true, lifecycle: 'active',
+    description: 'Return to the administrator context',
+  },
+  'parts.list': {
+    key: 'parts.list',
+    method: 'GET',
+    path: '/parts',
+    auth: true,
+    lifecycle: 'active',
+    description: 'List parts with pagination and filters; search matches customer name/code, customer part number, part name, and tooling number',
+  },
+  'customers.list': {
+    key: 'customers.list',
+    method: 'GET',
+    path: '/customers',
+    auth: true,
+    lifecycle: 'active',
+    description: 'List customers and optionally restrict to customers with parts',
+  },
+  'customerPrices.yearPrices': {
+    key: 'customerPrices.yearPrices',
+    method: 'GET',
+    path: '/customer-prices/customers/{customer_id}/year-prices',
+    auth: true,
+    lifecycle: 'active',
+    description: 'Return the current yearly prices for a customer\'s parts',
+  },
+  'production.report': {
+    key: 'production.report',
+    method: 'POST',
+    path: '/production/reports',
+    auth: true,
+    lifecycle: 'active',
+    description: 'Submit a production report for a production session',
+  },
+  'packaging.inventory': {
+    key: 'packaging.inventory',
+    method: 'GET',
+    path: '/packaging/inventory',
+    auth: true,
+    lifecycle: 'active',
+    description: 'List inventory records available for delivery',
+  },
+  'warehouse.finishedGoods': {
+    key: 'warehouse.finishedGoods', method: 'GET', path: '/warehouse/finished-goods', auth: true, lifecycle: 'active',
+    description: 'List formal finished-goods inventory balances with part and customer data',
+  },
+  'warehouse.finishedGoodsReview': {
+    key: 'warehouse.finishedGoodsReview', method: 'GET', path: '/warehouse/finished-goods/review', auth: true, lifecycle: 'active',
+    description: 'List isolated review rows from the latest finished-goods snapshot',
+  },
+  'warehouse.finishedGoodsLedger': {
+    key: 'warehouse.finishedGoodsLedger', method: 'GET', path: '/warehouse/finished-goods/{inventory_id}/ledger', auth: true, lifecycle: 'active',
+    description: 'Return daily finished-goods incoming and outgoing ledger',
+  },
+  'warehouse.finishedGoodsLedgerEntry': {
+    key: 'warehouse.finishedGoodsLedgerEntry', method: 'POST', path: '/warehouse/finished-goods/{inventory_id}/ledger/entry', auth: true, lifecycle: 'active',
+    description: 'Register a finished-goods income or expense, including historical backfill',
+  },
+  'warehouse.finishedGoodsLedgerReconcile': {
+    key: 'warehouse.finishedGoodsLedgerReconcile', method: 'POST', path: '/warehouse/finished-goods/{inventory_id}/ledger/reconcile', auth: true, lifecycle: 'active',
+    description: 'Reconcile physical finished-goods stock and record a stocktake difference',
+  },
+  'warehouse.finishedGoodsLocation': {
+    key: 'warehouse.finishedGoodsLocation', method: 'PATCH', path: '/warehouse/finished-goods/{inventory_id}/location', auth: true, lifecycle: 'active',
+    description: 'Update a finished-goods storage location',
+  },
+  'warehouse.finishedGoodsAdjust': {
+    key: 'warehouse.finishedGoodsAdjust', method: 'POST', path: '/warehouse/finished-goods/{inventory_id}/adjust', auth: true, lifecycle: 'active',
+    description: 'Apply an audited finished-goods stock adjustment',
+  },
+  'warehouse.finishedGoodsReviewResolve': {
+    key: 'warehouse.finishedGoodsReviewResolve', method: 'POST', path: '/warehouse/finished-goods/review/{row_id}/resolve', auth: true, lifecycle: 'active',
+    description: 'Confirm a review row into formal finished-goods inventory',
+  },
+  'qr.lookup': {
+    key: 'qr.lookup',
+    method: 'GET',
+    path: '/qr/lookup',
+    auth: true,
+    lifecycle: 'active',
+    description: 'Resolve a scanned QR code to its business entity',
+  },
+  'parts.grouped': {
+    key: 'parts.grouped', method: 'GET', path: '/parts/grouped', auth: true, lifecycle: 'active',
+    description: 'List grouped parts for the parts workspace; search matches customer name/code, customer part number, part name, and tooling number',
+  },
+  'parts.create': {
+    key: 'parts.create', method: 'POST', path: '/parts', auth: true, lifecycle: 'active',
+    description: 'Create a part record',
+  },
+  'parts.delete': {
+    key: 'parts.delete', method: 'DELETE', path: '/parts/{part_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a part record',
+  },
+  'parts.editor.detail': {
+    key: 'parts.editor.detail', method: 'GET', path: '/parts/{part_id}/editor/detail', auth: true, lifecycle: 'active',
+    description: 'Load the part editor detail and optional tooling catalog',
+  },
+  'parts.editor.update': {
+    key: 'parts.editor.update', method: 'PATCH', path: '/parts/{part_id}/editor', auth: true, lifecycle: 'active',
+    description: 'Update editable part fields',
+  },
+  'parts.editor.bulk': {
+    key: 'parts.editor.bulk', method: 'PUT', path: '/parts/{part_id}/editor/bulk', auth: true, lifecycle: 'active',
+    description: 'Save part aliases, tooling associations, and TWP specs',
+  },
+  'parts.editor.history': {
+    key: 'parts.editor.history', method: 'GET', path: '/parts/{part_id}/editor/history', auth: true, lifecycle: 'active',
+    description: 'List part editor change history',
+  },
+  'parts.toolingSpec.primary': {
+    key: 'parts.toolingSpec.primary', method: 'PATCH', path: '/parts/tooling-specs/{spec_id}/primary', auth: true, lifecycle: 'active',
+    description: 'Set a tooling specification as primary',
+  },
+  'customers.create': {
+    key: 'customers.create', method: 'POST', path: '/customers', auth: true, lifecycle: 'active',
+    description: 'Create a customer',
+  },
+  'customers.update': {
+    key: 'customers.update', method: 'PATCH', path: '/customers/{customer_id}', auth: true, lifecycle: 'active',
+    description: 'Update a customer',
+  },
+  'customers.delete': {
+    key: 'customers.delete', method: 'DELETE', path: '/customers/{customer_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a customer',
+  },
+  'partNames.list': {
+    key: 'partNames.list', method: 'GET', path: '/part-names', auth: true, lifecycle: 'active',
+    description: 'List part-name dictionary values',
+  },
+  'partNames.create': {
+    key: 'partNames.create', method: 'POST', path: '/part-names', auth: true, lifecycle: 'active',
+    description: 'Create a part-name dictionary value',
+  },
+  'partNames.update': {
+    key: 'partNames.update', method: 'PATCH', path: '/part-names/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Update a part-name dictionary value',
+  },
+  'partNames.delete': {
+    key: 'partNames.delete', method: 'DELETE', path: '/part-names/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a part-name dictionary value',
+  },
+  'materials.list': {
+    key: 'materials.list', method: 'GET', path: '/materials', auth: true, lifecycle: 'active',
+    description: 'List material master data',
+  },
+  'materials.create': {
+    key: 'materials.create', method: 'POST', path: '/materials', auth: true, lifecycle: 'active',
+    description: 'Create a material',
+  },
+  'materials.update': {
+    key: 'materials.update', method: 'PATCH', path: '/materials/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Update a material',
+  },
+  'materials.delete': {
+    key: 'materials.delete', method: 'DELETE', path: '/materials/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a material',
+  },
+  'machineTonnages.list': {
+    key: 'machineTonnages.list', method: 'GET', path: '/machine-tonnages', auth: true, lifecycle: 'active',
+    description: 'List machine tonnage dictionary values',
+  },
+  'machineTonnages.create': {
+    key: 'machineTonnages.create', method: 'POST', path: '/machine-tonnages', auth: true, lifecycle: 'active',
+    description: 'Create a machine tonnage value',
+  },
+  'machineTonnages.update': {
+    key: 'machineTonnages.update', method: 'PATCH', path: '/machine-tonnages/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Update a machine tonnage value',
+  },
+  'machineTonnages.delete': {
+    key: 'machineTonnages.delete', method: 'DELETE', path: '/machine-tonnages/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a machine tonnage value',
+  },
+  'moldTypes.list': {
+    key: 'moldTypes.list', method: 'GET', path: '/mold-types', auth: true, lifecycle: 'active',
+    description: 'List mold type dictionary values',
+  },
+  'moldTypes.create': {
+    key: 'moldTypes.create', method: 'POST', path: '/mold-types', auth: true, lifecycle: 'active',
+    description: 'Create a mold type value',
+  },
+  'moldTypes.update': {
+    key: 'moldTypes.update', method: 'PATCH', path: '/mold-types/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Update a mold type value',
+  },
+  'moldTypes.delete': {
+    key: 'moldTypes.delete', method: 'DELETE', path: '/mold-types/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a mold type value',
+  },
+  'partDisplayGroups.list': {
+    key: 'partDisplayGroups.list', method: 'GET', path: '/part-display-groups', auth: true, lifecycle: 'active',
+    description: 'List part display groups',
+  },
+  'partDisplayGroups.create': {
+    key: 'partDisplayGroups.create', method: 'POST', path: '/part-display-groups', auth: true, lifecycle: 'active',
+    description: 'Create a part display group',
+  },
+  'partDisplayGroups.delete': {
+    key: 'partDisplayGroups.delete', method: 'DELETE', path: '/part-display-groups/{group_id}', auth: true, lifecycle: 'active',
+    description: 'Delete a part display group',
+  },
+  'quotes.list': {
+    key: 'quotes.list', method: 'GET', path: '/quotes', auth: true, lifecycle: 'active',
+    description: 'List quotes',
+  },
+  'quotes.detail': {
+    key: 'quotes.detail', method: 'GET', path: '/quotes/{quote_id}', auth: true, lifecycle: 'active',
+    description: 'Load quote details',
+  },
+  'quotes.create': {
+    key: 'quotes.create', method: 'POST', path: '/quotes', auth: true, lifecycle: 'active',
+    description: 'Create a quote',
+  },
+  'quotes.pricing': {
+    key: 'quotes.pricing', method: 'POST', path: '/quotes/{quote_id}/pricing', auth: true, lifecycle: 'active',
+    description: 'Save quote pricing',
+  },
+  'quotes.submitReview': {
+    key: 'quotes.submitReview', method: 'POST', path: '/quotes/{quote_id}/submit-review', auth: true, lifecycle: 'active',
+    description: 'Submit a quote for technical review',
+  },
+  'quotes.submitBoss': {
+    key: 'quotes.submitBoss', method: 'POST', path: '/quotes/{quote_id}/submit-boss', auth: true, lifecycle: 'active',
+    description: 'Submit a quote for boss approval',
+  },
+  'quotes.bossApprove': {
+    key: 'quotes.bossApprove', method: 'POST', path: '/quotes/{quote_id}/boss-approve', auth: true, lifecycle: 'active',
+    description: 'Approve or reject a quote',
+  },
+  'quotes.fix': {
+    key: 'quotes.fix', method: 'POST', path: '/quotes/{quote_id}/fix', auth: true, lifecycle: 'active',
+    description: 'Complete quote nomination fixing',
+  },
+  'quotes.revokeNomination': {
+    key: 'quotes.revokeNomination', method: 'POST', path: '/quotes/{quote_id}/revoke-nomination', auth: true, lifecycle: 'active',
+    description: 'Revoke quote nomination',
+  },
+  'customerInquiries.list': {
+    key: 'customerInquiries.list', method: 'GET', path: '/customer-inquiries', auth: true, lifecycle: 'active',
+    description: 'List customer inquiries with optional technical-review and search filters',
+  },
+  'customerInquiries.detail': {
+    key: 'customerInquiries.detail', method: 'GET', path: '/customer-inquiries/{inquiry_id}', auth: true, lifecycle: 'active',
+    description: 'Load a customer inquiry and its uploaded attachments',
+  },
+  'customerInquiries.create': {
+    key: 'customerInquiries.create', method: 'POST', path: '/customer-inquiries', auth: true, lifecycle: 'active',
+    description: 'Create a customer inquiry with uploaded technical-review files',
+  },
+  'customerInquiries.technicalReview': {
+    key: 'customerInquiries.technicalReview', method: 'POST', path: '/customer-inquiries/{inquiry_id}/technical-review', auth: true, lifecycle: 'active',
+    description: 'Record a technical review decision for a customer inquiry',
+  },
+  'quoteGroups.list': {
+    key: 'quoteGroups.list', method: 'GET', path: '/quote-groups', auth: true, lifecycle: 'active',
+    description: 'List quotation groups with read-only engineering tooling totals and final customer prices',
+  },
+  'quoteGroups.detail': {
+    key: 'quoteGroups.detail', method: 'GET', path: '/quote-groups/{group_id}', auth: true, lifecycle: 'active',
+    description: 'Load a quotation group with engineering tooling estimate, final tooling price and part price lines',
+  },
+  'quoteGroups.create': {
+    key: 'quoteGroups.create', method: 'POST', path: '/quote-groups', auth: true, lifecycle: 'active',
+    description: 'Create a quotation group from technical review; shared tooling is counted once in the initial price',
+  },
+  'quoteGroups.update': {
+    key: 'quoteGroups.update', method: 'PATCH', path: '/quote-groups/{group_id}', auth: true, lifecycle: 'active',
+    description: 'Update final customer tooling price, quotation scheme and part prices; preserve engineering snapshots',
+  },
+  'production.workbench': {
+    key: 'production.workbench', method: 'GET', path: '/production/plans/workbench', auth: true, lifecycle: 'active',
+    description: 'List production workbench plans',
+  },
+  'production.planningPartOptions': {
+    key: 'production.planningPartOptions', method: 'GET', path: '/production/planning-part-options', auth: true, lifecycle: 'active',
+    description: 'Search parts available for production planning',
+  },
+  'production.plansCount': {
+    key: 'production.plansCount', method: 'GET', path: '/production/plans-count', auth: true, lifecycle: 'active',
+    description: 'Count production plans by status',
+  },
+  'production.plansBatch': {
+    key: 'production.plansBatch', method: 'POST', path: '/production/plans/batch', auth: true, lifecycle: 'active',
+    description: 'Create production plans in batch',
+  },
+  'production.materialConfirmations': {
+    key: 'production.materialConfirmations', method: 'POST', path: '/production/plans/material-confirmations', auth: true, lifecycle: 'active',
+    description: 'Confirm production plan materials',
+  },
+  'production.planUpdate': {
+    key: 'production.planUpdate', method: 'PATCH', path: '/production/plans/{plan_id}', auth: true, lifecycle: 'active',
+    description: 'Update production plan settings',
+  },
+  'production.planCancel': {
+    key: 'production.planCancel', method: 'POST', path: '/production/plans/{plan_id}/cancel', auth: true, lifecycle: 'active',
+    description: 'Cancel a production plan',
+  },
+  'production.schedulingWorkbench': {
+    key: 'production.schedulingWorkbench', method: 'GET', path: '/production/scheduling-workbench', auth: true, lifecycle: 'active',
+    description: 'Load the production scheduling board',
+  },
+  'production.schedule': {
+    key: 'production.schedule', method: 'POST', path: '/production/plans/{plan_id}/schedule', auth: true, lifecycle: 'active',
+    description: 'Schedule a production plan',
+  },
+  'production.unschedule': {
+    key: 'production.unschedule', method: 'POST', path: '/production/plans/{plan_id}/unschedule', auth: true, lifecycle: 'active',
+    description: 'Remove a production plan from schedule',
+  },
+  'production.reorder': {
+    key: 'production.reorder', method: 'POST', path: '/production/scheduling/reorder', auth: true, lifecycle: 'active',
+    description: 'Reorder scheduled plans on a machine',
+  },
+  'packaging.records': {
+    key: 'packaging.records', method: 'GET', path: '/packaging/records', auth: true, lifecycle: 'active',
+    description: 'List packaging records',
+  },
+  'packaging.scan': {
+    key: 'packaging.scan', method: 'POST', path: '/packaging/scan', auth: true, lifecycle: 'active',
+    description: 'Register a packaging scan',
+  },
+  'packaging.inspect': {
+    key: 'packaging.inspect', method: 'POST', path: '/packaging/inspect/{record_id}', auth: true, lifecycle: 'active',
+    description: 'Submit packaging inspection results',
+  },
+  'customerPrices.priceHistory': {
+    key: 'customerPrices.priceHistory', method: 'GET', path: '/customer-prices/customers/{customer_id}/parts/{part_id}/price-history', auth: true, lifecycle: 'active',
+    description: 'Return historical prices for a customer part',
+  },
+  'priceAdjustments.list': {
+    key: 'priceAdjustments.list', method: 'GET', path: '/price-adjustments', auth: true, lifecycle: 'active',
+    description: 'List price adjustment requests',
+  },
+  'priceAdjustments.create': {
+    key: 'priceAdjustments.create', method: 'POST', path: '/price-adjustments', auth: true, lifecycle: 'active',
+    description: 'Create a price adjustment request',
+  },
+  'priceAdjustments.approve': {
+    key: 'priceAdjustments.approve', method: 'POST', path: '/price-adjustments/{adjustment_id}/approve', auth: true, lifecycle: 'active',
+    description: 'Approve or reject a price adjustment',
+  },
+  'treatments.list': {
+    key: 'treatments.list', method: 'GET', path: '/treatments', auth: true, lifecycle: 'active',
+    description: 'List treatment dictionary values',
+  },
+  'treatments.create': {
+    key: 'treatments.create', method: 'POST', path: '/treatments', auth: true, lifecycle: 'active',
+    description: 'Create a treatment dictionary value',
+  },
+  'treatments.update': {
+    key: 'treatments.update', method: 'PUT', path: '/treatments/{treatment_id}', auth: true, lifecycle: 'active',
+    description: 'Update a treatment dictionary value',
+  },
+  'afterSales.workspaces': {
+    key: 'afterSales.workspaces', method: 'GET', path: '/after-sales/gaibo/workspaces', auth: true, lifecycle: 'active',
+    description: 'List after-sales workspaces',
+  },
+  'afterSales.workspace.create': {
+    key: 'afterSales.workspace.create', method: 'POST', path: '/after-sales/gaibo/workspaces', auth: true, lifecycle: 'active',
+    description: 'Create an after-sales workspace',
+  },
+  'afterSales.workspace.columns': {
+    key: 'afterSales.workspace.columns', method: 'GET', path: '/after-sales/gaibo/workspaces/{workspace_id}/column-config', auth: true, lifecycle: 'active',
+    description: 'Load after-sales workspace column configuration',
+  },
+  'afterSales.workspace.columns.update': {
+    key: 'afterSales.workspace.columns.update', method: 'PUT', path: '/after-sales/gaibo/workspaces/{workspace_id}/column-config', auth: true, lifecycle: 'active',
+    description: 'Save after-sales workspace column configuration',
+  },
+  'afterSales.search': {
+    key: 'afterSales.search', method: 'GET', path: '/after-sales/gaibo/search', auth: true, lifecycle: 'active',
+    description: 'Search after-sales records',
+  },
+  'afterSales.filterOptions': {
+    key: 'afterSales.filterOptions', method: 'GET', path: '/after-sales/gaibo/filter-options', auth: true, lifecycle: 'active',
+    description: 'Load after-sales filter options',
+  },
+  'afterSales.viewPreference': {
+    key: 'afterSales.viewPreference', method: 'GET', path: '/after-sales/gaibo/view-preferences/{view_key}', auth: true, lifecycle: 'active',
+    description: 'Load an after-sales view preference',
+  },
+  'afterSales.viewPreference.update': {
+    key: 'afterSales.viewPreference.update', method: 'PUT', path: '/after-sales/gaibo/view-preferences/{view_key}', auth: true, lifecycle: 'active',
+    description: 'Save an after-sales view preference',
+  },
+  'afterSales.package.detail': {
+    key: 'afterSales.package.detail', method: 'GET', path: '/after-sales/gaibo/packages/{package_id}', auth: true, lifecycle: 'active',
+    description: 'Load an installation package dossier',
+  },
+  'afterSales.package.update': {
+    key: 'afterSales.package.update', method: 'PATCH', path: '/after-sales/gaibo/packages/{package_id}', auth: true, lifecycle: 'active',
+    description: 'Update an installation package dossier',
+  },
+  'afterSales.package.item.create': {
+    key: 'afterSales.package.item.create', method: 'POST', path: '/after-sales/gaibo/packages/{package_id}/items', auth: true, lifecycle: 'active',
+    description: 'Create an installation package item',
+  },
+  'afterSales.package.item.update': {
+    key: 'afterSales.package.item.update', method: 'PATCH', path: '/after-sales/gaibo/packages/{package_id}/items/{item_id}', auth: true, lifecycle: 'active',
+    description: 'Update an installation package item',
+  },
+  'afterSales.requirement.detail': {
+    key: 'afterSales.requirement.detail', method: 'GET', path: '/after-sales/gaibo/requirements/{requirement_id}', auth: true, lifecycle: 'active',
+    description: 'Load a single-part after-sales dossier',
+  },
+  'afterSales.requirement.update': {
+    key: 'afterSales.requirement.update', method: 'PATCH', path: '/after-sales/gaibo/requirements/{requirement_id}/dossier', auth: true, lifecycle: 'active',
+    description: 'Update a single-part after-sales dossier',
+  },
+  'afterSales.requirement.drawing.create': {
+    key: 'afterSales.requirement.drawing.create', method: 'POST', path: '/after-sales/gaibo/requirements/{requirement_id}/drawings', auth: true, lifecycle: 'active',
+    description: 'Create an after-sales drawing version',
+  },
+  'afterSales.drawing.update': {
+    key: 'afterSales.drawing.update', method: 'PATCH', path: '/after-sales/gaibo/drawings/{drawing_id}', auth: true, lifecycle: 'active',
+    description: 'Update an after-sales drawing version',
+  },
+  'afterSales.requirement.route.create': {
+    key: 'afterSales.requirement.route.create', method: 'POST', path: '/after-sales/gaibo/requirements/{requirement_id}/process-routes', auth: true, lifecycle: 'active',
+    description: 'Create an after-sales process route',
+  },
+  'afterSales.route.update': {
+    key: 'afterSales.route.update', method: 'PATCH', path: '/after-sales/gaibo/process-routes/{route_id}', auth: true, lifecycle: 'active',
+    description: 'Update an after-sales process route',
+  },
+  'afterSales.requirement.document.create': {
+    key: 'afterSales.requirement.document.create', method: 'POST', path: '/after-sales/gaibo/requirements/{requirement_id}/documents', auth: true, lifecycle: 'active',
+    description: 'Create an after-sales requirement document',
+  },
+  'afterSales.package.document.create': {
+    key: 'afterSales.package.document.create', method: 'POST', path: '/after-sales/gaibo/packages/{package_id}/documents', auth: true, lifecycle: 'active',
+    description: 'Create an after-sales package document',
+  },
+  'afterSales.document.update': {
+    key: 'afterSales.document.update', method: 'PATCH', path: '/after-sales/gaibo/documents/{document_id}', auth: true, lifecycle: 'active',
+    description: 'Update an after-sales document',
+  },
+  'afterSales.installationKits.list': {
+    key: 'afterSales.installationKits.list', method: 'GET', path: '/after-sales/installation-kits', auth: true, lifecycle: 'active',
+    description: 'List installation kits',
+  },
+  'afterSales.installationKits.detail': {
+    key: 'afterSales.installationKits.detail', method: 'GET', path: '/after-sales/installation-kits/{fmg_code}', auth: true, lifecycle: 'active',
+    description: 'Load an installation kit detail',
+  },
+  'afterSales.installationKits.update': {
+    key: 'afterSales.installationKits.update', method: 'PUT', path: '/after-sales/installation-kits/{fmg_code}', auth: true, lifecycle: 'active',
+    description: 'Update installation kit fields',
+  },
+  'afterSales.installationKits.component.update': {
+    key: 'afterSales.installationKits.component.update', method: 'PUT', path: '/after-sales/installation-kits/{fmg_code}/components/{source_kind}/{sequence}', auth: true, lifecycle: 'active',
+    description: 'Update an installation kit component',
+  },
+  'afterSales.installationKits.componentPair.update': {
+    key: 'afterSales.installationKits.componentPair.update', method: 'PUT', path: '/after-sales/installation-kits/{fmg_code}/component-pairs/{sequence}', auth: true, lifecycle: 'active',
+    description: 'Update an installation kit component pair status',
+  },
+  'shippingOrders.list': {
+    key: 'shippingOrders.list', method: 'GET', path: '/shipping-orders', auth: true, lifecycle: 'active',
+    description: 'List shipping orders',
+  },
+  'shippingOrders.create': {
+    key: 'shippingOrders.create', method: 'POST', path: '/shipping-orders', auth: true, lifecycle: 'active',
+    description: 'Create a shipping order',
+  },
+  'shippingOrders.update': {
+    key: 'shippingOrders.update', method: 'PATCH', path: '/shipping-orders/{order_id}', auth: true, lifecycle: 'active',
+    description: 'Update a shipping order',
+  },
+  'shippingOrders.submit': {
+    key: 'shippingOrders.submit', method: 'POST', path: '/shipping-orders/{order_id}/submit', auth: true, lifecycle: 'active',
+    description: 'Submit a shipping order',
+  },
+  'shippingOrders.detail': {
+    key: 'shippingOrders.detail', method: 'GET', path: '/shipping-orders/{order_id}', auth: true, lifecycle: 'active',
+    description: 'Load a shipping order',
+  },
+  'shippingOrders.customerParts': {
+    key: 'shippingOrders.customerParts', method: 'GET', path: '/shipping-orders/customer-parts/search', auth: true, lifecycle: 'active',
+    description: 'Search customer parts for shipping',
+  },
+  'shippingOrders.labelConfirm': {
+    key: 'shippingOrders.labelConfirm', method: 'POST', path: '/shipping-orders/lines/{line_id}/label-confirm', auth: true, lifecycle: 'active',
+    description: 'Confirm a shipping label',
+  },
+  'shippingOrders.cancelLine': {
+    key: 'shippingOrders.cancelLine', method: 'POST', path: '/shipping-orders/lines/{line_id}/cancel', auth: true, lifecycle: 'active',
+    description: 'Cancel a shipping line',
+  },
+  'shippingOrders.cancellationConsent': {
+    key: 'shippingOrders.cancellationConsent', method: 'POST', path: '/shipping-orders/lines/{line_id}/cancellation-consent', auth: true, lifecycle: 'active',
+    description: 'Record shipping line cancellation consent',
+  },
+  'shippingOrders.confirmShipment': {
+    key: 'shippingOrders.confirmShipment', method: 'POST', path: '/shipping-orders/{order_id}/shipments/confirm', auth: true, lifecycle: 'active',
+    description: 'Confirm shipment for a shipping order',
+  },
+  'shippingOrders.history': {
+    key: 'shippingOrders.history', method: 'GET', path: '/shipping-orders/{order_id}/history', auth: true, lifecycle: 'active',
+    description: 'List shipping order history',
+  },
+  'shippingOrders.shipmentLogistics': {
+    key: 'shippingOrders.shipmentLogistics', method: 'PATCH', path: '/shipping-shipments/{shipment_id}/logistics', auth: true, lifecycle: 'active',
+    description: 'Update shipment logistics',
+  },
+})
+
+export const getApiDefinition = (key) => {
+  const definition = apiRegistry[key]
+  if (!definition) throw new Error(`Unknown API registry key: ${key}`)
+  return definition
+}

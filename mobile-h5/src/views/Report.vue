@@ -1,6 +1,6 @@
 <template>
+  <MobileShell title="报工" :back="true">
   <div class="report-page">
-    <van-nav-bar title="报工" left-text="返回" @click-left="router.back()" />
 
     <van-form @submit="handleSubmit">
       <van-cell-group title="基本信息">
@@ -71,22 +71,22 @@
       @select="onSelectScrapReason"
     />
   </div>
+  </MobileShell>
 </template>
 
 <script setup>
 import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
 import { showToast, showDialog } from 'vant'
+import MobileShell from '@/components/MobileShell.vue'
+import { submitProductionReport } from '@/api/production'
 
-const router = useRouter()
 const submitting = ref(false)
 const showScrapReasons = ref(false)
-
-const serverUrl = localStorage.getItem('server_url') || 'http://124.222.29.229:8000'
 
 const form = reactive({
   machineCode: '',
   machineId: null,
+  sessionId: null,
   partCode: '',
   partId: null,
   partName: '',
@@ -127,26 +127,25 @@ const handleSubmit = async () => {
 
   submitting.value = true
   try {
-    const formData = new FormData()
-    formData.append('machine_id', form.machineId || 0)
-    formData.append('part_id', form.partId || 0)
-    formData.append('good_count', form.goodCount || 0)
-    formData.append('scrap_count', form.scrapCount || 0)
-    formData.append('scrap_reason', form.scrapReason || '')
-    formData.append('remark', form.remark || '')
+    if (!form.sessionId) {
+      showToast({ message: '请先从生产会话进入报工', position: 'top' })
+      return
+    }
 
-    const response = await fetch(`${serverUrl}/operator/report`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
+    await submitProductionReport(form.sessionId, {
+      strokes: form.goodCount || 1,
+      cavity_count: 1,
+      good_qty: form.goodCount || 0,
+      reject_qty: form.scrapCount || 0,
+      notes: [form.scrapReason, form.remark].filter(Boolean).join('；') || null,
     })
-
-    if (response.ok || response.redirected) {
+    {
       showToast({ message: '报工成功', position: 'top' })
       // 重置表单
       Object.assign(form, {
         machineCode: '',
         machineId: null,
+        sessionId: null,
         partCode: '',
         partId: null,
         partName: '',
@@ -155,9 +154,6 @@ const handleSubmit = async () => {
         scrapReason: '',
         remark: '',
       })
-    } else {
-      const error = await response.text()
-      showToast({ message: '报工失败: ' + error, position: 'top' })
     }
   } catch (error) {
     showToast({ message: '提交失败: ' + error.message, position: 'top' })

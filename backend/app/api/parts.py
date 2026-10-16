@@ -20,6 +20,7 @@ from app.models.part_tooling_spec import PartToolingSpec
 from app.models.excel_import import ExcelImportRow
 from app.models.material_dict import MaterialDict
 from app.models.user import User
+from app.models.packaging import Inventory
 from app.schemas.part import (
     PartCreate,
     PartDisplayGroup,
@@ -222,17 +223,12 @@ def _resolve_customer_product_fields(
             if alias.customer_id == customer_id
         ]
 
-    # When a search term is present, keep the list row focused on the alias
-    # that matched it. Exact aliases win over aliases that merely contain the
-    # same text (for example, 35D041348 vs 35D041348/35D041349).
+    # When a search term is present, keep the list row focused on aliases that
+    # contain it. Do not narrow the result to an exact alias: every search
+    # field in the parts workspace uses contains matching.
     normalized_search = search.strip().lower() if search and search.strip() else None
     if normalized_search:
-        exact_aliases = [
-            alias for alias in active_aliases
-            if alias.customer_part_no
-            and alias.customer_part_no.strip().lower() == normalized_search
-        ]
-        matching_aliases = exact_aliases or [
+        matching_aliases = [
             alias for alias in active_aliases
             if (alias.customer_part_no and normalized_search in alias.customer_part_no.lower())
             or (alias.customer_part_name and normalized_search in alias.customer_part_name.lower())
@@ -283,32 +279,20 @@ async def _part_tooling_summary(db, part_id: int) -> tuple[Optional[str], Option
     return tooling_number, _summarize_mold_types(value for _, value in rows)
 
 
-async def _load_exact_customer_alias_part_ids(
-    db,
-    search: Optional[str],
-    customer_id: Optional[int] = None,
-) -> set[int]:
-    """Return parts with an exact active customer-part-number alias.
-
-    Exact aliases take precedence over substring matches so a query such as
-    ``35D041348`` does not also return a composite alias such as
-    ``35D041348/35D041349`` when an exact source-backed alias exists.
-    """
-    normalized_search = search.strip().lower() if search and search.strip() else None
-    if not normalized_search:
-        return set()
-
-    conditions = [
+def _customer_name_search_part_ids(search: str):
+    """Return parts linked to customers whose name or code matches search."""
+    pattern = f"%{search}%"
+    return select(PartCustomerAlias.part_id).join(
+        Customer, Customer.id == PartCustomerAlias.customer_id
+    ).where(
         PartCustomerAlias.is_active == True,
-        func.lower(func.trim(PartCustomerAlias.customer_part_no)) == normalized_search,
-    ]
-    if customer_id is not None:
-        conditions.append(PartCustomerAlias.customer_id == customer_id)
-
-    result = await db.execute(
-        select(PartCustomerAlias.part_id).where(*conditions)
+        PartCustomerAlias.data_quality_status == "approved",
+        or_(
+            Customer.name.ilike(pattern),
+            Customer.customer_code.ilike(pattern),
+            Customer.short_name.ilike(pattern),
+        )
     )
-    return set(result.scalars().all())
 
 
 def _apply_part_filters(
@@ -317,31 +301,37 @@ def _apply_part_filters(
     customer_id,
     part_status,
     material,
-    exact_customer_part_ids: Optional[set[int]] = None,
 ):
     """Apply the shared parts-list filters to a SELECT statement."""
     # Soft-deleted repair/import duplicates must never appear in list or count
     # endpoints.  Historical rows remain auditable in the database, but are
     # excluded from the active ERP UI.
     q = q.where(Part.is_deleted == False)
-    if search:
-        if exact_customer_part_ids:
-            customer_alias_filter = Part.id.in_(exact_customer_part_ids)
-        else:
-            customer_alias_subq = select(PartCustomerAlias.part_id).where(
-                PartCustomerAlias.customer_part_no.ilike(f"%{search}%")
-            )
-            customer_alias_filter = Part.id.in_(customer_alias_subq)
+    if search and search.strip():
+        search_term = search.strip()
+        customer_alias_subq = select(PartCustomerAlias.part_id).where(
+            PartCustomerAlias.is_active == True,
+            PartCustomerAlias.data_quality_status == "approved",
+            or_(
+                PartCustomerAlias.customer_part_no.ilike(f"%{search_term}%"),
+                PartCustomerAlias.customer_part_name.ilike(f"%{search_term}%"),
+            ),
+        )
+        customer_alias_filter = Part.id.in_(customer_alias_subq)
         tooling_subq = select(ToolingPart.part_id).join(
             Tooling, ToolingPart.tooling_id == Tooling.id
         ).where(
             or_(
-                Tooling.tooling_number.ilike(f"%{search}%"),
+                Tooling.tooling_number.ilike(f"%{search_term}%"),
             )
         )
         q = q.where(or_(
-            Part.internal_name.ilike(f"%{search}%"),
+            Part.internal_part_no.ilike(f"%{search_term}%"),
+            Part.internal_name.ilike(f"%{search_term}%"),
+            Part.customer_part_no.ilike(f"%{search_term}%"),
+            Part.customer_part_name.ilike(f"%{search_term}%"),
             customer_alias_filter,
+            Part.id.in_(_customer_name_search_part_ids(search_term)),
             Part.id.in_(tooling_subq),
         ))
 
@@ -381,6 +371,13 @@ async def _to_resp(db, p: Part) -> PartResponse:
     } if customer_ids else {}
     customer = next(iter(customers.values()), None)
     tooling_number, tooling_type = await _part_tooling_summary(db, p.id)
+    inventory_row = (
+        await db.execute(
+            select(func.count(Inventory.id), func.coalesce(func.sum(Inventory.stock_qty), 0))
+            .where(Inventory.part_id == p.id)
+        )
+    ).one()
+    stock_pcs = int(inventory_row[1] or 0) if inventory_row[0] else int(p.stock_pcs or 0)
     return PartResponse(
         id=p.id,
         part_name=p.internal_name,
@@ -391,7 +388,7 @@ async def _to_resp(db, p: Part) -> PartResponse:
         vehicle_model=p.vehicle_model,
         material_name=p.material_name,
         part_status=p.part_status,
-        stock_pcs=p.stock_pcs,
+        stock_pcs=stock_pcs,
         tooling_number=tooling_number,
         tooling_type=tooling_type,
         press_tonnage=p.press_tonnage,
@@ -422,6 +419,21 @@ async def _build_part_responses(
         return []
 
     part_ids = [p.id for p in parts]
+
+    inventory_rows = (
+        await db.execute(
+            select(
+                Inventory.part_id,
+                func.sum(Inventory.stock_qty).label("stock_qty"),
+            )
+            .where(Inventory.part_id.in_(part_ids))
+            .group_by(Inventory.part_id)
+        )
+    ).all()
+    inventory_stock_by_part = {
+        part_id: int(stock_qty or 0)
+        for part_id, stock_qty in inventory_rows
+    }
 
     customer_aliases = {}
     aliases_result = await db.execute(
@@ -568,7 +580,7 @@ async def _build_part_responses(
             material_name=p.material_name,
             material_name_full=materials[p.material_id].name if p.material_id in materials else None,
             part_status=p.part_status,
-            stock_pcs=p.stock_pcs,
+            stock_pcs=inventory_stock_by_part.get(p.id, int(p.stock_pcs or 0)),
             tooling_number=mold_summary,
             tooling_type=mold_type_summary,
             press_tonnage=p.press_tonnage,
@@ -762,18 +774,14 @@ async def _load_source_group_lookup(db) -> dict[int, tuple[str, list[int]]]:
 async def count_parts(
     db: DbSession,
     current_user: CurrentUser,
-    search: Optional[str] = Query(default=None),
+    search: Optional[str] = Query(default=None, description="Customer name/code, customer part number, part name, or tooling number"),
     customer_id: Optional[int] = Query(default=None),
     part_status: Optional[str] = Query(default=None),
     material: Optional[str] = Query(default=None),
 ) -> dict[str, int]:
     """Count parts with the same filters as list_parts - returns total distinct parts."""
-    exact_customer_part_ids = await _load_exact_customer_alias_part_ids(
-        db, search, customer_id
-    )
     q = _apply_part_filters(
         select(Part.id), search, customer_id, part_status, material,
-        exact_customer_part_ids=exact_customer_part_ids,
     )
 
     # Count distinct parts
@@ -787,19 +795,15 @@ async def count_parts(
 async def list_parts(
     db: DbSession,
     current_user: CurrentUser,
-    search: Optional[str] = Query(default=None),
+    search: Optional[str] = Query(default=None, description="Customer name/code, customer part number, part name, or tooling number"),
     customer_id: Optional[int] = Query(default=None),
     part_status: Optional[str] = Query(default=None),
     material: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> list[PartResponse]:
-    exact_customer_part_ids = await _load_exact_customer_alias_part_ids(
-        db, search, customer_id
-    )
     q = _apply_part_filters(
         select(Part), search, customer_id, part_status, material,
-        exact_customer_part_ids=exact_customer_part_ids,
     )
 
     # Stable ordering: created_at DESC, then id DESC for deterministic pagination
@@ -817,7 +821,7 @@ async def list_parts(
 async def list_grouped_parts(
     db: DbSession,
     current_user: CurrentUser,
-    search: Optional[str] = Query(default=None),
+    search: Optional[str] = Query(default=None, description="Customer name/code, customer part number, part name, or tooling number"),
     customer_id: Optional[int] = Query(default=None),
     part_status: Optional[str] = Query(default=None),
     material: Optional[str] = Query(default=None),
@@ -832,12 +836,8 @@ async def list_grouped_parts(
     creates a one-out-two display group. Filtering matches either member and
     returns the complete pair.
     """
-    exact_customer_part_ids = await _load_exact_customer_alias_part_ids(
-        db, search, customer_id
-    )
     id_query = _apply_part_filters(
         select(Part.id), search, customer_id, part_status, material,
-        exact_customer_part_ids=exact_customer_part_ids,
     ).order_by(Part.created_at.desc().nulls_last(), Part.id.desc())
     filtered_ids = list((await db.execute(id_query)).scalars().all())
     hidden_simple_part_ids = await _load_hidden_simple_part_ids(db)

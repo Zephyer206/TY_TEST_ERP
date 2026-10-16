@@ -13,6 +13,7 @@ from app.models.price import (
     PriceAccount,
     PriceAdjustment,
     PriceAdjustmentType,
+    PriceYear,
 )
 from app.models.user import User
 
@@ -51,13 +52,12 @@ async def create_price_account(
     account = PriceAccount(
         part_id=part_id,
         customer_id=customer_id,
-        material=material,
-        net_weight_kg=net_weight_kg,
-        gross_weight_kg=gross_weight_kg,
+        material_name=material,
+        net_weight=net_weight_kg,
+        gross_weight=gross_weight_kg,
         material_unit_price=material_unit_price,
         scrap_price=scrap_price,
-        reduction_pct=reduction_pct,
-        notes=notes,
+        remark=notes,
     )
     db.add(account)
     await db.commit()
@@ -72,11 +72,8 @@ async def get_price_account_by_id(
     """Get price account by ID."""
     result = await db.execute(
         select(PriceAccount)
-        .options(
-            selectinload(PriceAccount.annual_records),
-            selectinload(PriceAccount.adjustments),
-        )
-        .where(PriceAccount.id == account_id, PriceAccount.is_deleted == False)
+        .options(selectinload(PriceAccount.annual_records))
+        .where(PriceAccount.id == account_id)
     )
     return result.scalar_one_or_none()
 
@@ -89,14 +86,10 @@ async def get_price_account_by_part_customer(
     """Get price account by part and customer."""
     result = await db.execute(
         select(PriceAccount)
-        .options(
-            selectinload(PriceAccount.annual_records),
-            selectinload(PriceAccount.adjustments),
-        )
+        .options(selectinload(PriceAccount.annual_records))
         .where(
             PriceAccount.part_id == part_id,
             PriceAccount.customer_id == customer_id,
-            PriceAccount.is_deleted == False,
         )
     )
     return result.scalar_one_or_none()
@@ -110,7 +103,7 @@ async def get_price_accounts_by_part(
     result = await db.execute(
         select(PriceAccount)
         .options(selectinload(PriceAccount.annual_records))
-        .where(PriceAccount.part_id == part_id, PriceAccount.is_deleted == False)
+        .where(PriceAccount.part_id == part_id)
     )
     return result.scalars().all()
 
@@ -121,9 +114,16 @@ async def update_price_account(
     **fields,
 ) -> PriceAccount:
     """Update price account fields."""
+    field_aliases = {
+        "material": "material_name",
+        "net_weight_kg": "net_weight",
+        "gross_weight_kg": "gross_weight",
+        "notes": "remark",
+    }
     for key, value in fields.items():
-        if hasattr(account, key):
-            setattr(account, key, value)
+        target = field_aliases.get(key, key)
+        if hasattr(account, target) and target not in {"reduction_pct", "is_active"}:
+            setattr(account, target, value)
     await db.commit()
     await db.refresh(account)
     return account
@@ -138,22 +138,29 @@ async def add_annual_price_record(
     notes: Optional[str] = None,
     created_by: Optional[User] = None,
 ):
-    """Add an annual price record to a price account.
-
-    ⚠️ 已废弃：使用新的 customer_material_prices 和 customer_treatment_prices 表
-    """
-    raise NotImplementedError("Use customer_material_prices / customer_treatment_prices instead")
+    """Add a year-price record to the canonical ``price_years`` table."""
+    record = PriceYear(
+        price_id=account_id,
+        year=year,
+        unit_price=unit_price,
+        annual_sales=annual_qty,
+        operator_id=created_by.id if created_by else None,
+    )
+    db.add(record)
+    await db.commit()
+    await db.refresh(record)
+    return record
 
 
 async def get_annual_records(
     db: AsyncSession,
     account_id: int,
 ):
-    """Get all annual records for a price account.
-
-    ⚠️ 已废弃：使用新的价格历史查询 API
-    """
-    return []  # 返回空列表以保持兼容性
+    """Get all annual records for a price account."""
+    result = await db.execute(
+        select(PriceYear).where(PriceYear.price_id == account_id).order_by(PriceYear.year)
+    )
+    return result.scalars().all()
 
 
 def compute_current_price_from_records(
@@ -176,18 +183,7 @@ def compute_current_price_from_records(
         if latest_record:
             return latest_record.unit_price, latest_record.year
 
-    if account.base_price and account.reduction_pct > 0:
-        base_year = account.price_year or (current_year - 1)
-        elapsed = current_year - base_year
-        if elapsed > 0:
-            price = calculate_current_price(
-                account.base_price,
-                account.reduction_pct,
-                elapsed,
-            )
-            return price, current_year
-
-    return account.current_price, account.price_year
+    return account.base_price, account.price_year
 
 
 async def record_price_adjustment(
@@ -200,19 +196,47 @@ async def record_price_adjustment(
     created_by: User,
 ) -> PriceAdjustment:
     """Record a manual price adjustment."""
+    account = await get_price_account_by_id(db, account_id)
+    if account is None:
+        raise ValueError(f"Price account {account_id} not found")
+
     adjustment = PriceAdjustment(
-        price_account_id=account_id,
+        customer_id=account.customer_id,
+        part_id=account.part_id,
+        adjustment_type=adjustment_type.value
+        if isinstance(adjustment_type, PriceAdjustmentType)
+        else str(adjustment_type),
         old_price=old_price,
         new_price=new_price,
-        adjustment_type=adjustment_type,
         reason=reason,
-        created_by=created_by.id,
+        status="approved",
+        requested_by=created_by.id,
+        reviewed_by=created_by.id,
+        reviewed_at=datetime.utcnow(),
     )
+    adjustment.price_account_id = account_id
     db.add(adjustment)
 
-    account = await get_price_account_by_id(db, account_id)
-    if account:
-        account.current_price = new_price
+    # ``prices`` has no mutable current-price column.  Store the approved
+    # value as the current year's canonical annual record instead.
+    current_year = datetime.utcnow().year
+    existing = await db.execute(
+        select(PriceYear).where(
+            PriceYear.price_id == account_id, PriceYear.year == current_year
+        )
+    )
+    annual = existing.scalar_one_or_none()
+    if annual is None:
+        annual = PriceYear(
+            price_id=account_id,
+            year=current_year,
+            unit_price=new_price,
+            operator_id=created_by.id,
+        )
+        db.add(annual)
+    else:
+        annual.unit_price = new_price
+        annual.operator_id = created_by.id
 
     await db.commit()
     await db.refresh(adjustment)

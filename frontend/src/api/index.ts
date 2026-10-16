@@ -1,42 +1,14 @@
-import axios from 'axios'
-import { ElMessage } from 'element-plus'
-
-const api = axios.create({
-  baseURL: '/api/v1',
-  timeout: 30000,
-})
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      window.location.href = '/login'
-    } else if (error.response?.status === 403) {
-      ElMessage.error('权限不足')
-    } else if (error.response?.status >= 500) {
-      ElMessage.error('服务器错误，请稍后重试')
-    }
-    return Promise.reject(error)
-  }
-)
-
-export async function sendApiRequest(method: string, url: string, data?: any) {
-  const response = await api.request({
-    method,
-    url,
-    data: method === 'POST' || method === 'PUT' || method === 'PATCH' ? data : undefined,
-    params: method === 'GET' || method === 'DELETE' ? data : undefined,
-  })
-  return response.data
-}
-
-export default api
+export { apiRegistry, getApiDefinition } from './registry'
+export { authApi } from './auth'
+export { adminApi } from './admin'
+export { partsApi, partDisplayGroupsApi } from './parts'
+export { customersApi } from './customers'
+export { partNamesApi, materialsApi, machineTonnagesApi, moldTypesApi } from './dictionary'
+export { quotesApi } from './quotes'
+export { customerInquiriesApi } from './customerInquiries'
+export { quoteGroupsApi } from './quoteGroups'
+export { productionApi } from './production'
+export { packagingApi } from './packaging'
+export { customerPricesApi, priceAdjustmentsApi, treatmentsApi } from './pricing'
+export { afterSalesApi } from './afterSales'
+export * from './shippingOrders'

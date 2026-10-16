@@ -23,9 +23,11 @@ from .gaibo import (
 )
 from .audit import AuditLog
 from .customer import Customer
+from .customer_inquiry import CustomerInquiry, CustomerInquiryAttachment
+from .quote_group import QuoteGroup, QuoteGroupItem
 from .die import Die
 from .machine import Machine, MachineState, MachineStatusLog
-from .part import Part, PartState
+from .part import Part, PartBOM, PartState
 from .part_customer_alias import PartCustomerAlias
 from .part_identity_issue import PartIdentityMigrationIssue
 from .part_display_group import (
@@ -41,6 +43,7 @@ from .price import (
     PriceAccount,
     PriceAdjustment,
     PriceAdjustmentType,
+    PriceYear,
     TreatmentDict,
 )
 from .production import (
@@ -78,6 +81,11 @@ from .tooling_step import ToolingStep
 from .tooling_customer_link import ToolingCustomerLink
 from .excel_import import ImportBatch, ExcelImportRow
 from .user import User  # Department 和 Position 已移除，因为与数据库不匹配
+from .shipping_order import (
+    ShippingOrder, ShippingOrderLine, ShippingLabelConfirmation,
+    ShippingCancellationConsent, ShippingShipment, ShippingShipmentLine,
+    ShippingLogistics,
+)
 from .warehouse import (
     BatchStatus,
     BatchTransaction,
@@ -125,6 +133,8 @@ __all__ = [
     "CoatingType",
     "ContextSwitchType",
     "Customer",
+    "CustomerInquiry",
+    "CustomerInquiryAttachment",
     "Die",
     # "Department",  # 已移除，与数据库不匹配
     "ExcelImportRow",
@@ -151,6 +161,7 @@ __all__ = [
     "PackagingRecord",
     "PackagingStatus",
     "Part",
+    "PartBOM",
     "PartCustomerAlias",
     "PartIdentityMigrationIssue",
     "PartDisplayGroupDef",
@@ -165,6 +176,7 @@ __all__ = [
     "PriceAccount",
     "PriceAdjustment",
     "PriceAdjustmentType",
+    "PriceYear",
     "ProcessFlowCard",
     "ProcessFlowStatus",
     "ProductionPlan",
@@ -193,4 +205,11 @@ __all__ = [
     "ToolingStep",
     "TreatmentDict",
     "User",
+    "ShippingOrder",
+    "ShippingOrderLine",
+    "ShippingLabelConfirmation",
+    "ShippingCancellationConsent",
+    "ShippingShipment",
+    "ShippingShipmentLine",
+    "ShippingLogistics",
 ]

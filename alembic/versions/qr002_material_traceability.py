@@ -23,6 +23,7 @@
 """
 
 from alembic import op
+from alembic import context
 import sqlalchemy as sa
 import re
 
@@ -108,7 +109,7 @@ def upgrade():
     # ── 2. batch_transactions 表 ────────────────────────────────────────
     if not bt_exists:
         conn.execute(sa.text("""
-            CREATE TABLE batch_transactions (
+            CREATE TABLE IF NOT EXISTS batch_transactions (
                 id                  SERIAL PRIMARY KEY,
                 batch_id            INTEGER REFERENCES material_batches(id) ON DELETE CASCADE,
                 batch_no            VARCHAR(100),
@@ -137,7 +138,7 @@ def upgrade():
     # ── 3. material_batch_children 表 ───────────────────────────────────
     if not mbc_exists:
         conn.execute(sa.text("""
-            CREATE TABLE material_batch_children (
+            CREATE TABLE IF NOT EXISTS material_batch_children (
                 id                  SERIAL PRIMARY KEY,
                 parent_batch_id     INTEGER NOT NULL
                     REFERENCES material_batches(id) ON DELETE CASCADE,
@@ -175,7 +176,7 @@ def upgrade():
     # ── 4. qr_scan_logs 表 ─────────────────────────────────────────────
     if not qrlog_exists:
         conn.execute(sa.text("""
-            CREATE TABLE qr_scan_logs (
+            CREATE TABLE IF NOT EXISTS qr_scan_logs (
                 id              SERIAL PRIMARY KEY,
                 scan_type       VARCHAR(20) NOT NULL,
                     -- MAT(原料) | MCN(机台) | PFC(工艺流转单) | PRT(零件)
@@ -211,7 +212,7 @@ def downgrade():
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_qr_scan_time;"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_qr_scan_operator;"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_qr_scan_entity;"))
-    conn.execute(sa.text("DROP INDEX IF EXISTS qr_scan_logs CASCADE;"))
+    conn.execute(sa.text("DROP TABLE IF EXISTS qr_scan_logs CASCADE;"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_mbc_child_no;"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_mbc_child_qr;"))
     conn.execute(sa.text("DROP INDEX IF EXISTS idx_mbc_parent;"))
@@ -232,6 +233,8 @@ def downgrade():
 # ── 工具函数 ──────────────────────────────────────────────────────────────
 
 def _get_columns(conn, table: str) -> set:
+    if context.is_offline_mode():
+        return set()
     result = conn.execute(
         sa.text(f"""
             SELECT column_name FROM information_schema.columns
@@ -242,6 +245,8 @@ def _get_columns(conn, table: str) -> set:
 
 
 def _table_exists(conn, table: str) -> bool:
+    if context.is_offline_mode():
+        return False
     result = conn.execute(
         sa.text(f"""
             SELECT 1 FROM information_schema.tables
@@ -252,6 +257,8 @@ def _table_exists(conn, table: str) -> bool:
 
 
 def _constraint_exists(conn, table: str, name: str) -> bool:
+    if context.is_offline_mode():
+        return False
     result = conn.execute(
         sa.text(f"""
             SELECT 1 FROM pg_constraint WHERE conname = '{name}';
@@ -261,34 +268,38 @@ def _constraint_exists(conn, table: str, name: str) -> bool:
 
 
 def _safe_add_col(conn, table: str, col: str, typ: str):
-    cols = _get_columns(conn, table)
-    if col not in cols:
-        conn.execute(sa.text(f"ALTER TABLE {table} ADD COLUMN {col} {typ};"))
-        print(f"[qr002] {table}.{col} added")
+    # IF NOT EXISTS keeps generated offline SQL repeatable and also covers
+    # concurrent/partially-applied online migrations without a result query.
+    conn.execute(sa.text(
+        f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {typ};"
+    ))
+    print(f"[qr002] ensured {table}.{col}")
 
 
 def _safe_add_fk(conn, table: str, fk_name: str, col: str,
                   ref_table: str, ref_col: str):
-    result = conn.execute(
-        sa.text(f"""
-            SELECT 1 FROM pg_constraint
-            WHERE conname = '{fk_name}';
-        """)
-    ).fetchone()
-    if not result:
-        conn.execute(sa.text(
-            f"ALTER TABLE {table} ADD CONSTRAINT {fk_name} "
-            f"FOREIGN KEY ({col}) REFERENCES {ref_table}({ref_col}) ON DELETE SET NULL;"
-        ))
-        print(f"[qr002] {table}.{col} FK to {ref_table}({ref_col}) added")
+    # PostgreSQL has no ALTER TABLE ... ADD CONSTRAINT IF NOT EXISTS.  A DO
+    # block provides the same idempotency while remaining valid in offline
+    # SQL output (and avoids fetching a result set from a static connection).
+    conn.execute(sa.text(f"""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = '{fk_name}'
+            ) THEN
+                ALTER TABLE {table} ADD CONSTRAINT {fk_name}
+                    FOREIGN KEY ({col}) REFERENCES {ref_table}({ref_col})
+                    ON DELETE SET NULL;
+            END IF;
+        END $$;
+    """))
+    print(f"[qr002] ensured {table}.{col} FK to {ref_table}({ref_col})")
 
 
 def _safe_create_index(conn, name: str, ddl: str):
-    result = conn.execute(
-        sa.text(f"SELECT 1 FROM pg_indexes WHERE indexname = '{name}';")
-    ).fetchone()
-    if not result:
-        conn.execute(sa.text(ddl))
-        print(f"[qr002] index {name} created")
-    else:
-        print(f"[qr002] index {name} already exists")
+    # CREATE INDEX IF NOT EXISTS is supported by PostgreSQL and works for
+    # both online execution and Alembic's static SQL generation.
+    ddl = re.sub(r"CREATE\s+INDEX\s+", "CREATE INDEX IF NOT EXISTS ",
+                 ddl, count=1, flags=re.IGNORECASE)
+    conn.execute(sa.text(ddl))
+    print(f"[qr002] ensured index {name}")

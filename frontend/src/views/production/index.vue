@@ -188,7 +188,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { CircleClose, Delete, EditPen, Plus, Refresh, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import apiClient, { get, post } from '@/utils/request'
+import { productionApi } from '@/api/production'
 
 type MaterialStatus = 'pending' | 'ready'
 type CalculationMode = 'auto' | 'manual'
@@ -308,7 +308,7 @@ const sourceTwpValue = (row: DraftRow): string | null => selectedTwpOption(row)?
 const loadWorkbench = async (): Promise<void> => {
   loading.value = true
   try {
-    const page = await get<WorkbenchPage>('/production/plans/workbench', { limit: 200 })
+  const page = await productionApi.workbench<WorkbenchPage>({ limit: 200 })
     plans.value = page.items
     activePlans.value = page.active_items
     refreshDuplicateWarnings()
@@ -322,7 +322,7 @@ const loadWorkbench = async (): Promise<void> => {
 const searchPartOptions = async (row: DraftRow, query: string): Promise<void> => {
   row.searching = true
   try {
-    row.options = await get<PartOption[]>('/production/planning-part-options', { query, limit: 30 })
+    row.options = await productionApi.planningPartOptions<PartOption[]>({ query, limit: 30 })
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '搜索零件失败')
   } finally {
@@ -441,7 +441,7 @@ const submitPlans = async (): Promise<void> => {
   if (!validateDraftRows()) return
   submitting.value = true
   try {
-    await post('/production/plans/batch', buildBatchPayload())
+    await productionApi.createBatch(buildBatchPayload())
     ElMessage.success('生产计划已提交给资材确认')
     draftRows.value = [makeDraftRow()]
     await loadWorkbench()
@@ -474,7 +474,7 @@ const confirmSelectedPlans = async (): Promise<void> => {
     const { value } = await ElMessageBox.prompt('确认备注（可留空，将写入所有已选计划）', '确认材料已备齐', {
       confirmButtonText: '确认已备齐', cancelButtonText: '取消', inputPlaceholder: '例如：材料已入库并备齐', inputType: 'textarea',
     })
-    await post('/production/plans/material-confirmations', { plan_ids: selected.map(plan => plan.id), note: value || undefined })
+    await productionApi.confirmMaterials({ plan_ids: selected.map(plan => plan.id), note: value || undefined })
     ElMessage.success(`已确认 ${selected.length} 条计划的材料备齐`)
     selectedPlans.value = []
     await loadWorkbench()
@@ -485,7 +485,7 @@ const confirmSelectedPlans = async (): Promise<void> => {
 
 const updateCalculationMode = async (plan: WorkbenchPlan, mode: CalculationMode): Promise<void> => {
   try {
-    await apiClient.patch(`/production/plans/${plan.id}`, { material_calculation_mode: mode })
+    await productionApi.updatePlan(plan.id, { material_calculation_mode: mode })
     ElMessage.success(mode === 'auto' ? '将按系统理论用量显示' : '将由资材手动确认')
   } catch (error) {
     plan.material_calculation_mode = mode === 'auto' ? 'manual' : 'auto'
@@ -502,7 +502,7 @@ const cancelPlan = async (plan: WorkbenchPlan): Promise<void> => {
     const { value } = await ElMessageBox.prompt('取消原因会保留在此计划中。', '取消生产计划', {
       confirmButtonText: '取消计划', cancelButtonText: '返回', inputPattern: /\S+/, inputErrorMessage: '请填写取消原因', inputType: 'textarea',
     })
-    await post(`/production/plans/${plan.id}/cancel`, { reason: value })
+    await productionApi.cancelPlan(plan.id, { reason: value })
     ElMessage.success('生产计划已取消')
     await loadWorkbench()
   } catch (error) {
@@ -517,24 +517,24 @@ onMounted(loadWorkbench)
 .production-container { padding: 16px 0 28px; color: var(--zephyr-ink); font-size: 13px; }
 .page-header, .section-heading, .queue-toolbar, .header-actions, .entry-actions, .queue-controls, .queue-title, .material-status, .queue-twp, .twp-cell, .manual-twp-inputs { display: flex; align-items: center; }
 .page-header { justify-content: space-between; gap: 16px; margin-bottom: 16px; }
-.page-header h1, .section-heading h2, .queue-title h2 { margin: 0; color: #26353a; font-weight: 650; }
+.page-header h1, .section-heading h2, .queue-title h2 { margin: 0; color: var(--zephyr-ink); font-weight: 650; }
 .page-header h1 { font-size: 21px; line-height: 1.3; }
-.page-header p, .section-heading p { margin: 4px 0 0; color: #738187; font-size: 12px; line-height: 1.5; }
-.header-actions { gap: 8px; }.sync-state { color: #718086; font-size: 11px; }
-.entry-panel, .queue-section { border-top: 1px solid #d8e1df; background: #fff; }
-.entry-panel { margin-bottom: 20px; border: 1px solid #d8e1df; border-radius: 5px; }
-.section-heading { min-height: 68px; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid #e1e8e5; }
+.page-header p, .section-heading p { margin: 4px 0 0; color: var(--zephyr-muted); font-size: 12px; line-height: 1.5; }
+.header-actions { gap: 8px; }.sync-state { color: var(--zephyr-muted); font-size: 11px; }
+.entry-panel, .queue-section { border-top: 1px solid var(--zephyr-border); background: #fff; }
+.entry-panel { margin-bottom: 20px; border: 1px solid var(--zephyr-border); border-radius: 5px; }
+.section-heading { min-height: 68px; justify-content: space-between; gap: 16px; padding: 12px 16px; border-bottom: 1px solid var(--zephyr-border-soft); }
 .section-heading h2, .queue-title h2 { font-size: 15px; }.entry-actions { gap: 8px; }
 .table-scroll { overflow-x: auto; scrollbar-gutter: stable; }.entry-table-wrap { min-width: 0; }
 .entry-table { min-width: 960px; }.row-index, .numeric, .part-number { font-variant-numeric: tabular-nums slashed-zero; }.row-index { color: #849196; font: 12px ui-monospace, "Cascadia Mono", monospace; }
-.part-picker, .paired-part-picker, .twp-cell > .el-select { width: 100%; }.paired-part-picker { display: block; margin-top: 4px; }.paired-part-picker :deep(.el-input__wrapper) { display: flex; box-sizing: border-box; width: 100%; background: #f3f8f6; box-shadow: 0 0 0 1px #bdd8d0 inset; }.paired-part-picker :deep(.el-input__inner) { width: 100%; min-width: 0; color: #2e665b; cursor: default; font-weight: 500; }.part-option { display: grid; grid-template-columns: minmax(95px, .8fr) minmax(0, 1.2fr); gap: 8px; align-items: center; }.part-option strong { color: #294d47; font: 12px ui-monospace, "Cascadia Mono", monospace; }.part-option span { overflow: hidden; color: #65747a; text-overflow: ellipsis; white-space: nowrap; }
+.part-picker, .paired-part-picker, .twp-cell > .el-select { width: 100%; }.paired-part-picker { display: block; margin-top: 4px; }.paired-part-picker :deep(.el-input__wrapper) { display: flex; box-sizing: border-box; width: 100%; background: #f3f8f6; box-shadow: 0 0 0 1px #bdd8d0 inset; }.paired-part-picker :deep(.el-input__inner) { width: 100%; min-width: 0; color: #2e665b; cursor: default; font-weight: 500; }.part-option { display: grid; grid-template-columns: minmax(95px, .8fr) minmax(0, 1.2fr); gap: 8px; align-items: center; }.part-option strong { color: var(--zephyr-ink); font: 12px ui-monospace, "Cascadia Mono", monospace; }.part-option span { overflow: hidden; color: #65747a; text-overflow: ellipsis; white-space: nowrap; }
 .inline-warning, .paired-hint { margin: 4px 0 0; font-size: 11px; line-height: 1.35; }.inline-warning { color: #a06d20; }.paired-hint { color: #47736b; }.cell-text { color: #53646a; }.cell-hint { display: block; margin-top: 3px; color: #a06d20; font-size: 10px; }
-.twp-cell { gap: 4px; min-width: 0; flex-wrap: wrap; }.twp-cell > .el-select { min-width: 180px; flex: 1; }.twp-source-value { color: #3b5f59; font: 11px ui-monospace, "Cascadia Mono", monospace; white-space: nowrap; }.manual-twp-inputs { gap: 4px; width: 100%; }.manual-twp-inputs :deep(.el-input-number) { width: 79px; }.manual-twp-inputs span { color: #819096; }.entry-note { margin: 0; padding: 9px 16px; border-top: 1px solid #e1e8e5; color: #718086; font-size: 11px; }
-.queue-section { border-top: 0; }.queue-toolbar { min-height: 52px; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid #d8e1df; }.queue-title { gap: 9px; }.queue-title span { color: #758489; font: 11px ui-monospace, "Cascadia Mono", monospace; }.queue-controls { justify-content: flex-end; gap: 8px; }.queue-controls :deep(.el-input) { width: 236px; }.queue-controls :deep(.el-select) { width: 116px; }
-.status-strip { display: grid; grid-template-columns: 108px 108px 108px minmax(180px, 1fr); margin: 10px 0; border: 1px solid #d8e1df; background: #fbfcfb; }.status-strip > div { display: grid; align-content: center; min-height: 54px; padding: 7px 12px; border-right: 1px solid #e2e8e6; }.status-strip span { color: #78878c; font-size: 10px; }.status-strip strong { margin-top: 2px; color: #294d47; font: 650 20px ui-monospace, "Cascadia Mono", monospace; font-variant-numeric: tabular-nums; }.status-strip p { display: flex; align-items: center; margin: 0; padding: 8px 14px; color: #718086; font-size: 11px; }
-.queue-table { min-width: 1060px; }.part-number { color: #315f56; font-family: ui-monospace, "Cascadia Mono", monospace; }.queue-twp { align-items: flex-start; gap: 5px; flex-direction: column; color: #485d60; font: 11px ui-monospace, "Cascadia Mono", monospace; }.manual-flag { color: #a1691b; font-family: inherit; }.material-status { gap: 6px; color: #53646a; white-space: nowrap; }.material-status small { color: #8b7149; font-size: 10px; }.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #bb7f26; }.status-dot.ready { background: #28785f; }.numeric { color: #3d5055; font-family: ui-monospace, "Cascadia Mono", monospace; }
-:deep(.el-table) { --el-table-header-bg-color: #edf2f1; --el-table-border-color: #d8e1df; --el-table-row-hover-bg-color: #f2f8f5; --el-table-header-text-color: #5d6f74; --el-table-text-color: #415257; border: 0; border-radius: 0; font-size: 12px; }.entry-table :deep(.el-table__header-wrapper), .queue-table :deep(.el-table__header-wrapper) { position: sticky; top: 0; z-index: 2; }.entry-table :deep(th.el-table__cell), .queue-table :deep(th.el-table__cell) { height: 36px; padding: 0 8px; font-size: 11px; font-weight: 600; }.entry-table :deep(td.el-table__cell) { height: 58px; padding: 5px 8px; vertical-align: top; }.queue-table :deep(td.el-table__cell) { height: 44px; padding: 5px 8px; }.entry-table :deep(.cell), .queue-table :deep(.cell) { line-height: 1.35; }.entry-table :deep(.el-input-number .el-input__wrapper) { padding-right: 28px; }.entry-table :deep(.el-input-number), .queue-table :deep(.el-input-number) { width: 100%; }.entry-table :deep(.el-select__wrapper), .entry-table :deep(.el-input__wrapper), .queue-table :deep(.el-select__wrapper) { min-height: 30px; }.queue-table :deep(.el-table__row) { transition: background-color 80ms ease; }.queue-table :deep(.el-table__row:hover > td.el-table__cell) { background: #f2f8f5 !important; }:deep(.el-button.is-circle) { min-width: 30px; min-height: 30px; }
-@media (max-width: 900px) { .page-header, .section-heading, .queue-toolbar { align-items: stretch; flex-direction: column; }.header-actions, .entry-actions, .queue-controls { justify-content: flex-start; flex-wrap: wrap; }.queue-controls :deep(.el-input) { width: min(100%, 360px); }.status-strip { grid-template-columns: repeat(3, 1fr); }.status-strip p { grid-column: 1 / -1; border-top: 1px solid #e2e8e6; } }
+.twp-cell { gap: 4px; min-width: 0; flex-wrap: wrap; }.twp-cell > .el-select { min-width: 180px; flex: 1; }.twp-source-value { color: #3b5f59; font: 11px ui-monospace, "Cascadia Mono", monospace; white-space: nowrap; }.manual-twp-inputs { gap: 4px; width: 100%; }.manual-twp-inputs :deep(.el-input-number) { width: 79px; }.manual-twp-inputs span { color: #819096; }.entry-note { margin: 0; padding: 9px 16px; border-top: 1px solid var(--zephyr-border-soft); color: var(--zephyr-muted); font-size: 11px; }
+.queue-section { border-top: 0; }.queue-toolbar { min-height: 52px; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--zephyr-border); }.queue-title { gap: 9px; }.queue-title span { color: #758489; font: 11px ui-monospace, "Cascadia Mono", monospace; }.queue-controls { justify-content: flex-end; gap: 8px; }.queue-controls :deep(.el-input) { width: 236px; }.queue-controls :deep(.el-select) { width: 116px; }
+.status-strip { display: grid; grid-template-columns: 108px 108px 108px minmax(180px, 1fr); margin: 10px 0; border: 1px solid var(--zephyr-border); background: #fbfcfb; }.status-strip > div { display: grid; align-content: center; min-height: 54px; padding: 7px 12px; border-right: 1px solid var(--zephyr-border-soft); }.status-strip span { color: #78878c; font-size: 10px; }.status-strip strong { margin-top: 2px; color: var(--zephyr-ink); font: 650 20px ui-monospace, "Cascadia Mono", monospace; font-variant-numeric: tabular-nums; }.status-strip p { display: flex; align-items: center; margin: 0; padding: 8px 14px; color: var(--zephyr-muted); font-size: 11px; }
+.queue-table { min-width: 1060px; }.part-number { color: var(--zephyr-primary); font-family: ui-monospace, "Cascadia Mono", monospace; }.queue-twp { align-items: flex-start; gap: 5px; flex-direction: column; color: #485d60; font: 11px ui-monospace, "Cascadia Mono", monospace; }.manual-flag { color: #a1691b; font-family: inherit; }.material-status { gap: 6px; color: #53646a; white-space: nowrap; }.material-status small { color: #8b7149; font-size: 10px; }.status-dot { width: 7px; height: 7px; border-radius: 50%; background: #bb7f26; }.status-dot.ready { background: #28785f; }.numeric { color: #3d5055; font-family: ui-monospace, "Cascadia Mono", monospace; }
+:deep(.el-table) { --el-table-header-bg-color: var(--zephyr-surface-muted); --el-table-border-color: var(--zephyr-border); --el-table-row-hover-bg-color: var(--zephyr-primary-soft); --el-table-header-text-color: #5d6f74; --el-table-text-color: #415257; border: 0; border-radius: 0; font-size: 12px; }.entry-table :deep(.el-table__header-wrapper), .queue-table :deep(.el-table__header-wrapper) { position: sticky; top: 0; z-index: 2; }.entry-table :deep(th.el-table__cell), .queue-table :deep(th.el-table__cell) { height: 36px; padding: 0 8px; font-size: 11px; font-weight: 600; }.entry-table :deep(td.el-table__cell) { height: 58px; padding: 5px 8px; vertical-align: top; }.queue-table :deep(td.el-table__cell) { height: 44px; padding: 5px 8px; }.entry-table :deep(.cell), .queue-table :deep(.cell) { line-height: 1.35; }.entry-table :deep(.el-input-number .el-input__wrapper) { padding-right: 28px; }.entry-table :deep(.el-input-number), .queue-table :deep(.el-input-number) { width: 100%; }.entry-table :deep(.el-select__wrapper), .entry-table :deep(.el-input__wrapper), .queue-table :deep(.el-select__wrapper) { min-height: 30px; }.queue-table :deep(.el-table__row) { transition: background-color 80ms ease; }.queue-table :deep(.el-table__row:hover > td.el-table__cell) { background: var(--zephyr-primary-soft) !important; }:deep(.el-button.is-circle) { min-width: 30px; min-height: 30px; }
+@media (max-width: 900px) { .page-header, .section-heading, .queue-toolbar { align-items: stretch; flex-direction: column; }.header-actions, .entry-actions, .queue-controls { justify-content: flex-start; flex-wrap: wrap; }.queue-controls :deep(.el-input) { width: min(100%, 360px); }.status-strip { grid-template-columns: repeat(3, 1fr); }.status-strip p { grid-column: 1 / -1; border-top: 1px solid var(--zephyr-border-soft); } }
 @media (max-width: 620px) { .production-container { padding-top: 12px; }.section-heading, .entry-note { padding-right: 12px; padding-left: 12px; }.entry-actions :deep(.el-button), .queue-controls :deep(.el-button) { flex: 1; }.queue-controls :deep(.el-input), .queue-controls :deep(.el-select) { width: 100%; }.status-strip > div { padding: 7px 8px; }.sync-state { display: none; } }
 @media (prefers-reduced-motion: reduce) { .queue-table :deep(.el-table__row) { transition: none; } }
 </style>

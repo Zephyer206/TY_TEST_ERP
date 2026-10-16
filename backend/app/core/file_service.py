@@ -109,3 +109,16 @@ def ensure_upload_dir() -> None:
     ]
     for d in dirs:
         os.makedirs(d, exist_ok=True)
+
+
+def get_upload_root() -> Path:
+    """Resolve the configured upload root for local disks or cloud mounts."""
+    configured = Path(settings.UPLOAD_DIR or "uploads")
+    return configured if configured.is_absolute() else Path(__file__).resolve().parents[2] / configured
+
+
+def get_inquiry_attachment_path(inquiry_id: int, filename: str) -> tuple[Path, str]:
+    """Return a safe inquiry attachment path and its portable relative key."""
+    stored_name = generate_unique_filename(filename)
+    relative = Path("inquiries") / str(inquiry_id) / stored_name
+    return get_upload_root() / relative, relative.as_posix()

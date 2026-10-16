@@ -11,6 +11,7 @@
 """
 
 from alembic import op
+from alembic import context
 import sqlalchemy as sa
 
 revision = 'v4b_sample_molds_cols'
@@ -46,6 +47,16 @@ def downgrade():
 def _add_col_if_missing(conn, table: str, col_name: str,
                         col_type: str, comment: str = None):
     """安全追加列（幂等）：仅在列不存在时添加。"""
+    if context.is_offline_mode():
+        conn.execute(sa.text(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col_name} {col_type};"
+        ))
+        if comment:
+            escaped = comment.replace("'", "''")
+            conn.execute(sa.text(
+                f"COMMENT ON COLUMN {table}.{col_name} IS '{escaped}'"
+            ))
+        return
     result = conn.execute(sa.text(f"""
         SELECT 1 FROM information_schema.columns
         WHERE table_name = '{table}' AND column_name = '{col_name}';

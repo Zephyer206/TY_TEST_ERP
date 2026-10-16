@@ -297,9 +297,12 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Menu, Plus, Search } from '@element-plus/icons-vue'
-import { get, post } from '@/utils/request'
 import { formatDate } from '@/utils/format'
 import { useUserStore } from '@/stores/user'
+import { quotesApi } from '@/api/quotes'
+import { customersApi } from '@/api/customers'
+import { partNamesApi } from '@/api/dictionary'
+import { partsApi } from '@/api/parts'
 
 const userStore = useUserStore()
 
@@ -383,7 +386,7 @@ const fetchQuotes = async () => {
       ...(filter.approval_status && { approval_status: filter.approval_status }),
       ...(filter.search && { search: filter.search }),
     }
-    const data = await get('/quotes', params)
+    const data = await quotesApi.list(params)
     quotes.value = Array.isArray(data) ? data : (data.items || [])
     page.total = data.total || quotes.value.length
   } catch (e) {
@@ -395,14 +398,14 @@ const fetchQuotes = async () => {
 
 const fetchCustomers = async () => {
   try {
-    const data = await get('/customers')
+    const data = await customersApi.list()
     customers.value = Array.isArray(data) ? data : (data.items || [])
   } catch { /* silent */ }
 }
 
 const fetchPartNames = async () => {
   try {
-    const data = await get('/part-names', { limit: 500 })
+    const data = await partNamesApi.list({ limit: 500 })
     partNames.value = Array.isArray(data) ? data : (data.items || [])
 
     // 提取一级分类列表
@@ -464,7 +467,7 @@ const searchParts = async (query) => {
   if (!query) return
   partLoading.value = true
   try {
-    const data = await get('/parts', { search: query, limit: 30 })
+    const data = await partsApi.list({ search: query, limit: 30 })
     partOptions.value = Array.isArray(data) ? data : (data.items || [])
   } catch { /* silent */ } finally {
     partLoading.value = false
@@ -473,7 +476,7 @@ const searchParts = async (query) => {
 
 const loadDetail = async (id) => {
   try {
-    return await get(`/quotes/${id}`)
+    return await quotesApi.detail(id)
   } catch (e) {
     ElMessage.error(e.message)
     return null
@@ -493,7 +496,7 @@ const doCreate = async () => {
   await createRef.value?.validate()
   saving.value = true
   try {
-    await post('/quotes', createForm)
+    await quotesApi.create(createForm)
     ElMessage.success('报价创建成功')
     createVisible.value = false
     fetchQuotes()
@@ -526,7 +529,7 @@ const openEditPricing = async (row) => {
 const savePricing = async () => {
   saving.value = true
   try {
-    await post(`/quotes/${activeId.value}/pricing`, pricingForm)
+    await quotesApi.pricing(activeId.value, pricingForm)
     ElMessage.success('定价已保存')
     pricingVisible.value = false
     fetchQuotes()
@@ -540,7 +543,7 @@ const savePricing = async () => {
 const submitReview = async (row) => {
   await ElMessageBox.confirm('提交技术审核？', '确认', { type: 'warning' })
   try {
-    await post(`/quotes/${row.id}/submit-review`)
+    await quotesApi.submitReview(row.id)
     ElMessage.success('已提交技术审核')
     fetchQuotes()
   } catch (e) {
@@ -551,7 +554,7 @@ const submitReview = async (row) => {
 const submitBoss = async (row) => {
   await ElMessageBox.confirm('提交老板审批？', '确认', { type: 'warning' })
   try {
-    await post(`/quotes/${row.id}/submit-boss`)
+    await quotesApi.submitBoss(row.id)
     ElMessage.success('已提交老板审批')
     fetchQuotes()
   } catch (e) {
@@ -569,7 +572,7 @@ const openBossApprove = (row) => {
 const doBossApprove = async () => {
   saving.value = true
   try {
-    await post(`/quotes/${activeId.value}/boss-approve`, approveForm)
+    await quotesApi.bossApprove(activeId.value, approveForm)
     ElMessage.success(approveForm.approved ? '审批通过' : '已驳回')
     approveVisible.value = false
     fetchQuotes()
@@ -590,7 +593,7 @@ const openFix = (row) => {
 const doFix = async () => {
   saving.value = true
   try {
-    await post(`/quotes/${activeId.value}/fix`, fixForm)
+    await quotesApi.fix(activeId.value, fixForm)
     ElMessage.success('定点完成')
     fixVisible.value = false
     fetchQuotes()
@@ -610,7 +613,7 @@ const openRevoke = (row) => {
 const doRevoke = async () => {
   saving.value = true
   try {
-    await post(`/quotes/${activeId.value}/revoke-nomination`, revokeForm)
+    await quotesApi.revokeNomination(activeId.value, revokeForm)
     ElMessage.success('定点已撤销')
     revokeVisible.value = false
     fetchQuotes()
@@ -648,7 +651,7 @@ const doQuickAddPartName = async () => {
   await quickPartNameRef.value?.validate()
   saving.value = true
   try {
-    const newPartName = await post('/part-names', quickPartNameForm)
+    const newPartName = await partNamesApi.create(quickPartNameForm)
     ElMessage.success('零件名称已添加')
     quickAddPartNameVisible.value = false
     createForm.part_name_id = newPartName.id
@@ -674,7 +677,7 @@ const doQuickAddPart = async () => {
   await quickPartRef.value?.validate()
   saving.value = true
   try {
-    const newPart = await post('/parts', quickPartForm)
+    const newPart = await partsApi.create(quickPartForm)
     ElMessage.success('零件已创建')
     quickAddPartVisible.value = false
     createForm.part_id = newPart.id
@@ -700,7 +703,7 @@ const doQuickAddCustomer = async () => {
   await quickCustomerRef.value?.validate()
   saving.value = true
   try {
-    const newCustomer = await post('/customers', quickCustomerForm)
+    const newCustomer = await customersApi.create(quickCustomerForm)
     ElMessage.success('客户已创建')
     quickAddCustomerVisible.value = false
     createForm.customer_id = newCustomer.id
@@ -721,7 +724,7 @@ onMounted(() => { fetchQuotes(); fetchCustomers(); fetchPartNames() })
 .list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
 .search-control { display: flex; align-items: center; gap: 8px; width: min(500px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
 .filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.filter-controls :deep(.el-select) { width: 128px; }.view-toggle { color: #625780; }
-.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.table-meta span:last-child { color: #96939e; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: var(--zephyr-muted); font-size: 12px; }.table-meta span:last-child { color: #96939e; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
 .text-gray { color: #999; }
 .text-danger { color: #f56c6c; }

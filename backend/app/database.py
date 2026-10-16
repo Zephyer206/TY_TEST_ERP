@@ -18,10 +18,14 @@ engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,  # SQL echo in debug mode
     poolclass=AsyncAdaptedQueuePool,
-    pool_size=20,
-    max_overflow=10,
+    # Keep the pool bounded for the remote PostgreSQL deployment. A large
+    # pool makes a Windows service restart look like a connection failure
+    # while stale sockets are still being reclaimed.
+    pool_size=5,
+    max_overflow=5,
     pool_pre_ping=True,  # Verify connections before use
-    pool_recycle=3600,  # Recycle connections after 1 hour
+    pool_recycle=900,  # Recycle connections before common idle timeouts
+    connect_args={"timeout": 10, "command_timeout": 30},
 )
 
 # Session factory

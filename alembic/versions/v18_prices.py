@@ -72,158 +72,136 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-
     # ── 表 1：prices ───────────────────────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT 1 FROM information_schema.tables
-        WHERE table_name = 'prices';
-    """)).fetchone()
-    if not result:
-        op.execute("""
-            CREATE TABLE prices (
-                id SERIAL PRIMARY KEY,
-                part_id INTEGER NOT NULL,
-                customer_id INTEGER,
-                material_name VARCHAR(100),
-                net_weight NUMERIC(10,4),
-                surface_treatment JSONB DEFAULT '[]'::jsonb,
-                created_at TIMESTAMP DEFAULT NOW(),
-                updated_at TIMESTAMP DEFAULT NOW(),
-                UNIQUE(part_id, customer_id)
-            );
-        """)
-        op.execute("CREATE INDEX idx_prices_part_id ON prices(part_id);")
-        op.execute("CREATE INDEX idx_prices_customer_id ON prices(customer_id);")
-        op.execute("COMMENT ON TABLE prices IS '价格台账主表：记录每个零件+客户的成本要素'")
-        print('[v18] table prices created')
-
-        # 外键
-        op.execute("""
-            ALTER TABLE prices
-            ADD CONSTRAINT fk_prices_part_id
-            FOREIGN KEY (part_id) REFERENCES parts(id)
-            ON DELETE CASCADE;
-        """)
-        op.execute("""
-            ALTER TABLE prices
-            ADD CONSTRAINT fk_prices_customer_id
-            FOREIGN KEY (customer_id) REFERENCES tooling_customers(id)
-            ON DELETE SET NULL;
-        """)
-        print('[v18] prices foreign keys added')
-    else:
-        print('[v18] table prices already exists, skipping')
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS prices (
+            id SERIAL PRIMARY KEY,
+            part_id INTEGER NOT NULL,
+            customer_id INTEGER,
+            material_name VARCHAR(100),
+            net_weight NUMERIC(10,4),
+            surface_treatment JSONB DEFAULT '[]'::jsonb,
+            created_at TIMESTAMP DEFAULT NOW(),
+            updated_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(part_id, customer_id)
+        );
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS idx_prices_part_id ON prices(part_id);")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_prices_customer_id ON prices(customer_id);")
+    op.execute("COMMENT ON TABLE prices IS '价格台账主表：记录每个零件+客户的成本要素'")
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_prices_part_id'
+            ) THEN
+                ALTER TABLE prices
+                ADD CONSTRAINT fk_prices_part_id
+                FOREIGN KEY (part_id) REFERENCES parts(id)
+                ON DELETE CASCADE;
+            END IF;
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_prices_customer_id'
+            ) THEN
+                ALTER TABLE prices
+                ADD CONSTRAINT fk_prices_customer_id
+                FOREIGN KEY (customer_id) REFERENCES tooling_customers(id)
+                ON DELETE SET NULL;
+            END IF;
+        END $$;
+    """)
 
     # ── 表 2：price_years ──────────────────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT 1 FROM information_schema.tables
-        WHERE table_name = 'price_years';
-    """)).fetchone()
-    if not result:
-        op.execute("""
-            CREATE TABLE price_years (
-                id SERIAL PRIMARY KEY,
-                price_id INTEGER NOT NULL,
-                year INTEGER NOT NULL,
-                unit_price NUMERIC(12,4),
-                annual_sales INTEGER DEFAULT 0,
-                operator_id INTEGER,
-                updated_at TIMESTAMP DEFAULT NOW(),
-                UNIQUE(price_id, year)
-            );
-        """)
-        op.execute("CREATE INDEX idx_price_years_price_id ON price_years(price_id);")
-        op.execute("CREATE INDEX idx_price_years_year ON price_years(year);")
-        op.execute("COMMENT ON TABLE price_years IS '年份单价与年销量'")
-        print('[v18] table price_years created')
-
-        op.execute("""
-            ALTER TABLE price_years
-            ADD CONSTRAINT fk_price_years_price_id
-            FOREIGN KEY (price_id) REFERENCES prices(id)
-            ON DELETE CASCADE;
-        """)
-        print('[v18] price_years foreign key added')
-    else:
-        print('[v18] table price_years already exists, skipping')
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS price_years (
+            id SERIAL PRIMARY KEY,
+            price_id INTEGER NOT NULL,
+            year INTEGER NOT NULL,
+            unit_price NUMERIC(12,4),
+            annual_sales INTEGER DEFAULT 0,
+            operator_id INTEGER,
+            updated_at TIMESTAMP DEFAULT NOW(),
+            UNIQUE(price_id, year)
+        );
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS idx_price_years_price_id ON price_years(price_id);")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_price_years_year ON price_years(year);")
+    op.execute("COMMENT ON TABLE price_years IS '年份单价与年销量'")
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_price_years_price_id'
+            ) THEN
+                ALTER TABLE price_years
+                ADD CONSTRAINT fk_price_years_price_id
+                FOREIGN KEY (price_id) REFERENCES prices(id)
+                ON DELETE CASCADE;
+            END IF;
+        END $$;
+    """)
 
     # ── 表 3：annual_reductions ────────────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT 1 FROM information_schema.tables
-        WHERE table_name = 'annual_reductions';
-    """)).fetchone()
-    if not result:
-        op.execute("""
-            CREATE TABLE annual_reductions (
-                id SERIAL PRIMARY KEY,
-                price_id INTEGER NOT NULL,
-                reduction_pct NUMERIC(5,2) NOT NULL DEFAULT 0,
-                start_year INTEGER NOT NULL,
-                duration_years INTEGER DEFAULT 0,
-                reason VARCHAR(200),
-                created_by INTEGER,
-                created_at TIMESTAMP DEFAULT NOW()
-            );
-        """)
-        op.execute("CREATE INDEX idx_annual_reductions_price_id ON annual_reductions(price_id);")
-        op.execute("COMMENT ON TABLE annual_reductions IS '年降规则表'")
-        print('[v18] table annual_reductions created')
-
-        op.execute("""
-            ALTER TABLE annual_reductions
-            ADD CONSTRAINT fk_annual_reductions_price_id
-            FOREIGN KEY (price_id) REFERENCES prices(id)
-            ON DELETE CASCADE;
-        """)
-        print('[v18] annual_reductions foreign key added')
-    else:
-        print('[v18] table annual_reductions already exists, skipping')
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS annual_reductions (
+            id SERIAL PRIMARY KEY,
+            price_id INTEGER NOT NULL,
+            reduction_pct NUMERIC(5,2) NOT NULL DEFAULT 0,
+            start_year INTEGER NOT NULL,
+            duration_years INTEGER DEFAULT 0,
+            reason VARCHAR(200),
+            created_by INTEGER,
+            created_at TIMESTAMP DEFAULT NOW()
+        );
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS idx_annual_reductions_price_id ON annual_reductions(price_id);")
+    op.execute("COMMENT ON TABLE annual_reductions IS '年降规则表'")
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_annual_reductions_price_id'
+            ) THEN
+                ALTER TABLE annual_reductions
+                ADD CONSTRAINT fk_annual_reductions_price_id
+                FOREIGN KEY (price_id) REFERENCES prices(id)
+                ON DELETE CASCADE;
+            END IF;
+        END $$;
+    """)
 
     # ── 表 4：manual_adjustments ──────────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT 1 FROM information_schema.tables
-        WHERE table_name = 'manual_adjustments';
-    """)).fetchone()
-    if not result:
-        op.execute("""
-            CREATE TABLE manual_adjustments (
-                id SERIAL PRIMARY KEY,
-                price_id INTEGER NOT NULL,
-                adjusted_at TIMESTAMP DEFAULT NOW(),
-                old_price NUMERIC(12,4),
-                new_price NUMERIC(12,4),
-                adjustment_type VARCHAR(30),
-                reason VARCHAR(200),
-                operator_id INTEGER
-            );
-        """)
-        op.execute("CREATE INDEX idx_manual_adjustments_price_id ON manual_adjustments(price_id);")
-        op.execute("CREATE INDEX idx_manual_adjustments_adjusted_at ON manual_adjustments(adjusted_at);")
-        op.execute("COMMENT ON TABLE manual_adjustments IS '手动调价记录'")
-        print('[v18] table manual_adjustments created')
-
-        op.execute("""
-            ALTER TABLE manual_adjustments
-            ADD CONSTRAINT fk_manual_adjustments_price_id
-            FOREIGN KEY (price_id) REFERENCES prices(id)
-            ON DELETE CASCADE;
-        """)
-        print('[v18] manual_adjustments foreign key added')
-    else:
-        print('[v18] table manual_adjustments already exists, skipping')
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS manual_adjustments (
+            id SERIAL PRIMARY KEY,
+            price_id INTEGER NOT NULL,
+            adjusted_at TIMESTAMP DEFAULT NOW(),
+            old_price NUMERIC(12,4),
+            new_price NUMERIC(12,4),
+            adjustment_type VARCHAR(30),
+            reason VARCHAR(200),
+            operator_id INTEGER
+        );
+    """)
+    op.execute("CREATE INDEX IF NOT EXISTS idx_manual_adjustments_price_id ON manual_adjustments(price_id);")
+    op.execute("CREATE INDEX IF NOT EXISTS idx_manual_adjustments_adjusted_at ON manual_adjustments(adjusted_at);")
+    op.execute("COMMENT ON TABLE manual_adjustments IS '手动调价记录'")
+    op.execute("""
+        DO $$
+        BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_manual_adjustments_price_id'
+            ) THEN
+                ALTER TABLE manual_adjustments
+                ADD CONSTRAINT fk_manual_adjustments_price_id
+                FOREIGN KEY (price_id) REFERENCES prices(id)
+                ON DELETE CASCADE;
+            END IF;
+        END $$;
+    """)
 
 
 def downgrade():
-    conn = op.get_bind()
-
     tables = ['manual_adjustments', 'annual_reductions', 'price_years', 'prices']
     for tbl in tables:
-        result = conn.execute(sa.text(f"""
-            SELECT 1 FROM information_schema.tables WHERE table_name = '{tbl}';
-        """)).fetchone()
-        if result:
-            op.execute(f'DROP TABLE IF EXISTS {tbl} CASCADE;')
-            print(f'[v18] table {tbl} dropped')
-        else:
-            print(f'[v18] table {tbl} does not exist, skipping')
+        op.execute(f'DROP TABLE IF EXISTS {tbl} CASCADE;')

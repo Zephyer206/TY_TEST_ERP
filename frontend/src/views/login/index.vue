@@ -111,7 +111,7 @@ import { reactive, ref } from 'vue'
 import { ArrowRight, Hide, Lock, User, View } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import api from '@/api'
+import { authApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
@@ -137,7 +137,7 @@ const handleLogin = async () => {
 
   loading.value = true
   try {
-    const { data } = await api.post('/auth/login', form)
+    const data = await authApi.login<{ access_token: string }>(form)
     userStore.setToken(data.access_token)
 
     userStore.setUserInfo({

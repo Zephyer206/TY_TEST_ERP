@@ -6,7 +6,10 @@ requests_api_test.py
 
 import sys, os
 sys.path.insert(0, r"c:\Users\Administrator\Desktop\Cloud-Stamping")
-os.environ.setdefault("DATABASE_URL", "postgresql://postgres:thehaoshi5DE@localhost:5432/stamping_system")
+os.environ.setdefault(
+    "DATABASE_URL",
+    "postgresql://postgres:" + __import__("os").environ.get("ZEPHYR_DB_PASSWORD", "") + "@localhost:5432/stamping_system",
+)
 
 import requests
 import json

@@ -1,5 +1,5 @@
 import psycopg2
-conn = psycopg2.connect(dbname='stamping_system', user='postgres', password='thehaoshi5DE', host='localhost', port='5432')
+conn = psycopg2.connect(dbname='stamping_system', user='postgres', password='__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")', host='localhost', port='5432')
 cur = conn.cursor()
 for tbl in ['part_customer_aliases', 'delivery_notes', 'delivery_items']:
     cur.execute(f"""

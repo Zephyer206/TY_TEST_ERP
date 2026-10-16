@@ -168,7 +168,7 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import api from '@/api'
+import { priceAdjustmentsApi } from '@/api/pricing'
 
 const adjustments = ref([])
 const showCreateDialog = ref(false)
@@ -213,8 +213,7 @@ const loadAdjustments = async () => {
     if (filters.customer_id) params.customer_id = filters.customer_id
     if (filters.status) params.status = filters.status
 
-    const { data } = await api.get('/price-adjustments', { params })
-    adjustments.value = data
+    adjustments.value = await priceAdjustmentsApi.list(params)
   } catch (error) {
     ElMessage.error('Failed to load adjustments')
   }
@@ -222,7 +221,7 @@ const loadAdjustments = async () => {
 
 const createAdjustment = async () => {
   try {
-    await api.post('/price-adjustments', form)
+    await priceAdjustmentsApi.create(form)
     ElMessage.success('Adjustment request created')
     showCreateDialog.value = false
     await loadAdjustments()
@@ -253,7 +252,7 @@ const reject = (adjustment: any) => {
 
 const submitApproval = async (approved: boolean) => {
   try {
-    await api.post(`/price-adjustments/${currentAdjustment.value.id}/approve`, {
+    await priceAdjustmentsApi.approve(currentAdjustment.value.id, {
       approved,
       notes: approvalForm.notes,
     })

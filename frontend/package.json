@@ -8,7 +8,8 @@
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs,.ts,.tsx,.cts,.mts --fix",
-    "type-check": "vue-tsc --noEmit"
+    "type-check": "vue-tsc --noEmit",
+    "check:api": "powershell -NoProfile -ExecutionPolicy Bypass -File ../scripts/check_api_usage.ps1"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.1",

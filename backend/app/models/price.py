@@ -5,8 +5,8 @@ from decimal import Decimal
 from enum import Enum as PyEnum
 from typing import Optional
 
-from sqlalchemy import DateTime, Integer, JSON, Numeric, String, Text
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import DateTime, ForeignKey, Integer, JSON, Numeric, String, Text
+from sqlalchemy.orm import Mapped, foreign, mapped_column, relationship
 
 from app.database import Base
 
@@ -26,7 +26,7 @@ class PriceAccount(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     part_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
-    customer_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
+    customer_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True, index=True)
 
     # Material info
     material_name: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
@@ -49,6 +49,116 @@ class PriceAccount(Base):
     # Timestamps
     created_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.utcnow)
     updated_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # ``price_accounts`` was the original API name.  The canonical table is
+    # ``prices``; keep the annual child relation here so the old API can be
+    # served without introducing a second table or a second migration chain.
+    annual_records: Mapped[list["PriceYear"]] = relationship(
+        "PriceYear",
+        back_populates="price_account",
+        cascade="all, delete-orphan",
+        order_by="PriceYear.year",
+    )
+    part: Mapped["Part"] = relationship(
+        "Part",
+        primaryjoin="foreign(PriceAccount.part_id) == Part.id",
+        viewonly=True,
+    )
+    customer: Mapped[Optional["Customer"]] = relationship(
+        "Customer",
+        primaryjoin="foreign(PriceAccount.customer_id) == Customer.id",
+        viewonly=True,
+    )
+
+    @property
+    def material(self) -> Optional[str]:
+        return self.material_name
+
+    @material.setter
+    def material(self, value: Optional[str]) -> None:
+        self.material_name = value
+
+    @property
+    def net_weight_kg(self) -> Optional[Decimal]:
+        return self.net_weight
+
+    @net_weight_kg.setter
+    def net_weight_kg(self, value: Optional[Decimal]) -> None:
+        self.net_weight = value
+
+    @property
+    def gross_weight_kg(self) -> Optional[Decimal]:
+        return self.gross_weight
+
+    @gross_weight_kg.setter
+    def gross_weight_kg(self, value: Optional[Decimal]) -> None:
+        self.gross_weight = value
+
+    @property
+    def notes(self) -> Optional[str]:
+        return self.remark
+
+    @notes.setter
+    def notes(self, value: Optional[str]) -> None:
+        self.remark = value
+
+    @property
+    def reduction_pct(self) -> Decimal:
+        # Annual reduction is a separate legacy table and is not part of the
+        # canonical ``prices`` row.  Zero is the truthful compatibility value.
+        return getattr(self, "_legacy_reduction_pct", Decimal("0"))
+
+    @reduction_pct.setter
+    def reduction_pct(self, value: Decimal) -> None:
+        self._legacy_reduction_pct = Decimal(str(value))
+
+    @property
+    def base_price(self) -> Optional[Decimal]:
+        return (
+            getattr(self, "_legacy_base_price", None)
+            or self.cost_override
+            or self.material_cost
+            or self.material_unit_price
+        )
+
+    @base_price.setter
+    def base_price(self, value: Optional[Decimal]) -> None:
+        self._legacy_base_price = value
+
+    @property
+    def current_price(self) -> Optional[Decimal]:
+        if self.annual_records:
+            return self.annual_records[-1].unit_price
+        return getattr(self, "_legacy_current_price", None) or self.base_price
+
+    @current_price.setter
+    def current_price(self, value: Optional[Decimal]) -> None:
+        self._legacy_current_price = value
+
+    @property
+    def price_year(self) -> Optional[int]:
+        return self.annual_records[-1].year if self.annual_records else getattr(self, "_legacy_price_year", None)
+
+    @price_year.setter
+    def price_year(self, value: Optional[int]) -> None:
+        self._legacy_price_year = value
+
+    @property
+    def is_active(self) -> bool:
+        return getattr(self, "_legacy_is_active", True)
+
+    @is_active.setter
+    def is_active(self, value: bool) -> None:
+        self._legacy_is_active = value
+
+    @property
+    def adjustments(self) -> list:
+        """Transient legacy field; approval history is served separately."""
+        return getattr(self, "_legacy_adjustments", [])
+
+    @adjustments.setter
+    def adjustments(self, value: list) -> None:
+        self._legacy_adjustments = value
 
     def __repr__(self) -> str:
         return f"<PriceAccount {self.id}>"
@@ -139,6 +249,22 @@ class PriceAdjustment(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
+    @property
+    def price_account_id(self) -> Optional[int]:
+        return getattr(self, "_price_account_id", None)
+
+    @price_account_id.setter
+    def price_account_id(self, value: int) -> None:
+        self._price_account_id = value
+
+    @property
+    def created_by(self) -> int:
+        return self.requested_by
+
+    @property
+    def adjustment_reason(self) -> Optional[str]:
+        return self.reason
+
     def __repr__(self) -> str:
         return f"<PriceAdjustment {self.id} {self.status}>"
 
@@ -149,12 +275,57 @@ class PriceYear(Base):
     __tablename__ = "price_years"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    price_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    price_id: Mapped[int] = mapped_column(
+        ForeignKey("prices.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     year: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
     unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
     annual_sales: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    price_account: Mapped[PriceAccount] = relationship(
+        "PriceAccount", back_populates="annual_records"
+    )
+
+    @property
+    def price_account_id(self) -> int:
+        return self.price_id
+
+    @price_account_id.setter
+    def price_account_id(self, value: int) -> None:
+        self.price_id = value
+
+    @property
+    def annual_qty(self) -> Optional[int]:
+        return self.annual_sales
+
+    @annual_qty.setter
+    def annual_qty(self, value: Optional[int]) -> None:
+        self.annual_sales = value
+
+    @property
+    def notes(self) -> Optional[str]:
+        return getattr(self, "_legacy_notes", None)
+
+    @notes.setter
+    def notes(self, value: Optional[str]) -> None:
+        self._legacy_notes = value
+
+    @property
+    def created_by(self) -> Optional[int]:
+        return self.operator_id
+
+    @created_by.setter
+    def created_by(self, value: Optional[int]) -> None:
+        self.operator_id = value
+
+    @property
+    def created_at(self) -> datetime:
+        return getattr(self, "_legacy_created_at", None) or self.updated_at
+
+    @created_at.setter
+    def created_at(self, value: datetime) -> None:
+        self._legacy_created_at = value
 
     def __repr__(self) -> str:
         return f"<PriceYear {self.price_id}-{self.year}>"

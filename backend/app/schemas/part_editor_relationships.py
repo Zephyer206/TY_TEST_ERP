@@ -122,7 +122,7 @@ class TWPSpecItem(BaseModel):
     def validate_decimal_scale(cls, v: Optional[Decimal]) -> Optional[Decimal]:
         """Ensure decimal values have at most 3 decimal places."""
         if v is not None and v.as_tuple().exponent < -3:
-            raise ValueError("Decimal precision must be at most 3 decimal places")
+            raise ValueError("Decimal precision allows no more than 3 decimal places")
         return v
 
 
@@ -166,7 +166,7 @@ class ToolingBriefInfo(BaseModel):
     id: int
     tooling_number: Optional[str]
     tooling_name: Optional[str]
-    mold_type: str
+    mold_type: Optional[str] = None
     is_continuous: bool
 
 
@@ -193,7 +193,8 @@ class PartEditorDetailResponse(BaseModel):
     net_weight: Optional[Decimal]
     part_position: Optional[str]
     part_status: str
-    status: Optional[str]
+    # Deprecated compatibility field; lifecycle uses part_status only.
+    status: Optional[str] = None
     remark: Optional[str]
     press_tonnage: Optional[str]
     ppap_no: Optional[str]

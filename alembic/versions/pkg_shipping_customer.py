@@ -31,31 +31,25 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-
-    result = conn.execute(sa.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'pkg_shipping_logs'
-          AND column_name = 'customer_id';
-    """)).fetchone()
-
-    if not result:
-        op.add_column(
-            'pkg_shipping_logs',
-            sa.Column('customer_id', sa.Integer(), nullable=True)
-        )
-        # 建立外键约束（MyPy/Alembic 建议）
-        op.create_foreign_key(
-            'fk_pkg_shipping_customer_id',
-            'pkg_shipping_logs', 'tooling_customers',
-            ['customer_id'], ['id']
-        )
-        # 索引：按客户查发货记录
-        op.execute("""
-            CREATE INDEX IF NOT EXISTS idx_pkg_shipping_customer
-            ON pkg_shipping_logs(customer_id);
-        """)
+    op.execute(
+        "ALTER TABLE pkg_shipping_logs "
+        "ADD COLUMN IF NOT EXISTS customer_id INTEGER"
+    )
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'fk_pkg_shipping_customer_id'
+            ) THEN
+                ALTER TABLE pkg_shipping_logs
+                ADD CONSTRAINT fk_pkg_shipping_customer_id
+                FOREIGN KEY (customer_id) REFERENCES tooling_customers(id);
+            END IF;
+        END $$;
+    """)
+    op.execute("""
+        CREATE INDEX IF NOT EXISTS idx_pkg_shipping_customer
+        ON pkg_shipping_logs(customer_id);
+    """)
 
 
 def downgrade():

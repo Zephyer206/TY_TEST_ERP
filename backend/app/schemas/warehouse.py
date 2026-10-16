@@ -1,7 +1,7 @@
 """Pydantic schemas for warehouse and material batch management."""
 
-from datetime import datetime
-from typing import Optional
+from datetime import date, datetime
+from typing import Literal, Optional
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -253,3 +253,125 @@ class MaterialBatchChildScanResponse(BaseModel):
     sibling_batches: list["MaterialBatchScanResponse"] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
+# ── Finished goods inventory workspace ──────────────────────────────────────
+
+class FinishedGoodsInventoryItem(BaseModel):
+    id: int
+    part_id: int
+    internal_part_no: Optional[str] = None
+    part_name: Optional[str] = None
+    customer_part_no: Optional[str] = None
+    customer_part_name: Optional[str] = None
+    customer_name: Optional[str] = None
+    stock_qty: int
+    reserved_qty: int
+    available_qty: int
+    last_month_shipped_qty: int = 0
+    last_3_month_shipped_qty: int = 0
+    location: Optional[str] = None
+    last_update_at: datetime
+
+
+class FinishedGoodsLedgerDay(BaseModel):
+    day: date
+    incoming_qty: int
+    outgoing_qty: int
+    net_qty: int
+    closing_qty: int
+
+
+class FinishedGoodsLedgerSummary(BaseModel):
+    opening_stock: int
+    total_incoming: int
+    total_outgoing: int
+    closing_stock: int
+    from_date: date
+    to_date: date
+
+
+class FinishedGoodsLedgerPage(BaseModel):
+    inventory_id: int
+    part_id: int
+    summary: FinishedGoodsLedgerSummary
+    days: list[FinishedGoodsLedgerDay]
+    entries: list["FinishedGoodsLedgerTransaction"] = Field(default_factory=list)
+
+
+class FinishedGoodsLedgerTransaction(BaseModel):
+    id: int
+    occurred_at: datetime
+    transaction_type: str
+    quantity: int
+    stock_before: int
+    stock_after: int
+    reason: Optional[str] = None
+    reference_type: Optional[str] = None
+    operator_id: Optional[int] = None
+    affects_stock: bool = True
+
+
+class FinishedGoodsLedgerEntry(BaseModel):
+    transaction_type: Literal['incoming', 'outgoing']
+    quantity: int = Field(gt=0)
+    reason: str = Field(min_length=1, max_length=200)
+    occurred_on: Optional[date] = None
+    affects_stock: bool = True
+
+
+class FinishedGoodsInventoryReconcile(BaseModel):
+    physical_stock: int = Field(ge=0)
+    reason: str = Field(min_length=1, max_length=200)
+    occurred_on: Optional[date] = None
+
+
+class FinishedGoodsInventorySummary(BaseModel):
+    inventory_rows: int
+    total_stock: int
+    total_reserved: int
+    total_available: int
+    missing_location_rows: int
+    review_rows: int
+    batch_id: Optional[int] = None
+
+
+class FinishedGoodsInventoryPage(BaseModel):
+    items: list[FinishedGoodsInventoryItem]
+    total: int
+    page: int
+    page_size: int
+    summary: FinishedGoodsInventorySummary
+
+
+class FinishedGoodsReviewItem(BaseModel):
+    id: int
+    batch_id: int
+    source_sheet: str
+    source_row: int
+    customer_part_no: Optional[str] = None
+    customer_part_name: Optional[str] = None
+    closing_qty: Optional[float] = None
+    location: Optional[str] = None
+    validation_errors: list[str]
+    missing_part: bool
+
+
+class FinishedGoodsReviewPage(BaseModel):
+    items: list[FinishedGoodsReviewItem]
+    total: int
+    page: int
+    page_size: int
+    batch_id: Optional[int] = None
+    categories: dict[str, int]
+
+
+class FinishedGoodsLocationUpdate(BaseModel):
+    location: Optional[str] = Field(default=None, max_length=100)
+
+
+class FinishedGoodsReviewResolve(BaseModel):
+    part_id: int = Field(gt=0)
+    location: Optional[str] = Field(default=None, max_length=100)
+    stock_qty: Optional[int] = Field(default=None, ge=0)
+    note: Optional[str] = Field(default=None, max_length=500)

@@ -70,10 +70,10 @@ function confirm() { emit('apply', Array.from(selected.value)) }
 .excel-filter-sort { gap: 4px; padding-bottom: 4px; border-bottom: 1px solid #e5ebe8; }
 .excel-filter-sort button, .excel-filter-toolbar button { border: 0; background: transparent; color: #50645d; font: inherit; cursor: pointer; }
 .excel-filter-sort button { padding: 4px 8px; }
-.excel-filter-sort button:hover, .excel-filter-toolbar button:hover { color: #176b5a; }
+.excel-filter-sort button:hover, .excel-filter-toolbar button:hover { color: var(--zephyr-primary); }
 .excel-filter-tabs { gap: 20px; padding: 7px 4px 5px; color: #71807a; }
 .excel-filter-tabs span { padding-bottom: 4px; }
-.excel-filter-tabs .active { border-bottom: 2px solid #176b5a; color: #176b5a; font-weight: 650; }
+.excel-filter-tabs .active { border-bottom: 2px solid var(--zephyr-primary); color: var(--zephyr-primary); font-weight: 650; }
 .excel-filter-toolbar { gap: 8px; padding: 5px 0 3px; }
 .excel-filter-toolbar :deep(.el-checkbox) { margin-right: auto; }
 .excel-filter-toolbar small, .excel-filter-option small { color: #8a9691; font-variant-numeric: tabular-nums; }
@@ -90,8 +90,8 @@ function confirm() { emit('apply', Array.from(selected.value)) }
 .excel-filter-empty { display: block; padding: 24px 8px; color: #8a9691; text-align: center; }
 .excel-filter-footer { justify-content: space-between; gap: 8px; padding-top: 6px; border-top: 1px solid #e5ebe8; }
 .link-button, .primary-button { min-height: 28px; padding: 0 10px; border-radius: 4px; font: inherit; cursor: pointer; }
-.link-button { border: 0; background: transparent; color: #176b5a; }
-.primary-button { border: 1px solid #176b5a; background: #176b5a; color: #fff; }
+.link-button { border: 0; background: transparent; color: var(--zephyr-primary); }
+.primary-button { border: 1px solid var(--zephyr-primary); background: var(--zephyr-primary); color: #fff; }
 
 /* VXE computes a conservative inline max-height for transferred filter popups.
    Keep the panel usable on short screens while giving long value lists room. */

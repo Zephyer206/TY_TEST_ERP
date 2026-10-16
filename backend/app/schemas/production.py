@@ -148,7 +148,10 @@ class ProductionSchedulingMachine(BaseModel):
     id: int
     machine_no: str
     name: str
+    machine_type: Optional[str] = None
     tonnage: Optional[float] = None
+    max_stroke: Optional[float] = None
+    bed_size: Optional[str] = None
     state: str
     location: Optional[str] = None
     queue: list[ProductionSchedulingPlan] = Field(default_factory=list)

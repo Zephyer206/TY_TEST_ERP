@@ -1,5 +1,5 @@
 import psycopg2
-conn = psycopg2.connect(dbname='stamping_system', user='postgres', password='thehaoshi5DE', host='localhost')
+conn = psycopg2.connect(dbname='stamping_system', user='postgres', password='__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")', host='localhost')
 cur = conn.cursor()
 cur.execute("SELECT column_name, data_type FROM information_schema.columns WHERE table_name = 'material_transactions' ORDER BY ordinal_position")
 print("material_transactions columns:", [(r[0], r[1]) for r in cur.fetchall()])

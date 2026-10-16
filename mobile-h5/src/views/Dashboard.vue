@@ -31,7 +31,7 @@
     <!-- 设置弹窗 -->
     <van-popup v-model:show="showSettings" position="bottom" style="height: 30%">
       <van-cell-group>
-        <van-cell title="服务器地址" :value="serverUrl" />
+        <van-cell title="当前账号" :value="userInfo.username" />
       </van-cell-group>
     </van-popup>
   </div>
@@ -41,14 +41,13 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { getCurrentUser, logout } from '@/api/auth'
 
 const router = useRouter()
-const serverUrl = ref(localStorage.getItem('server_url') || 'http://124.222.29.229:8000')
-
 const userInfo = ref({
-  username: localStorage.getItem('username') || '未知用户',
-  department: '生产部',
-  position: '操作工',
+  username: '未知用户',
+  department: '-',
+  position: '-',
 })
 
 const stats = ref({
@@ -60,30 +59,12 @@ const stats = ref({
 const showSettings = ref(false)
 
 onMounted(async () => {
-  await fetchDashboard()
+  try { userInfo.value = await getCurrentUser() } catch { /* auth guard handles expiry */ }
 })
-
-const fetchDashboard = async () => {
-  try {
-    const response = await fetch(`${serverUrl.value}/api/dashboard`, {
-      credentials: 'include',
-    })
-    if (response.ok) {
-      const data = await response.json()
-      stats.value = {
-        reportCount: data.reportCount || 0,
-        goodCount: data.goodCount || 0,
-        pendingCount: data.pendingCount || 0,
-      }
-    }
-  } catch (error) {
-    console.error('获取仪表板数据失败:', error)
-  }
-}
 
 const handleLogout = async () => {
   try {
-    await fetch(`${serverUrl.value}/logout`, { credentials: 'include' })
+    await logout()
   } catch (error) {
     console.error('登出失败:', error)
   }

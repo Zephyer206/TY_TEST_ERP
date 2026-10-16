@@ -12,15 +12,30 @@ from app.core.security import decode_token
 from app.database import get_db
 from app.models.user import User
 
-# Security scheme
-security = HTTPBearer()
+# Security scheme. `auto_error=False` lets the temporary acceptance mode
+# inject the administrator when no login header is present.
+security = HTTPBearer(auto_error=False)
 
 
 async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials, Depends(security)],
+    credentials: Annotated[Optional[HTTPAuthorizationCredentials], Depends(security)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
     """Get current authenticated user from JWT token."""
+    if settings.AUTH_DISABLED:
+        result = await db.execute(
+            select(User)
+            .where(User.role_level == 4)
+            .order_by(User.id.asc())
+        )
+        admin_user = result.scalars().first()
+        if admin_user is None:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Acceptance administrator is not configured",
+            )
+        return admin_user
+
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -30,7 +45,7 @@ async def get_current_user(
     token = credentials.credentials
     payload = decode_token(token)
 
-    if payload is None:
+    if payload is None or payload.get("type") != "access":
         raise credentials_exception
 
     user_id: Optional[str] = payload.get("sub")

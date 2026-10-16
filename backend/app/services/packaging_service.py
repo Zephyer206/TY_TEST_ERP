@@ -3,7 +3,7 @@
 from datetime import datetime
 from typing import Optional, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
@@ -204,6 +204,12 @@ async def adjust_inventory(
     if inventory.stock_qty < 0:
         raise ValueError("Inventory cannot be negative")
 
+    await db.execute(
+        update(Part)
+        .where(Part.id == part_id)
+        .values(stock_pcs=inventory.stock_qty, updated_at=datetime.utcnow())
+    )
+
     # Record transaction
     await _record_inventory_transaction(
         db,
@@ -266,6 +272,12 @@ async def _update_inventory(
     inventory.stock_qty += quantity
     inventory.last_update_by = operator_id
     inventory.last_update_at = datetime.utcnow()
+
+    await db.execute(
+        update(Part)
+        .where(Part.id == part_id)
+        .values(stock_pcs=inventory.stock_qty, updated_at=datetime.utcnow())
+    )
 
     await _record_inventory_transaction(
         db,

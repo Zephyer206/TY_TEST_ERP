@@ -1,0 +1,603 @@
+{
+  "total_customers": 93,
+  "code_mappings": 67,
+  "data_sheets": 72,
+  "customers": [
+    "IBI",
+    "ITT",
+    "TRW",
+    "ZF",
+    "一汽东机工",
+    "一汽东机工减振器有限公司",
+    "万向钱潮",
+    "万都",
+    "上海凯众材料科技股份有限公司",
+    "上海同驭",
+    "上海拿森",
+    "上海拿森汽车电子有限公司",
+    "上海汇众汽车制造有限公司",
+    "上海龙感",
+    "东营信义汽车配件有限公司",
+    "丰铃公司",
+    "亨国(厦门)精机工业有限公司",
+    "京西重工",
+    "兰溪捷克",
+    "南方天合",
+    "厦门亨东制动系统有限公司",
+    "厦门和利多卫浴科技有限公司",
+    "厦门安思通制动系统有限公司",
+    "厦门永裕机械工业有限公司",
+    "台湾贺安贸易有限公司",
+    "坐标系智能",
+    "坤泰",
+    "大工科技",
+    "大陆集团",
+    "天津垠石)",
+    "天越五金",
+    "宁波双林",
+    "安徽万安汽车零部件有限公司",
+    "展翔",
+    "山东双连",
+    "山东日信",
+    "山东日信工业有限公司",
+    "布雷博",
+    "常州泰山",
+    "广东中博汽车零部件有限公司",
+    "广州曙光制动系统有限公司",
+    "日立高新",
+    "杭州吉成",
+    "柳州五菱",
+    "格陆博科技",
+    "正凌制动器有限公司",
+    "武汉万向汽车制动器有限公司",
+    "武汉元丰",
+    "比亚迪",
+    "江苏恒义",
+    "江苏恒义汽配制造有限公司",
+    "江苏恒力",
+    "江西江铃",
+    "江西江铃集团博亚制动系统有限公司",
+    "汽车部件苏州有限公司(东机工)",
+    "沃富润",
+    "泛博",
+    "泰明顿",
+    "浙江万向系统有限公司",
+    "浙江万安科技股份有限公司",
+    "浙江万宝机械有限公司",
+    "浙江亚太",
+    "浙江亚太机电股份有限公司",
+    "浙江杭摩欧亿",
+    "浙江精科汽车零件部件有限公司",
+    "浙江精科汽车零部件有限公司",
+    "浙江钱江摩托股份有限公司",
+    "浙江钱江摩托股份有限公司机械分公司",
+    "温州力邦企业有限公司",
+    "湖北华阳",
+    "湖北悦达",
+    "湖北悦达科技有限公司",
+    "湖北航特科技有限责任公司",
+    "湖南运达机械制造有限公司",
+    "炯熠电子科技（苏州）有限公司",
+    "烟台海纳",
+    "爱德克斯",
+    "玉环万建机械有限公司",
+    "珠海格莱利",
+    "瑞立",
+    "石家庄泰明顿摩擦材料有限公司",
+    "福州新信制动系统有限公司",
+    "精诚工科汽车系统有限公司",
+    "致森",
+    "艾得利",
+    "芜湖伯特利",
+    "芜湖佰特利",
+    "莆田荣兴",
+    "莆田荣兴机械有限公司",
+    "辉门摩擦产品有限公司",
+    "长城汽车",
+    "龙港工艺",
+    "龙港工艺品厂"
+  ],
+  "code_to_name": {
+    "A": "浙江万宝机械有限公司",
+    "B": "浙江万安科技股份有限公司",
+    "C": "安徽万安汽车零部件有限公司",
+    "D": "亨国(厦门)精机工业有限公司",
+    "E": "厦门亨东制动系统有限公司",
+    "F": "广东中博汽车零部件有限公司",
+    "G": "湖北航特科技有限责任公司",
+    "H": "福州新信制动系统有限公司",
+    "I": "辉门摩擦产品有限公司",
+    "J": "广州曙光制动系统有限公司",
+    "K": "汽车部件苏州有限公司(东机工)",
+    "L": "厦门安思通制动系统有限公司",
+    "M": "厦门永裕机械工业有限公司",
+    "N": "石家庄泰明顿摩擦材料有限公司",
+    "O": "浙江钱江摩托股份有限公司机械分公司",
+    "P": "温州力邦企业有限公司",
+    "Q": "丰铃公司",
+    "R": "正凌制动器有限公司",
+    "S": "浙江精科汽车零部件有限公司",
+    "T": "玉环万建机械有限公司",
+    "U": "天越五金",
+    "V": "台湾贺安贸易有限公司",
+    "W": "湖南运达机械制造有限公司",
+    "X": "厦门和利多卫浴科技有限公司",
+    "Y": "山东日信工业有限公司",
+    "Z": "常州泰山",
+    "AA": "万向钱潮",
+    "AB": "艾得利",
+    "AC": "展翔",
+    "AD": "武汉元丰",
+    "AE": "龙港工艺",
+    "AF": "日立高新",
+    "AG": "沃富润",
+    "AH": "泰明顿",
+    "AI": "TRW",
+    "AJ": "湖北悦达",
+    "AK": "一汽东机工",
+    "AL": "浙江亚太",
+    "AM": "宁波双林",
+    "AN": "京西重工",
+    "AO": "南方天合",
+    "AP": "IBI",
+    "AQ": "江苏恒义",
+    "AR": "莆田荣兴",
+    "AS": "江西江铃",
+    "AT": "浙江万向系统有限公司",
+    "AU": "比亚迪",
+    "AV": "长城汽车",
+    "AW": "大工科技",
+    "AX": "泛博",
+    "AY": "瑞立",
+    "AZ": "柳州五菱",
+    "BA": "烟台海纳",
+    "BB": "大陆集团",
+    "BC": "武汉万向汽车制动器有限公司",
+    "BD": "东营信义汽车配件有限公司",
+    "BE": "坤泰",
+    "BF": "上海汇众汽车制造有限公司",
+    "BG": "芜湖佰特利",
+    "BH": "杭州吉成",
+    "BI": "江苏恒力",
+    "BJ": "兰溪捷克",
+    "BK": "万都",
+    "B-L": "山东双连",
+    "BM": "布雷博",
+    "BN": "上海拿森汽车电子有限公司",
+    "BO": "上海凯众材料科技股份有限公司"
+  },
+  "sheet_analysis": [
+    {
+      "sheet": "浙江万宝机械有限公司(A)",
+      "code": "A",
+      "extracted": "浙江万宝机械有限公司",
+      "full_name": "浙江万宝机械有限公司"
+    },
+    {
+      "sheet": "浙江万安科技股份有限公司(B)",
+      "code": "B",
+      "extracted": "浙江万安科技股份有限公司",
+      "full_name": "浙江万安科技股份有限公司"
+    },
+    {
+      "sheet": "安徽万安汽车零部件有限公司(C)",
+      "code": "C",
+      "extracted": "安徽万安汽车零部件有限公司",
+      "full_name": "安徽万安汽车零部件有限公司"
+    },
+    {
+      "sheet": "亨国(厦门)精机工业有限公司(D)",
+      "code": "D",
+      "extracted": "亨国(厦门)精机工业有限公司",
+      "full_name": "亨国(厦门)精机工业有限公司"
+    },
+    {
+      "sheet": "厦门亨东制动系统有限公司(E)",
+      "code": "E",
+      "extracted": "厦门亨东制动系统有限公司",
+      "full_name": "厦门亨东制动系统有限公司"
+    },
+    {
+      "sheet": "广东中博汽车零部件有限公司(F)",
+      "code": "F",
+      "extracted": "广东中博汽车零部件有限公司",
+      "full_name": "广东中博汽车零部件有限公司"
+    },
+    {
+      "sheet": "湖北航特科技有限责任公司(G)",
+      "code": "G",
+      "extracted": "湖北航特科技有限责任公司",
+      "full_name": "湖北航特科技有限责任公司"
+    },
+    {
+      "sheet": "福州新信制动系统有限公司(H)",
+      "code": "H",
+      "extracted": "福州新信制动系统有限公司",
+      "full_name": "福州新信制动系统有限公司"
+    },
+    {
+      "sheet": "辉门摩擦产品有限公司(I)",
+      "code": "I",
+      "extracted": "辉门摩擦产品有限公司",
+      "full_name": "辉门摩擦产品有限公司"
+    },
+    {
+      "sheet": "广州曙光制动系统有限公司(J)",
+      "code": "J",
+      "extracted": "广州曙光制动系统有限公司",
+      "full_name": "广州曙光制动系统有限公司"
+    },
+    {
+      "sheet": "汽车部件苏州有限公司(东机工)(K)",
+      "code": "K",
+      "extracted": "汽车部件苏州有限公司(东机工)",
+      "full_name": "汽车部件苏州有限公司(东机工)"
+    },
+    {
+      "sheet": "厦门安思通制动系统有限公司(L)",
+      "code": "L",
+      "extracted": "厦门安思通制动系统有限公司",
+      "full_name": "厦门安思通制动系统有限公司"
+    },
+    {
+      "sheet": "厦门永裕机械工业有限公司(M)",
+      "code": "M",
+      "extracted": "厦门永裕机械工业有限公司",
+      "full_name": "厦门永裕机械工业有限公司"
+    },
+    {
+      "sheet": "石家庄泰明顿摩擦材料有限公司(N)",
+      "code": "N",
+      "extracted": "石家庄泰明顿摩擦材料有限公司",
+      "full_name": "石家庄泰明顿摩擦材料有限公司"
+    },
+    {
+      "sheet": "浙江钱江摩托股份有限公司(O)",
+      "code": "O",
+      "extracted": "浙江钱江摩托股份有限公司",
+      "full_name": "浙江钱江摩托股份有限公司机械分公司"
+    },
+    {
+      "sheet": "温州力邦企业有限公司(P)",
+      "code": "P",
+      "extracted": "温州力邦企业有限公司",
+      "full_name": "温州力邦企业有限公司"
+    },
+    {
+      "sheet": "正凌制动器有限公司(R)",
+      "code": "R",
+      "extracted": "正凌制动器有限公司",
+      "full_name": "正凌制动器有限公司"
+    },
+    {
+      "sheet": "浙江精科汽车零件部件有限公司(S)",
+      "code": "S",
+      "extracted": "浙江精科汽车零件部件有限公司",
+      "full_name": "浙江精科汽车零部件有限公司"
+    },
+    {
+      "sheet": "玉环万建机械有限公司(T)",
+      "code": "T",
+      "extracted": "玉环万建机械有限公司",
+      "full_name": "玉环万建机械有限公司"
+    },
+    {
+      "sheet": "天越五金(U)",
+      "code": "U",
+      "extracted": "天越五金",
+      "full_name": "天越五金"
+    },
+    {
+      "sheet": "台湾贺安贸易有限公司(V)",
+      "code": "V",
+      "extracted": "台湾贺安贸易有限公司",
+      "full_name": "台湾贺安贸易有限公司"
+    },
+    {
+      "sheet": "湖南运达机械制造有限公司(W)",
+      "code": "W",
+      "extracted": "湖南运达机械制造有限公司",
+      "full_name": "湖南运达机械制造有限公司"
+    },
+    {
+      "sheet": "山东日信(Y)",
+      "code": "Y",
+      "extracted": "山东日信",
+      "full_name": "山东日信工业有限公司"
+    },
+    {
+      "sheet": "A-D武汉元丰",
+      "code": "A-D",
+      "extracted": "武汉元丰",
+      "full_name": null
+    },
+    {
+      "sheet": "A-E龙港工艺品厂",
+      "code": "A-E",
+      "extracted": "龙港工艺品厂",
+      "full_name": null
+    },
+    {
+      "sheet": "A-F日立高新",
+      "code": "A-F",
+      "extracted": "日立高新",
+      "full_name": null
+    },
+    {
+      "sheet": "A-G沃富润",
+      "code": "A-G",
+      "extracted": "沃富润",
+      "full_name": null
+    },
+    {
+      "sheet": "A-H泰明顿",
+      "code": "A-H",
+      "extracted": "泰明顿",
+      "full_name": null
+    },
+    {
+      "sheet": "ZF",
+      "code": "ZF",
+      "extracted": "ZF",
+      "full_name": null
+    },
+    {
+      "sheet": "A-J湖北悦达科技有限公司",
+      "code": "A-J",
+      "extracted": "湖北悦达科技有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-K 一汽东机工减振器有限公司",
+      "code": "A-K",
+      "extracted": "一汽东机工减振器有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-L 浙江亚太机电股份有限公司",
+      "code": "A-L",
+      "extracted": "浙江亚太机电股份有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-M 宁波双林",
+      "code": "A-M",
+      "extracted": "宁波双林",
+      "full_name": null
+    },
+    {
+      "sheet": "A-N 京西重工",
+      "code": "A-N",
+      "extracted": "京西重工",
+      "full_name": null
+    },
+    {
+      "sheet": "A-O 南方天合",
+      "code": "A-O",
+      "extracted": "南方天合",
+      "full_name": null
+    },
+    {
+      "sheet": "A-P IBI",
+      "code": "A-P",
+      "extracted": "IBI",
+      "full_name": null
+    },
+    {
+      "sheet": "A-Q江苏恒义汽配制造有限公司",
+      "code": "A-Q",
+      "extracted": "江苏恒义汽配制造有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-R莆田荣兴机械有限公司",
+      "code": "A-R",
+      "extracted": "莆田荣兴机械有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-S江西江铃集团博亚制动系统有限公司",
+      "code": "A-S",
+      "extracted": "江西江铃集团博亚制动系统有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-T浙江万向系统有限公司",
+      "code": "A-T",
+      "extracted": "浙江万向系统有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-U比亚迪",
+      "code": "A-U",
+      "extracted": "比亚迪",
+      "full_name": null
+    },
+    {
+      "sheet": "A-V精诚工科汽车系统有限公司",
+      "code": "A-V",
+      "extracted": "精诚工科汽车系统有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "A-W大工科技",
+      "code": "A-W",
+      "extracted": "大工科技",
+      "full_name": null
+    },
+    {
+      "sheet": "A-X泛博",
+      "code": "A-X",
+      "extracted": "泛博",
+      "full_name": null
+    },
+    {
+      "sheet": "A-Y瑞立",
+      "code": "A-Y",
+      "extracted": "瑞立",
+      "full_name": null
+    },
+    {
+      "sheet": "A-Z柳州五菱",
+      "code": "A-Z",
+      "extracted": "柳州五菱",
+      "full_name": null
+    },
+    {
+      "sheet": "B-A烟台海纳",
+      "code": "B-A",
+      "extracted": "烟台海纳",
+      "full_name": null
+    },
+    {
+      "sheet": "B-B 大陆集团",
+      "code": "B-B",
+      "extracted": "大陆集团",
+      "full_name": null
+    },
+    {
+      "sheet": "B-C武汉万向汽车制动器有限公司",
+      "code": "B-C",
+      "extracted": "武汉万向汽车制动器有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "B-D东营信义汽车配件有限公司",
+      "code": "B-D",
+      "extracted": "东营信义汽车配件有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "B-E坤泰",
+      "code": "B-E",
+      "extracted": "坤泰",
+      "full_name": null
+    },
+    {
+      "sheet": "B-F上海汇众汽车制造有限公司",
+      "code": "B-F",
+      "extracted": "上海汇众汽车制造有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "B-G芜湖伯特利",
+      "code": "B-G",
+      "extracted": "芜湖伯特利",
+      "full_name": null
+    },
+    {
+      "sheet": "B-H杭州吉成",
+      "code": "B-H",
+      "extracted": "杭州吉成",
+      "full_name": null
+    },
+    {
+      "sheet": "B-I江苏恒力",
+      "code": "B-I",
+      "extracted": "江苏恒力",
+      "full_name": null
+    },
+    {
+      "sheet": "B-J兰溪捷克",
+      "code": "B-J",
+      "extracted": "兰溪捷克",
+      "full_name": null
+    },
+    {
+      "sheet": "B-K万都",
+      "code": "B-K",
+      "extracted": "万都",
+      "full_name": null
+    },
+    {
+      "sheet": "B-L山东双连",
+      "code": "B-L",
+      "extracted": "山东双连",
+      "full_name": "山东双连"
+    },
+    {
+      "sheet": "B-M布雷博",
+      "code": "B-M",
+      "extracted": "布雷博",
+      "full_name": null
+    },
+    {
+      "sheet": "B-N 上海拿森",
+      "code": "B-N",
+      "extracted": "上海拿森",
+      "full_name": null
+    },
+    {
+      "sheet": "B-O炯熠电子科技（苏州）有限公司",
+      "code": "B-O",
+      "extracted": "炯熠电子科技（苏州）有限公司",
+      "full_name": null
+    },
+    {
+      "sheet": "B-P致森",
+      "code": "B-P",
+      "extracted": "致森",
+      "full_name": null
+    },
+    {
+      "sheet": "B-Q爱德克斯",
+      "code": "B-Q",
+      "extracted": "爱德克斯",
+      "full_name": null
+    },
+    {
+      "sheet": "B-R格陆博科技",
+      "code": "B-R",
+      "extracted": "格陆博科技",
+      "full_name": null
+    },
+    {
+      "sheet": "B-S上海同驭",
+      "code": "B-S",
+      "extracted": "上海同驭",
+      "full_name": null
+    },
+    {
+      "sheet": "B-T湖北华阳",
+      "code": "B-T",
+      "extracted": "湖北华阳",
+      "full_name": null
+    },
+    {
+      "sheet": "B-U  ITT",
+      "code": "B-U",
+      "extracted": "ITT",
+      "full_name": null
+    },
+    {
+      "sheet": "B-V  上海龙感",
+      "code": "B-V",
+      "extracted": "上海龙感",
+      "full_name": null
+    },
+    {
+      "sheet": "B-W 珠海格莱利",
+      "code": "B-W",
+      "extracted": "珠海格莱利",
+      "full_name": null
+    },
+    {
+      "sheet": "B-X 坐标系智能",
+      "code": "B-X",
+      "extracted": "坐标系智能",
+      "full_name": null
+    },
+    {
+      "sheet": "B-Y 浙江杭摩欧亿",
+      "code": "B-Y",
+      "extracted": "浙江杭摩欧亿",
+      "full_name": null
+    },
+    {
+      "sheet": "B-Z 天津垠石)",
+      "code": "B-Z",
+      "extracted": "天津垠石)",
+      "full_name": null
+    }
+  ]
+}

@@ -7,24 +7,25 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession
-from app.models.price import PriceAdjustment
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.models.price import CustomerMaterialPrice, CustomerTreatmentPrice, PriceAdjustment, TreatmentDict
 from app.schemas.price import (
-    PriceAdjustmentCreate,
-    PriceAdjustmentApprovalRequest,
-    PriceAdjustmentResponse,
+    CustomerPriceAdjustmentApprovalRequest,
+    CustomerPriceAdjustmentCreate,
+    CustomerPriceAdjustmentResponse,
 )
 
 router = APIRouter(prefix="/price-adjustments", tags=["Price Adjustments"])
 
 
-@router.post("", response_model=PriceAdjustmentResponse)
+@router.post("", response_model=CustomerPriceAdjustmentResponse)
 async def create_price_adjustment(
-    adjustment: PriceAdjustmentCreate,
+    adjustment: CustomerPriceAdjustmentCreate,
     current_user: CurrentUser,
     db: DbSession,
 ) -> PriceAdjustment:
     """Create a new price adjustment request."""
+    require_role(current_user, min_level=2)
 
     new_adjustment = PriceAdjustment(
         **adjustment.model_dump(),
@@ -39,18 +40,22 @@ async def create_price_adjustment(
     return new_adjustment
 
 
-@router.get("", response_model=list[PriceAdjustmentResponse])
+@router.get("", response_model=list[CustomerPriceAdjustmentResponse])
 async def list_price_adjustments(
     db: DbSession,
+    current_user: CurrentUser,
     customer_id: Optional[int] = Query(None),
     status: Optional[str] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, le=1000),
 ) -> list[PriceAdjustment]:
     """Get price adjustment requests."""
+    require_role(current_user, min_level=2)
 
     query = select(PriceAdjustment)
 
+    if customer_id is not None:
+        query = query.where(PriceAdjustment.customer_id == customer_id)
     if status:
         query = query.where(PriceAdjustment.status == status)
 
@@ -60,12 +65,14 @@ async def list_price_adjustments(
     return list(result.scalars().all())
 
 
-@router.get("/{adjustment_id}", response_model=PriceAdjustmentResponse)
+@router.get("/{adjustment_id}", response_model=CustomerPriceAdjustmentResponse)
 async def get_price_adjustment(
     adjustment_id: int,
     db: DbSession,
+    current_user: CurrentUser,
 ) -> PriceAdjustment:
     """Get a specific price adjustment by ID."""
+    require_role(current_user, min_level=2)
 
     result = await db.execute(
         select(PriceAdjustment).where(PriceAdjustment.id == adjustment_id)
@@ -78,17 +85,20 @@ async def get_price_adjustment(
     return adjustment
 
 
-@router.post("/{adjustment_id}/approve", response_model=PriceAdjustmentResponse)
+@router.post("/{adjustment_id}/approve", response_model=CustomerPriceAdjustmentResponse)
 async def approve_price_adjustment(
     adjustment_id: int,
-    approval: PriceAdjustmentApprovalRequest,
+    approval: CustomerPriceAdjustmentApprovalRequest,
     current_user: CurrentUser,
     db: DbSession,
 ) -> PriceAdjustment:
     """Approve or reject a price adjustment request."""
+    require_role(current_user, min_level=3)
 
     result = await db.execute(
-        select(PriceAdjustment).where(PriceAdjustment.id == adjustment_id)
+        select(PriceAdjustment)
+        .where(PriceAdjustment.id == adjustment_id)
+        .with_for_update()
     )
     adjustment = result.scalar_one_or_none()
 
@@ -99,59 +109,65 @@ async def approve_price_adjustment(
         raise HTTPException(status_code=400, detail="Adjustment has already been reviewed")
 
     # Update adjustment status
-    adjustment.status = "approved" if approval.approved else "rejected"
+    adjustment.status = approval.status
     adjustment.reviewed_by = current_user.id
     adjustment.reviewed_at = datetime.utcnow()
-    adjustment.review_notes = approval.notes
+    adjustment.review_notes = approval.rejection_reason
 
-    if approval.approved and adjustment.effective_date is None:
+    if approval.status == "approved" and adjustment.effective_date is None:
         # Set effective date to today if not specified
-        from datetime import date
-        adjustment.effective_date = date.today()
+        adjustment.effective_date = datetime.utcnow()
 
-    await db.commit()
-    await db.refresh(adjustment)
-
-    # If approved, create corresponding price record
-    if approval.approved:
+    # If approved, create the corresponding customer price history in the same
+    # transaction as the approval state change.
+    if approval.status == "approved":
         if adjustment.adjustment_type == "material":
-            from app.models.price import CustomerMaterialPrice
-            from datetime import date
-
+            if adjustment.material_id is None:
+                raise HTTPException(status_code=422, detail="material_id is required for material adjustments")
             new_price = CustomerMaterialPrice(
                 customer_id=adjustment.customer_id,
                 material_id=adjustment.material_id,
                 unit_price=adjustment.new_price,
-                effective_date=adjustment.effective_date or date.today(),
+                quoted_at=adjustment.effective_date or datetime.utcnow(),
                 created_by=current_user.id
             )
             db.add(new_price)
 
         elif adjustment.adjustment_type == "treatment":
-            from app.models.price import CustomerTreatmentPrice
-            from datetime import date
+            if not adjustment.treatment_name:
+                raise HTTPException(status_code=422, detail="treatment_name is required for treatment adjustments")
+            treatment_result = await db.execute(
+                select(TreatmentDict).where(TreatmentDict.name == adjustment.treatment_name)
+            )
+            treatment = treatment_result.scalar_one_or_none()
+            if treatment is None:
+                raise HTTPException(status_code=422, detail="Treatment not found")
 
             new_price = CustomerTreatmentPrice(
                 customer_id=adjustment.customer_id,
-                treatment_name=adjustment.treatment_name,
-                rate=adjustment.new_price,
-                effective_date=adjustment.effective_date or date.today(),
+                treatment_id=treatment.id,
+                unit_price=adjustment.new_price,
+                calc_mode_snapshot=treatment.calc_mode,
+                unit_snapshot=treatment.unit,
+                quoted_at=adjustment.effective_date or datetime.utcnow(),
                 created_by=current_user.id
             )
             db.add(new_price)
 
-        await db.commit()
+    await db.commit()
+    await db.refresh(adjustment)
 
     return adjustment
 
 
-@router.post("/{adjustment_id}/cancel", response_model=PriceAdjustmentResponse)
+@router.post("/{adjustment_id}/cancel", response_model=CustomerPriceAdjustmentResponse)
 async def cancel_price_adjustment(
     adjustment_id: int,
     current_user: CurrentUser,
     db: DbSession,
 ) -> PriceAdjustment:
     """Cancel a pending price adjustment request."""
+    require_role(current_user, min_level=2)
 
     result = await db.execute(
         select(PriceAdjustment).where(PriceAdjustment.id == adjustment_id)

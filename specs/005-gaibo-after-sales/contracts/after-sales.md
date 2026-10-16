@@ -16,15 +16,15 @@
 
 ### `GET /after-sales/workspaces`
 
-查询售后客户入口。支持 `search`、`is_active`、分页。
+查询公司及其客户入口。顶层按“天越 / 盖博”分组，客户工作区显式包含 `company_id`/`company_name`；天越客户不返回安装包能力，盖博客户可返回安装包能力。支持 `search`、`is_active`、分页。
 
-响应项至少包含：`id`、`customer_id`、`slug`、`display_name`、`is_active`、`record_counts`。
+响应项至少包含：`id`、已核实的 `company_id`/`company_name`、公司内 `customer_id`/`customer_name`、`slug`、`display_name`、`is_active`、`capabilities`、`record_counts`。不能通过同名候选或当前仅有一个售后客户而自动认定身份映射。
 
 ### `POST /after-sales/workspaces`
 
 创建客户工作区。
 
-请求：`customer_id`、`slug`、`display_name`、可选 `field_labels`、`extra_field_definitions`。
+请求：`company_id`、该公司内 `customer_id`、`slug`、`display_name`、可选 `field_labels`、`extra_field_definitions`。公司和客户关系必须通过显式映射校验。
 
 ### `PATCH /after-sales/workspaces/{workspace_id}`
 
@@ -48,25 +48,23 @@
 
 ### `GET /after-sales/single-parts`
 
-独立单件查询入口。支持 `q`、`workspace_id`、`has_customer_requirement` 和分页；返回主档案及客户数量，不复制客户数据。
+公司区分的售后单件视图。天越和盖博客户在物理身份经确认后可引用同一 `parts.id`；公司/客户件号以独立作用域的别名保存，响应返回公司、客户和身份来源。盖博只有在显式确认物理零件共享后才能引用天越零件，禁止按件号相似度自动关联或覆盖天越别名。
 
-### `POST /after-sales/single-parts`
+禁止新增绕过归属规则的通用单件创建接口。新增天越物理零件走天越 `parts` API；盖博售后新身份留在盖博域。若盖博确认复用既有物理零件，只创建盖博客户要求和公司作用域别名，不改写天越客户数据。
 
-创建单件主档案，可选 `part_id`、`tianyue_internal_part_no`、`name`、`drawing_reference`。
+### `POST /after-sales/workspaces/{workspace_id}/parts/{part_id}/requirements`
 
-### `POST /after-sales/single-parts/{single_part_id}/requirements`
-
-创建客户需求。四个固定字段 `customer_part_number`、`ibi`、`tianyue_internal_composition`、`price` 必填；扩展字段写入 `extra_data`。
+为指定公司客户对经确认的物理零件创建售后要求。客户件号/修订通过公司和客户作用域的别名管理；IBI、价格、币种、扩展字段和售后备注写入该客户要求。允许同一 `part_id` 有多家公司/客户要求，但不允许字段互相覆盖；歧义身份返回 `409`。
 
 ## 安装包
 
 ### `GET /after-sales/workspaces/{workspace_id}/packages`
 
-查询客户安装包，支持 `q`、资料状态、价格状态和分页。
+仅查询盖博公司客户的安装包，支持 `q`、资料状态、价格状态和分页。天越工作区调用时拒绝或不提供该路由。每条记录明确返回所属公司、工作区及客户。
 
 ### `POST /after-sales/workspaces/{workspace_id}/packages`
 
-创建安装包，至少需要 `package_number`；若安装包本身承载核心字段，仍需校验 IBI、天越内部组成和价格的业务要求。
+创建安装包，至少需要 `package_number`，客户由路由中的已绑定工作区确定；不接受与工作区客户冲突的另一个客户值。若安装包本身承载核心字段，仍需校验 IBI、天越内部组成和价格的业务要求。
 
 ### `GET /after-sales/packages/{package_id}`
 
@@ -74,7 +72,11 @@
 
 ### `POST /after-sales/packages/{package_id}/items`
 
-添加已关联客户需求或暂存组成。通常请求满足：`requirement_id` 与 `unlinked_customer_part_number` 至少一个，且 IBI、天越内部组成、数量、顺序齐全。若 Excel 已提供天越内部组成但 IBI 尚未提供，允许 `ibi=null`、`match_state=missing_ibi`，保留内部组成并在详情显示“待补 IBI”，不得猜测 IBI。
+添加已关联统一零件或暂存组成。客户上下文继承自所属安装包/工作区，写入和匹配时不得跨客户。请求以 `component_part_id` 或 `unlinked_customer_part_number` 标识组成，不要求创建虚假的售后单件记录；客户专属 IBI、天越内部组成、数量、顺序继续保留在安装包行。若 Excel 已提供天越内部组成但 IBI 尚未提供，允许 `ibi=null`、`match_state=missing_ibi`，不得猜测 IBI。当前 `requirement_id` 是迁移兼容字段，不能作为最终零件身份。
+
+### 导入客户边界
+
+每个导入任务必须显式指定目标客户工作区，并校验来源文件/批次的客户范围。当前来源批次据业务说明只包含 ZF 墨西哥数据，因此只能导入经确认对应此客户的工作区；现存售后客户记录名为 FMG 墨西哥，ZF 与 FMG 是否为同一客户尚待业务确认，不得由名称或唯一批次推断。这不限制系统未来支持其他客户。客户不明或混有其他客户的数据必须拒绝导入或隔离复核，不得落入默认客户。
 
 ### `PATCH /after-sales/packages/{package_id}/items/{item_id}`
 

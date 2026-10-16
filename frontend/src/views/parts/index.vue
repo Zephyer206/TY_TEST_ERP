@@ -9,9 +9,13 @@
       </div>
       <div class="search-control">
         <el-icon><Search /></el-icon>
-        <el-input v-model="filter.search" placeholder="搜索客户件号、零件名称或模具号" clearable @keyup.enter="fetchParts" />
+        <el-input v-model="filter.search" placeholder="搜索客户名称、客户件号、零件名称或模具号" clearable @keyup.enter="fetchParts" @clear="handleSearchClear" />
       </div>
-      <div class="filter-controls" :class="{ expanded: filtersExpanded }">
+      <div class="filter-controls">
+        <el-select v-model="companyStore.selectedCompany" placeholder="公司" @change="handleCompanyChange">
+          <el-option label="天越" value="tianyue" />
+          <el-option label="盖博" value="gaibo" />
+        </el-select>
         <el-select v-model="filter.customer_id" clearable placeholder="客户" filterable @change="fetchParts">
             <el-option v-for="c in customers" :key="c.id" :value="c.id"
               :label="c.customer_code ? `${c.customer_code} ${c.name}` : c.name" />
@@ -25,7 +29,6 @@
         </el-select>
         <el-button type="primary" @click="fetchParts">筛选</el-button>
         <el-button text @click="resetFilter">重置</el-button>
-        <el-button class="view-toggle" text circle aria-label="展开或收起筛选" title="展开或收起筛选" @click="filtersExpanded = !filtersExpanded"><el-icon><Menu /></el-icon></el-button>
         <el-button type="primary" @click="openCreate" v-if="userStore.userInfo?.role_level >= 4">
           <el-icon><Plus /></el-icon>新建
         </el-button>
@@ -47,17 +50,25 @@
       <el-table-column type="selection" width="32" fixed="left" />
       <el-table-column label="零件编号" width="96" fixed>
         <template #default="{ row }">
-          <span v-if="row.customer_part_no">{{ row.customer_part_no }}</span>
+          <span v-if="row.customer_part_no">
+            <span v-for="(segment, index) in highlightSegments(row.customer_part_no)" :key="`part-no-${index}`" :class="{ 'search-hit': segment.highlighted }">{{ segment.text }}</span>
+          </span>
           <span v-else class="text-muted">暂无记录</span>
         </template>
       </el-table-column>
       <el-table-column label="零件名称" min-width="110">
         <template #default="{ row }">
-          <span v-if="row.part_name">{{ row.part_name }}</span>
+          <span v-if="row.part_name">
+            <span v-for="(segment, index) in highlightSegments(row.part_name)" :key="`part-name-${index}`" :class="{ 'search-hit': segment.highlighted }">{{ segment.text }}</span>
+          </span>
           <span v-else class="text-muted">暂无记录</span>
         </template>
       </el-table-column>
-      <el-table-column prop="tooling_number" label="模具号" width="100" />
+      <el-table-column label="模具号" width="100">
+        <template #default="{ row }">
+          <span v-for="(segment, index) in highlightSegments(row.tooling_number)" :key="`tooling-${index}`" :class="{ 'search-hit': segment.highlighted }">{{ segment.text }}</span>
+        </template>
+      </el-table-column>
       <el-table-column label="TWP规格" width="115">
         <template #default="{ row }">
           <span v-if="row.thickness || row.width || row.pitch" class="twp-text">
@@ -84,7 +95,11 @@
           <span v-else class="text-muted">-</span>
         </template>
       </el-table-column>
-      <el-table-column prop="customer_name" label="客户" width="96" />
+      <el-table-column label="客户" width="96">
+        <template #default="{ row }">
+          <span v-for="(segment, index) in highlightSegments(row.customer_name)" :key="`customer-${index}`" :class="{ 'search-hit': segment.highlighted }">{{ segment.text }}</span>
+        </template>
+      </el-table-column>
       <el-table-column prop="tooling_type" label="模具类型" width="78" />
       <el-table-column prop="press_tonnage" label="冲床吨位" width="92" />
       <el-table-column prop="stock_pcs" label="库存" width="64" align="right" />
@@ -177,13 +192,17 @@
 <script setup>
 import { computed, ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Menu, Plus, Search } from '@element-plus/icons-vue'
-import { get, post } from '@/utils/request'
+import { Plus, Search } from '@element-plus/icons-vue'
+import { useRouter } from 'vue-router'
+import { useCompanyStore } from '@/stores/company'
 import { useUserStore } from '@/stores/user'
-import apiClient from '@/utils/request'
+import { partsApi } from '@/api/parts'
+import { customersApi } from '@/api/customers'
 import PartEditorDialog from '@/components/PartEditorDialog.vue'
 
 const userStore = useUserStore()
+const router = useRouter()
+const companyStore = useCompanyStore()
 
 const parts = ref([])
 const customers = ref([])
@@ -194,7 +213,7 @@ const formRef = ref(null)
 const editorVisible = ref(false)
 const editPartId = ref(null)
 const selectedParts = ref([])
-const filtersExpanded = ref(false)
+const appliedSearch = ref('')
 
 const filter = reactive({ search: '', customer_id: null, part_status: '', material: '' })
 const page = reactive({ current: 1, size: 20, total: 0 })
@@ -214,6 +233,30 @@ const STATUS_MAP = {
 const statusLabel = s => STATUS_MAP[s]?.label || s
 const statusType = s => STATUS_MAP[s]?.type || 'info'
 const positionLabel = position => position === 'left' ? '左' : position === 'right' ? '右' : ''
+
+const highlightSegments = value => {
+  const text = value === null || value === undefined ? '' : String(value)
+  const query = appliedSearch.value
+  if (!text || !query) return [{ text, highlighted: false }]
+
+  const lowerText = text.toLocaleLowerCase()
+  const lowerQuery = query.toLocaleLowerCase()
+  const segments = []
+  let cursor = 0
+  let matchIndex = lowerText.indexOf(lowerQuery, cursor)
+  while (matchIndex !== -1) {
+    if (matchIndex > cursor) {
+      segments.push({ text: text.slice(cursor, matchIndex), highlighted: false })
+    }
+    segments.push({ text: text.slice(matchIndex, matchIndex + query.length), highlighted: true })
+    cursor = matchIndex + query.length
+    matchIndex = lowerText.indexOf(lowerQuery, cursor)
+  }
+  if (cursor < text.length) {
+    segments.push({ text: text.slice(cursor), highlighted: false })
+  }
+  return segments.length ? segments : [{ text, highlighted: false }]
+}
 
 const formatTWP = (t, w, p) => {
   // Format T/W/P without letters, using × as separator
@@ -394,6 +437,11 @@ const tableRowClassName = ({ row }) => {
 
 const visibleParts = computed(() => parts.value)
 
+const handleCompanyChange = (company) => {
+  companyStore.setCompany(company)
+  if (company === 'gaibo') router.push('/after-sales')
+}
+
 const fetchParts = async () => {
   loading.value = true
   try {
@@ -408,7 +456,8 @@ const fetchParts = async () => {
       limit: page.size,
       ...filterParams,
     }
-    const data = await get('/parts/grouped', params)
+    const data = await partsApi.listGrouped(params)
+    appliedSearch.value = String(filter.search || '').trim()
     parts.value = (data.items || []).flatMap(toDisplayRows)
     page.total = data.total || 0
   } catch (e) {
@@ -420,15 +469,22 @@ const fetchParts = async () => {
 
 const fetchCustomers = async () => {
   try {
-    const data = await get('/customers', { limit: 200 })
+    const data = await customersApi.list({ limit: 200 })
     // API returns CustomerListResponse{items, total}, extract items
     customers.value = data.items || []
   } catch { /* silent */ }
 }
 
 const resetFilter = () => {
-  filter.search = ''; filter.customer_id = null; filter.part_status = ''; filter.material = ''
+  appliedSearch.value = ''
+  companyStore.setCompany('tianyue'); filter.search = ''; filter.customer_id = null; filter.part_status = ''; filter.material = ''
   page.current = 1; fetchParts()
+}
+
+const handleSearchClear = () => {
+  appliedSearch.value = ''
+  page.current = 1
+  fetchParts()
 }
 
 const openCreate = () => {
@@ -463,7 +519,7 @@ const doSave = async () => {
   await formRef.value?.validate()
   saving.value = true
   try {
-    await post('/parts', form)
+    await partsApi.create(form)
     ElMessage.success('已创建')
     dialogVisible.value = false
     fetchParts()
@@ -477,7 +533,7 @@ const doSave = async () => {
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确认删除零件「${row.part_name || row.customer_part_no}」？删除后将不再显示，历史记录仍会保留。`, '确认', { type: 'warning' })
   try {
-    await apiClient.delete(`/parts/${row.id}`)
+    await partsApi.remove(row.id)
     ElMessage.success('已删除')
     fetchParts()
   } catch (e) {
@@ -485,38 +541,43 @@ const handleDelete = async (row) => {
   }
 }
 
-onMounted(() => { fetchParts(); fetchCustomers() })
+onMounted(() => {
+  if (companyStore.selectedCompany === 'gaibo') {
+    router.replace('/after-sales')
+    return
+  }
+  fetchParts(); fetchCustomers()
+})
 </script>
 
 <style scoped>
 .parts-container { min-width: 0; overflow-x: hidden; }
 .list-view-toolbar { display: grid; grid-template-columns: minmax(150px, .6fr) minmax(260px, 1.6fr) auto; align-items: center; gap: 14px; min-height: 64px; margin-bottom: 10px; padding: 8px 0; }
 .list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }
-.list-title-block h1 { margin: 0; color: #1f2933; font-size: 20px; font-weight: 650; }
+.list-title-block h1 { margin: 0; color: var(--zephyr-ink); font-size: 20px; font-weight: 650; }
 .list-caption { display: block; margin-top: 2px; color: #6c7980; font-size: 12px; }
-.search-control { width: min(520px, 100%); display: flex; align-items: center; gap: 8px; padding: 4px 10px; border: 1px solid #cbd4d6; border-radius: 4px; background: #fff; color: #60717a; }
+.search-control { width: min(520px, 100%); display: flex; align-items: center; gap: 8px; padding: 4px 10px; border: 1px solid #cbd4d6; border-radius: 4px; background: #fff; color: var(--zephyr-muted); }
 .search-control :deep(.el-input__wrapper) { box-shadow: none; padding: 0; }
 .filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .filter-controls :deep(.el-select), .filter-controls :deep(.el-input) { width: 145px; }
-.filter-controls:not(.expanded) :deep(.el-select:nth-of-type(2)) { display: none; }
-.view-toggle { color: #176b5a; }
-.table-meta { display: flex; justify-content: space-between; margin: 0 2px 8px; color: #68747b; font-size: 12px; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 2px 8px; color: var(--zephyr-muted); font-size: 12px; }
 .batch-bar { display: flex; align-items: center; gap: 8px; min-height: 30px; margin: 0 0 6px; padding: 0 2px; color: #7a888c; font-size: 11px; }
 .batch-bar .el-button { margin-left: auto; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-.twp-text { color: #176b5a; font-weight: 600; }
+.twp-text { color: var(--zephyr-primary); font-weight: 600; }
 .spec-text { color: #909399; font-size: 13px; }
 .text-muted { color: #c0c4cc; }
-.customer-part-no { color: #67c23a; font-style: italic; }
-.customer-part-name { color: #67c23a; font-style: italic; }
+.customer-part-no { color: var(--el-color-success); font-style: italic; }
+.customer-part-name { color: var(--el-color-success); font-style: italic; }
+.search-hit { background: #fff0a8; color: #5b4300; border-radius: 2px; padding: 0 1px; box-shadow: 0 0 0 1px rgba(184, 134, 11, .15); }
 .twp-tag { margin-right: 8px; }
 :deep(.el-dropdown + .el-dropdown) { margin-left: 10px; }
 :deep(.parts-table) {
-  --el-table-border-color: #d9dee1;
-  --el-table-header-bg-color: #eef1f2;
-  --el-table-row-hover-bg-color: #eef6f3;
+  --el-table-border-color: var(--zephyr-border);
+  --el-table-header-bg-color: var(--zephyr-surface-muted);
+  --el-table-row-hover-bg-color: var(--zephyr-primary-soft);
   --el-table-tr-bg-color: #ffffff;
-  border: 1px solid #dfe0e4;
+  border: 1px solid var(--zephyr-border);
   border-radius: 3px;
   overflow: hidden;
   cursor: pointer;
@@ -570,11 +631,15 @@ onMounted(() => { fetchParts(); fetchCustomers() })
   border-bottom: 1px solid #e7e7ea;
 }
 
+@media (max-width: 1200px) {
+  .list-view-toolbar { grid-template-columns: minmax(150px, .6fr) minmax(260px, 1.6fr); }
+  .filter-controls { grid-column: 1 / -1; justify-content: flex-start; flex-wrap: wrap; }
+}
 @media (max-width: 900px) {
   .list-view-toolbar { grid-template-columns: 1fr; align-items: stretch; }
   .list-title-block, .filter-controls { justify-content: flex-start; }
   .search-control { width: 100%; }
-  .filter-controls { flex-wrap: wrap; }
+  .filter-controls { grid-column: auto; flex-wrap: wrap; }
   .filter-controls :deep(.el-select), .filter-controls :deep(.el-input) { width: calc(50% - 4px); }
   .table-meta { gap: 6px; flex-direction: column; }
 }

@@ -146,8 +146,8 @@
         <el-form-item label="参考资料">
           <el-upload
             class="upload-demo"
-            :action="uploadUrl"
-            :on-success="handleUploadSuccess"
+            :auto-upload="false"
+            :on-change="handleAttachmentChange"
             :file-list="createForm.attachments"
             multiple
           >
@@ -216,9 +216,6 @@ const createRules: FormRules = {
   deadline: [{ required: true, message: '请选择截止日期', trigger: 'change' }],
   requirements: [{ required: true, message: '请输入打样要求', trigger: 'blur' }]
 }
-
-// 上传地址
-const uploadUrl = ref('/api/v1/upload')
 
 // 加载数据
 const loadData = async () => {
@@ -371,9 +368,9 @@ const submitCreate = async () => {
   })
 }
 
-// 上传成功
-const handleUploadSuccess = (_response: any, file: any) => {
-  createForm.attachments.push(file)
+// Keep selected files local until the sampling multipart contract is registered.
+const handleAttachmentChange = (...args: any[]) => {
+  createForm.attachments = args[1] || []
 }
 
 // 禁用过去的日期

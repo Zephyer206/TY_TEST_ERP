@@ -1,0 +1,1915 @@
+{
+  "recorded_at": "2026-10-12T16:46:11.064731+08:00",
+  "scope": "Phase 0 baseline only",
+  "business_writes": 0,
+  "source": {
+    "routes": [
+      {
+        "method": "POST",
+        "path": "/warehouse/material-batches",
+        "source": "backend/app/api/warehouse.py",
+        "line": 699,
+        "minimum_levels": [
+          2
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches",
+        "source": "backend/app/api/warehouse.py",
+        "line": 734,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches/{batch_id}",
+        "source": "backend/app/api/warehouse.py",
+        "line": 754,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches/by-no/{batch_no}",
+        "source": "backend/app/api/warehouse.py",
+        "line": 767,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "PUT",
+        "path": "/warehouse/material-batches/{batch_id}/iqc",
+        "source": "backend/app/api/warehouse.py",
+        "line": 780,
+        "minimum_levels": [
+          2
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/warehouse/material-batches/{batch_id}/split",
+        "source": "backend/app/api/warehouse.py",
+        "line": 804,
+        "minimum_levels": [
+          2
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/warehouse/material-batches/{batch_id}/consume",
+        "source": "backend/app/api/warehouse.py",
+        "line": 869,
+        "minimum_levels": [
+          1
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/warehouse/material-batches/{batch_id}/scrap",
+        "source": "backend/app/api/warehouse.py",
+        "line": 898,
+        "minimum_levels": [
+          3
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches/{batch_id}/trace",
+        "source": "backend/app/api/warehouse.py",
+        "line": 922,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches/scan/{batch_id}",
+        "source": "backend/app/api/warehouse.py",
+        "line": 958,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches/scan/child/{child_id}",
+        "source": "backend/app/api/warehouse.py",
+        "line": 1011,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/material-batches/{batch_id}/children",
+        "source": "backend/app/api/warehouse.py",
+        "line": 1120,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/warehouse/scans",
+        "source": "backend/app/api/warehouse.py",
+        "line": 1315,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/warehouse/scans/{entity_type}/{entity_id}",
+        "source": "backend/app/api/warehouse.py",
+        "line": 1343,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/warehouse/material-batches/{batch_id}/reprint-qr",
+        "source": "backend/app/api/warehouse.py",
+        "line": 1377,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/machines/{machine_id}/scan",
+        "source": "backend/app/api/machines.py",
+        "line": 184,
+        "minimum_levels": [
+          2
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/machines/{machine_id}/generate-qr",
+        "source": "backend/app/api/machines.py",
+        "line": 333,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/machines/scan/{machine_id}",
+        "source": "backend/app/api/machines.py",
+        "line": 351,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/production/sessions/verify-material",
+        "source": "backend/app/api/production.py",
+        "line": 1078,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/production/sessions/start",
+        "source": "backend/app/api/production.py",
+        "line": 1093,
+        "minimum_levels": [
+          1
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/production/sessions/{session_id}/close",
+        "source": "backend/app/api/production.py",
+        "line": 1268,
+        "minimum_levels": [
+          1
+        ],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/production/process-flow-cards",
+        "source": "backend/app/api/production.py",
+        "line": 1307,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/production/process-flow-cards/scan/{card_id}",
+        "source": "backend/app/api/production.py",
+        "line": 1402,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/production/process-flow-cards/{card_id}/reverse-trace",
+        "source": "backend/app/api/production.py",
+        "line": 1455,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "PUT",
+        "path": "/production/process-flow-cards/{card_id}/inbound",
+        "source": "backend/app/api/production.py",
+        "line": 1503,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "POST",
+        "path": "/production/process-flow-cards/{card_id}/reprint-qr",
+        "source": "backend/app/api/production.py",
+        "line": 1571,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/qr/lookup",
+        "source": "backend/app/api/qr.py",
+        "line": 272,
+        "minimum_levels": [],
+        "registry_keys": [
+          "qr.lookup"
+        ]
+      },
+      {
+        "method": "POST",
+        "path": "/qr/generate",
+        "source": "backend/app/api/qr.py",
+        "line": 347,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/qr/material/{batch_id}",
+        "source": "backend/app/api/qr.py",
+        "line": 376,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/qr/machine/{machine_id}",
+        "source": "backend/app/api/qr.py",
+        "line": 400,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/qr/process-flow/{card_id}",
+        "source": "backend/app/api/qr.py",
+        "line": 425,
+        "minimum_levels": [],
+        "registry_keys": []
+      },
+      {
+        "method": "GET",
+        "path": "/qr/part/{part_id}",
+        "source": "backend/app/api/qr.py",
+        "line": 450,
+        "minimum_levels": [],
+        "registry_keys": []
+      }
+    ],
+    "source_sha256": {
+      "backend/app/api/warehouse.py": "3cb4ad4c7a362b3ce74c9d2f65f0953d6bae8ba811cf9c1fafa8ee57e70c67d8",
+      "backend/app/api/machines.py": "d68ca916ffd561a8b1cc3099d6c681973743f0d901c3a44c55ffb5d6955566db",
+      "backend/app/api/production.py": "be563e54907d7978b147b2bf33c7e6f906b2fd38894a14935afab827dc022e0e",
+      "backend/app/api/qr.py": "3f4c945040762abfd7196dc7a474bdabda817fb31a0f60b05a96f87c5f357cb1"
+    },
+    "migration_heads": [
+      "20261009_qg_pricing_costs"
+    ],
+    "migration_bases": [
+      "001_initial",
+      "a1b2c3d4e5f6"
+    ],
+    "revision_count": 72,
+    "known_revisions": [
+      "001_initial",
+      "20260707_customer_price_system",
+      "20260722_null_cust_part_no",
+      "20260730_explicit_part_grouping",
+      "20260804_drop_part_mold",
+      "20260809_retire_legacy_columns",
+      "20260809_spec_database_alignment",
+      "20260809_spec_database_hardening",
+      "20260812_left_right_pair_plans",
+      "20260812_plan_material_readiness",
+      "20260814_after_sales_kits",
+      "20260815_kit_component_status",
+      "20260817_after_sales_editable",
+      "20260818_gaibo_after_sales",
+      "20260818_gaibo_archive_views",
+      "20260818_gaibo_customer_columns",
+      "20260818_gaibo_doc_unique",
+      "20260819_gaibo_afsc",
+      "20260821_gaibo_pending_ibi",
+      "20260822_shipping_orders",
+      "20260914_unify_parts",
+      "20260916_consolidate_status",
+      "20261004_customer_inquiries",
+      "20261006_quote_groups",
+      "20261007_material_library_seed",
+      "20261008_qg_material_snap",
+      "20261009_qg_pricing_costs",
+      "a1b2c3d4e5f6",
+      "abc123tech_twoscan",
+      "add_parts_customer_id",
+      "clarify20260620",
+      "clarify20260620b",
+      "clarify20260620c",
+      "def456tech_pending_pool",
+      "ghi789part_aliases",
+      "jkl012pkg_actual_date",
+      "mat0001slitting_logs",
+      "mbp0001_material_base_prices",
+      "mbp0002_parts_material_name",
+      "mno345pkg_shipping_customer",
+      "nom003nomination_price_snapshot",
+      "nom004quotes_parts_mold_split",
+      "nom005quotes_nomination_status",
+      "p001patch_levels34",
+      "qr002_material_traceability",
+      "qr003_fix_missing_columns",
+      "sales_pricing_engine_v1",
+      "spr0001spray_module",
+      "v10_canonical_lv1_lv4",
+      "v10_tech_qa_pipeline",
+      "v11_industrial_pipeline_schema_align",
+      "v12_inventory_die_architecture",
+      "v13_allow_duplicate_part_numbers",
+      "v14_dies_architecture_refactor",
+      "v15_add_sdr_drawing_path",
+      "v16",
+      "v16_treatment_items_and_mold_discount",
+      "v18_prices",
+      "v19_prices_add_cost_fields",
+      "v20_prices_add_surface_cost",
+      "v2split_parts_and_quotes",
+      "v3part_status_lifecycle",
+      "v4_sample_molds_bom",
+      "v4b_sample_molds_cols",
+      "v5_material_qr_tracking",
+      "v5b_material_aux_unit",
+      "v6_shopfloor_execution",
+      "v6b_shopfloor_routing",
+      "v7_delivery_qa_switch",
+      "v8_prod_maintenance",
+      "v9_prod_sessions_qa",
+      "xyz999tech_manager"
+    ]
+  },
+  "helper_checks": [
+    {
+      "name": "material_payload_round_trip",
+      "status": "PASS"
+    },
+    {
+      "name": "machine_payload_round_trip",
+      "status": "PASS"
+    },
+    {
+      "name": "process_flow_payload_round_trip",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid_format_and_unknown_prefix",
+      "status": "PASS"
+    },
+    {
+      "name": "printable_png_300px",
+      "status": "PASS"
+    }
+  ],
+  "database": {
+    "status": "PASS",
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261009_qg_pricing_costs"
+    ],
+    "unknown_migration_versions": [],
+    "columns": [
+      {
+        "table_name": "alembic_version",
+        "column_name": "version_num",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "batch_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "batch_no",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "transaction_type",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "quantity_change",
+        "data_type": "double precision",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "weight_after",
+        "data_type": "double precision",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "reference_type",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "reference_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "operator_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "notes",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "batch_transactions",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "machine_no",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "name",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "machine_type",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "tonnage",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "max_stroke",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "bed_size",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "state",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "current_tooling_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "fault_time",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "fault_reported_by",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "fault_reason",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "repair_start_time",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "repairer_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "location",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "is_deleted",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "machines",
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "parent_batch_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "child_batch_no",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "child_qr_code",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "width",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "length",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "current_weight",
+        "data_type": "double precision",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "status",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batch_children",
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "qr_uid",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "batch_no",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "qr_code",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "material_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "material_name",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "supplier_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "supplier_name",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "thickness",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "width",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "length",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "gross_weight",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "net_weight",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "current_weight",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "status",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "lifecycle_status",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "iqc_result",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "iqc_time",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "iqc_by",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "iqc_notes",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "parent_batch_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "po_no",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "received_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "is_deleted",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "material_batches",
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "plan_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "machine_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "assigned_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "completed_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "is_active",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "assigned_by",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "assigned_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "card_no",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "session_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "part_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "machine_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "tooling_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "material_batch_no",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "planned_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "actual_output",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "good_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "reject_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "status",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "start_time",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "end_time",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "operator_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "inbound_time",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "inbound_operator_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "inbound_notes",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "qr_code",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "part_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "total_qty",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "progress_qty",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "delivered_qty",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "due_date",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "machine_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "plan_order",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "force_order",
+        "data_type": "boolean",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "assigned_by",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "assigned_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "urgency",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "status",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "remark",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "created_by",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "is_urgent",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_status",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_confirmed_qty",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_confirmed_by",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_confirmed_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_confirmation_note",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_calculation_mode",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_source_spec_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_value",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_thickness",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_width",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_pitch",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_cavity_count",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "twp_manual_override",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_name_snapshot",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "material_density_snapshot",
+        "data_type": "numeric",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "cancellation_reason",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "paired_part_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "is_left_right_pair",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "paired_customer_part_no_snapshot",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_plans",
+        "column_name": "paired_part_name_snapshot",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "session_no",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "plan_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "assignment_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "machine_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "tooling_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "part_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "material_batch_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "status",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "started_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "closed_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "total_strokes",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "total_output",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "good_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "reject_qty",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "work_hours",
+        "data_type": "double precision",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "process_flow_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "operator_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "production_sessions",
+        "column_name": "updated_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "scan_type",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "entity_id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "entity_no",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "operator_id",
+        "data_type": "integer",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "operation",
+        "data_type": "USER-DEFINED",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "notes",
+        "data_type": "text",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "column_name": "scanned_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "users",
+        "column_name": "id",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "users",
+        "column_name": "username",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "users",
+        "column_name": "password",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "users",
+        "column_name": "real_name",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "users",
+        "column_name": "dept",
+        "data_type": "character varying",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "users",
+        "column_name": "role_level",
+        "data_type": "integer",
+        "is_nullable": "NO"
+      },
+      {
+        "table_name": "users",
+        "column_name": "created_at",
+        "data_type": "timestamp without time zone",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "users",
+        "column_name": "position",
+        "data_type": "character varying",
+        "is_nullable": "YES"
+      },
+      {
+        "table_name": "users",
+        "column_name": "is_tech",
+        "data_type": "boolean",
+        "is_nullable": "NO"
+      }
+    ],
+    "row_counts": {
+      "alembic_version": 1,
+      "material_batches": 0,
+      "material_batch_children": 0,
+      "batch_transactions": 0,
+      "qr_scan_logs": 0,
+      "machines": 53,
+      "production_plans": 3,
+      "plan_machine_assignments": 4,
+      "production_sessions": 0,
+      "process_flow_cards": 0
+    },
+    "role_groups": [
+      {
+        "dept": "admin",
+        "role_level": 4,
+        "user_count": 2
+      },
+      {
+        "dept": "engineering",
+        "role_level": 2,
+        "user_count": 75
+      },
+      {
+        "dept": "prod",
+        "role_level": 1,
+        "user_count": 6
+      },
+      {
+        "dept": "prod",
+        "role_level": 2,
+        "user_count": 1
+      },
+      {
+        "dept": "sales",
+        "role_level": 2,
+        "user_count": 1
+      },
+      {
+        "dept": "test",
+        "role_level": 1,
+        "user_count": 1
+      },
+      {
+        "dept": "warehouse",
+        "role_level": 1,
+        "user_count": 2
+      }
+    ],
+    "indexes": [
+      {
+        "tablename": "alembic_version",
+        "indexname": "alembic_version_pkc",
+        "indexdef": "CREATE UNIQUE INDEX alembic_version_pkc ON public.alembic_version USING btree (version_num)"
+      },
+      {
+        "tablename": "batch_transactions",
+        "indexname": "batch_transactions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX batch_transactions_pkey ON public.batch_transactions USING btree (id)"
+      },
+      {
+        "tablename": "batch_transactions",
+        "indexname": "ix_batch_transactions_batch_id",
+        "indexdef": "CREATE INDEX ix_batch_transactions_batch_id ON public.batch_transactions USING btree (batch_id)"
+      },
+      {
+        "tablename": "batch_transactions",
+        "indexname": "ix_batch_transactions_batch_no",
+        "indexdef": "CREATE INDEX ix_batch_transactions_batch_no ON public.batch_transactions USING btree (batch_no)"
+      },
+      {
+        "tablename": "machines",
+        "indexname": "ix_machines_current_tooling_id",
+        "indexdef": "CREATE INDEX ix_machines_current_tooling_id ON public.machines USING btree (current_tooling_id)"
+      },
+      {
+        "tablename": "machines",
+        "indexname": "ix_machines_machine_no",
+        "indexdef": "CREATE UNIQUE INDEX ix_machines_machine_no ON public.machines USING btree (machine_no)"
+      },
+      {
+        "tablename": "machines",
+        "indexname": "ix_machines_state",
+        "indexdef": "CREATE INDEX ix_machines_state ON public.machines USING btree (state)"
+      },
+      {
+        "tablename": "machines",
+        "indexname": "machines_pkey",
+        "indexdef": "CREATE UNIQUE INDEX machines_pkey ON public.machines USING btree (id)"
+      },
+      {
+        "tablename": "material_batch_children",
+        "indexname": "ix_material_batch_children_child_batch_no",
+        "indexdef": "CREATE UNIQUE INDEX ix_material_batch_children_child_batch_no ON public.material_batch_children USING btree (child_batch_no)"
+      },
+      {
+        "tablename": "material_batch_children",
+        "indexname": "ix_material_batch_children_parent_batch_id",
+        "indexdef": "CREATE INDEX ix_material_batch_children_parent_batch_id ON public.material_batch_children USING btree (parent_batch_id)"
+      },
+      {
+        "tablename": "material_batch_children",
+        "indexname": "material_batch_children_pkey",
+        "indexdef": "CREATE UNIQUE INDEX material_batch_children_pkey ON public.material_batch_children USING btree (id)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "ix_material_batches_batch_no",
+        "indexdef": "CREATE UNIQUE INDEX ix_material_batches_batch_no ON public.material_batches USING btree (batch_no)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "ix_material_batches_material_id",
+        "indexdef": "CREATE INDEX ix_material_batches_material_id ON public.material_batches USING btree (material_id)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "ix_material_batches_parent_batch_id",
+        "indexdef": "CREATE INDEX ix_material_batches_parent_batch_id ON public.material_batches USING btree (parent_batch_id)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "ix_material_batches_qr_uid",
+        "indexdef": "CREATE UNIQUE INDEX ix_material_batches_qr_uid ON public.material_batches USING btree (qr_uid)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "ix_material_batches_status",
+        "indexdef": "CREATE INDEX ix_material_batches_status ON public.material_batches USING btree (status)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "ix_material_batches_supplier_id",
+        "indexdef": "CREATE INDEX ix_material_batches_supplier_id ON public.material_batches USING btree (supplier_id)"
+      },
+      {
+        "tablename": "material_batches",
+        "indexname": "material_batches_pkey",
+        "indexdef": "CREATE UNIQUE INDEX material_batches_pkey ON public.material_batches USING btree (id)"
+      },
+      {
+        "tablename": "plan_machine_assignments",
+        "indexname": "ix_plan_machine_assignments_machine_id",
+        "indexdef": "CREATE INDEX ix_plan_machine_assignments_machine_id ON public.plan_machine_assignments USING btree (machine_id)"
+      },
+      {
+        "tablename": "plan_machine_assignments",
+        "indexname": "ix_plan_machine_assignments_plan_id",
+        "indexdef": "CREATE INDEX ix_plan_machine_assignments_plan_id ON public.plan_machine_assignments USING btree (plan_id)"
+      },
+      {
+        "tablename": "plan_machine_assignments",
+        "indexname": "plan_machine_assignments_pkey",
+        "indexdef": "CREATE UNIQUE INDEX plan_machine_assignments_pkey ON public.plan_machine_assignments USING btree (id)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "ix_process_flow_cards_card_no",
+        "indexdef": "CREATE UNIQUE INDEX ix_process_flow_cards_card_no ON public.process_flow_cards USING btree (card_no)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "ix_process_flow_cards_machine_id",
+        "indexdef": "CREATE INDEX ix_process_flow_cards_machine_id ON public.process_flow_cards USING btree (machine_id)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "ix_process_flow_cards_part_id",
+        "indexdef": "CREATE INDEX ix_process_flow_cards_part_id ON public.process_flow_cards USING btree (part_id)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "ix_process_flow_cards_qr_code",
+        "indexdef": "CREATE INDEX ix_process_flow_cards_qr_code ON public.process_flow_cards USING btree (qr_code)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "ix_process_flow_cards_session_id",
+        "indexdef": "CREATE INDEX ix_process_flow_cards_session_id ON public.process_flow_cards USING btree (session_id)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "ix_process_flow_cards_status",
+        "indexdef": "CREATE INDEX ix_process_flow_cards_status ON public.process_flow_cards USING btree (status)"
+      },
+      {
+        "tablename": "process_flow_cards",
+        "indexname": "process_flow_cards_pkey",
+        "indexdef": "CREATE UNIQUE INDEX process_flow_cards_pkey ON public.process_flow_cards USING btree (id)"
+      },
+      {
+        "tablename": "production_plans",
+        "indexname": "ix_production_plans_material_status",
+        "indexdef": "CREATE INDEX ix_production_plans_material_status ON public.production_plans USING btree (material_status)"
+      },
+      {
+        "tablename": "production_plans",
+        "indexname": "ix_production_plans_paired_part_id",
+        "indexdef": "CREATE INDEX ix_production_plans_paired_part_id ON public.production_plans USING btree (paired_part_id)"
+      },
+      {
+        "tablename": "production_plans",
+        "indexname": "ix_production_plans_part_id",
+        "indexdef": "CREATE INDEX ix_production_plans_part_id ON public.production_plans USING btree (part_id)"
+      },
+      {
+        "tablename": "production_plans",
+        "indexname": "ix_production_plans_twp_source_spec_id",
+        "indexdef": "CREATE INDEX ix_production_plans_twp_source_spec_id ON public.production_plans USING btree (twp_source_spec_id)"
+      },
+      {
+        "tablename": "production_plans",
+        "indexname": "production_plans_pkey",
+        "indexdef": "CREATE UNIQUE INDEX production_plans_pkey ON public.production_plans USING btree (id)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_assignment_id",
+        "indexdef": "CREATE INDEX ix_production_sessions_assignment_id ON public.production_sessions USING btree (assignment_id)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_machine_id",
+        "indexdef": "CREATE INDEX ix_production_sessions_machine_id ON public.production_sessions USING btree (machine_id)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_part_id",
+        "indexdef": "CREATE INDEX ix_production_sessions_part_id ON public.production_sessions USING btree (part_id)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_plan_id",
+        "indexdef": "CREATE INDEX ix_production_sessions_plan_id ON public.production_sessions USING btree (plan_id)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_session_no",
+        "indexdef": "CREATE UNIQUE INDEX ix_production_sessions_session_no ON public.production_sessions USING btree (session_no)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_status",
+        "indexdef": "CREATE INDEX ix_production_sessions_status ON public.production_sessions USING btree (status)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "ix_production_sessions_tooling_id",
+        "indexdef": "CREATE INDEX ix_production_sessions_tooling_id ON public.production_sessions USING btree (tooling_id)"
+      },
+      {
+        "tablename": "production_sessions",
+        "indexname": "production_sessions_pkey",
+        "indexdef": "CREATE UNIQUE INDEX production_sessions_pkey ON public.production_sessions USING btree (id)"
+      },
+      {
+        "tablename": "qr_scan_logs",
+        "indexname": "ix_qr_scan_logs_scan_type",
+        "indexdef": "CREATE INDEX ix_qr_scan_logs_scan_type ON public.qr_scan_logs USING btree (scan_type)"
+      },
+      {
+        "tablename": "qr_scan_logs",
+        "indexname": "qr_scan_logs_pkey",
+        "indexdef": "CREATE UNIQUE INDEX qr_scan_logs_pkey ON public.qr_scan_logs USING btree (id)"
+      },
+      {
+        "tablename": "users",
+        "indexname": "ix_users_username",
+        "indexdef": "CREATE UNIQUE INDEX ix_users_username ON public.users USING btree (username)"
+      },
+      {
+        "tablename": "users",
+        "indexname": "users_pkey",
+        "indexdef": "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+      }
+    ],
+    "constraints": [
+      {
+        "table_name": "alembic_version",
+        "constraint_name": "alembic_version_pkc",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (version_num)"
+      },
+      {
+        "table_name": "batch_transactions",
+        "constraint_name": "batch_transactions_batch_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (batch_id) REFERENCES material_batches(id)"
+      },
+      {
+        "table_name": "batch_transactions",
+        "constraint_name": "batch_transactions_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "machines",
+        "constraint_name": "machines_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "material_batch_children",
+        "constraint_name": "material_batch_children_parent_batch_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (parent_batch_id) REFERENCES material_batches(id) ON DELETE CASCADE"
+      },
+      {
+        "table_name": "material_batch_children",
+        "constraint_name": "material_batch_children_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "material_batches",
+        "constraint_name": "material_batches_material_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (material_id) REFERENCES materials(id)"
+      },
+      {
+        "table_name": "material_batches",
+        "constraint_name": "material_batches_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "material_batches",
+        "constraint_name": "material_batches_supplier_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (supplier_id) REFERENCES suppliers(id)"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "constraint_name": "plan_machine_assignments_machine_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (machine_id) REFERENCES machines(id)"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "constraint_name": "plan_machine_assignments_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "plan_machine_assignments",
+        "constraint_name": "plan_machine_assignments_plan_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (plan_id) REFERENCES production_plans(id) ON DELETE CASCADE"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "constraint_name": "process_flow_cards_machine_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (machine_id) REFERENCES machines(id)"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "constraint_name": "process_flow_cards_part_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (part_id) REFERENCES parts(id)"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "constraint_name": "process_flow_cards_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "constraint_name": "process_flow_cards_session_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (session_id) REFERENCES production_sessions(id)"
+      },
+      {
+        "table_name": "process_flow_cards",
+        "constraint_name": "process_flow_cards_tooling_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (tooling_id) REFERENCES tooling(id)"
+      },
+      {
+        "table_name": "production_plans",
+        "constraint_name": "fk_production_plans_paired_part",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (paired_part_id) REFERENCES parts(id)"
+      },
+      {
+        "table_name": "production_plans",
+        "constraint_name": "fk_production_plans_twp_source_spec",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (twp_source_spec_id) REFERENCES part_tooling_specs(id) ON DELETE SET NULL"
+      },
+      {
+        "table_name": "production_plans",
+        "constraint_name": "production_plans_part_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (part_id) REFERENCES parts(id)"
+      },
+      {
+        "table_name": "production_plans",
+        "constraint_name": "production_plans_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "production_sessions",
+        "constraint_name": "production_sessions_assignment_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (assignment_id) REFERENCES plan_machine_assignments(id)"
+      },
+      {
+        "table_name": "production_sessions",
+        "constraint_name": "production_sessions_machine_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (machine_id) REFERENCES machines(id)"
+      },
+      {
+        "table_name": "production_sessions",
+        "constraint_name": "production_sessions_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "production_sessions",
+        "constraint_name": "production_sessions_plan_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (plan_id) REFERENCES production_plans(id)"
+      },
+      {
+        "table_name": "production_sessions",
+        "constraint_name": "production_sessions_tooling_id_fkey",
+        "constraint_type": "f",
+        "definition": "FOREIGN KEY (tooling_id) REFERENCES tooling(id)"
+      },
+      {
+        "table_name": "qr_scan_logs",
+        "constraint_name": "qr_scan_logs_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      },
+      {
+        "table_name": "users",
+        "constraint_name": "ck_users_role_level_1_4",
+        "constraint_type": "c",
+        "definition": "CHECK (((role_level >= 1) AND (role_level <= 4)))"
+      },
+      {
+        "table_name": "users",
+        "constraint_name": "users_pkey",
+        "constraint_type": "p",
+        "definition": "PRIMARY KEY (id)"
+      }
+    ],
+    "missing_tables": [
+      "product_qr_pool_items",
+      "product_boxes",
+      "product_flow_events",
+      "product_box_relations",
+      "coil_spec_exceptions",
+      "product_conversion_records",
+      "notification_outbox"
+    ],
+    "runtime_auth_disabled": true
+  },
+  "api_contracts": {
+    "checks": [
+      {
+        "name": "invalid_qr_format",
+        "status": "PASS",
+        "http_status": 200
+      },
+      {
+        "name": "unknown_qr_prefix",
+        "status": "PASS",
+        "http_status": 200
+      },
+      {
+        "name": "manual_lookup_requires_type",
+        "status": "PASS",
+        "http_status": 200
+      }
+    ],
+    "health_status": 200,
+    "source_routes_missing_from_openapi": [],
+    "mode": "in-process ASGI, synthetic actor, no DB, no lifespan",
+    "authentication_acceptance": "NOT_RUN",
+    "live_browser_acceptance": "NOT_RUN"
+  }
+}

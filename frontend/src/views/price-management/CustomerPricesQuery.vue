@@ -134,7 +134,8 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Picture } from '@element-plus/icons-vue'
-import { get } from '@/utils/request'
+import { customersApi } from '@/api/customers'
+import { customerPricesApi } from '@/api/pricing'
 
 const customers = ref([])
 const selectedCustomerId = ref(null)
@@ -161,7 +162,7 @@ const statusLabelMap = {
 
 const fetchCustomers = async () => {
   try {
-    const data = await get('/customers', { limit: 200, has_parts: true })
+    const data = await customersApi.list({ limit: 200, has_parts: true })
     customers.value = Array.isArray(data) ? data : (data.items || [])
   } catch (e) {
     ElMessage.error('获取客户列表失败: ' + (e.message || '未知错误'))
@@ -177,7 +178,7 @@ const fetchCustomerParts = async () => {
 
   loading.value = true
   try {
-    const data = await get(`/customer-prices/customers/${selectedCustomerId.value}/year-prices`)
+    const data = await customerPricesApi.yearPrices(selectedCustomerId.value)
     customerData.value = data
   } catch (e) {
     ElMessage.error('获取客户零件价格失败: ' + (e.message || '未知错误'))
@@ -225,7 +226,7 @@ const viewPriceHistory = async (part) => {
   priceHistory.value = []
 
   try {
-    const data = await get(`/customer-prices/customers/${selectedCustomerId.value}/parts/${part.part_id}/price-history`)
+    const data = await customerPricesApi.priceHistory(selectedCustomerId.value, part.part_id)
     priceHistory.value = data
   } catch (e) {
     ElMessage.error('获取调价历史失败: ' + (e.message || '未知错误'))

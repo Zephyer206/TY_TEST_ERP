@@ -24,6 +24,7 @@ from app.models.customer import Customer
 from app.models.part import Part
 from app.models.part_customer_alias import PartCustomerAlias
 from app.models.part_tooling_spec import PartToolingSpec
+from app.models.packaging import Inventory
 from app.models.tooling import Tooling, ToolingPart
 from app.schemas.part_editor_relationships import (
     CustomerAliasesUpdateRequest,
@@ -354,6 +355,14 @@ async def _build_editor_detail_response(
         )
         all_toolings = all_toolings_result.scalars().all()
 
+    inventory_qty = (
+        await db.execute(
+            select(Inventory.stock_qty)
+            .where(Inventory.part_id == part.id)
+        )
+    ).scalars().all()
+    stock_pcs = sum(int(qty or 0) for qty in inventory_qty) if inventory_qty else int(part.stock_pcs or 0)
+
     return PartEditorDetailResponse(
         id=part.id,
         part_name=part.internal_name,
@@ -374,11 +383,14 @@ async def _build_editor_detail_response(
         net_weight=part.net_weight,
         part_position=part.part_position,
         part_status=part.part_status,
-        status=part.status,
+        # ``status`` is a deprecated compatibility field.  The canonical
+        # lifecycle value is ``part_status``; emit an explicit null so older
+        # response-model deployments cannot fail on a missing key.
+        status=None,
         remark=part.remark,
         press_tonnage=part.press_tonnage,
         ppap_no=part.ppap_no,
-        stock_pcs=part.stock_pcs or 0,
+        stock_pcs=stock_pcs,
         is_deleted=part.is_deleted,
         created_at=part.created_at,
         updated_at=part.updated_at,
@@ -535,13 +547,6 @@ async def bulk_update_relationships(
             detail=f"Part {part_id} not found"
         )
 
-    existing_tooling_count = len((await db.execute(
-        select(ToolingPart.id).where(ToolingPart.part_id == part_id)
-    )).scalars().all())
-    existing_spec_count = len((await db.execute(
-        select(PartToolingSpec.id).where(PartToolingSpec.part_id == part_id)
-    )).scalars().all())
-
     # Optimistic lock check
     server_ts = part.updated_at or part.created_at
     client_ts = request.expected_updated_at
@@ -560,6 +565,13 @@ async def bulk_update_relationships(
                 "server_timestamp": server_ts.isoformat() if server_ts else None,
             }
         )
+
+    existing_tooling_count = len((await db.execute(
+        select(ToolingPart.id).where(ToolingPart.part_id == part_id)
+    )).scalars().all())
+    existing_spec_count = len((await db.execute(
+        select(PartToolingSpec.id).where(PartToolingSpec.part_id == part_id)
+    )).scalars().all())
 
     try:
         counts = {"aliases": 0, "tooling_parts": 0, "specs": 0}

@@ -81,9 +81,6 @@ class Tooling(Base):
     is_continuous: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     cavity_count: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
     process_step_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
-    cavity_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    mold_status: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    mold_count: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     status: Mapped[str] = mapped_column(String(30), nullable=False, default='DRAFT')
 
     # 材料和规格
@@ -93,7 +90,6 @@ class Tooling(Base):
 
     # 压机和工艺
     press_tonnage: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
-    forming_steps: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
 
     # 多产品相关
     is_multi_product: Mapped[Optional[bool]] = mapped_column(Boolean, nullable=True)

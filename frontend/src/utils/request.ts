@@ -1,5 +1,6 @@
 import axios from 'axios'
-import type { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import type { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios'
+import { AUTH_DISABLED } from '@/stores/user'
 
 // 创建 axios 实例
 const apiClient: AxiosInstance = axios.create({
@@ -13,9 +14,15 @@ const apiClient: AxiosInstance = axios.create({
 // 请求拦截器
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // Let the browser set the multipart boundary for uploaded inquiry files.
+    // The Axios instance has a JSON default header for all other requests.
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData && config.headers) {
+      delete config.headers['Content-Type']
+    }
+
     // 添加 token
     const token = localStorage.getItem('token')
-    if (token && config.headers) {
+    if (!AUTH_DISABLED && token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
 
@@ -41,9 +48,18 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config
+    // Keep the server response available to workflow screens. Shipping-order
+    // submission uses structured 409 warnings (code/message/details) to let
+    // the operator explicitly confirm a duplicate or unregistered part.
+    const attachResponse = (message: string) => {
+      const enriched = new Error(message) as Error & { response?: unknown; status?: number }
+      enriched.response = error.response
+      enriched.status = error.response?.status
+      return enriched
+    }
 
     // 401 未授权 - 跳转到登录页
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !AUTH_DISABLED) {
       originalRequest._retry = true
 
       // 清除本地存储
@@ -53,24 +69,28 @@ apiClient.interceptors.response.use(
       // 跳转到登录页
       window.location.href = '/login'
 
-      return Promise.reject(new Error('登录已过期，请重新登录'))
+      return Promise.reject(attachResponse('登录已过期，请重新登录'))
     }
 
     // 403 禁止访问
     if (error.response?.status === 403) {
+      if (AUTH_DISABLED) {
+        console.warn('验收模式：已跳过前端权限限制，接口返回403')
+        return Promise.reject(attachResponse('验收模式下接口暂未返回数据'))
+      }
       console.error('权限不足:', error.response.data?.detail || '无权限访问')
-      return Promise.reject(new Error('权限不足'))
+      return Promise.reject(attachResponse('权限不足'))
     }
 
     // 404 未找到
     if (error.response?.status === 404) {
-      return Promise.reject(new Error('资源不存在'))
+      return Promise.reject(attachResponse('资源不存在'))
     }
 
     // 500 服务器错误
     if (error.response?.status >= 500) {
       console.error('服务器错误:', error.response?.data)
-      return Promise.reject(new Error('服务器错误，请稍后重试'))
+      return Promise.reject(attachResponse('服务器错误，请稍后重试'))
     }
 
     // 其他错误
@@ -80,54 +100,10 @@ apiClient.interceptors.response.use(
       error.message ||
       '请求失败'
 
-    return Promise.reject(new Error(errorMessage))
+    return Promise.reject(attachResponse(typeof errorMessage === 'string' ? errorMessage : '请求失败'))
   }
 )
 
-// 通用 GET 请求
-export const get = <T = any>(
-  url: string,
-  params?: Record<string, any>,
-  config?: AxiosRequestConfig
-): Promise<T> => {
-  return apiClient.get(url, { params, ...config }).then((res) => res.data)
-}
-
-// 通用 POST 请求
-export const post = <T = any>(
-  url: string,
-  data?: any,
-  config?: AxiosRequestConfig
-): Promise<T> => {
-  return apiClient.post(url, data, config).then((res) => res.data)
-}
-
-// 通用 PUT 请求
-export const put = <T = any>(
-  url: string,
-  data?: any,
-  config?: AxiosRequestConfig
-): Promise<T> => {
-  return apiClient.put(url, data, config).then((res) => res.data)
-}
-
-// 通用 PATCH 请求
-export const patch = <T = any>(
-  url: string,
-  data?: any,
-  config?: AxiosRequestConfig
-): Promise<T> => {
-  return apiClient.patch(url, data, config).then((res) => res.data)
-}
-
-// 通用 DELETE 请求
-export const del = <T = any>(
-  url: string,
-  config?: AxiosRequestConfig
-): Promise<T> => {
-  return apiClient.delete(url, config).then((res) => res.data)
-}
-
-// 导出实例和快捷方法
+// Only the registry-aware API client may use this transport instance.
 export { apiClient }
 export default apiClient

@@ -10,6 +10,10 @@
       </div>
       <div class="search-control"><el-icon><Search /></el-icon><el-input v-model="filters.toolingNo" placeholder="搜索模具号" clearable @keyup.enter="loadData" /></div>
       <div class="filter-controls">
+        <el-select v-model="companyStore.selectedCompany" placeholder="公司" @change="handleCompanyChange">
+          <el-option label="天越" value="tianyue" />
+          <el-option label="盖博" value="gaibo" />
+        </el-select>
         <el-select v-model="filters.status" placeholder="状态" clearable><el-option label="可用" value="available" /><el-option label="使用中" value="in_use" /><el-option label="维修中" value="maintenance" /><el-option label="报废" value="scrapped" /></el-select>
         <el-input v-model="filters.customer" placeholder="客户" clearable @keyup.enter="loadData" />
         <el-select v-model="filters.type" placeholder="类型" clearable><el-option label="单工序" value="single" /><el-option label="连续模" value="progressive" /><el-option label="复合模" value="compound" /></el-select>
@@ -20,7 +24,8 @@
     <div class="table-meta"><span>{{ pagination.total }} 条记录</span><span>点击详情继续查看模具生命周期</span></div>
 
     <!-- 模具列表 -->
-    <el-table :data="toolingList" v-loading="loading">
+    <div class="table-scroll">
+      <el-table :data="toolingList" v-loading="loading">
         <el-table-column prop="toolingNo" label="模具号" width="140" fixed="left" />
         <el-table-column prop="customerName" label="客户" width="150" />
         <el-table-column prop="customerPartNo" label="客户产品号" width="150" />
@@ -65,7 +70,8 @@
             </el-button>
           </template>
         </el-table-column>
-    </el-table>
+      </el-table>
+    </div>
 
       <div class="pagination-container">
         <el-pagination
@@ -171,9 +177,11 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Menu, Plus, Search } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
+import { useCompanyStore, type CompanyKey } from '@/stores/company'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
+const companyStore = useCompanyStore()
 
 // 状态
 const loading = ref(false)
@@ -236,7 +244,7 @@ const loadData = async () => {
     // const response = await api.tooling.list({...filters, ...pagination})
 
     // 模拟数据
-    toolingList.value = [
+    toolingList.value = companyStore.selectedCompany === 'tianyue' ? [
       {
         id: 1,
         toolingNo: 'M-2026-001',
@@ -251,8 +259,8 @@ const loadData = async () => {
         location: 'A区01',
         createdAt: '2026-01-15'
       }
-    ]
-    pagination.total = 1
+    ] : []
+    pagination.total = toolingList.value.length
   } catch (error) {
     ElMessage.error('加载失败')
   } finally {
@@ -280,6 +288,12 @@ const resetFilters = () => {
   filters.toolingNo = ''
   filters.type = ''
   loadData()
+}
+
+const handleCompanyChange = (company: CompanyKey) => {
+  companyStore.setCompany(company)
+  pagination.page = 1
+  void loadData()
 }
 
 // 类型文本
@@ -389,7 +403,20 @@ onMounted(() => {
 .list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
 .search-control { display: flex; align-items: center; gap: 8px; width: min(480px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
 .filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.filter-controls :deep(.el-select) { width: 118px; }.filter-controls :deep(.el-input) { width: 124px; }.view-toggle { color: #625780; }
-.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.table-meta span:last-child { color: #96939e; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: var(--zephyr-muted); font-size: 12px; }.table-meta span:last-child { color: #96939e; }
 .pagination-container { display: flex; justify-content: flex-end; margin-top: 12px; }
 @media (max-width: 1040px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; flex-wrap: wrap; } }
+.table-scroll { width: 100%; max-width: 100%; overflow-x: auto; }
+.table-scroll :deep(.el-table) { min-width: 1470px; }
+@media (max-width: 600px) {
+  .list-view-toolbar { gap: 8px; }
+  .list-title-block { min-width: 0; justify-content: space-between; }
+  .search-control { width: 100%; box-sizing: border-box; }
+  .filter-controls { width: 100%; align-items: stretch; }
+  .filter-controls :deep(.el-select), .filter-controls :deep(.el-input) { flex: 1 1 120px; width: auto; min-width: 0; }
+  .filter-controls :deep(.el-button) { flex: 0 0 auto; }
+  .table-meta { gap: 8px; align-items: flex-start; }
+  .table-meta span:last-child { text-align: right; }
+  .pagination-container { justify-content: center; overflow-x: auto; }
+}
 </style>

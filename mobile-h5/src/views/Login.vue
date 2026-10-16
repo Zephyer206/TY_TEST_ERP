@@ -30,9 +30,6 @@
       </div>
     </van-form>
 
-    <div class="server-info">
-      <p>服务器: {{ serverUrl }}</p>
-    </div>
   </div>
 </template>
 
@@ -40,38 +37,29 @@
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { showToast } from 'vant'
+import { getCurrentUser, login } from '@/api/auth'
 
 const router = useRouter()
 const username = ref('')
 const password = ref('')
 const loading = ref(false)
-const serverUrl = ref('http://124.222.29.229:8000')
 
 const handleLogin = async () => {
   loading.value = true
   try {
-    const formData = new FormData()
-    formData.append('username', username.value)
-    formData.append('password', password.value)
-
-    const response = await fetch(`${serverUrl.value}/login`, {
-      method: 'POST',
-      body: formData,
-      credentials: 'include',
-    })
-
-    if (response.redirected || response.url.includes('/login') === false) {
-      // 保存用户信息到 localStorage
-      localStorage.setItem('user_id', 'logged_in')
-      localStorage.setItem('server_url', serverUrl.value)
-      localStorage.setItem('username', username.value)
+    const data = await login({ username: username.value, password: password.value })
+    localStorage.setItem('access_token', data.access_token)
+    localStorage.setItem('refresh_token', data.refresh_token)
+    try {
+      const user = await getCurrentUser()
+      localStorage.setItem('mobile_user', JSON.stringify(user))
+    } catch {
+      localStorage.setItem('mobile_user', JSON.stringify({ username: username.value }))
+    }
       showToast({ message: '登录成功', position: 'top' })
       router.push('/dashboard')
-    } else {
-      showToast({ message: '用户名或密码错误', position: 'top' })
-    }
   } catch (error) {
-    showToast({ message: '登录失败: ' + error.message, position: 'top' })
+    showToast({ message: '登录失败: ' + (error.message || '请检查账号密码'), position: 'top' })
   } finally {
     loading.value = false
   }
@@ -81,7 +69,7 @@ const handleLogin = async () => {
 <style scoped>
 .login-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #10211f;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -108,10 +96,4 @@ const handleLogin = async () => {
   margin: 24px 16px;
 }
 
-.server-info {
-  text-align: center;
-  color: rgba(255, 255, 255, 0.6);
-  font-size: 12px;
-  margin-top: 20px;
-}
 </style>

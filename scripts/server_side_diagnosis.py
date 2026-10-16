@@ -7,7 +7,11 @@ server_side_diagnosis.py
 
 import sys, os
 sys.path.insert(0, r"c:\Users\Administrator\Desktop\Cloud-Stamping")
-os.environ["DATABASE_URL"] = "postgresql://postgres:thehaoshi5DE@localhost:5432/stamping_system"
+os.environ["DATABASE_URL"] = (
+    "postgresql://postgres:"
+    + __import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")
+    + "@localhost:5432/stamping_system"
+)
 
 # 直接 import 并调用 db_service（绕过 HTTP）
 import psycopg2
@@ -17,7 +21,7 @@ import json
 DB = {
     "dbname": "stamping_system",
     "user": "postgres",
-    "password": "thehaoshi5DE",
+    "password": __import__("os").environ.get("ZEPHYR_DB_PASSWORD", ""),
     "host": "localhost",
     "port": "5432",
 }
@@ -30,7 +34,7 @@ try:
     with psycopg2.connect(
         dbname="stamping_system",
         user="postgres",
-        password="thehaoshi5DE",
+        password=__import__("os").environ.get("ZEPHYR_DB_PASSWORD", ""),
         host="localhost",
         port="5432"
     ) as conn:

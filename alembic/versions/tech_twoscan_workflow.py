@@ -21,8 +21,6 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-    
     # ─────────────────────────────────────────────────────────────
     # 1. 修改 maintenance_status CHECK 约束（扩展状态枚举）
     # ─────────────────────────────────────────────────────────────
@@ -49,41 +47,34 @@ def upgrade():
     # ─────────────────────────────────────────────────────────────
     # 2. 新增维修时间戳字段
     # ─────────────────────────────────────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'mold_offline_records' AND column_name = 'repair_start_time'
-    """)).fetchone()
-    
-    if not result:
-        op.add_column('mold_offline_records', sa.Column('repair_start_time', sa.DateTime(), nullable=True))
-    
-    result2 = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'mold_offline_records' AND column_name = 'repair_end_time'
-    """)).fetchone()
-    
-    if not result2:
-        op.add_column('mold_offline_records', sa.Column('repair_end_time', sa.DateTime(), nullable=True))
+    op.execute(
+        "ALTER TABLE mold_offline_records "
+        "ADD COLUMN IF NOT EXISTS repair_start_time TIMESTAMP"
+    )
+    op.execute(
+        "ALTER TABLE mold_offline_records "
+        "ADD COLUMN IF NOT EXISTS repair_end_time TIMESTAMP"
+    )
     
     # ─────────────────────────────────────────────────────────────
     # 3. 新增模具信息字段（便于直接关联零件）
     # ─────────────────────────────────────────────────────────────
-    result3 = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'mold_offline_records' AND column_name = 'current_part_number'
-    """)).fetchone()
-    
-    if not result3:
-        op.add_column('mold_offline_records', sa.Column('current_part_number', sa.String(100), nullable=True))
-        op.add_column('mold_offline_records', sa.Column('current_part_name', sa.String(200), nullable=True))
+    op.execute(
+        "ALTER TABLE mold_offline_records "
+        "ADD COLUMN IF NOT EXISTS current_part_number VARCHAR(100)"
+    )
+    op.execute(
+        "ALTER TABLE mold_offline_records "
+        "ADD COLUMN IF NOT EXISTS current_part_name VARCHAR(200)"
+    )
 
 
 def downgrade():
     # 删除新增的列
-    op.drop_column('mold_offline_records', 'current_part_name')
-    op.drop_column('mold_offline_records', 'current_part_number')
-    op.drop_column('mold_offline_records', 'repair_end_time')
-    op.drop_column('mold_offline_records', 'repair_start_time')
+    op.execute("ALTER TABLE mold_offline_records DROP COLUMN IF EXISTS current_part_name")
+    op.execute("ALTER TABLE mold_offline_records DROP COLUMN IF EXISTS current_part_number")
+    op.execute("ALTER TABLE mold_offline_records DROP COLUMN IF EXISTS repair_end_time")
+    op.execute("ALTER TABLE mold_offline_records DROP COLUMN IF EXISTS repair_start_time")
     
     # 恢复旧约束
     op.execute("""

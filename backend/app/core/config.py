@@ -10,6 +10,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 BACKEND_DIR = Path(__file__).resolve().parents[2]
+DEFAULT_SECRET_KEY = "change-me-in-production"
 
 
 class Settings(BaseSettings):
@@ -33,6 +34,15 @@ class Settings(BaseSettings):
     PORT: int = 8000
     API_V1_PREFIX: str = "/api/v1"
 
+    # Legacy in-process migrations are disabled by default. Database changes
+    # must normally run through the repository Alembic entry point.
+    ENABLE_LEGACY_MIGRATION_API: bool = False
+
+    # Temporary acceptance switch. When enabled, API dependencies use the
+    # first LV4 user as the current administrator without requiring login.
+    # Set AUTH_DISABLED=false before enabling a production deployment.
+    AUTH_DISABLED: bool = True
+
     # Database
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:postgres@localhost:5432/cloud_stamping",
@@ -47,7 +57,7 @@ class Settings(BaseSettings):
 
     # JWT Security
     SECRET_KEY: str = Field(
-        default="change-me-in-production",
+        default=DEFAULT_SECRET_KEY,
         description="Secret key for JWT token signing",
     )
     ALGORITHM: str = "HS256"
@@ -92,3 +102,18 @@ def get_settings() -> Settings:
 
 # Global settings instance
 settings = get_settings()
+
+
+def validate_runtime_settings(config: Settings = settings) -> None:
+    """Reject unsafe production settings before accepting traffic."""
+    if config.ENVIRONMENT != "production":
+        return
+
+    if config.SECRET_KEY == DEFAULT_SECRET_KEY or len(config.SECRET_KEY) < 32:
+        raise RuntimeError("Production SECRET_KEY must be a non-default value of at least 32 characters")
+
+    if config.ENABLE_LEGACY_MIGRATION_API:
+        raise RuntimeError("ENABLE_LEGACY_MIGRATION_API must remain disabled in production")
+
+    if config.AUTH_DISABLED:
+        raise RuntimeError("AUTH_DISABLED must be false in production")

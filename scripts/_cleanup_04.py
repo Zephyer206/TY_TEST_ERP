@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import psycopg2
 
-conn = psycopg2.connect(host='localhost', dbname='stamping_system', user='postgres', password='thehaoshi5DE', port='5432')
+conn = psycopg2.connect(host='localhost', dbname='stamping_system', user='postgres', password='__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")', port='5432')
 cur = conn.cursor()
 
 # 删除 A00125983-04 的空 price 记录（子行，没有重量数据）

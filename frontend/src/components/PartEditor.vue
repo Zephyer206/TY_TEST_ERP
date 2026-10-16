@@ -291,8 +291,8 @@
 import { ref, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Loading, QuestionFilled } from '@element-plus/icons-vue'
-import { get } from '@/utils/request'
-import apiClient from '@/utils/request'
+import { partsApi } from '@/api/parts'
+import { customersApi } from '@/api/customers'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -338,7 +338,7 @@ const loadEditorData = async () => {
   if (!props.partId) return
   loading.value = true
   try {
-    const data = await get(`/parts/${props.partId}/editor/detail`)
+    const data = await partsApi.editorDetail(props.partId)
     editorData.value = data
     originalData.value = JSON.parse(JSON.stringify(data))
 
@@ -389,7 +389,7 @@ const loadEditorData = async () => {
 
 const loadCustomers = async () => {
   try {
-    const data = await get('/customers', { limit: 200 })
+    const data = await customersApi.list({ limit: 200 })
     customersForSelect.value = data.items || []
   } catch (e) {
     // Silent fail
@@ -404,7 +404,7 @@ const handleSave = async () => {
       ...baseForm.value,
       updated_at: editorData.value.updated_at,
     }
-    await apiClient.patch(`/parts/${props.partId}/editor`, baseUpdatePayload)
+    await partsApi.updateEditor(props.partId, baseUpdatePayload)
 
     // Update relationships via bulk endpoint
     const bulkPayload = {
@@ -440,7 +440,7 @@ const handleSave = async () => {
       delete_spec_ids: deletedSpecIds.value,
     }
 
-    await apiClient.put(`/parts/${props.partId}/editor/bulk`, bulkPayload)
+    await partsApi.updateEditorBulk(props.partId, bulkPayload)
 
     ElMessage.success('保存成功')
     hasUnsavedChanges.value = false
@@ -660,7 +660,7 @@ const canSetPrimary = (tp) => {
 }
 
 .continuous-tooling {
-  border-color: #67c23a;
+  border-color: var(--el-color-success);
   background-color: #f0f9ff;
 }
 

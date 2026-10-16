@@ -11,7 +11,8 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import settings
+from app.core.config import settings, validate_runtime_settings
+from app.core.file_service import get_upload_root
 from app.core.events import EventBus, audit_event
 from app.database import close_db, engine, init_db
 from app.redis import redis_client
@@ -21,6 +22,7 @@ from app.redis import redis_client
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan handler for startup/shutdown."""
     # Startup
+    validate_runtime_settings()
     # await init_db()  # 表已存在，跳过创建
     await redis_client.connect()
     yield
@@ -105,6 +107,7 @@ from app.api.auth import router as auth_router
 from app.api.coating import router as coating_router
 from app.api.customer_prices import router as customer_prices_router
 from app.api.customers import router as customers_router
+from app.api.customer_inquiries import router as customer_inquiries_router
 from app.api.machines import router as machines_router
 from app.api.migrations import router as migrations_router
 from app.api.packaging import router as packaging_router
@@ -119,10 +122,12 @@ from app.api.production import router as production_router
 from app.api.quality import router as quality_router
 from app.api.qr import router as qr_router
 from app.api.quotes import router as quotes_router
+from app.api.quote_groups import router as quote_groups_router
 from app.api.sampling_tasks import router as sampling_tasks_router
 from app.api.toolings import router as toolings_router
 from app.api.treatments import router as treatments_router
 from app.api.warehouse import router as warehouse_router
+from app.api.shipping_orders import router as shipping_orders_router, contract_router as shipping_contract_router
 # Dictionary routers
 from app.api.part_names import router as part_names_router
 from app.api.part_names_extra import router as part_names_extra_router
@@ -137,8 +142,12 @@ app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(coating_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customer_prices_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customers_router, prefix=settings.API_V1_PREFIX)
+app.include_router(customer_inquiries_router, prefix=settings.API_V1_PREFIX)
 app.include_router(machines_router, prefix=settings.API_V1_PREFIX)
-app.include_router(migrations_router, prefix=settings.API_V1_PREFIX)
+# Legacy in-process migrations stay disabled by default. Use Alembic from the
+# deployment environment so schema changes are versioned and auditable.
+if settings.ENABLE_LEGACY_MIGRATION_API:
+    app.include_router(migrations_router, prefix=settings.API_V1_PREFIX)
 app.include_router(packaging_router, prefix=settings.API_V1_PREFIX)
 app.include_router(parts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(parts_detail_router, prefix=settings.API_V1_PREFIX)
@@ -151,10 +160,13 @@ app.include_router(production_router, prefix=settings.API_V1_PREFIX)
 app.include_router(quality_router, prefix=settings.API_V1_PREFIX)
 app.include_router(qr_router, prefix=settings.API_V1_PREFIX)
 app.include_router(quotes_router, prefix=settings.API_V1_PREFIX)
+app.include_router(quote_groups_router, prefix=settings.API_V1_PREFIX)
 app.include_router(sampling_tasks_router, prefix=settings.API_V1_PREFIX)
 app.include_router(toolings_router, prefix=settings.API_V1_PREFIX)
 app.include_router(treatments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(warehouse_router, prefix=settings.API_V1_PREFIX)
+app.include_router(shipping_orders_router, prefix=settings.API_V1_PREFIX)
+app.include_router(shipping_contract_router, prefix=settings.API_V1_PREFIX)
 # Dictionary endpoints
 app.include_router(part_names_router, prefix=settings.API_V1_PREFIX)
 app.include_router(part_names_extra_router, prefix=settings.API_V1_PREFIX)
@@ -167,6 +179,10 @@ app.include_router(mold_types_router, prefix=settings.API_V1_PREFIX)
 static_dir = Path(__file__).parent.parent.parent / "static"
 if static_dir.exists():
     app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+
+upload_dir = get_upload_root()
+upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
 
 # ---- Customers endpoint ----

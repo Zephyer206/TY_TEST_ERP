@@ -7,7 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import select, desc, distinct
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import CurrentUser, DbSession
+from app.api.deps import CurrentUser, DbSession, require_role
 from app.models.customer import Customer
 from app.models.part import Part
 from app.models.part_customer_alias import PartCustomerAlias
@@ -37,6 +37,7 @@ async def create_material_price(
     db: DbSession,
 ) -> CustomerMaterialPrice:
     """Create a new customer material price record."""
+    require_role(current_user, min_level=2)
 
     new_price = CustomerMaterialPrice(
         **price.model_dump(),
@@ -53,12 +54,14 @@ async def create_material_price(
 @router.get("/materials", response_model=list[CustomerMaterialPriceResponse])
 async def list_material_prices(
     db: DbSession,
+    current_user: CurrentUser,
     customer_id: Optional[int] = Query(None),
     material_id: Optional[int] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, le=1000),
 ) -> list[CustomerMaterialPrice]:
     """Get customer material price history."""
+    require_role(current_user, min_level=2)
 
     query = select(CustomerMaterialPrice)
 
@@ -67,7 +70,7 @@ async def list_material_prices(
     if material_id:
         query = query.where(CustomerMaterialPrice.material_id == material_id)
 
-    query = query.order_by(desc(CustomerMaterialPrice.effective_date)).offset(skip).limit(limit)
+    query = query.order_by(desc(CustomerMaterialPrice.quoted_at)).offset(skip).limit(limit)
 
     result = await db.execute(query)
     return list(result.scalars().all())
@@ -80,6 +83,7 @@ async def create_treatment_price(
     db: DbSession,
 ) -> CustomerTreatmentPrice:
     """Create a new customer treatment price record."""
+    require_role(current_user, min_level=2)
 
     new_price = CustomerTreatmentPrice(
         **price.model_dump(),
@@ -96,12 +100,14 @@ async def create_treatment_price(
 @router.get("/treatments", response_model=list[CustomerTreatmentPriceResponse])
 async def list_treatment_prices(
     db: DbSession,
+    current_user: CurrentUser,
     customer_id: Optional[int] = Query(None),
     treatment_name: Optional[str] = Query(None),
     skip: int = Query(0, ge=0),
     limit: int = Query(100, le=1000),
 ) -> list[CustomerTreatmentPrice]:
     """Get customer treatment price history."""
+    require_role(current_user, min_level=2)
 
     query = select(CustomerTreatmentPrice)
 
@@ -110,7 +116,7 @@ async def list_treatment_prices(
     if treatment_name:
         query = query.where(CustomerTreatmentPrice.treatment_name == treatment_name)
 
-    query = query.order_by(desc(CustomerTreatmentPrice.effective_date)).offset(skip).limit(limit)
+    query = query.order_by(desc(CustomerTreatmentPrice.quoted_at)).offset(skip).limit(limit)
 
     result = await db.execute(query)
     return list(result.scalars().all())
@@ -119,11 +125,13 @@ async def list_treatment_prices(
 @router.get("/materials/latest")
 async def get_latest_material_price(
     db: DbSession,
+    current_user: CurrentUser,
     customer_id: int = Query(...),
     material_id: int = Query(...),
     as_of_date: Optional[date] = Query(None),
 ) -> Optional[CustomerMaterialPriceResponse]:
     """Get the latest material price for a customer as of a specific date."""
+    require_role(current_user, min_level=2)
 
     query = select(CustomerMaterialPrice).where(
         CustomerMaterialPrice.customer_id == customer_id,
@@ -131,9 +139,9 @@ async def get_latest_material_price(
     )
 
     if as_of_date:
-        query = query.where(CustomerMaterialPrice.effective_date <= as_of_date)
+        query = query.where(CustomerMaterialPrice.quoted_at <= as_of_date)
 
-    query = query.order_by(desc(CustomerMaterialPrice.effective_date)).limit(1)
+    query = query.order_by(desc(CustomerMaterialPrice.quoted_at)).limit(1)
 
     result = await db.execute(query)
     price = result.scalar_one_or_none()
@@ -147,11 +155,13 @@ async def get_latest_material_price(
 @router.get("/treatments/latest")
 async def get_latest_treatment_price(
     db: DbSession,
+    current_user: CurrentUser,
     customer_id: int = Query(...),
     treatment_name: str = Query(...),
     as_of_date: Optional[date] = Query(None),
 ) -> Optional[CustomerTreatmentPriceResponse]:
     """Get the latest treatment price for a customer as of a specific date."""
+    require_role(current_user, min_level=2)
 
     query = select(CustomerTreatmentPrice).where(
         CustomerTreatmentPrice.customer_id == customer_id,
@@ -159,9 +169,9 @@ async def get_latest_treatment_price(
     )
 
     if as_of_date:
-        query = query.where(CustomerTreatmentPrice.effective_date <= as_of_date)
+        query = query.where(CustomerTreatmentPrice.quoted_at <= as_of_date)
 
-    query = query.order_by(desc(CustomerTreatmentPrice.effective_date)).limit(1)
+    query = query.order_by(desc(CustomerTreatmentPrice.quoted_at)).limit(1)
 
     result = await db.execute(query)
     price = result.scalar_one_or_none()
@@ -187,6 +197,7 @@ async def get_customer_parts_with_prices(
     - parts_count 返回去重后的零件数量（distinct part_id count）
     - 不伪造价格数据
     """
+    require_role(current_user, min_level=2)
     # Get customer
     customer = await db.get(Customer, customer_id)
     if not customer:

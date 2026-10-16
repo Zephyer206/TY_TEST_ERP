@@ -1,6 +1,6 @@
 """Customer-first gaibo after-sales APIs."""
 
-from datetime import date
+from datetime import date, datetime, timezone
 from decimal import Decimal, InvalidOperation
 import json
 from typing import Iterable, Optional
@@ -28,6 +28,7 @@ from app.models.gaibo import (
 )
 from app.schemas.gaibo import (
     GaiboChangeLogResponse,
+    GaiboDocumentEventResponse,
     GaiboDocumentStatusCreate,
     GaiboDocumentStatusResponse,
     GaiboDocumentStatusUpdate,
@@ -77,8 +78,34 @@ from app.services.after_sales_service import (
     require_text,
     validate_package_item_reference,
 )
+from app.services.after_sales_document_events import (
+    append_status_event,
+    document_events,
+    latest_document_event,
+)
 
 router = APIRouter(prefix="/after-sales/gaibo", tags=["Gaibo after sales"])
+
+
+def _document_response(document: GaiboDocumentStatus) -> GaiboDocumentStatusResponse:
+    """Serialize a document status together with its process timeline."""
+    payload = GaiboDocumentStatusResponse.model_validate(document, from_attributes=True).model_dump()
+    events = document_events(document.source_data, document_type=document.document_type, remark=document.remark)
+    payload["events"] = events
+    payload["latest_event"] = events[-1] if events else None
+    return GaiboDocumentStatusResponse(**payload)
+
+
+def _latest_event_for_row(document: GaiboDocumentStatus | None) -> GaiboDocumentEventResponse | None:
+    if document is None:
+        return None
+    event = latest_document_event(document.source_data, document_type=document.document_type, remark=document.remark)
+    return GaiboDocumentEventResponse(**event) if event else None
+
+
+def _ordered_documents(documents: Iterable[GaiboDocumentStatus]) -> list[GaiboDocumentStatus]:
+    order = {"drawing": 0, "sample": 1, "ppap": 2}
+    return sorted(documents, key=lambda document: (order.get(document.document_type, 99), document.id))
 
 
 CORE_COLUMN_DEFAULTS: dict[str, dict[str, object]] = {
@@ -179,6 +206,18 @@ def _normalize_field_labels(values: dict[str, str]) -> dict[str, str]:
     return normalized
 
 
+def _normalize_detail_section_labels(values: dict[str, str]) -> dict[str, str]:
+    normalized: dict[str, str] = {}
+    for key, value in values.items():
+        if key != "core_fields":
+            raise HTTPException(status_code=400, detail=f"不支持修改详情标题 {key}")
+        label = value.strip()
+        if not label or len(label) > 50:
+            raise HTTPException(status_code=400, detail="详情标题必须为 1 到 50 个字符")
+        normalized[key] = label
+    return normalized
+
+
 def _parse_column_filters(raw: str | None) -> dict[str, str | list[str]]:
     if not raw:
         return {}
@@ -210,10 +249,18 @@ def _column_config_response(workspace: GaiboCustomerWorkspace) -> GaiboWorkspace
         for key, value in (workspace.field_labels or {}).items()
         if key in CORE_COLUMN_DEFAULTS and isinstance(value, str) and value.strip() and len(value.strip()) <= 50
     }
+    raw_extra = workspace.extra_field_definitions or {}
+    raw_detail_labels = raw_extra.get("detail_section_labels", {}) if isinstance(raw_extra, dict) else {}
+    detail_section_labels = {
+        key: value.strip()
+        for key, value in raw_detail_labels.items()
+        if key == "core_fields" and isinstance(value, str) and value.strip() and len(value.strip()) <= 50
+    }
     return GaiboWorkspaceColumnConfigResponse(
         workspace_id=workspace.id,
         version=workspace.column_config_version,
         field_labels=field_labels,
+        detail_section_labels=detail_section_labels,
         custom_fields=custom_fields,
         default_view_config=view_config,
     )
@@ -419,6 +466,18 @@ async def _flush_or_conflict(db, detail: str = "数据与现有售后档案冲�
     except IntegrityError as exc:
         await db.rollback()
         raise HTTPException(status_code=409, detail=detail) from exc
+
+
+def _check_updated_at(item, expected_updated_at: datetime | None) -> None:
+    if expected_updated_at is None:
+        return
+    actual = item.updated_at
+    if actual is None:
+        raise HTTPException(status_code=409, detail="档案版本已变化，请刷新后重试")
+    expected = expected_updated_at.replace(tzinfo=None)
+    actual_naive = actual.replace(tzinfo=None)
+    if actual_naive != expected:
+        raise HTTPException(status_code=409, detail="档案已被其他用户更新，请刷新后重试")
 
 
 async def _get_requirement_detail(db, requirement_id: int) -> GaiboCustomerRequirement | None:
@@ -704,6 +763,7 @@ async def save_workspace_column_config(
             incoming_fields.append(previous.model_copy(update={"is_active": False, "sequence": len(incoming_fields)}))
 
     field_labels = _normalize_field_labels(payload.field_labels)
+    detail_section_labels = _normalize_detail_section_labels(payload.detail_section_labels)
     default_view = _normalize_workspace_view_config(payload.default_view_config, incoming_fields)
     before_version = workspace.column_config_version
     before_fields = current_fields
@@ -711,6 +771,7 @@ async def save_workspace_column_config(
     workspace.extra_field_definitions = {
         "schema_version": 1,
         "columns": [field.model_dump(mode="json") for field in incoming_fields],
+        "detail_section_labels": detail_section_labels,
     }
     workspace.default_view_config = default_view.model_dump(mode="json")
     workspace.column_config_version += 1
@@ -737,7 +798,7 @@ async def save_workspace_column_config(
         entity_type="workspace",
         entity_id=workspace.id,
         action="workspace_columns_updated",
-        changed_fields=["field_labels", "custom_fields", "default_view_config"],
+        changed_fields=["field_labels", "detail_section_labels", "custom_fields", "default_view_config"],
         change_data={
             "version": {"before": before_version, "after": workspace.column_config_version},
             "added": added,
@@ -1220,6 +1281,26 @@ async def search_gaibo(
         for row in rows
         if row._mapping["record_type"] == "installation_package"
     ]
+    requirement_ids = [
+        int(row._mapping["record_id"])
+        for row in rows
+        if row._mapping["record_type"] == "single_part"
+    ]
+    document_event_map: dict[tuple[str, int, str], GaiboDocumentEventResponse | None] = {}
+    if package_ids or requirement_ids:
+        document_conditions = []
+        if package_ids:
+            document_conditions.append(GaiboDocumentStatus.package_id.in_(package_ids))
+        if requirement_ids:
+            document_conditions.append(GaiboDocumentStatus.requirement_id.in_(requirement_ids))
+        document_rows = await db.scalars(
+            select(GaiboDocumentStatus).where(or_(*document_conditions))
+        )
+        for document in document_rows:
+            owner_type = "installation_package" if document.package_id is not None else "single_part"
+            owner_id = document.package_id if document.package_id is not None else document.requirement_id
+            if owner_id is not None:
+                document_event_map[(owner_type, int(owner_id), document.document_type)] = _latest_event_for_row(document)
     package_display_values: dict[int, tuple[str | None, str | None]] = {}
     package_component_items: dict[int, list[dict[str, object]]] = {}
     if package_ids:
@@ -1264,6 +1345,10 @@ async def search_gaibo(
             payload["ibi"] = ibi
             payload["tianyue_internal_composition"] = internal
             payload["component_items"] = package_component_items.get(int(payload["record_id"]), [])
+        record_key = (payload["record_type"], int(payload["record_id"]))
+        payload["drawing_latest_event"] = document_event_map.get((*record_key, "drawing"))
+        payload["sample_latest_event"] = document_event_map.get((*record_key, "sample"))
+        payload["ppap_latest_event"] = document_event_map.get((*record_key, "ppap"))
         items.append(GaiboSearchItem.model_validate(payload))
     return GaiboSearchPage(items=items, total=total, page=page, page_size=page_size, summary=summary)
 
@@ -1412,6 +1497,7 @@ async def update_requirement(
     if not item:
         raise HTTPException(status_code=404, detail="客户单件需求不存在")
     updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(item, updates.pop("expected_updated_at", None))
     _normalize_requirement_updates(updates)
     if "extra_data" in updates:
         workspace = await db.get(GaiboCustomerWorkspace, item.workspace_id)
@@ -1453,6 +1539,7 @@ async def update_requirement_dossier(
         raise HTTPException(status_code=404, detail="客户单件需求不存在")
 
     updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(item, updates.pop("expected_updated_at", None))
     single_part_name = updates.pop("single_part_name", None)
     has_single_part_name = "single_part_name" in payload.model_fields_set
     _normalize_requirement_updates(updates)
@@ -1568,6 +1655,7 @@ async def get_package(
         raise HTTPException(status_code=404, detail="安装包档案不存在")
     history = await _get_package_change_history(db, item)
     data = GaiboPackageDetailResponse.model_validate(item, from_attributes=True).model_dump()
+    data["documents"] = [_document_response(document) for document in _ordered_documents(item.documents)]
     data["change_history"] = [GaiboChangeLogResponse.model_validate(row, from_attributes=True) for row in history]
     return GaiboPackageDetailResponse(**data)
 
@@ -1584,6 +1672,7 @@ async def update_package(
     if not item:
         raise HTTPException(status_code=404, detail="安装包档案不存在")
     updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(item, updates.pop("expected_updated_at", None))
     if "currency" in updates:
         updates["currency"] = _required_currency_or_400(updates["currency"])
     if "package_number" in updates:
@@ -1675,6 +1764,7 @@ async def update_package_item(
     if not package or not package.is_active or not item or item.package_id != package.id:
         raise HTTPException(status_code=404, detail="安装包组成项不存在")
     updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(item, updates.pop("expected_updated_at", None))
     _normalize_required_text_updates(updates, {"tianyue_internal_composition": "天越内部组成"})
     for field, label in (("quantity", "数量"), ("sequence", "顺序")):
         if field in updates and updates[field] is None:
@@ -1728,6 +1818,7 @@ async def get_requirement(
         raise HTTPException(status_code=404, detail="客户单件需求不存在")
     history = await _get_requirement_change_history(db, item)
     data = GaiboRequirementDetailResponse.model_validate(item, from_attributes=True).model_dump()
+    data["documents"] = [_document_response(document) for document in _ordered_documents(item.documents)]
     data["change_history"] = [GaiboChangeLogResponse.model_validate(row, from_attributes=True) for row in history]
     return GaiboRequirementDetailResponse(**data)
 
@@ -1771,10 +1862,11 @@ async def update_drawing(
     drawing = await db.get(GaiboDrawing, drawing_id)
     if not drawing:
         raise HTTPException(status_code=404, detail="图纸版本不存在")
+    updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(drawing, updates.pop("expected_updated_at", None))
     requirement = await db.get(GaiboCustomerRequirement, drawing.requirement_id)
     if not requirement:
         raise HTTPException(status_code=404, detail="客户单件需求不存在")
-    updates = payload.model_dump(exclude_unset=True)
     _normalize_required_text_updates(
         updates,
         {"version": "图纸版本", "file_key": "图纸文件", "status": "图纸状态"},
@@ -1841,6 +1933,7 @@ async def update_process_route(
     if workspace_id is None:
         raise HTTPException(status_code=404, detail="客户单件需求不存在")
     updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(route, updates.pop("expected_updated_at", None))
     _normalize_required_text_updates(updates, {"version": "工艺版本", "status": "工艺状态"})
     next_steps = updates.pop("steps", None)
     if updates.get("is_current"):
@@ -1876,6 +1969,7 @@ async def create_requirement_document(
     if not requirement or not requirement.is_active:
         raise HTTPException(status_code=404, detail="客户单件需求不存在")
     document = GaiboDocumentStatus(requirement_id=requirement.id, **payload.model_dump())
+    document.source_data = append_status_event({}, status=document.status, document_type=document.document_type)
     db.add(document)
     await _flush_or_conflict(db, "当前单件已存在相同的资料类型")
     values = payload.model_dump()
@@ -1889,7 +1983,7 @@ async def create_requirement_document(
         change_data=creation_change_data(values),
         actor_user_id=current_user.id,
     )
-    return GaiboDocumentStatusResponse.model_validate(document, from_attributes=True)
+    return _document_response(document)
 
 
 @router.post("/packages/{package_id}/documents", response_model=GaiboDocumentStatusResponse, status_code=201)
@@ -1904,6 +1998,7 @@ async def create_package_document(
     if not package or not package.is_active:
         raise HTTPException(status_code=404, detail="安装包档案不存在")
     document = GaiboDocumentStatus(package_id=package.id, **payload.model_dump())
+    document.source_data = append_status_event({}, status=document.status, document_type=document.document_type)
     db.add(document)
     await _flush_or_conflict(db, "当前安装包已存在相同的资料类型")
     values = payload.model_dump()
@@ -1917,7 +2012,7 @@ async def create_package_document(
         change_data=creation_change_data(values),
         actor_user_id=current_user.id,
     )
-    return GaiboDocumentStatusResponse.model_validate(document, from_attributes=True)
+    return _document_response(document)
 
 
 @router.patch("/documents/{document_id}", response_model=GaiboDocumentStatusResponse)
@@ -1939,12 +2034,21 @@ async def update_document(
     if workspace_id is None:
         raise HTTPException(status_code=409, detail="资料状态缺少所属客户")
     updates = payload.model_dump(exclude_unset=True)
+    _check_updated_at(document, updates.pop("expected_updated_at", None))
     _normalize_required_text_updates(updates, {"document_type": "资料类型", "status": "资料状态"})
+    next_document_type = updates.get("document_type", document.document_type)
+    next_status = updates.get("status")
+    if next_status is not None:
+        document.source_data = append_status_event(
+            document.source_data,
+            status=next_status,
+            document_type=next_document_type,
+        )
     changed, data = _changed_values(document, updates)
     if changed:
         _add_change_log(db, workspace_id=workspace_id, entity_type="document", entity_id=document.id, action="document_updated", changed_fields=changed, change_data=data, actor_user_id=current_user.id)
         await _flush_or_conflict(db, "当前档案已存在相同的资料类型")
-    return GaiboDocumentStatusResponse.model_validate(document, from_attributes=True)
+    return _document_response(document)
 
 
 @router.get("/history", response_model=list[GaiboChangeLogResponse])

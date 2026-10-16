@@ -4,14 +4,27 @@ from fastapi import APIRouter, HTTPException
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import DbSession
+from app.api.deps import CurrentUser, DbSession, require_role
+from app.core.config import settings
 
 router = APIRouter(prefix="/migrations", tags=["Migrations"])
 
 
+def _require_legacy_migration_api(current_user: CurrentUser) -> None:
+    """Protect the legacy migration endpoints during the transition period."""
+    if not settings.ENABLE_LEGACY_MIGRATION_API:
+        raise HTTPException(
+            status_code=404,
+            detail="Legacy migration API is disabled; use Alembic from the deployment environment",
+        )
+    require_role(current_user, min_level=4)
+
+
 @router.post("/run-all")
-async def run_all_migrations(db: DbSession) -> dict:
+async def run_all_migrations(db: DbSession, current_user: CurrentUser) -> dict:
     """Run all price management migrations."""
+
+    _require_legacy_migration_api(current_user)
 
     results = []
 
@@ -199,8 +212,10 @@ async def run_all_migrations(db: DbSession) -> dict:
 
 
 @router.get("/status")
-async def check_migration_status(db: DbSession) -> dict:
+async def check_migration_status(db: DbSession, current_user: CurrentUser) -> dict:
     """Check if price management tables exist."""
+
+    _require_legacy_migration_api(current_user)
 
     tables = ['treatment_dict', 'customer_material_prices',
               'customer_treatment_prices', 'price_adjustments']

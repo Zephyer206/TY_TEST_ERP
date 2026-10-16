@@ -101,7 +101,7 @@ if svc_found:
 print(f"\n=== Step 4: Direct DB query ===")
 import psycopg2
 from psycopg2.extras import RealDictCursor
-DB = {"dbname": "stamping_system", "user": "postgres", "password": "thehaoshi5DE", "host": "localhost", "port": "5432"}
+DB = {"dbname": "stamping_system", "user": "postgres", "password": __import__("os").environ.get("ZEPHYR_DB_PASSWORD", ""), "host": "localhost", "port": "5432"}
 conn = psycopg2.connect(**DB)
 cur = conn.cursor(cursor_factory=RealDictCursor)
 cur.execute("SELECT id, name, calc_mode, rate, unit, is_active FROM treatment_dicts WHERE name = %s", (unique_name,))

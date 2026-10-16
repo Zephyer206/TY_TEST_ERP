@@ -56,7 +56,8 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Menu, Plus, Search } from '@element-plus/icons-vue'
-import { get, post } from '@/utils/request'
+import { packagingApi } from '@/api/packaging'
+import { partsApi } from '@/api/parts'
 
 type PackageStatus = 'scanned' | 'inspecting' | 'passed' | 'rejected' | 'shipped'
 type PackagingRecord = { id: number; package_no: string; part_id: number; part_number?: string | null; part_name?: string | null; package_qty: number; box_no?: string | null; status: PackageStatus; inspected_at?: string | null; inspection_notes?: string | null; scanned_at: string }
@@ -92,14 +93,14 @@ const statusLabel = (status: PackageStatus) => ({ scanned: '待全检', inspecti
 const statusType = (status: PackageStatus) => ({ scanned: 'warning', inspecting: 'primary', passed: 'success', rejected: 'danger', shipped: 'info' }[status] || 'info')
 const formatDate = (value?: string | null) => value ? new Date(value).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }) : '-'
 
-const fetchRecords = async () => { loading.value = true; try { records.value = await get<PackagingRecord[]>('/packaging/records', { status: filter.status || undefined, skip: 0, limit: 100 }); page.current = 1 } catch (error: any) { records.value = []; ElMessage.error(error?.message || '获取包装记录失败') } finally { loading.value = false } }
+const fetchRecords = async () => { loading.value = true; try { records.value = await packagingApi.records<PackagingRecord[]>({ status: filter.status || undefined, skip: 0, limit: 100 }); page.current = 1 } catch (error: any) { records.value = []; ElMessage.error(error?.message || '获取包装记录失败') } finally { loading.value = false } }
 const resetFilter = () => { Object.assign(filter, { search: '', status: '' }); fetchRecords() }
-const loadPartChoices = async () => { try { const items = await get<PartChoice[]>('/parts', { skip: 0, limit: 500 }); partChoices.value = Array.isArray(items) ? items : [] } catch { partChoices.value = [] } }
+const loadPartChoices = async () => { try { const items = await partsApi.list<PartChoice[]>({ skip: 0, limit: 500 }); partChoices.value = Array.isArray(items) ? items : [] } catch { partChoices.value = [] } }
 const openCreate = async () => { Object.assign(createForm, { part_id: undefined, package_qty: 1, box_no: '', notes: '' }); createVisible.value = true; if (!partChoices.value.length) await loadPartChoices() }
 const openInspect = (record: PackagingRecord) => { activeRecord.value = record; Object.assign(inspectForm, { passed: true, notes: '' }); inspectVisible.value = true }
 const openDetail = (record: PackagingRecord) => { activeRecord.value = record; detailVisible.value = true }
-const createRecord = async () => { await createFormRef.value?.validate(); saving.value = true; try { await post('/packaging/scan', { part_id: createForm.part_id, package_qty: createForm.package_qty, box_no: createForm.box_no || null, notes: createForm.notes || null }); ElMessage.success('包装已登记'); createVisible.value = false; await fetchRecords() } catch (error: any) { ElMessage.error(error?.message || '包装登记失败') } finally { saving.value = false } }
-const submitInspection = async () => { if (!activeRecord.value) return; await inspectFormRef.value?.validate(); saving.value = true; try { await post(`/packaging/inspect/${activeRecord.value.id}`, inspectForm); ElMessage.success('全检结果已保存'); inspectVisible.value = false; await fetchRecords() } catch (error: any) { ElMessage.error(error?.message || '全检失败') } finally { saving.value = false } }
+const createRecord = async () => { await createFormRef.value?.validate(); saving.value = true; try { await packagingApi.scan({ part_id: createForm.part_id, package_qty: createForm.package_qty, box_no: createForm.box_no || null, notes: createForm.notes || null }); ElMessage.success('包装已登记'); createVisible.value = false; await fetchRecords() } catch (error: any) { ElMessage.error(error?.message || '包装登记失败') } finally { saving.value = false } }
+const submitInspection = async () => { if (!activeRecord.value) return; await inspectFormRef.value?.validate(); saving.value = true; try { await packagingApi.inspect(activeRecord.value.id, inspectForm); ElMessage.success('全检结果已保存'); inspectVisible.value = false; await fetchRecords() } catch (error: any) { ElMessage.error(error?.message || '全检失败') } finally { saving.value = false } }
 
 onMounted(fetchRecords)
 </script>
@@ -110,6 +111,6 @@ onMounted(fetchRecords)
 .list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
 .search-control { display: flex; align-items: center; gap: 8px; width: min(480px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
 .filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.filter-controls :deep(.el-select) { width: 116px; }.view-toggle { color: #625780; }
-.record-summary { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.record-summary span:last-child { color: #96939e; }.pagination { display: flex; justify-content: flex-end; margin-top: 16px; }.dialog-form { margin-top: 18px; }
+.record-summary { display: flex; justify-content: space-between; margin: 0 0 8px; color: var(--zephyr-muted); font-size: 12px; }.record-summary span:last-child { color: #96939e; }.pagination { display: flex; justify-content: flex-end; margin-top: 16px; }.dialog-form { margin-top: 18px; }
 @media (max-width: 960px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; flex-wrap: wrap; } }
 </style>

@@ -2,12 +2,19 @@
   <div class="app-shell">
     <header class="app-topbar">
       <div class="topbar-leading">
-        <button class="app-switcher" type="button" aria-label="打开应用菜单" :aria-expanded="appMenuOpen" @click="appMenuOpen = !appMenuOpen">
+        <button ref="appSwitcherRef" class="app-switcher" type="button" aria-label="打开应用菜单" aria-controls="application-launcher" :aria-expanded="appMenuOpen" @click="toggleLauncher" @keydown.down.prevent="openLauncher">
           <el-icon><Grid /></el-icon>
         </button>
-        <button class="brand-lockup" type="button" @click="go('/parts')">
+        <button
+          class="brand-lockup"
+          type="button"
+          :aria-label="'切换公司，当前' + companyLabel"
+          :title="'切换至' + nextCompanyLabel"
+          @click="toggleCompany"
+        >
           <span class="brand-mark">Z</span>
-          <span class="brand-name">Zephyr</span>
+          <span class="brand-name">{{ companyLabel }}</span>
+          <el-icon class="company-switch-icon"><ArrowDown /></el-icon>
         </button>
         <span class="topbar-divider" aria-hidden="true" />
         <nav class="module-nav" aria-label="业务模块">
@@ -20,7 +27,9 @@
               :aria-current="activeArea === item.key ? 'page' : undefined"
               :aria-haspopup="item.tabs.length ? 'menu' : undefined"
               :aria-expanded="item.tabs.length ? openMenuKey === item.key : undefined"
+              :aria-controls="item.tabs.length ? 'module-submenu' : undefined"
               @click="handlePrimaryClick(item, $event)"
+              @keydown.down.prevent="openPrimaryMenu(item, $event)"
             >
               <el-icon><component :is="item.icon" /></el-icon>
               <span>{{ item.label }}</span>
@@ -29,8 +38,8 @@
         </nav>
       </div>
 
-      <div v-if="openMenuArea" class="module-nav-submenu" role="menu" :aria-label="`${openMenuArea.label}子菜单`" :style="submenuStyle">
-        <button v-for="tab in openMenuArea.tabs" :key="tab.label" type="button" role="menuitem" :disabled="tab.disabled || !tab.route" @click="tab.route && go(tab.route)">
+      <div v-if="openMenuArea" id="module-submenu" ref="submenuRef" class="module-nav-submenu" role="menu" :aria-label="`${openMenuArea.label}子菜单`" :style="submenuStyle" @keydown="handleMenuKeydown">
+        <button v-for="tab in openMenuArea.tabs" :key="tab.label" type="button" role="menuitem" :aria-current="tab.route && isRouteActive(tab.route) ? 'page' : undefined" :disabled="tab.disabled || !tab.route" @click="tab.route && go(tab.route)">
           {{ tab.label }}
         </button>
       </div>
@@ -44,29 +53,31 @@
           </button>
           <template #dropdown>
             <el-dropdown-menu>
-              <el-dropdown-item command="logout">退出登录</el-dropdown-item>
+              <el-dropdown-item disabled>管理员模式 · LV4 全视角</el-dropdown-item>
+              <el-dropdown-item command="technical-review">技术视角审核</el-dropdown-item>
+              <el-dropdown-item command="admin-context">切换其他部门视角</el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
       </div>
     </header>
 
-    <div v-if="appMenuOpen" class="app-launcher" role="menu" aria-label="应用菜单">
+    <div v-if="appMenuOpen" id="application-launcher" ref="launcherRef" class="app-launcher" role="menu" aria-label="应用菜单" @keydown="handleMenuKeydown">
       <div class="launcher-title">应用</div>
       <template v-for="item in primaryNav" :key="item.key">
-        <button class="launcher-item" :class="{ disabled: item.disabled }" type="button" role="menuitem" :disabled="item.disabled" @click="item.route && go(item.route)">
+        <button class="launcher-item" :class="{ disabled: item.disabled }" type="button" role="menuitem" :disabled="item.disabled || (!item.route && !item.tabs.some(tab => tab.route))" @click="goToArea(item)">
           <span class="launcher-icon"><el-icon><component :is="item.icon" /></el-icon></span>
           <span>{{ item.label }}</span>
         </button>
         <div v-if="item.tabs.length" class="launcher-subitems" :aria-label="`${item.label}子入口`">
-          <button v-for="tab in item.tabs" :key="tab.label" class="launcher-subitem" type="button" role="menuitem" :disabled="!tab.route" @click="tab.route && go(tab.route)">
+          <button v-for="tab in item.tabs" :key="tab.label" class="launcher-subitem" type="button" role="menuitem" :disabled="tab.disabled || !tab.route" @click="tab.route && go(tab.route)">
             {{ tab.label }}
           </button>
         </div>
       </template>
     </div>
 
-    <main class="workspace">
+    <main id="workspace" class="workspace">
       <nav v-if="currentArea.tabs.length" class="secondary-nav" role="navigation" :aria-label="`${currentArea.label}页面`">
         <span class="secondary-title">{{ currentArea.label }}</span>
         <button
@@ -76,6 +87,7 @@
           :class="{ active: tab.route && isRouteActive(tab.route), disabled: tab.disabled }"
           type="button"
           :disabled="tab.disabled"
+          :aria-current="tab.route && isRouteActive(tab.route) ? 'page' : undefined"
           @click="tab.route && go(tab.route)"
         >{{ tab.label }}</button>
       </nav>
@@ -85,12 +97,13 @@
 </template>
 
 <script setup lang="ts">
-import { computed, nextTick, ref, type Component } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, Box, Document, Grid, House, Setting, Tools } from '@element-plus/icons-vue'
+import { ArrowDown, Box, Briefcase, Document, Grid, House, Setting, Tools } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
+import { useCompanyStore, type CompanyKey } from '@/stores/company'
 
-type AreaKey = 'productEngineering' | 'manufacturing' | 'procurement' | 'warehouseProcessing' | 'pricing' | 'afterSales' | 'permissions'
+type AreaKey = 'productEngineering' | 'tooling' | 'projectManagement' | 'manufacturing' | 'procurement' | 'warehouseProcessing' | 'pricing' | 'permissions'
 
 interface WorkspaceTab { label: string; route?: string; disabled?: boolean }
 interface WorkspaceArea {
@@ -105,17 +118,88 @@ interface WorkspaceArea {
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const companyStore = useCompanyStore()
 const appMenuOpen = ref(false)
 const openMenuKey = ref<AreaKey | null>(null)
 const submenuPosition = ref({ left: 0 })
+const appSwitcherRef = ref<HTMLButtonElement | null>(null)
+const launcherRef = ref<HTMLElement | null>(null)
+const submenuRef = ref<HTMLElement | null>(null)
+let activeMenuTrigger: HTMLElement | null = null
+
+const closeMenus = (restoreFocus = false) => {
+  const trigger = appMenuOpen.value ? appSwitcherRef.value : activeMenuTrigger
+  appMenuOpen.value = false
+  openMenuKey.value = null
+  if (restoreFocus) trigger?.focus()
+}
+const focusFirstMenuItem = (menu: HTMLElement | null) => {
+  menu?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus()
+}
+const toggleLauncher = () => {
+  openMenuKey.value = null
+  appMenuOpen.value = !appMenuOpen.value
+}
+const openLauncher = async () => {
+  openMenuKey.value = null
+  appMenuOpen.value = true
+  await nextTick()
+  focusFirstMenuItem(launcherRef.value)
+}
+const handleMenuKeydown = (event: KeyboardEvent) => {
+  if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
+  const menu = event.currentTarget as HTMLElement
+  const items = Array.from(menu.querySelectorAll<HTMLButtonElement>('[role="menuitem"]:not(:disabled)'))
+  if (!items.length) return
+  event.preventDefault()
+  const current = items.indexOf(document.activeElement as HTMLButtonElement)
+  const index = event.key === 'Home' ? 0 : event.key === 'End' ? items.length - 1
+    : (current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length
+  items[index]?.focus()
+}
+const handleOutsideInteraction = (event: Event) => {
+  const target = event.target as Node | null
+  if (!target) return
+  if (appMenuOpen.value && !launcherRef.value?.contains(target) && !appSwitcherRef.value?.contains(target)) closeMenus()
+  if (openMenuKey.value && !submenuRef.value?.contains(target) && !activeMenuTrigger?.contains(target)) closeMenus()
+}
+const handleEscape = (event: KeyboardEvent) => {
+  if (event.key === 'Escape' && (appMenuOpen.value || openMenuKey.value)) {
+    event.preventDefault()
+    closeMenus(true)
+  }
+}
+const handleResize = () => closeMenus()
+watch(() => route.path, () => closeMenus())
+onMounted(() => {
+  document.addEventListener('pointerdown', handleOutsideInteraction)
+  document.addEventListener('focusin', handleOutsideInteraction)
+  document.addEventListener('keydown', handleEscape)
+  window.addEventListener('resize', handleResize)
+})
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', handleOutsideInteraction)
+  document.removeEventListener('focusin', handleOutsideInteraction)
+  document.removeEventListener('keydown', handleEscape)
+  window.removeEventListener('resize', handleResize)
+})
 
 const areas: WorkspaceArea[] = [
   {
-    key: 'productEngineering', label: '产品与工装', route: '/parts', icon: Box,
+    key: 'productEngineering', label: '零件', route: '/parts', icon: Box, tabs: [],
+  },
+  {
+    key: 'tooling', label: '模具', route: '/tooling', icon: Tools, tabs: [],
+  },
+  {
+    key: 'projectManagement', label: '项目管理', icon: Briefcase,
     tabs: [
-      { label: '零件', route: '/parts' },
-      { label: '模具', route: '/tooling' },
-      { label: '工艺查询', disabled: true },
+      { label: '项目总览', route: '/projects' },
+      { label: '询价', route: '/projects/rfq' },
+      { label: '报价', route: '/projects/quotes' },
+      { label: '样件', route: '/projects/samples' },
+      { label: '图纸变更', route: '/projects/changes' },
+      { label: '研发合规', route: '/projects/research-compliance' },
     ],
   },
   {
@@ -130,14 +214,15 @@ const areas: WorkspaceArea[] = [
   {
     key: 'procurement', label: '采购与外协', icon: Tools,
     tabs: [
-      { label: '材料', disabled: true },
+      { label: '材料', route: '/materials' },
       { label: '外协', disabled: true },
     ],
   },
   {
     key: 'warehouseProcessing', label: '仓储与后处理', icon: House,
     tabs: [
-      { label: '仓库', disabled: true },
+      { label: '发货订单', route: '/shipping-orders' },
+      { label: '仓库', route: '/warehouse' },
       { label: '全检与包装', disabled: true },
       { label: '后处理', disabled: true },
     ],
@@ -151,17 +236,16 @@ const areas: WorkspaceArea[] = [
     ],
   },
   {
-    key: 'afterSales', label: '售后', icon: Box,
-    tabs: [{ label: '售后档案', route: '/after-sales' }],
-  },
-  {
     key: 'permissions', label: '权限分配', icon: Setting, disabled: true,
     tabs: [],
   },
 ]
 
 const activeArea = computed<AreaKey>(() => {
-  const matchedArea = areas.find(area => area.tabs.some(tab => tab.route && isRouteActive(tab.route)))
+  const matchedArea = areas.find(area =>
+    (area.route && isRouteActive(area.route)) ||
+    area.tabs.some(tab => tab.route && isRouteActive(tab.route)),
+  )
   return matchedArea?.key || 'productEngineering'
 })
 const currentArea = computed(() => areas.find(area => area.key === activeArea.value) || areas[0])
@@ -169,11 +253,27 @@ const primaryNav = computed(() => areas)
 const openMenuArea = computed(() => areas.find(area => area.key === openMenuKey.value) || null)
 const submenuStyle = computed(() => ({ left: `${submenuPosition.value.left}px` }))
 const userInitial = computed(() => (userStore.userInfo?.real_name || '用').slice(0, 1))
+const companyLabel = computed(() => companyStore.selectedCompany === 'gaibo' ? '盖博' : '天越')
+const nextCompanyLabel = computed(() => companyStore.selectedCompany === 'gaibo' ? '天越' : '盖博')
 
 const go = (target: string) => {
   appMenuOpen.value = false
   openMenuKey.value = null
   if (route.path !== target) router.push(target)
+}
+const goToArea = (item: WorkspaceArea) => {
+  const target = item.route || item.tabs.find(tab => tab.route && !tab.disabled)?.route
+  if (target) go(target)
+}
+
+const handleCompanySwitch = (company: CompanyKey) => {
+  companyStore.setCompany(company)
+  const target = company === 'gaibo' ? '/after-sales' : '/parts'
+  if (route.path !== target) void router.push(target)
+}
+
+const toggleCompany = () => {
+  handleCompanySwitch(companyStore.selectedCompany === 'gaibo' ? 'tianyue' : 'gaibo')
 }
 
 const handlePrimaryClick = (item: WorkspaceArea, event: MouseEvent) => {
@@ -187,15 +287,37 @@ const handlePrimaryClick = (item: WorkspaceArea, event: MouseEvent) => {
   appMenuOpen.value = false
   const menuTrigger = event.currentTarget as HTMLElement | null
   if (!menuTrigger) return
+  activeMenuTrigger = menuTrigger
   void nextTick(() => {
     const rect = menuTrigger.getBoundingClientRect()
     submenuPosition.value.left = Math.min(Math.max(rect.left, 12), window.innerWidth - 190)
   })
 }
 
-const isRouteActive = (target: string) => route.path === target || (target === '/tooling' && route.path.startsWith('/tooling'))
+const openPrimaryMenu = async (item: WorkspaceArea, event: KeyboardEvent) => {
+  if (item.disabled || !item.tabs.length) return
+  activeMenuTrigger = event.currentTarget as HTMLElement
+  appMenuOpen.value = false
+  openMenuKey.value = item.key
+  const rect = activeMenuTrigger.getBoundingClientRect()
+  submenuPosition.value.left = Math.min(Math.max(rect.left, 12), window.innerWidth - 190)
+  await nextTick()
+  focusFirstMenuItem(submenuRef.value)
+}
+
+const isRouteActive = (target: string) => target === '/projects'
+  ? route.path === target
+  : route.path === target || route.path.startsWith(`${target}/`)
 
 const handleCommand = (command: string) => {
+  if (command === 'technical-review') {
+    router.push('/projects/rfq?review=technical')
+    return
+  }
+  if (command === 'admin-context') {
+    router.push('/admin/context-switch')
+    return
+  }
   if (command === 'logout') {
     userStore.logout()
     router.push('/login')
@@ -204,184 +326,77 @@ const handleCommand = (command: string) => {
 </script>
 
 <style scoped>
-.app-shell { display: flex; flex-direction: column; height: 100%; min-height: 100vh; background: #f6f7f8; color: #1f2933; }
-.app-topbar { position: relative; z-index: 20; display: flex; align-items: center; justify-content: space-between; min-height: 58px; padding: 0 24px; background: #176b5a; color: #fff; }
+.app-shell { display: flex; flex-direction: column; height: 100%; min-height: 100vh; background: var(--zephyr-canvas); color: var(--zephyr-ink); }
+.app-topbar { position: relative; z-index: 20; display: flex; align-items: center; justify-content: space-between; flex: 0 0 56px; height: 56px; padding: 0 20px; background: #242b3d; color: #fff; box-shadow: 0 2px 8px rgb(19 27 46 / 10%); }
 .topbar-leading, .topbar-actions, .module-nav, .profile-trigger { display: flex; align-items: center; }
-.topbar-leading { min-width: 0; height: 58px; }
-.app-switcher { display: grid; place-items: center; width: 32px; height: 32px; margin-right: 8px; border: 0; border-radius: 4px; background: transparent; color: #fff; cursor: pointer; }
-.app-switcher:hover, .app-switcher[aria-expanded='true'] { background: rgba(255, 255, 255, .18); }
-.app-switcher .el-icon { font-size: 16px; }
-.brand-lockup { display: flex; align-items: center; gap: 8px; margin-right: 12px; border: 0; background: transparent; color: #fff; font: inherit; cursor: pointer; }
-.brand-mark { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 4px; background: #fff; color: #176b5a; font-size: 16px; font-weight: 750; }
-.brand-name { font-size: 17px; font-weight: 650; letter-spacing: -.02em; }
-.topbar-divider { width: 1px; height: 30px; margin-right: 13px; background: rgba(255, 255, 255, .28); }
-.module-nav { display: flex; height: 58px; gap: 0; min-width: 0; overflow-x: auto; }
-.module-nav-entry { position: relative; display: flex; height: 58px; }
-.module-nav-item { display: inline-flex; align-items: center; gap: 5px; height: 58px; padding: 0 10px; border: 0; outline: none; background: transparent; color: rgba(255, 255, 255, .84); font: inherit; font-size: 15px; font-weight: 550; white-space: nowrap; cursor: pointer; }
-.module-nav-item:hover, .module-nav-item.active { background: rgba(255, 255, 255, .16); color: #fff; }
-.module-nav-item .el-icon { flex: 0 0 auto; font-size: 14px; }
-.module-nav-item:focus-visible { outline: 2px solid rgba(225, 255, 246, .92); outline-offset: -3px; }
-.module-nav-item:disabled { cursor: default; opacity: .62; }
-.module-nav-item:disabled:hover { background: transparent; color: rgba(255, 255, 255, .84); }
-.module-nav-submenu { position: fixed; z-index: 50; top: 58px; display: grid; min-width: 170px; padding: 6px; border: 1px solid #d9dee1; background: #fff; box-shadow: 0 6px 16px rgba(15, 35, 31, .18); }
-.module-nav-submenu button { min-height: 36px; padding: 0 12px; border: 0; background: #fff; color: #5f6b70; font: inherit; font-size: 13px; text-align: left; }
-.module-nav-submenu button:disabled { cursor: default; opacity: .62; }
-.topbar-actions { gap: 6px; }
+.topbar-leading { min-width: 0; height: 56px; flex: 1; }
+.app-switcher { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; margin-right: 12px; border: 1px solid rgb(255 255 255 / 12%); border-radius: 6px; background: transparent; color: #c8d0e2; cursor: pointer; }
+.app-switcher:hover, .app-switcher[aria-expanded='true'] { border-color: rgb(255 255 255 / 24%); background: rgb(255 255 255 / 8%); color: #fff; }
+.app-switcher .el-icon { font-size: 15px; }
+.brand-lockup { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; min-height: 36px; margin-right: 14px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: #fff; font: inherit; cursor: pointer; }
+.brand-lockup:hover .brand-name { color: #e2e7ff; }
+.brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #c1c9e0; border-radius: 7px; background: #f4f6ff; color: #46558c; font-size: 17px; font-weight: 750; letter-spacing: -.04em; }
+.brand-name { font-size: 14px; font-weight: 600; white-space: nowrap; }
+.company-switch-icon { font-size: 10px; color: #9faac2; }
+.topbar-divider { flex: 0 0 1px; height: 22px; margin-right: 12px; background: rgb(255 255 255 / 13%); }
+.module-nav { flex: 1; height: 56px; gap: 2px; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+.module-nav-entry { position: relative; display: flex; flex: 0 0 auto; align-items: center; height: 56px; }
+.module-nav-item { position: relative; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #bfc8db; font: inherit; font-size: 13px; font-weight: 500; white-space: nowrap; cursor: pointer; }
+.module-nav-item:hover { background: rgb(255 255 255 / 6%); color: #fff; }
+.module-nav-item.active { border-color: #6575a5; background: #3d4b71; color: #fff; box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%); }
+.module-nav-item.active::after { position: absolute; right: 9px; bottom: -12px; left: 9px; height: 2px; border-radius: 2px 2px 0 0; background: #a6b4e8; content: ''; }
+.module-nav-item .el-icon { flex: 0 0 auto; font-size: 14px; opacity: .9; }
+.module-nav-item:disabled { cursor: default; opacity: .4; }
+.module-nav-item:disabled:hover { background: transparent; color: #bfc8db; }
+.app-topbar button:focus-visible { outline: 2px solid #b9c5f6; outline-offset: 3px; }
+.module-nav-submenu { position: fixed; z-index: 50; top: 62px; display: grid; min-width: 182px; padding: 5px; border: 1px solid var(--zephyr-border); border-radius: 9px; background: var(--zephyr-surface); box-shadow: var(--zephyr-shadow-overlay); }
+.module-nav-submenu button { min-height: 34px; padding: 0 12px; border: 0; border-radius: 5px; background: transparent; color: var(--zephyr-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.module-nav-submenu button:hover:not(:disabled) { background: var(--zephyr-primary-soft); color: var(--zephyr-primary); }
+.module-nav-submenu button:disabled { cursor: default; opacity: .45; }
+.module-nav-submenu button[aria-current='page'] { background: var(--zephyr-primary-soft); color: var(--zephyr-primary); font-weight: 600; }
+.topbar-actions { flex: 0 0 auto; gap: 6px; margin-left: 14px; }
 .topbar-icon { color: #fff; }
-.profile-trigger { gap: 7px; padding: 3px 5px 3px 8px; border: 0; border-radius: 3px; background: transparent; color: #fff; font: inherit; cursor: pointer; }
-.profile-trigger:hover { background: rgba(255, 255, 255, .16); }
-.profile-trigger .el-icon { font-size: 12px; }
-.avatar { display: grid; place-items: center; width: 25px; height: 25px; border-radius: 3px; background: rgba(255, 255, 255, .2); font-size: 12px; font-weight: 700; }
-.profile-name { font-size: 12px; }
-.app-launcher { position: absolute; z-index: 30; top: 58px; left: 4px; display: grid; grid-template-columns: repeat(2, 150px); gap: 4px; width: 320px; padding: 12px; border: 1px solid #d9dee1; border-top: 0; background: #fff; box-shadow: 0 5px 14px rgba(15, 35, 31, .16); }
-.launcher-title { grid-column: 1 / -1; padding: 2px 6px 8px; color: #6d6c75; font-size: 12px; font-weight: 650; }
-.launcher-item { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 5px 6px; border: 0; border-radius: 3px; background: #fff; color: #464550; font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
-.launcher-item:hover { background: #eef6f3; color: #176b5a; }
-.launcher-item:disabled { cursor: default; opacity: .48; }
-.launcher-item:disabled:hover { background: #fff; color: #464550; }
-.launcher-subitems { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: -2px 0 2px 36px; }
-.launcher-subitem { min-height: 28px; padding: 4px 8px; border: 0; border-radius: 3px; background: #f7f9f9; color: #7a8588; font: inherit; font-size: 12px; text-align: left; }
-.launcher-icon { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 3px; background: #e7f1ed; color: #176b5a; }
+.profile-trigger { gap: 8px; min-height: 34px; padding: 0 7px; border: 1px solid rgb(255 255 255 / 10%); border-radius: 6px; background: rgb(255 255 255 / 3%); color: #e3e8f2; font: inherit; cursor: pointer; }
+.profile-trigger:hover { border-color: rgb(255 255 255 / 22%); background: rgb(255 255 255 / 8%); }
+.profile-trigger .el-icon { color: #9faac2; font-size: 10px; }
+.avatar { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: #45516d; color: #e6ecff; font-size: 11px; font-weight: 600; }
+.profile-name { font-size: 12px; white-space: nowrap; }
+.app-launcher { position: absolute; z-index: 30; top: 63px; left: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; width: 346px; max-height: calc(100dvh - 76px); overflow-y: auto; overscroll-behavior: contain; padding: 12px; border: 1px solid var(--zephyr-border); border-radius: 10px; background: #fff; box-shadow: var(--zephyr-shadow-overlay); }
+.launcher-title { grid-column: 1 / -1; padding: 2px 6px 8px; color: var(--zephyr-muted); font-size: 11px; font-weight: 600; }
+.launcher-item { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 5px 7px; border: 0; border-radius: 6px; background: #fff; color: var(--zephyr-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.launcher-item:hover:not(:disabled) { background: var(--zephyr-primary-soft); color: var(--zephyr-primary); }
+.launcher-item:disabled { cursor: default; opacity: .45; }
+.launcher-subitems { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: -2px 0 4px 36px; }
+.launcher-subitem { min-height: 30px; padding: 4px 8px; border: 0; border-radius: 5px; background: var(--zephyr-surface-muted); color: var(--zephyr-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.launcher-subitem:hover:not(:disabled) { color: var(--zephyr-primary); background: var(--zephyr-primary-soft); }
+.launcher-subitem:disabled { opacity: .45; cursor: default; }
+.launcher-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 6px; background: var(--zephyr-primary-soft); color: var(--zephyr-primary); }
 .launcher-icon .el-icon { font-size: 14px; }
-.workspace { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; padding: 0 20px 28px; overflow: auto; }
-.secondary-nav { display: flex; align-items: center; gap: 2px; min-height: 54px; margin: 0 -20px 16px; padding: 0 20px; border-bottom: 1px solid #dfe0e4; background: #fff; }
-.secondary-title { margin-right: 18px; color: #34434b; font-size: 16px; font-weight: 650; }
-.workspace-tab { height: 54px; padding: 0 13px; border: 0; border-bottom: 2px solid transparent; outline: none; background: transparent; color: #68747b; font: inherit; font-size: 15px; cursor: pointer; }
-.workspace-tab:hover { color: #176b5a; }
-.workspace-tab.active { border-bottom-color: #176b5a; color: #176b5a; font-weight: 650; }
-.workspace-tab:focus-visible { outline: 2px solid rgba(23, 107, 90, .55); outline-offset: -4px; }
-.workspace-tab:disabled { cursor: default; opacity: .48; }
-.workspace-tab:disabled:hover { color: #68747b; }
-
+.workspace { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; padding: 0 20px 20px; overflow: auto; }
+.secondary-nav { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; min-height: 46px; margin: 0 -20px 2px; padding: 0 20px; border-bottom: 1px solid var(--zephyr-border); background: #fff; }
+.secondary-title { flex: 0 0 auto; margin-right: 14px; padding-right: 18px; border-right: 1px solid var(--zephyr-border); color: var(--zephyr-ink); font-size: 13px; font-weight: 650; }
+.workspace-tab { position: relative; flex: 0 0 auto; height: 46px; padding: 0 12px; border: 0; border-bottom: 2px solid transparent; background: transparent; color: var(--zephyr-muted); font: inherit; font-size: 13px; cursor: pointer; }
+.workspace-tab:hover { background: #f8f9fc; color: var(--zephyr-primary); }
+.workspace-tab.active { border-bottom-color: var(--zephyr-primary); color: var(--zephyr-primary); font-weight: 650; }
+.workspace-tab:focus-visible { outline: 2px solid var(--zephyr-primary); outline-offset: -4px; }
+.workspace-tab:disabled { cursor: default; opacity: .45; }
+.workspace-tab:disabled:hover { background: transparent; color: var(--zephyr-muted); }
 :deep(.workspace > .after-sales-page) { flex: 1 1 auto; min-height: 0; }
-
-/* Shared Zephyr workbench spine. Page views keep their business logic while
- * inheriting the same compact list, filter, and change-history surfaces. */
-:global(:root) {
-  --zephyr-primary: #176b5a;
-  --zephyr-primary-soft: #e4f2ee;
-  --zephyr-ink: #26353a;
-  --zephyr-muted: #708087;
-  --zephyr-surface: #ffffff;
-  --zephyr-canvas: #f2f5f4;
-  --zephyr-border: #d8e1df;
-  --zephyr-warning: #b7791f;
-  --zephyr-danger: #be514d;
-  --zephyr-control: 32px;
-  --zephyr-row: 38px;
-}
-
-:deep(.workspace > [class$='-container']),
-:deep(.workspace > [class$='-workspace']) { min-width: 0; }
-:deep(.workspace .parts-container),
-:deep(.workspace .materials-container),
-:deep(.workspace .packaging-container),
-:deep(.workspace .tooling-container),
-:deep(.workspace .production-container),
-:deep(.workspace .quotes-container) { padding: 18px 0 0; color: var(--zephyr-ink); }
-
-:deep(.workspace .list-view-toolbar) {
-  display: grid;
-  grid-template-columns: minmax(150px, .65fr) minmax(260px, 1.55fr) auto;
-  align-items: center;
-  gap: 10px;
-  min-height: 58px;
-  margin-bottom: 8px;
-  padding: 7px 0;
-}
-:deep(.workspace .list-title-block) { min-width: 0; gap: 9px; }
-:deep(.workspace .list-title-block h1) { color: var(--zephyr-ink); font-size: 19px; font-weight: 650; letter-spacing: -.015em; }
-:deep(.workspace .list-caption) { color: var(--zephyr-muted); font-size: 11px; }
-:deep(.workspace .search-control) {
-  width: min(560px, 100%);
-  height: var(--zephyr-control);
-  padding: 0 9px;
-  border: 1px solid var(--zephyr-border);
-  border-radius: 4px;
-  background: var(--zephyr-surface);
-  color: #839197;
-}
-:deep(.workspace .search-control:focus-within) { border-color: var(--zephyr-primary); box-shadow: 0 0 0 3px rgba(23, 107, 90, .12); }
-:deep(.workspace .search-control .el-input__wrapper) { box-shadow: none; padding: 0; }
-:deep(.workspace .filter-controls) { gap: 6px; }
-:deep(.workspace .filter-controls .el-input),
-:deep(.workspace .filter-controls .el-select),
-:deep(.workspace .filter-controls .el-date-editor) { min-width: 112px; height: var(--zephyr-control); }
-:deep(.workspace .filter-controls .el-input__wrapper),
-:deep(.workspace .filter-controls .el-select__wrapper) { min-height: var(--zephyr-control); box-shadow: none; border-color: var(--zephyr-border); }
-:deep(.workspace .table-meta),
-:deep(.workspace .record-summary) { margin: 0 2px 7px; color: var(--zephyr-muted); font-size: 11px; }
-:deep(.workspace .table-meta span:last-child),
-:deep(.workspace .record-summary span:last-child) { color: #8a989d; }
-
-:deep(.workspace .el-table) {
-  --el-table-header-bg-color: #edf2f1;
-  --el-table-row-hover-bg-color: #f0f7f4;
-  --el-table-border-color: var(--zephyr-border);
-  --el-table-text-color: #44545a;
-  --el-table-header-text-color: #617178;
-  border: 1px solid var(--zephyr-border);
-  border-radius: 5px;
-  overflow: hidden;
-  font-size: 12px;
-}
-:deep(.workspace .el-table th.el-table__cell) { height: 38px; padding: 0 9px; font-size: 10px; font-weight: 700; letter-spacing: .035em; }
-:deep(.workspace .el-table td.el-table__cell) { height: var(--zephyr-row); padding: 0 9px; border-bottom-color: #e7edeb; }
-:deep(.workspace .el-table .cell) { line-height: 1.35; }
-:deep(.workspace .el-table tbody tr) { cursor: pointer; transition: background-color 160ms ease; }
-:deep(.workspace .el-table tbody tr:hover > td.el-table__cell) { background: #f0f7f4 !important; }
-:deep(.workspace .el-table .el-tag) { border-radius: 3px; font-size: 10px; }
-:deep(.workspace .pagination),
-:deep(.workspace .pagination-container) { min-height: 38px; margin-top: 10px; align-items: center; }
-:deep(.workspace .el-pagination) { padding: 0; font-size: 11px; }
-:deep(.workspace .el-button--primary) { --el-button-bg-color: var(--zephyr-primary); --el-button-border-color: var(--zephyr-primary); --el-button-hover-bg-color: #12594b; --el-button-hover-border-color: #12594b; }
-:deep(.workspace .el-button.is-link) { font-size: 11px; }
-
-/* Dossier/editor surfaces: keep the record central and the change trail visible. */
-:deep(.workspace .part-editor-drawer .el-drawer__header) { margin-bottom: 0; padding: 15px 20px; border-bottom: 1px solid var(--zephyr-border); }
-:deep(.workspace .part-editor-drawer .el-drawer__body) { padding: 0 20px 20px; background: #f6f8f7; }
-:deep(.workspace .dossier-layout) { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 14px; }
-:deep(.workspace .dossier-tabs) { min-width: 0; padding: 14px 16px; border: 1px solid var(--zephyr-border); background: var(--zephyr-surface); }
-:deep(.workspace .change-history-rail) { align-self: start; padding: 15px; border: 1px solid var(--zephyr-border); background: #f8fbfa; }
-:deep(.workspace .change-history-rail h3) { margin: 0 0 12px; color: var(--zephyr-ink); font-size: 13px; }
-
-/* Manufacturing control console defaults. */
-:deep(.workspace .production-container) { padding-top: 13px; }
-:deep(.workspace .production-container .list-view-toolbar) { grid-template-columns: minmax(180px, .75fr) minmax(260px, 1.3fr) auto; }
-:deep(.workspace .production-container .el-table td.el-table__cell) { height: 42px; }
-:deep(.workspace .production-container .el-progress) { width: 100%; }
-:deep(.workspace .page-header) { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 14px; }
-:deep(.workspace .page-header h2) { margin: 0; color: #3d3b42; font-size: 20px; font-weight: 600; line-height: 1.25; }
-:deep(.workspace .filter-card) { margin-bottom: 10px; border: 1px solid #dfe0e4; border-radius: 3px; box-shadow: none; }
-:deep(.workspace .filter-card .el-card__body) { padding: 10px 12px 2px; }
-:deep(.workspace .el-table) { --el-table-header-bg-color: #eef1f2; --el-table-header-text-color: #48545c; --el-table-border-color: #d9dee1; --el-table-row-hover-bg-color: #eef6f3; border: 1px solid #d9dee1; border-radius: 4px; overflow: hidden; }
-:deep(.workspace .el-table th.el-table__cell) { font-size: 12px; font-weight: 650; }
-:deep(.workspace .el-table td.el-table__cell) { border-bottom-color: #e5e5e8; }
-:deep(.workspace .pagination) { min-height: 38px; align-items: center; }
-:deep(.workspace .el-button--primary) { --el-button-bg-color: #176b5a; --el-button-border-color: #176b5a; --el-button-hover-bg-color: #12594b; --el-button-hover-border-color: #12594b; --el-button-active-bg-color: #0e463c; --el-button-active-border-color: #0e463c; }
-
-@media (max-width: 920px) {
-  .app-topbar { padding: 0 16px; }
-  .module-nav-item { gap: 4px; padding: 0 8px; font-size: 14px; }
-  .module-nav-item .el-icon, .topbar-divider { display: none; }
-  .workspace { padding: 0 12px 20px; }
-  .secondary-nav { min-height: 52px; margin: 0 -12px 16px; padding: 0 12px; overflow-x: auto; }
-  .secondary-title, .workspace-tab { height: 52px; font-size: 15px; }
-  :deep(.workspace .list-view-toolbar),
-  :deep(.workspace .production-container .list-view-toolbar) { grid-template-columns: 1fr; align-items: stretch; }
-  :deep(.workspace .search-control) { width: 100%; }
-  :deep(.workspace .filter-controls) { justify-content: flex-start; flex-wrap: wrap; }
-  :deep(.workspace .change-history-rail) { order: 2; }
-  :deep(.workspace .dossier-layout) { grid-template-columns: 1fr; }
+:deep(.workspace > [class$='-container']), :deep(.workspace > [class$='-workspace']) { min-width: 0; }
+@media (max-width: 1100px) {
+  .app-topbar { padding: 0 14px; }
+  .module-nav-item { gap: 5px; padding: 0 8px; font-size: 12px; }
+  .module-nav-item .el-icon { display: none; }
+  .topbar-actions { margin-left: 8px; }
+  .workspace { padding: 0 14px 18px; }
+  .secondary-nav { margin-right: -14px; margin-left: -14px; padding: 0 14px; overflow-x: auto; }
 }
 @media (max-width: 620px) {
   .module-nav { display: none; }
-  .brand-name, .profile-name { display: none; }
-  .app-launcher { grid-template-columns: 1fr 1fr; width: calc(100vw - 8px); }
-  .topbar-actions { margin-left: 8px; }
-  :deep(.workspace .page-header) { align-items: stretch; flex-direction: column; }
-  :deep(.workspace .filter-controls .el-input),
-  :deep(.workspace .filter-controls .el-select),
-  :deep(.workspace .filter-controls .el-date-editor) { width: 100%; }
+  .profile-name { display: none; }
+  .app-launcher { left: 8px; width: calc(100vw - 16px); }
+  .topbar-leading { flex: 1; }
+  .secondary-title { margin-right: 4px; padding-right: 10px; }
+  .workspace-tab { padding: 0 10px; font-size: 12px; }
 }
 </style>

@@ -24,6 +24,7 @@ Rollback: alembic downgrade -1
 """
 
 from alembic import op
+from alembic import context
 import sqlalchemy as sa
 
 revision = 'v10_canonical_lv1_lv4'
@@ -37,13 +38,15 @@ def upgrade():
 
     # Step 1: Verify ONLY admin can be mapped
     print("Verifying migration safety: only admin (username='admin', role_level=10) can be migrated...")
-    result = conn.execute(sa.text("""
-        SELECT id, username, role_level, dept, position
-        FROM users
-        WHERE (role_level IS NULL OR role_level < 1 OR role_level > 4)
-          AND NOT (username = 'admin' AND role_level = 10)
-    """))
-    invalid_users = result.fetchall()
+    invalid_users = []
+    if not context.is_offline_mode():
+        result = conn.execute(sa.text("""
+            SELECT id, username, role_level, dept, position
+            FROM users
+            WHERE (role_level IS NULL OR role_level < 1 OR role_level > 4)
+              AND NOT (username = 'admin' AND role_level = 10)
+        """))
+        invalid_users = result.fetchall()
 
     if invalid_users:
         users_info = "\n".join([
@@ -60,13 +63,23 @@ def upgrade():
 
     # Step 2: Normalize ONLY the admin user (username='admin', role_level=10 → 4)
     print("Normalizing admin user: role_level 10 → 4...")
-    result = conn.execute(sa.text("""
-        UPDATE users
-        SET role_level = 4
-        WHERE username = 'admin' AND role_level = 10
-    """))
+    result = None
+    if context.is_offline_mode():
+        # Keep the data-normalization statement in generated SQL.  Offline
+        # mode cannot inspect rowcount, so validation is deferred to runtime.
+        op.execute(sa.text("""
+            UPDATE users
+            SET role_level = 4
+            WHERE username = 'admin' AND role_level = 10
+        """))
+    else:
+        result = conn.execute(sa.text("""
+            UPDATE users
+            SET role_level = 4
+            WHERE username = 'admin' AND role_level = 10
+        """))
 
-    if result.rowcount > 0:
+    if result is not None and result.rowcount > 0:
         print(f"  Migrated {result.rowcount} admin user(s) from level 10 to LV4")
 
     # Step 3: Ensure role_level is NOT NULL (default to 1 if somehow NULL after checks)
@@ -86,10 +99,13 @@ def upgrade():
 
     # Step 5: Remove is_superadmin column (replaced by role_level=4)
     print("Removing is_superadmin column if exists...")
-    inspector = sa.inspect(conn)
-    columns = [col['name'] for col in inspector.get_columns('users')]
-    if 'is_superadmin' in columns:
-        op.drop_column('users', 'is_superadmin')
+    if context.is_offline_mode():
+        op.execute("ALTER TABLE users DROP COLUMN IF EXISTS is_superadmin")
+    else:
+        inspector = sa.inspect(conn)
+        columns = [col['name'] for col in inspector.get_columns('users')]
+        if 'is_superadmin' in columns:
+            op.drop_column('users', 'is_superadmin')
 
     print("Migration complete: Canonical LV1-LV4 system activated")
 

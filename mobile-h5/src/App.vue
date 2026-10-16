@@ -17,10 +17,11 @@
 html, body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
-  background-color: #f5f5f5;
+  background-color: #f3f6f5;
+  color: #26353a;
 }
 
 #app {
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 </style>

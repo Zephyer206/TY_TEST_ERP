@@ -2,9 +2,9 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from app.models.price import PriceAdjustmentType
 
@@ -66,58 +66,65 @@ class CustomerTreatmentPriceResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class PriceAdjustmentCreate(BaseModel):
-    """Schema for creating a price adjustment - T018（替换旧版本）."""
+class CustomerPriceAdjustmentCreate(BaseModel):
+    """Request for the customer/material/treatment approval workflow."""
 
-    price_account_id: int = Field(gt=0)
-    old_price: Decimal = Field(gt=0)
+    customer_id: int = Field(gt=0)
+    part_id: Optional[int] = Field(default=None, gt=0)
+    material_id: Optional[int] = Field(default=None, gt=0)
+    treatment_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    adjustment_type: Literal["material", "treatment", "part"]
+    old_price: Optional[Decimal] = Field(default=None, ge=0)
     new_price: Decimal = Field(gt=0)
-    adjustment_type: str = Field(description="increase / decrease")
-    reason: str = Field(min_length=1, max_length=500)
+    reason: Optional[str] = Field(default=None, max_length=500)
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "price_account_id": 123,
-                "old_price": 10.50,
-                "new_price": 12.00,
-                "adjustment_type": "increase",
-                "reason": "原材料价格上涨",
-            }
+    @model_validator(mode="after")
+    def validate_target_fields(self) -> "CustomerPriceAdjustmentCreate":
+        required_by_type = {
+            "material": ("material_id", self.material_id),
+            "treatment": ("treatment_name", self.treatment_name),
+            "part": ("part_id", self.part_id),
         }
-    )
+        field_name, value = required_by_type[self.adjustment_type]
+        if value is None:
+            raise ValueError(f"{field_name} is required for {self.adjustment_type} adjustments")
+        return self
 
 
-class PriceAdjustmentApprovalRequest(BaseModel):
-    """Schema for approving/rejecting price adjustment - T018."""
+class CustomerPriceAdjustmentApprovalRequest(BaseModel):
+    """Request to approve or reject a customer price adjustment."""
 
-    status: str = Field(description="approved / rejected")
-    rejection_reason: Optional[str] = Field(default=None, description="驳回原因（status=rejected时必填）")
+    status: Literal["approved", "rejected"]
+    rejection_reason: Optional[str] = Field(default=None, max_length=500)
 
-    model_config = ConfigDict(
-        json_schema_extra={
-            "example": {
-                "status": "approved"
-            }
-        }
-    )
+    @model_validator(mode="after")
+    def require_rejection_reason(self) -> "CustomerPriceAdjustmentApprovalRequest":
+        if self.status == "rejected" and not self.rejection_reason:
+            raise ValueError("rejection_reason is required when status is rejected")
+        return self
 
 
-class PriceAdjustmentResponse(BaseModel):
-    """Schema for price adjustment response - T018（更新）."""
+class CustomerPriceAdjustmentResponse(BaseModel):
+    """Response mapped to the current customer price adjustment table."""
 
     id: int
-    price_account_id: int
-    old_price: Decimal
-    new_price: Decimal
+    customer_id: int
+    part_id: Optional[int] = None
+    material_id: Optional[int] = None
+    treatment_name: Optional[str] = None
     adjustment_type: str
-    reason: str
+    old_price: Optional[Decimal] = None
+    new_price: Decimal
+    reason: Optional[str] = None
     status: str
-    created_by: int
+    requested_by: int
+    requested_at: datetime
+    reviewed_by: Optional[int] = None
+    reviewed_at: Optional[datetime] = None
+    review_notes: Optional[str] = None
+    effective_date: Optional[datetime] = None
     created_at: datetime
-    approved_by: Optional[int] = None
-    approved_at: Optional[datetime] = None
-    rejection_reason: Optional[str] = None
+    updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -156,8 +163,8 @@ class AnnualPriceRecordResponse(AnnualPriceRecordBase):
 
 # --- Price Adjustment Schemas ---
 
-class PriceAdjustmentResponse(BaseModel):
-    """Schema for price adjustment response."""
+class PriceAccountAdjustmentResponse(BaseModel):
+    """Response for the legacy price-account adjustment endpoint."""
 
     id: int
     price_account_id: int
@@ -206,8 +213,8 @@ class PriceAccountUpdate(BaseModel):
     notes: Optional[str] = None
 
 
-class PriceAdjustmentCreate(BaseModel):
-    """Schema for creating a price adjustment."""
+class PriceAccountAdjustmentCreate(BaseModel):
+    """Request for the legacy price-account adjustment endpoint."""
 
     new_price: Decimal = Field(ge=0)
     adjustment_type: PriceAdjustmentType = Field(default=PriceAdjustmentType.MANUAL)
@@ -223,7 +230,7 @@ class PriceAccountResponse(PriceAccountBase):
     price_year: Optional[int] = None
     is_active: bool
     annual_records: list[AnnualPriceRecordResponse] = []
-    adjustments: list[PriceAdjustmentResponse] = []
+    adjustments: list[PriceAccountAdjustmentResponse] = []
     created_at: datetime
     updated_at: datetime
 
@@ -255,3 +262,10 @@ class CurrentPriceResponse(BaseModel):
     year: int
     is_computed: bool  # True if from formula, False if from record
     formula: Optional[str] = None  # Description of how price was computed
+
+
+# Compatibility names used by older price-account consumers. New approval code
+# must use the explicit CustomerPriceAdjustment* classes above.
+PriceAdjustmentCreate = PriceAccountAdjustmentCreate
+PriceAdjustmentResponse = PriceAccountAdjustmentResponse
+PriceAdjustmentApprovalRequest = CustomerPriceAdjustmentApprovalRequest

@@ -13,7 +13,7 @@ async def inspect_schema():
         host='124.222.29.229',
         port=5432,
         user='postgres',
-        password='thehaoshi5DE',
+        password='__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")',
         database='stamping_system'
     )
 

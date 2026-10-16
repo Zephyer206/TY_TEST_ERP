@@ -16,8 +16,6 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-
     # ── 1. 扩展 CHECK 约束 ──────────────────────────────────────────────
     op.execute("""
         ALTER TABLE mold_offline_records
@@ -39,14 +37,10 @@ def upgrade():
     print('Added pending_offline_repair status')
 
     # ── 2. 确保 assigned_tech_id 字段存在 ─────────────────────────────
-    result = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'mold_offline_records'
-        AND column_name = 'assigned_tech_id'
-    """)).fetchone()
-    if not result:
-        op.add_column('mold_offline_records',
-                      sa.Column('assigned_tech_id', sa.Integer(), nullable=True))
+    op.execute(
+        "ALTER TABLE mold_offline_records "
+        "ADD COLUMN IF NOT EXISTS assigned_tech_id INTEGER"
+    )
 
     # ── 3. 全文搜索索引（GIN Trigram）──────────────────────────────
     # 启用扩展（如果未启用）
@@ -74,25 +68,15 @@ def upgrade():
         ('current_part_number', 'VARCHAR(100)'),
         ('current_part_name', 'VARCHAR(200)'),
     ]:
-        r = conn.execute(sa.text(f"""
-            SELECT column_name FROM information_schema.columns
-            WHERE table_name = 'mold_offline_records'
-            AND column_name = '{col}'
-        """)).fetchone()
-        if not r:
-            op.add_column('mold_offline_records',
-                         sa.Column(col, sa.String(100 if 'number' in col else 200), nullable=True))
+        op.execute(
+            f"ALTER TABLE mold_offline_records ADD COLUMN IF NOT EXISTS {col} {coltype}"
+        )
 
     # ── 5. 维修时间戳 ──────────────────────────────────────────────
     for col in ['repair_start_time', 'repair_end_time']:
-        r = conn.execute(sa.text(f"""
-            SELECT column_name FROM information_schema.columns
-            WHERE table_name = 'mold_offline_records'
-            AND column_name = '{col}'
-        """)).fetchone()
-        if not r:
-            op.add_column('mold_offline_records',
-                         sa.Column(col, sa.DateTime(), nullable=True))
+        op.execute(
+            f"ALTER TABLE mold_offline_records ADD COLUMN IF NOT EXISTS {col} TIMESTAMP"
+        )
 
 
 def downgrade():

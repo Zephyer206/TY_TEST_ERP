@@ -72,7 +72,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import api from '@/api'
+import { treatmentsApi } from '@/api/pricing'
 
 interface Treatment {
   id?: number
@@ -100,8 +100,7 @@ const form = ref<Treatment>({
 
 const loadTreatments = async () => {
   try {
-    const { data } = await api.get('/treatments')
-    treatments.value = data
+    treatments.value = await treatmentsApi.list()
   } catch (error) {
     ElMessage.error('Failed to load treatments')
     console.error(error)
@@ -118,10 +117,10 @@ const saveTreatment = async () => {
   saving.value = true
   try {
     if (editingTreatment.value?.id) {
-      await api.put(`/treatments/${editingTreatment.value.id}`, form.value)
+      await treatmentsApi.update(editingTreatment.value.id, form.value)
       ElMessage.success('Treatment updated')
     } else {
-      await api.post('/treatments', form.value)
+      await treatmentsApi.create(form.value)
       ElMessage.success('Treatment created')
     }
     showCreateDialog.value = false

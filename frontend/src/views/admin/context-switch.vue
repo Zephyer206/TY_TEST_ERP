@@ -35,10 +35,9 @@
           切换视角后，将临时获得该角色的权限，可正常操作系统。老板专属按钮将被隐藏，防止越权自审。
         </p>
         <el-form :model="form" label-width="120px">
-          <el-form-item label="目标角色">
-            <el-select v-model="form.target_role" placeholder="请选择角色">
-              <el-option label="生产操作工 (LV1)" value="production" />
-              <el-option label="业务人员 (LV2)" value="sales" />
+          <el-form-item label="目标视角">
+            <el-select v-model="form.target_role" placeholder="请选择部门视角">
+              <el-option v-for="item in permissionStore.availableDepartments" :key="item.department" :label="item.role_name + ' · ' + item.department" :value="item.department" />
             </el-select>
           </el-form-item>
           <el-form-item label="切换时长">
@@ -75,7 +74,7 @@ import { usePermissionStore } from '@/stores/permission'
 const permissionStore = usePermissionStore()
 
 const form = reactive({
-  target_role: 'operator',
+  target_role: 'design',
   duration_minutes: 60,
   reason: '',
 })
@@ -86,7 +85,7 @@ const isSwitched = computed(() => permissionStore.isSwitched)
 const contextStatus = computed(() => permissionStore.contextSwitch)
 
 onMounted(async () => {
-  await permissionStore.fetchContextInfo()
+  await Promise.all([permissionStore.fetchContextInfo(), permissionStore.fetchDepartments()])
 })
 
 const handleSwitch = async () => {

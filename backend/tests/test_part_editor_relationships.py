@@ -22,6 +22,8 @@ from app.schemas.part_editor_relationships import (
     ToolingPartItem,
     TWPSpecItem,
     PartEditorBulkUpdateRequest,
+    PartEditorDetailResponse,
+    ToolingBriefInfo,
 )
 
 
@@ -29,6 +31,11 @@ from app.schemas.part_editor_relationships import (
 
 class TestSchemaValidation:
     """Test request schema validation."""
+
+    def test_detail_response_compatibility_fields_allow_null(self):
+        """Legacy response fields must not reject imported null values."""
+        assert not PartEditorDetailResponse.model_fields["status"].is_required()
+        assert not ToolingBriefInfo.model_fields["mold_type"].is_required()
 
     def test_customer_alias_item_valid(self):
         """Valid customer alias item."""

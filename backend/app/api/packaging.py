@@ -67,10 +67,15 @@ def _inventory_to_response(inventory: Inventory) -> InventoryResponse:
 
 def _inventory_detail_to_response(inventory: Inventory) -> InventoryDetailResponse:
     """Convert Inventory to detail response."""
+    part = inventory.__dict__.get("part")
     return InventoryDetailResponse(
         id=inventory.id,
         part_id=inventory.part_id,
-        part_name=inventory.part.internal_name if inventory.part else None,
+        part_name=part.internal_name if part else None,
+        internal_part_no=part.internal_part_no if part else None,
+        customer_part_no=part.customer_part_no if part else None,
+        customer_part_name=part.customer_part_name if part else None,
+        part_status=part.part_status if part else None,
         stock_qty=inventory.stock_qty,
         reserved_qty=inventory.reserved_qty,
         location=inventory.location,

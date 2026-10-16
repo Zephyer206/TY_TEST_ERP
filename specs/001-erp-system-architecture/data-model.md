@@ -9,8 +9,11 @@
 
 1. Excel 的“本厂产品编号”是模具号，不是内部零件编号。
 2. Excel 的“本厂产品名称”是内部零件名称。
-3. 公司目前没有内部零件业务编号，暂时不生成；内部零件以数据库 `parts.id` 唯一标识。
-4. 同一个内部零件可以销售给多个客户，并具有不同的客户件号、客户件名和价格。
+3. 每个合作公司作为一个独立客户记录，不建立客户母公司/子公司层级。
+4. 零件记录按客户维护，同时保留内部零件号和客户件号；同一客户件号可以在不同客户下重复使用。
+5. 零件处理方式属于零件记录；同一零件号的不同处理方式形成不同零件记录。
+6. 零件可以通过 `parent_part_id` 表示可选的派生来源；没有派生关系的零件该字段为空。
+7. 同一个内部零件可以销售给多个客户，并具有不同的客户件号、客户件名和价格。
 5. 同一副模具可以关联多个客户，不能用 `tooling.customer_id` 表达全部关系。
 6. 一副模具可以关联一个或多个内部零件；一个内部零件也可能经过多副非连续模。
 7. “模数”和“穴数”是两个不同概念：
@@ -24,7 +27,8 @@
 - 客户主表统一为 `customers`。
 - 内部零件主表统一为 `parts`。
 - 模具/工装主表统一为 `tooling`；不再新增或并行维护 `dies`、`tooling_molds`。
-- 客户件号只能进入 `part_customer_aliases`，不得写入 `parts.internal_part_no`。
+- 客户、零件和客户件号在零件记录中统一管理；`internal_part_no` 与 `customer_part_no` 是两个不同字段。
+- 客户件号不得写入内部零件号字段。
 - 模具号只能进入 `tooling.tooling_number`，不得写入零件编号字段。
 - 零件与模具使用关系表 `tooling_parts`，不得依赖文本模具号猜测关系。
 - 模具与客户使用关系表 `tooling_customer_links`，不得在模具表放单一客户外键代替多客户关系。
@@ -35,8 +39,9 @@
 
 ```mermaid
 erDiagram
-    CUSTOMERS ||--o{ PART_CUSTOMER_ALIASES : "拥有客户件号"
-    PARTS ||--o{ PART_CUSTOMER_ALIASES : "映射到客户"
+    CUSTOMERS ||--o{ PARTS : "拥有零件记录"
+    PARTS ||--o{ PARTS : "派生"
+    PARTS ||--o{ PART_BOM : "作为组合零件"
     PARTS ||--o{ TOOLING_PARTS : "由模具生产"
     TOOLING ||--o{ TOOLING_PARTS : "关联零件"
     TOOLING ||--o{ TOOLING_STEPS : "包含非连续模步骤"
@@ -81,15 +86,21 @@ erDiagram
 
 ## 5. 内部零件与客户件号
 
-### 5.1 `parts`
+### 5.1 `parts`（零件表）
 
-`parts` 是公司内部标准零件主档，不属于某一个固定客户。
+`parts` 是按客户维护的零件记录。每条记录表示一个客户下的一个内部零件号、客户件号和处理方式组合。
 
 | 字段 | 类型 | 约束 | 说明 |
 |---|---|---|---|
 | id | INTEGER | PK | 内部零件唯一标识 |
-| internal_part_no | VARCHAR(100) | UNIQUE, NULL | 预留内部零件编号；当前不生成、不强制填写 |
-| internal_name | VARCHAR(200) | NOT NULL | Excel“本厂产品名称” |
+| customer_id | INTEGER | FK -> customers.id, NOT NULL | 所属客户；每个合作公司作为独立客户 |
+| internal_part_no | VARCHAR(100) | NOT NULL | 内部零件号 |
+| internal_name | VARCHAR(200) | NOT NULL | 内部零件名称 |
+| customer_part_no | VARCHAR(150) | NULL | 客户件号 |
+| customer_part_name | VARCHAR(200) | NULL | 客户零件名称 |
+| process_type | VARCHAR(100) | NULL | 处理方式 |
+| process_description | TEXT | NULL | 处理说明 |
+| parent_part_id | INTEGER | FK -> parts.id, NULL | 派生来源零件；无派生关系时为空 |
 | material_id | INTEGER | FK, NULL | 标准材料 |
 | thickness | NUMERIC(10,3) | NULL | T，厚度 |
 | width | NUMERIC(10,3) | NULL | W，宽度 |
@@ -105,35 +116,59 @@ erDiagram
 
 规则：
 
-- `internal_part_no` 为空是合法状态。
-- 不允许把 Excel“原图产品编号”写入 `internal_part_no`。
+- `internal_part_no` 是业务可见的内部零件号，同一客户下同一版本不得重复。
+- 客户件号保存于 `customer_part_no`，不得写入 `internal_part_no`。
+- `process_type` 不同的零件记录视为不同可用零件记录。
+- `parent_part_id` 只表示派生关系，不是每条记录都必须填写的基础零件号。
 - `internal_name` 不唯一，不得仅凭名称自动合并零件。
 - Excel 导入阶段可生成不可见的匹配指纹，但指纹不是业务编号。
 - 推荐匹配指纹：`tooling_number + 规范化 internal_name + material + T/W/P + position`。
 - 指纹冲突或技术参数不一致时进入人工复核，不得自动覆盖或合并。
 
-### 5.2 `part_customer_aliases`
+### 5.2 客户件号字段
 
-保存内部零件在不同客户侧的件号和名称。
+客户件号直接保存在 `parts` 表，与对应客户和内部零件记录在同一条记录中。原 `part_customer_aliases` 作为兼容历史数据的旧结构，不再作为新的目标设计。
 
 | 字段 | 类型 | 约束 | 说明 |
 |---|---|---|---|
-| id | INTEGER | PK | 映射 ID |
-| part_id | INTEGER | FK -> parts.id, NOT NULL | 内部零件 |
-| customer_id | INTEGER | FK -> customers.id, NOT NULL | 客户 |
-| customer_part_no | VARCHAR(150) | NOT NULL | Excel“原图产品编号” |
-| customer_part_name | VARCHAR(200) | NULL | Excel“原图产品名称1+2” |
-| revision | VARCHAR(50) | NOT NULL DEFAULT '' | 客户版本/修订 |
-| vehicle_model | VARCHAR(100) | NULL | 车型 |
-| remark | TEXT | NULL | 备注 |
-| is_active | BOOLEAN | NOT NULL DEFAULT TRUE | 是否有效 |
-| created_at | TIMESTAMP | NOT NULL | 创建时间 |
-| updated_at | TIMESTAMP | NOT NULL | 更新时间 |
+| 字段 | 说明 |
+|---|---|
+| `customer_id` | 所属客户 |
+| `internal_part_no` | 内部零件号 |
+| `customer_part_no` | 客户件号，可为空 |
+| `process_type` | 处理方式 |
+| `revision` | 零件版本 |
 
 唯一约束：
 
 ```text
+UNIQUE(customer_id, internal_part_no, revision)
+
+客户件号如不为空，建议增加唯一约束：
+
+```text
 UNIQUE(customer_id, customer_part_no, revision)
+```
+
+不同客户可以使用相同的客户件号。
+
+### 5.3 `part_BOM`（零件组成表）
+
+记录一个组合零件由哪些单个零件组成。安装包可以在需要时按 BOM 组合，不代表必须建立独立库存零件。
+
+| 字段 | 类型 | 约束 | 说明 |
+|---|---|---|---|
+| id | INTEGER | PK | BOM ID |
+| parent_part_id | INTEGER | FK -> parts.id, NOT NULL | 组合零件 |
+| component_part_id | INTEGER | FK -> parts.id, NOT NULL | 组成零件 |
+| quantity | NUMERIC(12,3) | NOT NULL DEFAULT 1 | 组成数量 |
+| unit | VARCHAR(30) | NOT NULL DEFAULT '个' | 计量单位 |
+| sequence | INTEGER | NOT NULL DEFAULT 1 | 组成顺序 |
+| revision | VARCHAR(50) | NOT NULL DEFAULT 'V1' | BOM 版本 |
+| is_active | BOOLEAN | NOT NULL DEFAULT TRUE | 是否启用 |
+| remark | TEXT | NULL | 备注 |
+
+约束：`quantity > 0`、`parent_part_id <> component_part_id`，以及 `UNIQUE(parent_part_id, component_part_id, revision)`。
 ```
 
 同一 `part_id` 可以关联多个客户。
@@ -249,7 +284,7 @@ UNIQUE(tooling_id, customer_id, relation_type)
 定点后：
 
 1. 建立或确认 `parts`。
-2. 建立 `part_customer_aliases`。
+2. 在统一 `parts` 零件记录中建立客户件号、处理方式和版本。
 3. 建立或更新 `price_accounts`。
 4. 写入客户材料和工序价格历史。
 5. 如已分配模具，建立 `tooling_parts` 和 `tooling_customer_links`。
@@ -384,8 +419,8 @@ Excel -> import_batches / excel_import_rows -> 校验与人工确认 -> 正式�
 |---|---|
 | 客户名称/Sheet | customers |
 | 客户名称代号 | customers.customer_code |
-| 原图产品编号 | part_customer_aliases.customer_part_no |
-| 原图产品名称1+2 | part_customer_aliases.customer_part_name |
+| 原图产品编号 | parts.customer_part_no |
+| 原图产品名称1+2 | parts.customer_part_name |
 | 本厂产品名称 | parts.internal_name |
 | 本厂产品编号 | tooling.tooling_number |
 | 模具类型 | tooling.mold_type / is_continuous |
@@ -447,8 +482,8 @@ DEVELOPING / AVAILABLE / MOUNTED / MAINTENANCE / SCRAPPED
 2. 创建暂存表和新的关系表。
 3. 清除表头、空件号和明显错列数据。
 4. 使用客户名称代号 Sheet 统一客户主档和 `customer_code`。
-5. 将现有客户件号从 `parts.part_number` 迁移到 `part_customer_aliases`。
-6. 使用内部名称和技术指纹建立内部 `parts`，冲突项人工复核。
+5. 将现有客户件号从旧的 `part_customer_aliases` 映射到 `parts.customer_part_no`。
+6. 将内部零件号、客户、处理方式和版本写入统一的 `parts` 零件记录；无法确认的派生关系保留为空。
 7. 将模具号统一到 `tooling.tooling_number`。
 8. 建立 `tooling_parts`、`tooling_steps`、`tooling_customer_links`。
 9. 对齐 ORM、API 和 Alembic，收敛到单一迁移 head。
@@ -458,7 +493,7 @@ DEVELOPING / AVAILABLE / MOUNTED / MAINTENANCE / SCRAPPED
 
 以下方案不得继续实现：
 
-- 把客户件号直接保存为 `parts.part_number`。
+- 把客户件号错误地写入 `parts.internal_part_no`。
 - 每个客户 Excel 行无条件创建一个独立内部零件。
 - 用 `parts.customer_id` 表达零件只能属于一个客户。
 - 用 `tooling.customer_id` 或单一 `owner_customer_id` 表达模具只能关联一个客户。

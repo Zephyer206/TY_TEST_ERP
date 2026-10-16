@@ -28,57 +28,49 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-
     # 1. pkg_packaging_logs 新增 actual_date 字段
-    result = conn.execute(sa.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'pkg_packaging_logs'
-          AND column_name = 'actual_date';
-    """)).fetchone()
-
-    if not result:
-        op.add_column(
-            'pkg_packaging_logs',
-            sa.Column('actual_date', sa.Date(), nullable=False, server_default='CURRENT_DATE')
-        )
-        # 约束：禁止未来日期
-        op.execute("""
-            ALTER TABLE pkg_packaging_logs
-            ADD CONSTRAINT chk_pkg_packaging_actual_date
-            CHECK (actual_date <= CURRENT_DATE);
-        """)
-        # 旧数据回填：actual_date = created_at 的日期部分
-        op.execute("""
-            UPDATE pkg_packaging_logs
-            SET actual_date = CAST(created_at AS DATE)
-            WHERE actual_date IS NULL;
-        """)
+    op.execute(
+        "ALTER TABLE pkg_packaging_logs "
+        "ADD COLUMN IF NOT EXISTS actual_date DATE NOT NULL DEFAULT CURRENT_DATE"
+    )
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'chk_pkg_packaging_actual_date'
+            ) THEN
+                ALTER TABLE pkg_packaging_logs
+                ADD CONSTRAINT chk_pkg_packaging_actual_date
+                CHECK (actual_date <= CURRENT_DATE);
+            END IF;
+        END $$;
+    """)
+    op.execute("""
+        UPDATE pkg_packaging_logs
+        SET actual_date = CAST(created_at AS DATE)
+        WHERE actual_date IS NULL;
+    """)
 
     # 2. pkg_shipping_logs 新增 actual_date 字段（同一迁移中处理，保持一致性）
-    result2 = conn.execute(sa.text("""
-        SELECT column_name
-        FROM information_schema.columns
-        WHERE table_name = 'pkg_shipping_logs'
-          AND column_name = 'actual_date';
-    """)).fetchone()
-
-    if not result2:
-        op.add_column(
-            'pkg_shipping_logs',
-            sa.Column('actual_date', sa.Date(), nullable=False, server_default='CURRENT_DATE')
-        )
-        op.execute("""
-            ALTER TABLE pkg_shipping_logs
-            ADD CONSTRAINT chk_pkg_shipping_actual_date
-            CHECK (actual_date <= CURRENT_DATE);
-        """)
-        op.execute("""
-            UPDATE pkg_shipping_logs
-            SET actual_date = CAST(created_at AS DATE)
-            WHERE actual_date IS NULL;
-        """)
+    op.execute(
+        "ALTER TABLE pkg_shipping_logs "
+        "ADD COLUMN IF NOT EXISTS actual_date DATE NOT NULL DEFAULT CURRENT_DATE"
+    )
+    op.execute("""
+        DO $$ BEGIN
+            IF NOT EXISTS (
+                SELECT 1 FROM pg_constraint WHERE conname = 'chk_pkg_shipping_actual_date'
+            ) THEN
+                ALTER TABLE pkg_shipping_logs
+                ADD CONSTRAINT chk_pkg_shipping_actual_date
+                CHECK (actual_date <= CURRENT_DATE);
+            END IF;
+        END $$;
+    """)
+    op.execute("""
+        UPDATE pkg_shipping_logs
+        SET actual_date = CAST(created_at AS DATE)
+        WHERE actual_date IS NULL;
+    """)
 
 
 def downgrade():

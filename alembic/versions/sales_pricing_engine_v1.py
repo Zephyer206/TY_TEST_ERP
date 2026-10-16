@@ -16,6 +16,7 @@
 
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects import postgresql
 
 revision = 'sales_pricing_engine_v1'
 down_revision = 'abc123tech_twoscan'
@@ -105,13 +106,16 @@ def downgrade():
 
 # ── 内部工具 ─────────────────────────────────────────────────────────
 def _add_col_if_missing(conn, table, col_name, col_type, comment=None):
-    result = conn.execute(sa.text(f"""
-        SELECT 1 FROM information_schema.columns
-        WHERE table_name = '{table}' AND column_name = '{col_name}';
-    """)).fetchone()
-    if not result:
-        col = sa.Column(col_name, col_type, nullable=True)
-        op.add_column(table, col)
-        if comment:
-            op.execute(f"COMMENT ON COLUMN {table}.{col_name} IS '{comment}'")
-        print(f'[sales_pricing] {table}.{col_name} added')
+    # Render the SQLAlchemy type once, then rely on PostgreSQL's native
+    # idempotent DDL.  Static Alembic connections do not return result sets,
+    # so information_schema probes cannot be used here.
+    type_sql = col_type.compile(dialect=postgresql.dialect())
+    op.execute(
+        f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col_name} {type_sql};"
+    )
+    if comment:
+        escaped = comment.replace("'", "''")
+        op.execute(
+            f"COMMENT ON COLUMN {table}.{col_name} IS '{escaped}';"
+        )
+    print(f'[sales_pricing] ensured {table}.{col_name}')

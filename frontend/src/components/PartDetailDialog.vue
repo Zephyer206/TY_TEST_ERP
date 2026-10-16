@@ -184,7 +184,7 @@
 <script setup>
 import { ref, watch } from 'vue'
 import { ElMessage } from 'element-plus'
-import apiClient from '@/utils/request'
+import { partsApi } from '@/api/parts'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -226,7 +226,7 @@ const hasPrimarySpec = (options) => options?.some(option => option.is_primary)
 const setPrimarySpec = async (option) => {
   settingPrimaryId.value = option.id
   try {
-    await apiClient.patch(`/parts/tooling-specs/${option.id}/primary`)
+    await partsApi.setPrimaryToolingSpec(option.id)
     ElMessage.success('主规格已更新')
     emit('primary-spec-updated', { partId: option.part_id, specId: option.id })
   } catch (error) {

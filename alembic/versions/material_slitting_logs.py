@@ -21,26 +21,18 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-
     # ── 1. materials.original_weight ──────────────────────────────────
     # 新增原始重量字段（新料入库时记录，永不修改）
-    result = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns
-        WHERE table_name = 'materials' AND column_name = 'original_weight';
-    """)).fetchone()
-    if not result:
-        op.add_column(
-            'materials',
-            sa.Column('original_weight', sa.Numeric(12, 4), nullable=True)
-        )
-        # 将已有 current_weight 同步填充 original_weight（历史数据）
-        op.execute("""
-            UPDATE materials
-            SET original_weight = current_weight
-            WHERE original_weight IS NULL AND current_weight IS NOT NULL;
-        """)
-        print('[mat] materials.original_weight added')
+    op.execute(
+        "ALTER TABLE materials ADD COLUMN IF NOT EXISTS original_weight NUMERIC(12, 4)"
+    )
+    # 将已有 current_weight 同步填充 original_weight（历史数据）
+    op.execute("""
+        UPDATE materials
+        SET original_weight = current_weight
+        WHERE original_weight IS NULL AND current_weight IS NOT NULL;
+    """)
+    print('[mat] materials.original_weight ensured')
 
     # ── 2. material_slitting_logs ─────────────────────────────────────
     # 幂等创建（可安全重复执行）

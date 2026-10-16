@@ -8,39 +8,15 @@ import App from './App.vue'
 import './style.css'
 
 const routes = [
-  {
-    path: '/login',
-    name: 'Login',
-    component: () => import('./views/Login.vue'),
-  },
-  {
-    path: '/',
-    redirect: '/dashboard',
-  },
-  {
-    path: '/dashboard',
-    name: 'Dashboard',
-    component: () => import('./views/Dashboard.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/scan',
-    name: 'Scan',
-    component: () => import('./views/Scan.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/report',
-    name: 'Report',
-    component: () => import('./views/Report.vue'),
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/parts',
-    name: 'Parts',
-    component: () => import('./views/Parts.vue'),
-    meta: { requiresAuth: true },
-  },
+  { path: '/login', name: 'Login', component: () => import('./views/Login.vue') },
+  { path: '/', redirect: '/query' },
+  { path: '/dashboard', redirect: '/query' },
+  { path: '/query', name: 'Query', component: () => import('./views/Query.vue'), meta: { requiresAuth: true } },
+  { path: '/production', name: 'Production', component: () => import('./views/Production.vue'), meta: { requiresAuth: true } },
+  { path: '/delivery', name: 'Delivery', component: () => import('./views/Delivery.vue'), meta: { requiresAuth: true } },
+  { path: '/scan', name: 'Scan', component: () => import('./views/Scan.vue'), meta: { requiresAuth: true } },
+  { path: '/report', name: 'Report', component: () => import('./views/Report.vue'), meta: { requiresAuth: true } },
+  { path: '/parts', redirect: '/query?tab=parts' },
 ]
 
 const router = createRouter({
@@ -48,16 +24,14 @@ const router = createRouter({
   routes,
 })
 
-router.beforeEach((to, from, next) => {
-  const userId = localStorage.getItem('user_id')
-  if (to.meta.requiresAuth && !userId) {
-    next('/login')
-  } else {
-    next()
-  }
+router.beforeEach((to) => {
+  if (to.meta.requiresAuth && !localStorage.getItem('access_token')) return '/login'
+  if (to.path === '/login' && localStorage.getItem('access_token')) return '/query'
+  return true
 })
 
-const app = createApp(App)
-app.use(router)
-app.use(Vant)
-app.mount('#app')
+window.addEventListener('mobile-auth-expired', () => {
+  if (router.currentRoute.value.path !== '/login') router.replace('/login')
+})
+
+createApp(App).use(router).use(Vant).mount('#app')

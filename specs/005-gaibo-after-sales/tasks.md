@@ -18,6 +18,8 @@
 - [x] T007 Add gaibo service transaction helpers, field validation, soft-deactivation, and audit recording in `backend/app/services/after_sales_service.py`
 - [x] T008 Add role capability mapping and route dependencies for after-sales permissions in `backend/app/api/after_sales.py` and `backend/app/api/gaibo_after_sales.py`
 - [x] T009 [P] Add migration import and old/new comparison scripts in `backend/scripts/import_after_sales_gaibo.py` and `backend/scripts/verify_after_sales_gaibo.py`
+- [ ] T009a [P] Require an explicit customer/workspace target for installation-package imports; validate the source batch customer scope, isolate unknown or mixed-customer rows, and preserve the current ZF Mexico batch boundary.
+- [ ] T009b [P] Add company ownership and capability checks: classify workspaces under Tianyue or Gaibo, keep current `parts` data Tianyue-owned, and reject installation-package routes/imports for Tianyue workspaces.
 
 ## Phase 3: User Story 1 - 按客户查看售后档案 (Priority: P1)
 
@@ -27,6 +29,8 @@
 
 - [x] T010 [US1] Add workspace list/detail and customer record query endpoints in `backend/app/api/gaibo_after_sales.py`
 - [ ] T011 [US1] Add customer workspace and record list views in `frontend/src/views/after-sales/index.vue` and `frontend/src/views/after-sales/customer.vue`
+- [ ] T011a [US1] Return and display the resolved customer identity for installation packages in list/detail/search responses; derive it from the bound workspace and reject conflicting client-supplied customer values.
+- [ ] T011b [US1] Add company-first navigation and capability-aware views: Tianyue shows customer single parts only; Gaibo shows customer single parts plus installation packages.
 - [ ] T012 [US1] Add reusable dense record table, filters, loading, empty, and error states in `frontend/src/components/after-sales/RecordSearch.vue`
 - [x] T013 [US1] Register customer-first after-sales routes without adding unapproved business menu entries in `frontend/src/router/index.ts` and `frontend/src/views/layout/index.vue`
 - [ ] T014 [US1] Add API integration tests for workspace isolation and record-type filtering in `backend/tests/test_after_sales_workspaces.py`
@@ -43,16 +47,17 @@
 - [x] T018 [US2] Connect global search UI and result navigation in `frontend/src/views/after-sales/index.vue`
 - [ ] T019 [US2] Verify search performance and cross-customer result labeling in `backend/tests/test_after_sales_search.py`
 
-## Phase 5: User Story 3 - 建立独立单件档案 (Priority: P1)
+## Phase 5: User Story 3 - 在统一零件中维护售后要求 (Priority: P1)
 
-**Goal**: 单件主库独立存在，同一单件可有多个客户需求且核心字段/工艺互不覆盖。
+**Goal**: 以经确认的物理零件 `parts.id` 作为可共享身份；天越和盖博可用不同客户件号关联同一零件，但别名、价格、图纸和工艺按公司/客户隔离；禁止静默跨公司合并。
 
 **Independent Test**: 同一单件建立客户 A/B 需求，分别修改价格、图纸和工艺，双方详情保持隔离。
 
 - [ ] T020 [P] [US3] Add single-part and customer-requirement CRUD contract tests in `backend/tests/test_after_sales_single_parts.py`
-- [ ] T021 [US3] Implement single-part master and requirement CRUD with four-field validation in `backend/app/services/after_sales_service.py`
+- [ ] T021 [US3] Implement company/customer-scoped requirement CRUD keyed by confirmed `part_id`, with explicit cross-company sharing approval, identity validation, and audit, in `backend/app/services/after_sales_service.py`
+- [ ] T021a [US3] Audit `part_customer_aliases` and add/confirm company scope so different Tianyue/Gaibo customer part numbers can point to one `part_id` without overwriting aliases.
 - [x] T022 [US3] Expose single-part library and requirement endpoints in `backend/app/api/gaibo_after_sales.py`
-- [ ] T023 [US3] Build single-part library and detail editor in `frontend/src/views/after-sales/single-parts.vue` and `frontend/src/components/after-sales/RecordDossier.vue`
+- [ ] T023 [US3] Build an after-sales view over unified parts and its customer-requirement editor in `frontend/src/views/after-sales/single-parts.vue` and `frontend/src/components/after-sales/RecordDossier.vue`; do not create a second part master
 - [ ] T024 [US3] Add customer-isolation integration tests for prices, drawings, and processes in `backend/tests/test_after_sales_customer_isolation.py`
 
 ## Phase 6: User Story 4 - 管理安装包及其单件组成 (Priority: P1)

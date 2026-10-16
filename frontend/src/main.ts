@@ -8,6 +8,7 @@ import VxeUITable from 'vxe-table'
 import VxeUIBase from 'vxe-pc-ui'
 import 'vxe-table/lib/style.css'
 import 'vxe-pc-ui/lib/style.css'
+import './styles/workbench.css'
 
 import App from './App.vue'
 import router from './router'

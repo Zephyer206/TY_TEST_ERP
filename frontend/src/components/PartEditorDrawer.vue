@@ -232,7 +232,7 @@
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import apiClient from '@/utils/request'
+import { partsApi } from '@/api/parts'
 
 const props = defineProps({
   modelValue: Boolean,
@@ -295,8 +295,7 @@ const canSetPrimary = (row) => {
 const loadEditorData = async () => {
   if (!props.partId) return
   try {
-    const { get } = await import('@/utils/request')
-    const detail = await get(`/parts/${props.partId}/editor/detail`)
+    const detail = await partsApi.editorDetail(props.partId)
     editorData.value = detail
 
     Object.assign(form, {
@@ -474,7 +473,7 @@ const saveEditor = async () => {
         .map(s => s.id),
     }
 
-    await apiClient.put(`/parts/${editorData.value.id}/editor/bulk`, payload)
+    await partsApi.updateEditorBulk(editorData.value.id, payload)
     ElMessage.success('保存成功')
     visible.value = false
     emit('saved')

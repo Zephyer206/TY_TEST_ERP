@@ -14,6 +14,7 @@ treatment_items 结构示例:
 """
 from alembic import op
 import sqlalchemy as sa
+from sqlalchemy.dialects.postgresql import JSONB
 
 revision = 'v16_treatment_items_and_mold_discount'
 down_revision = 'v16'  # 依赖上一个 migration v16_add_annual_avg_lifecycle
@@ -24,7 +25,7 @@ depends_on = None
 def upgrade():
     # 1. treatment_items: JSONB，多道表面处理工序
     op.add_column('quotes', sa.Column(
-        'treatment_items', sa.JSONB, nullable=True, server_default=None,
+        'treatment_items', JSONB, nullable=True, server_default=None,
         comment='多道表面处理工序，结构：[{"name":"热处理","fee":2.5},...]'
     ))
     # 将旧 surface_fee 数据迁移到 treatment_items（保留旧字段，数据迁移后业务层统一用 treatment_items）

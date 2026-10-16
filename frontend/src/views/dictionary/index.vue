@@ -298,7 +298,7 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
-import request from '@/utils/request'
+import { partNamesApi, materialsApi, machineTonnagesApi, moldTypesApi } from '@/api/dictionary'
 
 const activeTab = ref('partName')
 
@@ -362,8 +362,7 @@ const loadPartNames = async () => {
   try {
     const params: any = { limit: 500 }
     if (partNameSearch.value) params.search = partNameSearch.value
-    const res = await request.get('/api/v1/part-names', { params })
-    partNames.value = res.data
+    partNames.value = await partNamesApi.list(params)
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '加载失败')
   }
@@ -373,8 +372,7 @@ const loadMaterials = async () => {
   try {
     const params: any = { limit: 500 }
     if (materialSearch.value) params.search = materialSearch.value
-    const res = await request.get('/api/v1/materials', { params })
-    materials.value = res.data
+    materials.value = await materialsApi.list(params)
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '加载失败')
   }
@@ -382,8 +380,7 @@ const loadMaterials = async () => {
 
 const loadMachineTonnages = async () => {
   try {
-    const res = await request.get('/api/v1/machine-tonnages', { params: { limit: 500 } })
-    machineTonnages.value = res.data
+    machineTonnages.value = await machineTonnagesApi.list({ limit: 500 })
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '加载失败')
   }
@@ -391,8 +388,7 @@ const loadMachineTonnages = async () => {
 
 const loadMoldTypes = async () => {
   try {
-    const res = await request.get('/api/v1/mold-types', { params: { limit: 500 } })
-    moldTypes.value = res.data
+    moldTypes.value = await moldTypesApi.list({ limit: 500 })
   } catch (error: any) {
     ElMessage.error(error.response?.data?.detail || '加载失败')
   }
@@ -450,10 +446,10 @@ const savePartName = async () => {
       return
     }
     if (partNameForm.value.id) {
-      await request.patch(`/api/v1/part-names/${partNameForm.value.id}`, partNameForm.value)
+      await partNamesApi.update(partNameForm.value.id, partNameForm.value)
       ElMessage.success('更新成功')
     } else {
-      await request.post('/api/v1/part-names', partNameForm.value)
+      await partNamesApi.create(partNameForm.value)
       ElMessage.success('创建成功')
     }
     partNameDialogVisible.value = false
@@ -470,10 +466,10 @@ const saveMaterial = async () => {
       return
     }
     if (materialForm.value.id) {
-      await request.patch(`/api/v1/materials/${materialForm.value.id}`, materialForm.value)
+      await materialsApi.update(materialForm.value.id, materialForm.value)
       ElMessage.success('更新成功')
     } else {
-      await request.post('/api/v1/materials', materialForm.value)
+      await materialsApi.create(materialForm.value)
       ElMessage.success('创建成功')
     }
     materialDialogVisible.value = false
@@ -490,10 +486,10 @@ const saveMachineTonnage = async () => {
       return
     }
     if (machineTonnageForm.value.id) {
-      await request.patch(`/api/v1/machine-tonnages/${machineTonnageForm.value.id}`, machineTonnageForm.value)
+      await machineTonnagesApi.update(machineTonnageForm.value.id, machineTonnageForm.value)
       ElMessage.success('更新成功')
     } else {
-      await request.post('/api/v1/machine-tonnages', machineTonnageForm.value)
+      await machineTonnagesApi.create(machineTonnageForm.value)
       ElMessage.success('创建成功')
     }
     machineTonnageDialogVisible.value = false
@@ -510,10 +506,10 @@ const saveMoldType = async () => {
       return
     }
     if (moldTypeForm.value.id) {
-      await request.patch(`/api/v1/mold-types/${moldTypeForm.value.id}`, moldTypeForm.value)
+      await moldTypesApi.update(moldTypeForm.value.id, moldTypeForm.value)
       ElMessage.success('更新成功')
     } else {
-      await request.post('/api/v1/mold-types', moldTypeForm.value)
+      await moldTypesApi.create(moldTypeForm.value)
       ElMessage.success('创建成功')
     }
     moldTypeDialogVisible.value = false
@@ -537,7 +533,7 @@ const deletePartName = async (row: any) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await request.delete(`/api/v1/part-names/${row.id}`)
+    await partNamesApi.remove(row.id)
     ElMessage.success('删除成功')
     loadPartNames()
   } catch (error: any) {
@@ -554,7 +550,7 @@ const deleteMaterial = async (row: any) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await request.delete(`/api/v1/materials/${row.id}`)
+    await materialsApi.remove(row.id)
     ElMessage.success('删除成功')
     loadMaterials()
   } catch (error: any) {
@@ -571,7 +567,7 @@ const deleteMachineTonnage = async (row: any) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await request.delete(`/api/v1/machine-tonnages/${row.id}`)
+    await machineTonnagesApi.remove(row.id)
     ElMessage.success('删除成功')
     loadMachineTonnages()
   } catch (error: any) {
@@ -588,7 +584,7 @@ const deleteMoldType = async (row: any) => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    await request.delete(`/api/v1/mold-types/${row.id}`)
+    await moldTypesApi.remove(row.id)
     ElMessage.success('删除成功')
     loadMoldTypes()
   } catch (error: any) {

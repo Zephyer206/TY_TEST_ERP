@@ -7,7 +7,7 @@ import psycopg2
 DB_CONFIG = {
     "dbname": "stamping_system",
     "user": "postgres",
-    "password": "thehaoshi5DE",
+    "password": __import__("os").environ.get("ZEPHYR_DB_PASSWORD", ""),
     "host": "localhost",
     "port": "5432"
 }

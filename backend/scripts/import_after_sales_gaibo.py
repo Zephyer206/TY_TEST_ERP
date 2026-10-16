@@ -32,6 +32,7 @@ from app.models.gaibo import (  # noqa: E402
     GaiboInstallationPackage,
     GaiboPackageItem,
 )
+from app.services.after_sales_document_events import parse_legacy_status_event  # noqa: E402
 
 
 LEGACY_DOCUMENT_FIELDS = (
@@ -109,6 +110,7 @@ def legacy_document_payload(kit: AfterSalesInstallationKit, source_field: str, d
         "source_file_name": kit.source_file_name,
         "source_sheet": kit.source_sheet,
         "source_row": kit.source_row,
+        "status_events": parse_legacy_status_event(raw, document_type),
     }
     return {
         "document_type": document_type,
@@ -148,6 +150,16 @@ async def sync_legacy_documents(
             db.add(GaiboDocumentStatus(package_id=package.id, **payload))
             report["documents_created"] = int(report.get("documents_created", 0)) + 1
         elif (document.source_data or {}).get("legacy_import"):
+            previous_source = dict(document.source_data or {})
+            incoming_source = dict(payload.get("source_data") or {})
+            previous_events = previous_source.get("status_events") if isinstance(previous_source.get("status_events"), list) else []
+            incoming_events = incoming_source.get("status_events") if isinstance(incoming_source.get("status_events"), list) else []
+            merged_events = list(previous_events)
+            for event in incoming_events:
+                if event not in merged_events:
+                    merged_events.append(event)
+            incoming_source["status_events"] = merged_events
+            payload["source_data"] = incoming_source
             changed = any(getattr(document, field) != value for field, value in payload.items())
             if changed:
                 for field, value in payload.items():

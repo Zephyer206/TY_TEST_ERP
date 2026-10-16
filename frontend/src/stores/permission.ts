@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { sendApiRequest } from '../api'
+import { adminApi } from '@/api/admin'
+import { AUTH_DISABLED } from '@/stores/user'
 
 interface ContextSwitch {
   user_id: number
@@ -27,6 +28,9 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // Computed: effective role after context switch
   const effectiveRoleLevel = computed(() => {
+    if (AUTH_DISABLED) {
+      return 4
+    }
     return contextSwitch.value?.current_role_level ?? 0
   })
 
@@ -52,7 +56,7 @@ export const usePermissionStore = defineStore('permission', () => {
   // Fetch current context info
   const fetchContextInfo = async () => {
     try {
-      const data = await sendApiRequest('GET', '/api/admin/context-info')
+      const data = await adminApi.contextInfo<ContextSwitch>()
       contextSwitch.value = data
       return data
     } catch (error) {
@@ -64,7 +68,7 @@ export const usePermissionStore = defineStore('permission', () => {
   // Fetch available departments
   const fetchDepartments = async () => {
     try {
-      const data = await sendApiRequest('GET', '/api/admin/departments')
+      const data = await adminApi.departments<DeptRoleMapping[]>()
       availableDepartments.value = data
       return data
     } catch (error) {
@@ -76,7 +80,7 @@ export const usePermissionStore = defineStore('permission', () => {
   // Switch context to a department
   const switchContext = async (department: string) => {
     try {
-      const data = await sendApiRequest('POST', '/api/admin/switch-context', { department })
+      const data = await adminApi.switchContext(department)
       await fetchContextInfo()
       return data
     } catch (error) {
@@ -88,7 +92,7 @@ export const usePermissionStore = defineStore('permission', () => {
   // Switch back to admin
   const switchBack = async () => {
     try {
-      const data = await sendApiRequest('POST', '/api/admin/switch-back')
+      const data = await adminApi.switchBack()
       contextSwitch.value = null
       return data
     } catch (error) {
@@ -109,6 +113,10 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // Check if route should be accessible
   const canAccessRoute = (routeName: string, requiredRoleLevel: number = 1): boolean => {
+    if (AUTH_DISABLED) {
+      return true
+    }
+
     // When switched, certain admin routes should be blocked
     if (isSwitched.value && routeName.startsWith('admin-')) {
       return false
@@ -118,6 +126,10 @@ export const usePermissionStore = defineStore('permission', () => {
 
   // Check if button should be visible based on role
   const isButtonVisible = (buttonRoleLevel: number): boolean => {
+    if (AUTH_DISABLED) {
+      return true
+    }
+
     // When switched, hide buttons requiring LV3 or higher
     if (isSwitched.value && buttonRoleLevel >= 3) {
       return false

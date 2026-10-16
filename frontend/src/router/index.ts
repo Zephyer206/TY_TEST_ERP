@@ -1,11 +1,11 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import { useUserStore } from '@/stores/user'
+import { AUTH_DISABLED, useUserStore } from '@/stores/user'
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('@/views/login/index.vue'),
+    redirect: '/parts',
   },
   {
     path: '/design-preview',
@@ -43,6 +43,48 @@ const routes: RouteRecordRaw[] = [
         meta: { roleLevel: 1 }, // LV1: maintenance workers record work
       },
       {
+        path: 'projects',
+        name: 'Projects',
+        component: () => import('@/views/projects/index.vue'),
+      },
+      {
+        path: 'projects/rfq',
+        name: 'ProjectRfqs',
+        component: () => import('@/views/projects/rfq.vue'),
+      },
+      {
+        path: 'projects/quotes',
+        name: 'ProjectQuoteGroups',
+        component: () => import('@/views/projects/quotes.vue'),
+      },
+      {
+        path: 'projects/samples',
+        name: 'ProjectSamples',
+        component: () => import('@/views/projects/samples.vue'),
+      },
+      {
+        path: 'projects/changes',
+        name: 'ProjectChanges',
+        component: () => import('@/views/projects/changes.vue'),
+      },
+      {
+        path: 'projects/research-compliance',
+        name: 'ResearchCompliance',
+        component: () => import('@/views/projects/research-compliance.vue'),
+      },
+      {
+        path: 'materials',
+        name: 'Materials',
+        component: () => import('@/views/materials/index.vue'),
+        meta: { roleLevel: 2 },
+      },
+      {
+        path: 'admin/context-switch',
+        name: 'AdminContextSwitch',
+        component: () => import('@/views/admin/context-switch.vue'),
+        meta: { roleLevel: 4 },
+      },
+      {
         path: 'production',
         name: 'ProductionPlanning',
         component: () => import('@/views/production/index.vue'),
@@ -68,6 +110,24 @@ const routes: RouteRecordRaw[] = [
         redirect: '/after-sales',
         meta: { roleLevel: 1 },
       },
+      {
+        path: 'shipping-orders',
+        name: 'ShippingOrders',
+        component: () => import('@/views/shipping-orders/index.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
+        path: 'shipping-orders/:id',
+        name: 'ShippingOrderDetail',
+        component: () => import('@/views/shipping-orders/detail.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
+        path: 'warehouse',
+        name: 'WarehouseInventory',
+        component: () => import('@/views/warehouse/index.vue'),
+        meta: { roleLevel: 1 },
+      },
     ],
   },
   {
@@ -83,15 +143,13 @@ const router = createRouter({
 
 // Routes that should be blocked when admin is in context-switched mode
 router.beforeEach(async (to, _from, next) => {
-  const token = localStorage.getItem('token')
-
-  // Login check
-  if (!token && to.path !== '/login' && !to.meta.public) {
-    next('/login')
+  if (to.path === '/login') {
+    next('/parts')
     return
   }
 
-  if (to.path === '/login') {
+  // Temporary acceptance mode bypasses route-level role checks.
+  if (AUTH_DISABLED) {
     next()
     return
   }

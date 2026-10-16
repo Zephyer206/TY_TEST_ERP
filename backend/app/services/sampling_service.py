@@ -229,7 +229,7 @@ async def submit_review(
     if passed:
         task.state = SamplingTaskState.PASSED
         if task.part:
-            task.part.state = PartState.MASSPRODUCTION
+            task.part.part_status = PartState.MASSPRODUCTION.value
     else:
         task.state = SamplingTaskState.FAILED
 

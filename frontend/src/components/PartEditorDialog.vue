@@ -73,7 +73,6 @@
               <el-col :span="8"><el-form-item label="净重"><el-input-number v-model="baseForm.net_weight" :min="0" :precision="3" controls-position="right" /></el-form-item></el-col>
               <el-col :span="8"><el-form-item label="零件位置"><el-select v-model="baseForm.part_position" clearable><el-option label="左" value="left" /><el-option label="右" value="right" /><el-option label="中" value="center" /><el-option label="单件" value="single" /></el-select></el-form-item></el-col>
               <el-col :span="8"><el-form-item label="零件状态"><el-select v-model="baseForm.part_status"><el-option label="草稿" value="DRAFT" /><el-option label="打样" value="SAMPLING" /><el-option label="量产" value="MASS_PRODUCTION" /><el-option label="淘汰" value="OBSOLETE" /></el-select></el-form-item></el-col>
-              <el-col :span="8"><el-form-item label="兼容状态"><el-input v-model="baseForm.status" /></el-form-item></el-col>
               <el-col :span="8"><el-form-item label="PPAP 编号"><el-input v-model="baseForm.ppap_no" /></el-form-item></el-col>
               <el-col :span="8"><el-form-item label="冲床吨位"><el-input v-model="baseForm.press_tonnage" /></el-form-item></el-col>
               <el-col :span="24"><el-form-item label="备注"><el-input v-model="baseForm.remark" type="textarea" :rows="3" /></el-form-item></el-col>
@@ -158,7 +157,7 @@
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit } from '@element-plus/icons-vue'
-import apiClient, { get } from '@/utils/request'
+import { partsApi, partDisplayGroupsApi } from '@/api/parts'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },
@@ -189,7 +188,7 @@ const displayGroupForm = reactive({ group_key: '', display_name: '', remark: '',
 const BASE_FIELDS = [
   'internal_name', 'customer_part_no', 'vehicle_model',
   'material_name', 'drawing_url',
-  'gross_weight', 'net_weight', 'part_position', 'part_status', 'status', 'remark',
+  'gross_weight', 'net_weight', 'part_position', 'part_status', 'remark',
   'press_tonnage', 'ppap_no',
 ]
 const DECIMAL_FIELDS = new Set(['thickness', 'width', 'pitch', 'height', 'gross_weight', 'net_weight'])
@@ -249,7 +248,7 @@ const applyDetail = response => {
 
 const loadGroups = async () => {
   try {
-    const displayGroups = await get('/part-display-groups', { limit: 200 })
+    const displayGroups = await partDisplayGroupsApi.list({ limit: 200 })
     allDisplayGroups.value = displayGroups || []
   } catch (error) {
     ElMessage.error(`获取左右件关联失败：${error.message || '未知错误'}`)
@@ -260,7 +259,7 @@ const loadHistory = async () => {
   if (!props.partId) return
   historyLoading.value = true
   try {
-    changeHistory.value = await get(`/parts/${props.partId}/editor/history`)
+    changeHistory.value = await partsApi.editorHistory(props.partId)
   } catch (error) {
     ElMessage.error(`获取修改历史失败：${error.message || '未知错误'}`)
   } finally {
@@ -274,7 +273,7 @@ const loadEditor = async () => {
   editing.value = false
   conflictMessage.value = ''
   try {
-    const response = await get(`/parts/${props.partId}/editor/detail`)
+    const response = await partsApi.editorDetail(props.partId)
     applyDetail(response)
     void loadGroups()
     void loadHistory()
@@ -296,7 +295,7 @@ const startEditing = async () => {
   editing.value = true
   if (toolingContext.value.length) return
   try {
-    const response = await get(`/parts/${props.partId}/editor/detail`, { include_tooling_catalog: true })
+    const response = await partsApi.editorDetail(props.partId, { include_tooling_catalog: true })
     detail.value = { ...detail.value, available_toolings: response.available_toolings || [] }
   } catch (error) {
     ElMessage.error(`获取可选模具失败：${error.message || '未知错误'}`)
@@ -308,7 +307,7 @@ const reloadKeepingDraft = async () => {
   const draft = editorSnapshot()
   loading.value = true
   try {
-    const response = await get(`/parts/${props.partId}/editor/detail`)
+    const response = await partsApi.editorDetail(props.partId)
     applyDetail(response)
     Object.assign(baseForm, draft.base)
     toolingParts.value = draft.tooling
@@ -403,12 +402,12 @@ const saveEditor = async () => {
   saving.value = true
   conflictMessage.value = ''
   try {
-    const baseResponse = await apiClient.patch(`/parts/${props.partId}/editor`, { ...basePayload(), updated_at: detail.value.updated_at }, { validateStatus: () => true })
+    const baseResponse = await partsApi.updateEditorRaw(props.partId, { ...basePayload(), updated_at: detail.value.updated_at })
     if (baseResponse.status === 409) return handleConflict(baseResponse.data)
     if (baseResponse.status >= 400) throw new Error(serverMessage(baseResponse.data))
     detail.value.updated_at = baseResponse.data.updated_at
 
-    const bulkResponse = await apiClient.put(`/parts/${props.partId}/editor/bulk`, bulkPayload(), { validateStatus: () => true })
+    const bulkResponse = await partsApi.updateEditorBulkRaw(props.partId, bulkPayload())
     if (bulkResponse.status === 409) return handleConflict(bulkResponse.data)
     if (bulkResponse.status >= 400) throw new Error(serverMessage(bulkResponse.data))
     await loadEditor()
@@ -436,7 +435,7 @@ const createDisplayGroup = async () => {
   const currentIsLeft = displayGroupForm.current_position === 'left'
   const members = [{ customer_part_no: currentNumber, position: currentIsLeft ? 'left' : 'right', sequence: 0 }, { customer_part_no: partnerNumber, position: currentIsLeft ? 'right' : 'left', sequence: 1 }]
   try {
-    await apiClient.post('/part-display-groups', { group_type: 'left_right', group_key: key, display_name: null, remark: nullableText(displayGroupForm.remark), members })
+    await partDisplayGroupsApi.create({ group_type: 'left_right', group_key: key, display_name: null, remark: nullableText(displayGroupForm.remark), members })
     groupDialogVisible.value = false
     await loadGroups()
     emit('saved')
@@ -446,7 +445,7 @@ const createDisplayGroup = async () => {
 const deleteDisplayGroup = async group => {
   try {
     await ElMessageBox.confirm(`删除分组“${group.group_key}”将同时移除其全部成员关系，是否继续？`, '确认删除', { type: 'warning' })
-    await apiClient.delete(`/part-display-groups/${group.id}`)
+    await partDisplayGroupsApi.remove(group.id)
     await loadGroups()
     emit('saved')
     ElMessage.success('左右件关联已解除')
@@ -462,34 +461,34 @@ watch(visible, value => emit('update:modelValue', value))
 </script>
 
 <style scoped>
-.editor-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 0 0 14px; padding: 14px 16px; border: 1px solid #d9dee1; border-radius: 6px; background: #f8faf9; }
+.editor-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin: 0 0 14px; padding: 14px 16px; border: 1px solid var(--zephyr-border); border-radius: 6px; background: var(--zephyr-surface-muted); }
 .editor-heading strong { margin-right: 12px; color: #252a30; font-size: 20px; font-weight: 650; }
-.editor-subtitle { margin-top: 4px; color: #68747b; font-size: 12px; }
+.editor-subtitle { margin-top: 4px; color: var(--zephyr-muted); font-size: 12px; }
 .editor-actions { display: flex; align-items: center; gap: 8px; }
 .dossier-layout { display: grid; grid-template-columns: minmax(0, 1fr) 240px; gap: 16px; min-height: 0; }
 .dossier-tabs { min-width: 0; padding-right: 2px; }
 .dossier-tabs :deep(.el-tabs__header) { position: sticky; top: 0; align-self: start; margin-right: 14px; }
 .dossier-tabs :deep(.el-tabs__item) { justify-content: flex-start; min-width: 118px; height: 36px; padding: 0 12px; font-size: 13px; }
-.dossier-tabs :deep(.el-tabs__active-bar) { background-color: #176b5a; }
-.dossier-tabs :deep(.el-tabs__item.is-active) { color: #176b5a; font-weight: 650; }
+.dossier-tabs :deep(.el-tabs__active-bar) { background-color: var(--zephyr-primary); }
+.dossier-tabs :deep(.el-tabs__item.is-active) { color: var(--zephyr-primary); font-weight: 650; }
 .dossier-tabs.is-read-only :deep(.el-tab-pane) { pointer-events: none; }
-.dossier-tabs.is-read-only :deep(.el-tab-pane .el-input__wrapper), .dossier-tabs.is-read-only :deep(.el-tab-pane .el-select__wrapper) { background: #f8faf9; }
-.change-history-rail { align-self: start; max-height: calc(100vh - 170px); overflow: auto; padding: 14px; border: 1px solid #d9dee1; border-radius: 6px; background: #f8faf9; }
-.change-history-rail h3 { margin: 0 0 12px; color: #34434b; font-size: 14px; font-weight: 650; }
+.dossier-tabs.is-read-only :deep(.el-tab-pane .el-input__wrapper), .dossier-tabs.is-read-only :deep(.el-tab-pane .el-select__wrapper) { background: var(--zephyr-surface-muted); }
+.change-history-rail { align-self: start; max-height: calc(100vh - 170px); overflow: auto; padding: 14px; border: 1px solid var(--zephyr-border); border-radius: 6px; background: var(--zephyr-surface-muted); }
+.change-history-rail h3 { margin: 0 0 12px; color: var(--zephyr-ink); font-size: 14px; font-weight: 650; }
 .history-preview { display: grid; gap: 10px; }
 .history-preview-item { display: grid; gap: 3px; padding-top: 10px; border-top: 1px solid #e4e8ea; }
 .history-preview-item:first-child { padding-top: 0; border-top: 0; }
-.history-preview-item strong { color: #2f7a69; font-size: 12px; }
-.history-preview-item span, .history-preview-item time { color: #68747b; font-size: 11px; line-height: 1.45; }
+.history-preview-item strong { color: var(--zephyr-primary); font-size: 12px; }
+.history-preview-item span, .history-preview-item time { color: var(--zephyr-muted); font-size: 11px; line-height: 1.45; }
 .editor-form { padding: 2px 8px 8px; }
 .field-hint, .muted { color: #909399; font-size: 12px; }
 .field-hint { line-height: 18px; }
 .conflict-alert { margin-bottom: 14px; }
 .add-row, .twp-header, .pairing-row { display: flex; align-items: center; gap: 10px; margin: 14px 0; }
 .twp-header { justify-content: space-between; margin-top: 18px; }
-.pairing-row { justify-content: space-between; min-height: 42px; padding: 0 12px; border: 1px solid #e0e4e8; border-radius: 6px; background: #f8faf9; }
+.pairing-row { justify-content: space-between; min-height: 42px; padding: 0 12px; border: 1px solid #e0e4e8; border-radius: 6px; background: var(--zephyr-surface-muted); }
 .pairing-row > div { display: flex; align-items: baseline; flex-wrap: wrap; gap: 8px; min-width: 0; }
-.pairing-row strong { color: #34434b; font-size: 13px; }
+.pairing-row strong { color: var(--zephyr-ink); font-size: 13px; }
 .pairing-row span { color: #5e6970; font-size: 13px; overflow-wrap: anywhere; }
 .pairing-row small { color: #909399; font-size: 12px; }
 .add-select { width: 360px; }

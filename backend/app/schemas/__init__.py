@@ -5,6 +5,7 @@ from .price import *
 from .quote import *
 from .sampling import *
 from .treatment import *
+from .shipping_order import *
 
 __all__ = [
     "CustomerMaterialPriceCreate",

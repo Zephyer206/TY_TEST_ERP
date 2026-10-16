@@ -20,6 +20,7 @@ parts 表拆分：零件主档 (parts) + 报价单台账 (quotes)
 """
 
 from alembic import op
+from alembic import context
 import sqlalchemy as sa
 
 revision = 'v2split_parts_and_quotes'
@@ -183,19 +184,31 @@ def upgrade():
         "零件主档状态: DRAFT=草稿, ACTIVE=活跃, ARCHIVED=归档, SUPERSEDED=已淘汰")
 
     # 联合唯一约束：同零件号 + 同版本不可重复
-    _result = conn.execute(sa.text("""
-        SELECT 1 FROM pg_constraint
-        WHERE conname = 'uq_parts_number_version';
-    """)).fetchone()
-    if not _result:
+    if context.is_offline_mode():
         conn.execute(sa.text("""
-            ALTER TABLE parts
-            ADD CONSTRAINT uq_parts_number_version
-            UNIQUE (part_number, version);
+            DO $$
+            BEGIN
+                IF NOT EXISTS (
+                    SELECT 1 FROM pg_constraint
+                    WHERE conname = 'uq_parts_number_version'
+                ) THEN
+                    ALTER TABLE parts
+                    ADD CONSTRAINT uq_parts_number_version
+                    UNIQUE (part_number, version);
+                END IF;
+            END $$;
         """))
-        print('[split-v2] uq_parts_number_version 联合唯一约束创建完成')
     else:
-        print('[split-v2] uq_parts_number_version 已存在，跳过')
+        _result = conn.execute(sa.text("""
+            SELECT 1 FROM pg_constraint
+            WHERE conname = 'uq_parts_number_version';
+        """)).fetchone()
+        if not _result:
+            conn.execute(sa.text("""
+                ALTER TABLE parts
+                ADD CONSTRAINT uq_parts_number_version
+                UNIQUE (part_number, version);
+            """))
 
     # ===================================================================
     # 步骤 3：数据平移（零件报价数据 → 初始报价单）
@@ -306,8 +319,9 @@ def upgrade():
     """))
     print('[split-v2] 数据平移 SQL 执行完成')
 
-    cnt = conn.execute(sa.text("SELECT COUNT(*) FROM quotes")).fetchone()[0]
-    print(f'[split-v2] quotes 表当前行数: {cnt}')
+    if not context.is_offline_mode():
+        cnt = conn.execute(sa.text("SELECT COUNT(*) FROM quotes")).fetchone()[0]
+        print(f'[split-v2] quotes 表当前行数: {cnt}')
 
     # ===================================================================
     # 步骤 4：parts 表瘦身（删除已转移字段）
@@ -334,15 +348,7 @@ def upgrade():
         'price_status',
     ]
     for col in drops:
-        _r = conn.execute(sa.text(f"""
-            SELECT 1 FROM information_schema.columns
-            WHERE table_name = 'parts' AND column_name = '{col}';
-        """)).fetchone()
-        if _r:
-            conn.execute(sa.text(f"ALTER TABLE parts DROP COLUMN IF EXISTS {col};"))
-            print(f'  [DROP] parts.{col}')
-        else:
-            print(f'  [SKIP] parts.{col}  已不存在')
+        conn.execute(sa.text(f"ALTER TABLE parts DROP COLUMN IF EXISTS {col};"))
 
     print('[split-v2] 步骤4完成: parts 表已瘦身')
     print('[split-v2] ======== 迁移完成 ========')
@@ -442,6 +448,16 @@ def downgrade():
 def _add_col_if_missing(conn, table: str, col_name: str,
                         col_type, comment: str = None):
     """安全追加列（幂等）：仅在列不存在时添加，避免重复执行报错。"""
+    if context.is_offline_mode():
+        conn.execute(sa.text(
+            f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col_name} {col_type};"
+        ))
+        if comment:
+            escaped = comment.replace("'", "''")
+            conn.execute(sa.text(
+                f"COMMENT ON COLUMN {table}.{col_name} IS '{escaped}'"
+            ))
+        return
     result = conn.execute(sa.text(f"""
         SELECT 1 FROM information_schema.columns
         WHERE table_name = '{table}' AND column_name = '{col_name}';

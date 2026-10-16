@@ -7,7 +7,14 @@ No-database unit tests covering:
 - Rejection of out-of-range role_level values
 """
 
-from app.core.security import create_tokens, verify_min_role_level
+from unittest.mock import AsyncMock
+
+import pytest
+from fastapi import HTTPException
+from fastapi.security import HTTPAuthorizationCredentials
+
+from app.api.deps import get_current_user
+from app.core.security import create_refresh_token, create_tokens, verify_min_role_level
 from app.models.user import User
 
 
@@ -44,6 +51,19 @@ def test_lv4_token_creation():
     tokens = create_tokens(user)
     assert "access_token" in tokens
     assert "refresh_token" in tokens
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_cannot_authenticate_api_request():
+    credentials = HTTPAuthorizationCredentials(
+        scheme="Bearer",
+        credentials=create_refresh_token({"sub": "1"}),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        await get_current_user(credentials, AsyncMock())
+
+    assert exc_info.value.status_code == 401
 
 
 def test_lv1_can_access_lv1_endpoints():

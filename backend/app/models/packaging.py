@@ -90,7 +90,7 @@ class Inventory(Base):
     part_id: Mapped[int] = mapped_column(
         ForeignKey("parts.id"), nullable=False, index=True
     )
-    part: Mapped["Part"] = relationship("Part")
+    part: Mapped["Part"] = relationship("Part", back_populates="inventory_records")
 
     # Inventory quantity
     stock_qty: Mapped[int] = mapped_column(Integer, default=0)

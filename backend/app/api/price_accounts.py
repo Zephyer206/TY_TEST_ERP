@@ -20,8 +20,8 @@ from app.schemas.price import (
     PriceAccountListResponse,
     PriceAccountResponse,
     PriceAccountUpdate,
-    PriceAdjustmentCreate,
-    PriceAdjustmentResponse,
+    PriceAccountAdjustmentCreate,
+    PriceAccountAdjustmentResponse,
 )
 from app.services import price_service
 
@@ -48,31 +48,21 @@ def _account_to_response(account: PriceAccount) -> PriceAccountResponse:
         annual_records=[
             AnnualPriceRecordResponse(
                 id=r.id,
-                price_account_id=r.price_account_id,
+                price_account_id=r.price_id,
                 year=r.year,
                 unit_price=r.unit_price,
-                annual_qty=r.annual_qty,
-                notes=r.notes,
-                created_by=r.created_by,
-                creator_name=r.creator.full_name if r.creator else None,
-                created_at=r.created_at,
+                annual_qty=r.annual_sales,
+                notes=None,
+                created_by=r.operator_id,
+                creator_name=None,
+                created_at=r.updated_at,
             )
             for r in (account.annual_records or [])
         ],
-        adjustments=[
-            PriceAdjustmentResponse(
-                id=a.id,
-                price_account_id=a.price_account_id,
-                old_price=a.old_price,
-                new_price=a.new_price,
-                adjustment_type=a.adjustment_type,
-                reason=a.reason,
-                created_by=a.created_by,
-                creator_name=a.creator.full_name if a.creator else None,
-                created_at=a.created_at,
-            )
-            for a in (account.adjustments or [])
-        ],
+        # Adjustment history belongs to the approval workflow and is exposed
+        # by /price-adjustments.  The legacy account response no longer reads
+        # a non-existent ``price_accounts.adjustments`` relationship.
+        adjustments=[],
         created_at=account.created_at,
         updated_at=account.updated_at,
     )
@@ -136,7 +126,9 @@ async def get_price_accounts_by_part(
         PriceAccountListResponse(
             id=a.id,
             part_id=a.part_id,
-            part_no=a.part.part_no if a.part else None,
+            # The canonical Part model no longer exposes the retired
+            # ``part_no`` column; customer aliases are queried separately.
+            part_no=None,
             part_name=a.part.internal_name if a.part else None,
             customer_id=a.customer_id,
             customer_name=a.customer.name if a.customer else None,
@@ -254,13 +246,13 @@ async def get_current_price(
     )
 
 
-@router.post("/{account_id}/adjustments", response_model=PriceAdjustmentResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/{account_id}/adjustments", response_model=PriceAccountAdjustmentResponse, status_code=status.HTTP_201_CREATED)
 async def create_price_adjustment(
     account_id: int,
-    data: PriceAdjustmentCreate,
+    data: PriceAccountAdjustmentCreate,
     db: DbSession,
     current_user: CurrentUser,
-) -> PriceAdjustmentResponse:
+) -> PriceAccountAdjustmentResponse:
     """Record a manual price adjustment - LV2: business staff."""
     require_role(current_user, min_level=2)
 
@@ -279,7 +271,7 @@ async def create_price_adjustment(
         created_by=current_user,
     )
 
-    return PriceAdjustmentResponse(
+    return PriceAccountAdjustmentResponse(
         id=adjustment.id,
         price_account_id=adjustment.price_account_id,
         old_price=adjustment.old_price,

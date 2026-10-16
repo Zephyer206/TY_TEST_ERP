@@ -8,7 +8,7 @@
 
       <div class="search-control">
         <el-icon><Search /></el-icon>
-        <el-input v-model="filter.search" placeholder="搜索材料代码、牌号或中文名称" clearable @keyup.enter="fetchMaterials" />
+        <el-input v-model="filter.search" placeholder="搜索材料名" clearable @keyup.enter="fetchMaterials" />
       </div>
 
       <div class="filter-controls">
@@ -28,31 +28,27 @@
     <div class="table-meta"><span>{{ filteredMaterials.length }} 条记录</span><span>材料主数据列表</span></div>
 
     <el-table :data="pagedMaterials" v-loading="loading" stripe>
-      <el-table-column prop="code" label="材料代码" min-width="150" />
-      <el-table-column label="材料牌号" min-width="150">
-        <template #default="{ row }">{{ row.name_cn || row.name || '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="name" label="标准名称" min-width="140" />
+      <el-table-column prop="name" label="材料名" min-width="180" />
       <el-table-column prop="category" label="分类" width="130">
         <template #default="{ row }">{{ row.category || '-' }}</template>
       </el-table-column>
-      <el-table-column prop="standard" label="执行标准" min-width="140">
-        <template #default="{ row }">{{ row.standard || '-' }}</template>
-      </el-table-column>
-      <el-table-column prop="thickness_range" label="常用厚度" width="120">
-        <template #default="{ row }">{{ row.thickness_range || '-' }}</template>
-      </el-table-column>
       <el-table-column label="密度" width="100" align="right">
-        <template #default="{ row }">{{ formatDecimal(row.density, 4) }}</template>
+        <template #default="{ row }">{{ formatDecimal(row.density) }}</template>
       </el-table-column>
-      <el-table-column label="参考价" width="120" align="right">
+      <el-table-column label="原料价 (元/kg)" width="140" align="right">
         <template #default="{ row }">{{ formatCurrency(row.default_price) }}</template>
+      </el-table-column>
+      <el-table-column label="废料价 (元/kg)" width="140" align="right">
+        <template #default="{ row }">{{ formatCurrency(row.scrap_price) }}</template>
       </el-table-column>
       <el-table-column label="状态" width="100" align="center">
         <template #default="{ row }"><el-tag :type="row.is_active ? 'success' : 'info'">{{ row.is_active ? '已启用' : '已停用' }}</el-tag></template>
       </el-table-column>
-      <el-table-column label="操作" width="92" fixed="right">
-        <template #default="{ row }"><el-button link type="primary" size="small" @click="openEdit(row)">编辑</el-button></template>
+      <el-table-column label="操作" width="145" fixed="right">
+        <template #default="{ row }">
+          <el-button link type="primary" size="small" :icon="Edit" @click="openEdit(row)">编辑</el-button>
+          <el-button link type="danger" size="small" :icon="Delete" @click="removeMaterial(row)">删除</el-button>
+        </template>
       </el-table-column>
     </el-table>
 
@@ -67,25 +63,15 @@
       />
     </div>
 
-    <el-dialog v-model="dialogVisible" :title="editId ? '编辑材料' : '新增材料'" width="620px" destroy-on-close>
+    <el-dialog v-model="dialogVisible" :title="editId ? '编辑材料' : '新增材料'" width="min(620px, 92vw)" destroy-on-close>
       <el-form ref="formRef" :model="form" :rules="rules" label-width="92px">
-        <el-row :gutter="16">
-          <el-col :span="12"><el-form-item label="材料代码" prop="code"><el-input v-model="form.code" placeholder="例如 SPCC" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="标准名称" prop="name"><el-input v-model="form.name" placeholder="例如 SPCC" /></el-form-item></el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="12"><el-form-item label="材料牌号"><el-input v-model="form.name_cn" placeholder="中文牌号或俗称" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="分类"><el-select v-model="form.category" filterable allow-create default-first-option placeholder="选择或输入分类" style="width: 100%"><el-option v-for="category in categories" :key="category" :label="category" :value="category" /></el-select></el-form-item></el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="12"><el-form-item label="执行标准"><el-input v-model="form.standard" placeholder="例如 JIS G 3141" /></el-form-item></el-col>
-          <el-col :span="12"><el-form-item label="常用厚度"><el-input v-model="form.thickness_range" placeholder="例如 0.4-2.0 mm" /></el-form-item></el-col>
-        </el-row>
-        <el-row :gutter="16">
-          <el-col :span="8"><el-form-item label="密度"><el-input-number v-model="form.density" :min="0" :precision="4" controls-position="right" style="width: 100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="参考价"><el-input-number v-model="form.default_price" :min="0" :precision="4" controls-position="right" style="width: 100%" /></el-form-item></el-col>
-          <el-col :span="8"><el-form-item label="废料价"><el-input-number v-model="form.scrap_price" :min="0" :precision="4" controls-position="right" style="width: 100%" /></el-form-item></el-col>
-        </el-row>
+        <el-form-item label="材料名" prop="name"><el-input v-model="form.name" placeholder="例如 SUS301/304" /></el-form-item>
+        <el-form-item label="分类"><el-select v-model="form.category" filterable allow-create default-first-option placeholder="选择或输入分类" style="width: 100%"><el-option v-for="category in categories" :key="category" :label="category" :value="category" /></el-select></el-form-item>
+        <div class="material-metrics">
+          <el-form-item label="密度"><el-input-number v-model="form.density" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width: 100%" /></el-form-item>
+          <el-form-item label="原料价"><el-input-number v-model="form.default_price" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width: 100%" /></el-form-item>
+          <el-form-item label="废料价"><el-input-number v-model="form.scrap_price" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width: 100%" /></el-form-item>
+        </div>
         <el-form-item label="状态"><el-switch v-model="form.is_active" active-text="启用" inactive-text="停用" /></el-form-item>
       </el-form>
       <template #footer><el-button @click="dialogVisible = false">取消</el-button><el-button type="primary" :loading="saving" @click="saveMaterial">保存</el-button></template>
@@ -95,10 +81,9 @@
 
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Menu, Plus, Search } from '@element-plus/icons-vue'
-import { get } from '@/utils/request'
-import apiClient from '@/utils/request'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Delete, Edit, Menu, Plus, Search } from '@element-plus/icons-vue'
+import { materialsApi } from '@/api/dictionary'
 
 type Material = {
   id: number
@@ -129,8 +114,7 @@ const form = reactive({
 })
 
 const rules = {
-  code: [{ required: true, message: '请输入材料代码', trigger: 'blur' }],
-  name: [{ required: true, message: '请输入标准名称', trigger: 'blur' }],
+  name: [{ required: true, message: '请输入材料名', trigger: 'blur' }],
 }
 
 const categories = computed(() => [...new Set(materials.value.map(item => item.category).filter((item): item is string => Boolean(item)))].sort())
@@ -141,13 +125,33 @@ const pagedMaterials = computed(() => {
 })
 
 const normalizeNullable = (value: string | number | undefined) => value === '' || value === undefined ? null : value
-const formatDecimal = (value: number | null | undefined, digits: number) => value == null ? '-' : Number(value).toFixed(digits)
-const formatCurrency = (value: number | null | undefined) => value == null ? '-' : `¥${Number(value).toFixed(4)}`
+const formatDecimal = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(Number(value))) return '-'
+  return Number(value).toFixed(4).replace(/\.?0+$/, '')
+}
+const formatCurrency = (value: number | null | undefined) => {
+  if (value == null || !Number.isFinite(Number(value))) return ''
+  return `¥${Number(value).toFixed(4).replace(/\.?0+$/, '')}`
+}
+const formatInputNumber = (value: string | number | undefined) => {
+  if (value == null || value === '') return ''
+  return String(value).replace(/\.?0+$/, '')
+}
+
+const materialCodeForName = (name: string) => {
+  const normalized = name
+    .trim()
+    .toUpperCase()
+    .replace(/[^A-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+
+  return (normalized || 'MAT').slice(0, 38) + '-' + Date.now()
+}
 
 const fetchMaterials = async () => {
   loading.value = true
   try {
-    const data = await get<Material[]>('/materials', {
+    const data = await materialsApi.list<Material[]>({
       search: filter.search || undefined,
       category: filter.category || undefined,
       is_active: filter.active || undefined,
@@ -194,18 +198,18 @@ const saveMaterial = async () => {
   await formRef.value?.validate()
   saving.value = true
   const payload = {
-    code: form.code.trim(), name: form.name.trim(), name_cn: normalizeNullable(form.name_cn.trim()),
-    density: form.density ?? null, thickness_range: normalizeNullable(form.thickness_range.trim()),
-    category: normalizeNullable(form.category.trim()), standard: normalizeNullable(form.standard.trim()),
+    name: form.name.trim(),
+    density: form.density ?? null,
+    category: normalizeNullable(form.category.trim()),
     default_price: form.default_price ?? null, scrap_price: form.scrap_price ?? null, is_active: form.is_active,
   }
   try {
     if (editId.value) {
-      await apiClient.patch(`/materials/${editId.value}`, payload)
+      await materialsApi.update(editId.value, payload)
       ElMessage.success('材料已更新')
     } else {
       const { is_active, ...createPayload } = payload
-      await apiClient.post('/materials', createPayload)
+      await materialsApi.create({ code: materialCodeForName(form.name), ...createPayload })
       ElMessage.success('材料已创建')
     }
     dialogVisible.value = false
@@ -217,11 +221,32 @@ const saveMaterial = async () => {
   }
 }
 
+const removeMaterial = async (row: Material) => {
+  try {
+    await ElMessageBox.confirm(
+      '删除材料“' + row.name + '”后，它将不再出现在材料库和报价候选中。',
+      '确认删除材料',
+      { type: 'warning', confirmButtonText: '删除', cancelButtonText: '取消' },
+    )
+    await materialsApi.remove(row.id)
+    ElMessage.success('材料已删除')
+    await fetchMaterials()
+  } catch (error: any) {
+    if (error === 'cancel' || error === 'close') return
+    ElMessage.error(error?.message || '删除材料失败')
+  }
+}
+
 onMounted(fetchMaterials)
 </script>
 
 <style scoped>
 .materials-container { min-width: 0; padding: 20px; }
+.material-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-bottom: 18px; }
+.material-metrics :deep(.el-form-item) { display: block; margin-bottom: 0; }
+.material-metrics :deep(.el-form-item__label) { display: block; height: auto; padding: 0; margin-bottom: 6px; color: var(--zephyr-muted); line-height: 18px; text-align: left; }
+.material-metrics :deep(.el-form-item__content) { margin-left: 0 !important; }
+.material-metrics :deep(.el-input-number) { width: 100% !important; }
 .list-view-toolbar { display: grid; grid-template-columns: auto minmax(240px, 1fr) auto; align-items: center; gap: 14px; min-height: 58px; margin-bottom: 10px; padding: 8px 0; }
 .list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }
 .list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
@@ -230,8 +255,9 @@ onMounted(fetchMaterials)
 .filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
 .filter-controls :deep(.el-select) { width: 110px; }
 .view-toggle { color: #625780; }
-.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: var(--zephyr-muted); font-size: 12px; }
 .table-meta span:last-child { color: #96939e; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
 @media (max-width: 1040px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; flex-wrap: wrap; } }
+@media (max-width: 520px) { .material-metrics { grid-template-columns: 1fr; gap: 10px; } }
 </style>

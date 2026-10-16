@@ -19,34 +19,15 @@ depends_on = None
 
 
 def upgrade():
-    conn = op.get_bind()
-
-    existing = set()
-    result = conn.execute(sa.text("""
-        SELECT column_name FROM information_schema.columns WHERE table_name = 'prices';
-    """)).fetchall()
-    existing = {r[0] for r in result}
-
     fields = [
         ('surface_treatment_cost', 'NUMERIC(12,4)'),
         ('cost_override',         'NUMERIC(12,4)'),
     ]
 
     for col, typ in fields:
-        if col not in existing:
-            op.execute(f"ALTER TABLE prices ADD COLUMN {col} {typ};")
-            print(f'[v20] prices.{col} added')
-        else:
-            print(f'[v20] prices.{col} already exists, skipping')
+        op.execute(f"ALTER TABLE prices ADD COLUMN IF NOT EXISTS {col} {typ};")
 
 
 def downgrade():
-    conn = op.get_bind()
     for col in ['cost_override', 'surface_treatment_cost']:
-        result = conn.execute(sa.text(f"""
-            SELECT 1 FROM information_schema.columns
-            WHERE table_name = 'prices' AND column_name = '{col}';
-        """)).fetchone()
-        if result:
-            op.execute(f"ALTER TABLE prices DROP COLUMN IF EXISTS {col};")
-            print(f'[v20] prices.{col} dropped')
+        op.execute(f"ALTER TABLE prices DROP COLUMN IF EXISTS {col};")

@@ -77,6 +77,7 @@ class GaiboWorkspaceViewConfig(BaseModel):
 class GaiboWorkspaceColumnConfigUpdate(BaseModel):
     expected_version: int = Field(ge=1)
     field_labels: dict[str, str] = Field(default_factory=dict)
+    detail_section_labels: dict[str, str] = Field(default_factory=dict)
     custom_fields: list[GaiboCustomFieldDefinition] = Field(default_factory=list, max_length=24)
     default_view_config: GaiboWorkspaceViewConfig
 
@@ -85,6 +86,7 @@ class GaiboWorkspaceColumnConfigResponse(BaseModel):
     workspace_id: int
     version: int
     field_labels: dict[str, str]
+    detail_section_labels: dict[str, str]
     custom_fields: list[GaiboCustomFieldDefinition]
     default_view_config: GaiboWorkspaceViewConfig
 
@@ -159,6 +161,7 @@ class GaiboRequirementCreate(BaseModel):
 
 
 class GaiboRequirementUpdate(BaseModel):
+    expected_updated_at: Optional[datetime] = None
     customer_part_number: Optional[str] = Field(default=None, min_length=1, max_length=200)
     ibi: Optional[str] = Field(default=None, min_length=1)
     tianyue_internal_composition: Optional[str] = Field(default=None, min_length=1)
@@ -231,6 +234,7 @@ class GaiboPackageResponse(BaseModel):
 
 
 class GaiboPackageUpdate(BaseModel):
+    expected_updated_at: Optional[datetime] = None
     package_number: Optional[str] = Field(default=None, min_length=1, max_length=200)
     name: Optional[str] = Field(default=None, max_length=300)
     priority: Optional[int] = Field(default=None, ge=1, le=3)
@@ -255,6 +259,7 @@ class GaiboPackageItemCreate(BaseModel):
 
 
 class GaiboPackageItemUpdate(BaseModel):
+    expected_updated_at: Optional[datetime] = None
     requirement_id: Optional[int] = Field(default=None, gt=0)
     unlinked_customer_part_number: Optional[str] = Field(default=None, max_length=200)
     ibi: Optional[str] = Field(default=None, min_length=1)
@@ -282,7 +287,15 @@ class GaiboDocumentStatusCreate(BaseModel):
     remark: Optional[str] = None
 
 
+class GaiboDocumentEventResponse(BaseModel):
+    event_type: str
+    label: str
+    date_text: Optional[str] = None
+    raw_text: Optional[str] = None
+
+
 class GaiboDocumentStatusUpdate(BaseModel):
+    expected_updated_at: Optional[datetime] = None
     document_type: Optional[str] = Field(default=None, min_length=1, max_length=50)
     status: Optional[str] = Field(default=None, min_length=1, max_length=30)
     submitted_at: Optional[datetime] = None
@@ -294,6 +307,9 @@ class GaiboDocumentStatusResponse(GaiboDocumentStatusCreate):
     id: int
     requirement_id: Optional[int] = None
     package_id: Optional[int] = None
+    events: list[GaiboDocumentEventResponse] = Field(default_factory=list)
+    latest_event: Optional[GaiboDocumentEventResponse] = None
+    updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -309,6 +325,7 @@ class GaiboDrawingCreate(BaseModel):
 
 
 class GaiboDrawingUpdate(GaiboDrawingCreate):
+    expected_updated_at: Optional[datetime] = None
     version: Optional[str] = Field(default=None, min_length=1, max_length=50)
     file_key: Optional[str] = Field(default=None, min_length=1, max_length=500)
     status: Optional[str] = Field(default=None, min_length=1, max_length=30)
@@ -323,6 +340,7 @@ class GaiboDrawingResponse(GaiboDrawingCreate):
     id: int
     requirement_id: int
     preview_url: Optional[str] = None
+    updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -353,6 +371,7 @@ class GaiboProcessRouteCreate(BaseModel):
 
 
 class GaiboProcessRouteUpdate(BaseModel):
+    expected_updated_at: Optional[datetime] = None
     version: Optional[str] = Field(default=None, min_length=1, max_length=50)
     status: Optional[str] = Field(default=None, min_length=1, max_length=30)
     is_current: Optional[bool] = None
@@ -372,6 +391,7 @@ class GaiboProcessRouteResponse(BaseModel):
     effective_to: Optional[datetime] = None
     remark: Optional[str] = None
     steps: list[GaiboProcessStepResponse] = Field(default_factory=list)
+    updated_at: Optional[datetime] = None
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -431,6 +451,9 @@ class GaiboSearchItem(BaseModel):
     drawing_status: Optional[str] = None
     sample_status: Optional[str] = None
     ppap_status: Optional[str] = None
+    drawing_latest_event: Optional[GaiboDocumentEventResponse] = None
+    sample_latest_event: Optional[GaiboDocumentEventResponse] = None
+    ppap_latest_event: Optional[GaiboDocumentEventResponse] = None
     component_items: list[GaiboSearchComponent] = Field(default_factory=list)
     updated_at: datetime
 

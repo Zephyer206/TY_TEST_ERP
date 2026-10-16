@@ -28,8 +28,8 @@ class MaterialDict(Base):
     standard: Mapped[Optional[str]] = mapped_column(String(100), nullable=True, comment="执行标准（GB/T、JIS等）")
 
     # 价格相关（可选）
-    default_price: Mapped[Optional[float]] = mapped_column(DECIMAL(12, 4), nullable=True, comment="默认单价（元/吨）")
-    scrap_price: Mapped[Optional[float]] = mapped_column(DECIMAL(12, 4), nullable=True, comment="废料单价（元/吨）")
+    default_price: Mapped[Optional[float]] = mapped_column(DECIMAL(12, 4), nullable=True, comment="原料单价（元/kg）")
+    scrap_price: Mapped[Optional[float]] = mapped_column(DECIMAL(12, 4), nullable=True, comment="废料单价（元/kg）")
 
     # 元数据
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, comment="是否启用")

@@ -66,6 +66,10 @@ class InventoryDetailResponse(InventoryResponse):
     """Schema for inventory detail with part info."""
 
     part_name: Optional[str] = None
+    internal_part_no: Optional[str] = None
+    customer_part_no: Optional[str] = None
+    customer_part_name: Optional[str] = None
+    part_status: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

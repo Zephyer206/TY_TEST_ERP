@@ -280,11 +280,11 @@ onMounted(() => {
           margin-bottom: 4px;
 
           &.primary {
-            color: #409eff;
+            color: var(--zephyr-primary);
           }
 
           &.success {
-            color: #67c23a;
+            color: var(--el-color-success);
           }
 
           &.info {

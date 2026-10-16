@@ -5,7 +5,7 @@ sys.stdout.reconfigure(encoding='utf-8')
 import psycopg2
 
 BASE = r'C:\Users\Administrator\Desktop\Cloud-Stamping\static\uploads\drawings'
-DB_CONFIG = dict(dbname='stamping_system', user='postgres', password='thehaoshi5DE', host='localhost', port='5432')
+DB_CONFIG = dict(dbname='stamping_system', user='postgres', password='__import__("os").environ.get("ZEPHYR_DB_PASSWORD", "")', host='localhost', port='5432')
 
 def safe(s):
     import re

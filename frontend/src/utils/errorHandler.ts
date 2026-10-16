@@ -5,6 +5,7 @@
 
 import { ElMessage, ElMessageBox, ElNotification } from 'element-plus'
 import router from '@/router'
+import { AUTH_DISABLED } from '@/stores/user'
 
 // 错误类型
 export enum ApiErrorType {
@@ -101,6 +102,13 @@ export function handleApiError(error: any, customMessage?: string): void {
 
   switch (type) {
     case ApiErrorType.UNAUTHORIZED:
+      if (AUTH_DISABLED) {
+        ElMessage.warning({
+          message: '当前为临时管理员模式，后端登录校验暂未启用',
+          duration: 3000,
+        })
+        break
+      }
       // 401 错误：清除本地存储并跳转登录
       localStorage.removeItem('token')
       localStorage.removeItem('userInfo')
@@ -114,6 +122,13 @@ export function handleApiError(error: any, customMessage?: string): void {
       break
 
     case ApiErrorType.FORBIDDEN:
+      if (AUTH_DISABLED) {
+        ElMessage.info({
+          message: '验收模式已跳过权限校验',
+          duration: 2200,
+        })
+        break
+      }
       // 403 错误：显示权限不足提示
       ElMessage.warning({
         message: message || '您没有权限执行此操作',

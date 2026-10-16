@@ -60,9 +60,8 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Menu, Plus, Search } from '@element-plus/icons-vue'
-import { get, post } from '@/utils/request'
 import { useUserStore } from '@/stores/user'
-import apiClient from '@/utils/request'
+import { customersApi } from '@/api/customers'
 
 const userStore = useUserStore()
 
@@ -100,7 +99,7 @@ const fetchCustomers = async () => {
       limit: page.size,
       ...(filter.search && { search: filter.search }),
     }
-    const data = await get('/customers', params)
+    const data = await customersApi.list(params)
     // Handle both old list format and new paginated format
     if (data && typeof data === 'object' && 'items' in data) {
       customers.value = data.items || []
@@ -147,10 +146,10 @@ const doSave = async () => {
   saving.value = true
   try {
     if (editId.value) {
-      await apiClient.patch(`/customers/${editId.value}`, form)
+      await customersApi.update(editId.value, form)
       ElMessage.success('已更新')
     } else {
-      await post('/customers', form)
+      await customersApi.create(form)
       ElMessage.success('已创建')
     }
     dialogVisible.value = false
@@ -165,7 +164,7 @@ const doSave = async () => {
 const handleDelete = async (row) => {
   await ElMessageBox.confirm(`确认删除客户「${row.name}」？`, '确认', { type: 'warning' })
   try {
-    await apiClient.delete(`/customers/${row.id}`)
+    await customersApi.remove(row.id)
     ElMessage.success('已删除')
     fetchCustomers()
   } catch (e) {
@@ -183,7 +182,7 @@ onMounted(() => { fetchCustomers() })
 .list-title-block { display: flex; align-items: center; gap: 10px; min-width: 150px; }.list-title-block h1 { margin: 0; color: #4a4850; font-size: 20px; font-weight: 600; }
 .search-control { display: flex; align-items: center; gap: 8px; width: min(480px, 100%); padding: 4px 10px; border: 1px solid #cbc9d1; border-radius: 3px; background: #fff; color: #7a7782; }.search-control :deep(.el-input__wrapper) { padding: 0; box-shadow: none; }
 .filter-controls { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }.view-toggle { color: #625780; }
-.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: #777580; font-size: 12px; }.table-meta span:last-child { color: #96939e; }
+.table-meta { display: flex; justify-content: space-between; margin: 0 0 8px; color: var(--zephyr-muted); font-size: 12px; }.table-meta span:last-child { color: #96939e; }
 .pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
 @media (max-width: 900px) { .list-view-toolbar { grid-template-columns: 1fr; }.filter-controls { justify-content: flex-start; } }
 </style>
