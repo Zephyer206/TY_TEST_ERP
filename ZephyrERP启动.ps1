@@ -3,7 +3,8 @@
 # and starts the backend/frontend services.
 
 param(
-    [switch]$NoWait
+    [switch]$NoWait,
+    [switch]$NoBrowser
 )
 
 $ErrorActionPreference = "Stop"
@@ -197,9 +198,12 @@ try {
 
         $BackendPath = Join-Path $ProjectRoot "backend"
 
-        # Prefer the project runtime so FastAPI/Pydantic versions match the backend.
-        $ProjectPython = Join-Path $BackendPath ".runtime312\Scripts\python.exe"
-        if (Test-Path -LiteralPath $ProjectPython) {
+        # 优先使用已安装项目依赖的虚拟环境，避免误用缺依赖的系统 Python。
+        $ProjectPython = @(
+            (Join-Path $BackendPath ".venv\Scripts\python.exe"),
+            (Join-Path $BackendPath ".runtime312\Scripts\python.exe")
+        ) | Where-Object { Test-Path -LiteralPath $_ } | Select-Object -First 1
+        if ($ProjectPython) {
             $PythonExe = $ProjectPython
         } else {
             # Fallback for a freshly cloned checkout before the local runtime is created.
@@ -387,8 +391,9 @@ Write-Host ""
 if ($BackendStatus -eq "Running" -and $FrontendStatus -eq "Running") {
     Write-Host "=== Startup Complete! Open the frontend URL in your browser ===" -ForegroundColor Green
 
-    # Auto-open browser
-    Start-Process "http://127.0.0.1:$FrontendPort"
+    if (-not $NoBrowser) {
+        Start-Process "http://127.0.0.1:$FrontendPort"
+    }
 } else {
     Write-Host "=== Startup Failed - Check error messages above ===" -ForegroundColor Red
     exit 1
