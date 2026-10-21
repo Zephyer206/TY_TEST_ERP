@@ -11,6 +11,10 @@
       </div>
     </header>
 
+    <el-alert v-if="linkedPlanId" class="linked-plan-notice" type="info" :closable="false" show-icon>
+      <template #title>从工作台打开：生产计划 #{{ linkedPlanId }}</template>
+      <template #default>下方队列仅显示此计划。<router-link to="/production">查看全部计划</router-link></template>
+    </el-alert>
     <section class="entry-panel" aria-labelledby="entry-title">
       <div class="section-heading">
         <div>
@@ -185,13 +189,16 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { CircleClose, Delete, EditPen, Plus, Refresh, RefreshLeft, Search } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { productionApi } from '@/api/production'
 
 type MaterialStatus = 'pending' | 'ready'
 type CalculationMode = 'auto' | 'manual'
+const route = useRoute()
+const linkedPlanId = computed(() => /^\d+$/.test(String(route.query.plan_id)) && Number(route.query.plan_id) > 0 ? Number(route.query.plan_id) : undefined)
 
 interface TWPOption {
   id: number
@@ -308,7 +315,7 @@ const sourceTwpValue = (row: DraftRow): string | null => selectedTwpOption(row)?
 const loadWorkbench = async (): Promise<void> => {
   loading.value = true
   try {
-  const page = await productionApi.workbench<WorkbenchPage>({ limit: 200 })
+  const page = await productionApi.workbench<WorkbenchPage>({ limit: 200, plan_id: linkedPlanId.value })
     plans.value = page.items
     activePlans.value = page.active_items
     refreshDuplicateWarnings()
@@ -510,10 +517,11 @@ const cancelPlan = async (plan: WorkbenchPlan): Promise<void> => {
   }
 }
 
-onMounted(loadWorkbench)
+watch(linkedPlanId, loadWorkbench, { immediate: true })
 </script>
 
 <style scoped>
+.linked-plan-notice { margin-bottom: 14px; }
 .production-container { padding: 16px 0 28px; color: var(--zephyr-ink); font-size: 13px; }
 .page-header, .section-heading, .queue-toolbar, .header-actions, .entry-actions, .queue-controls, .queue-title, .material-status, .queue-twp, .twp-cell, .manual-twp-inputs { display: flex; align-items: center; }
 .page-header { justify-content: space-between; gap: 16px; margin-bottom: 16px; }

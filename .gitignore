@@ -48,3 +48,6 @@ backend/scripts/backups/
 reports/
 screenshots/
 backend/scripts/*_temp.py
+backend/private/
+# Machine-local Node, browser, conversion tools and acceptance artifacts
+runtime/

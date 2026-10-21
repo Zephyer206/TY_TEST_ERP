@@ -95,6 +95,7 @@
         <header class="dossier-header">
           <div><p class="eyebrow">{{ detailTypeLabel }} / {{ companyLabel(detail.workspace_id) }} · {{ detail.workspace_name || selectedWorkspaceName }}</p><h2>{{ detailTitle }}</h2></div>
           <div class="dossier-actions">
+            <el-button v-if="!editing" @click="router.push({ path: '/ppap', query: { company: 'gaibo', [detail.type === 'installation_package' ? 'package_id' : 'requirement_id']: detail.id } })">查看PPAP</el-button>
             <el-button v-if="!editing" :icon="Edit" @click="startEditing">编辑档案</el-button>
             <template v-else><el-button :loading="saving" type="primary" :icon="Check" @click="saveDetail">保存核心资料</el-button><el-button :disabled="saving" :icon="Close" @click="cancelEditing">取消</el-button></template>
             <el-button text :icon="Close" aria-label="关闭详情" title="关闭详情" @click="requestDrawerClose(() => { drawerOpen = false })" />

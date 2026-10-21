@@ -1,7 +1,9 @@
 import { callApi, type ApiParams } from './client'
 
+interface ProductionWorkbenchParams extends ApiParams { plan_id?: number; limit?: number }
+
 export const productionApi = {
-  workbench: <T = unknown>(params: ApiParams = {}) => callApi<T>('production.workbench', { params }),
+  workbench: <T = unknown>(params: ProductionWorkbenchParams = {}) => callApi<T>('production.workbench', { params }),
   planningPartOptions: <T = unknown>(params: ApiParams = {}) => callApi<T>('production.planningPartOptions', { params }),
   plansCount: <T = unknown>(params: ApiParams = {}) => callApi<T>('production.plansCount', { params }),
   createBatch: <T = unknown>(payload: unknown) => callApi<T>('production.plansBatch', { data: payload }),

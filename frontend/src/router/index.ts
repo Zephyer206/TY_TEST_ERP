@@ -19,16 +19,34 @@ const routes: RouteRecordRaw[] = [
     redirect: '/parts',
     children: [
       {
+        path: 'workbench',
+        name: 'Workbench',
+        component: () => import('@/views/workbench/index.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
         path: 'parts',
         name: 'Parts',
         component: () => import('@/views/parts/index.vue'),
         meta: { roleLevel: 2 }, // LV2: technical staff manage parts
       },
       {
+        path: 'ppap/:archiveId?',
+        name: 'PpapArchive',
+        component: () => import('@/views/ppap/index.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
         path: 'tooling',
         name: 'Tooling',
         component: () => import('@/views/tooling/index.vue'),
         meta: { roleLevel: 2 }, // LV2: technical staff manage tooling
+      },
+      {
+        path: 'tooling/rework',
+        name: 'ReworkTooling',
+        component: () => import('@/views/tooling/rework.vue'),
+        meta: { roleLevel: 1 },
       },
       {
         path: 'tooling/detail/:id',
@@ -79,6 +97,18 @@ const routes: RouteRecordRaw[] = [
         meta: { roleLevel: 2 },
       },
       {
+        path: 'customers',
+        name: 'Customers',
+        component: () => import('@/views/customers/index.vue'),
+        meta: { roleLevel: 2 },
+      },
+      {
+        path: 'price-management',
+        name: 'CustomerPrices',
+        component: () => import('@/views/price-management/CustomerPricesQuery.vue'),
+        meta: { roleLevel: 2 },
+      },
+      {
         path: 'admin/context-switch',
         name: 'AdminContextSwitch',
         component: () => import('@/views/admin/context-switch.vue'),
@@ -120,6 +150,12 @@ const routes: RouteRecordRaw[] = [
         path: 'shipping-orders/:id',
         name: 'ShippingOrderDetail',
         component: () => import('@/views/shipping-orders/detail.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
+        path: 'nonconforming',
+        name: 'NonconformingProducts',
+        component: () => import('@/views/nonconforming/index.vue'),
         meta: { roleLevel: 1 },
       },
       {

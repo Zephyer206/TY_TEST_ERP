@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>各部门工作台 · 设计评审 | Zephyr ERP</title>
+<style>
+:root{--primary:#176b5a;--soft:#edf5f2;--ink:#24333d;--muted:#596974;--line:#dce3e6;--bg:#f5f7f8;--red:#aa332d;--amber:#8a5815;--radius:7px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.6 "Microsoft YaHei","PingFang SC",system-ui,sans-serif}button,input,select{font:inherit}button,a,select{touch-action:manipulation}button{cursor:pointer}button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #207e6a;outline-offset:3px}button:disabled{cursor:not-allowed;opacity:.55}a{color:var(--primary)}.skip{position:absolute;top:-80px;left:16px;background:white;padding:10px;z-index:10}.skip:focus{top:10px}.shell{display:grid;grid-template-columns:216px minmax(0,1fr);min-height:100vh}.sidebar{padding:24px 15px;background:#fff;border-right:1px solid var(--line)}.brand{display:flex;align-items:center;gap:10px;padding:0 10px 24px;font-weight:700;letter-spacing:.04em}.brand-icon{display:grid;place-items:center;width:32px;height:32px;background:var(--primary);color:white;border-radius:7px;font-size:20px}.brand small{display:block;font-size:10px;font-weight:500;letter-spacing:.12em;color:var(--muted)}.nav-caption{padding:9px 11px 7px;font-size:11px;color:var(--muted)}.dept-nav{display:grid;gap:4px}.dept-nav button{display:flex;align-items:center;gap:11px;min-height:44px;border:0;border-radius:5px;background:transparent;color:var(--muted);text-align:left;padding:8px 12px}.dept-nav button.active{background:var(--soft);color:var(--primary);font-weight:700}.dept-nav button:hover{background:#f1f5f4}.nav-number{font:11px/1.2 Consolas,monospace;color:#75828a}.dept-nav button.active .nav-number{color:var(--primary)}.sidebar-note{margin:22px 10px 0;border-top:1px solid var(--line);padding-top:16px;font-size:11px;color:var(--muted)}.main{min-width:0}.topbar{min-height:68px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:15px 30px;background:#fff;border-bottom:1px solid var(--line)}.topbar strong{font-size:14px}.topbar small{margin-left:13px;color:var(--muted);font-size:12px}.mode-nav{display:flex;gap:5px}.mode-nav button{min-height:38px;padding:5px 12px;border:1px solid transparent;border-radius:5px;background:white;color:var(--muted);font-size:12px}.mode-nav button.active{border-color:var(--line);background:var(--bg);color:var(--ink);font-weight:600}.content{max-width:1600px;padding:24px 30px 40px;margin:auto}.notice{padding:9px 13px;margin-bottom:24px;border:1px solid #e8d9b6;background:#fffbef;color:#725326;border-radius:5px;font-size:12px}.notice strong{font-weight:650;margin-right:7px}.page-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;margin-bottom:17px}.eyebrow{margin:0 0 5px;font-size:11px;color:var(--primary);font-weight:700;letter-spacing:.1em}h1{font-size:24px;line-height:1.4;margin:0;font-weight:650}h2{font-size:15px;margin:0;font-weight:650}h3{font-size:13px;margin:0 0 10px}.subtitle{max-width:800px;margin:6px 0 0;color:var(--muted);font-size:12px}.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 8px;font-size:11px;border:1px solid var(--line);background:#fff;color:var(--muted);border-radius:4px;white-space:nowrap}.badge.partial{color:var(--primary);background:var(--soft);border-color:#c6ddd4}.role-field{min-width:166px}.role-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:4px}select,input{min-height:38px;border:1px solid #ced8dd;border-radius:5px;background:white;color:var(--ink);padding:7px 10px;max-width:100%}.role-field select{width:100%}.responsibility-strip{border-left:3px solid var(--primary);padding:10px 14px;margin-bottom:20px;background:white;display:flex;gap:20px;align-items:center;justify-content:space-between}.responsibility-strip p{margin:0;font-size:12px}.responsibility-strip strong{font-weight:600}.responsibility-strip span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.text-button{border:0;background:transparent;color:var(--primary);padding:4px;min-height:32px;font-size:12px;white-space:nowrap}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:22px}.metric{min-width:0;min-height:110px;padding:14px 17px;text-align:left;border:1px solid var(--line);border-radius:var(--radius);background:#fff;color:var(--ink);transition:border-color 150ms,background 150ms}.metric.selected{border-color:var(--primary);box-shadow:0 0 0 1px var(--primary)}.metric-label{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)}.metric-label i{width:6px;height:6px;border-radius:50%;background:#82978f}.metric b{display:block;margin:4px 0 0;font:600 29px/1.3 Consolas,monospace;font-variant-numeric:tabular-nums}.metric small{font-size:10px;color:var(--muted)}.metric.danger b{color:var(--red)}.metric.warn b{color:var(--amber)}.board{display:grid;grid-template-columns:minmax(0,1fr) 270px;gap:18px;align-items:start}.panel{border:1px solid var(--line);border-radius:var(--radius);background:#fff;overflow:hidden;min-width:0}.panel-header{padding:16px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}.panel-header p{margin:3px 0 0;color:var(--muted);font-size:11px}.counter{font-size:11px;color:var(--muted);white-space:nowrap}.scopes{display:flex;gap:20px;padding:0 18px;border-bottom:1px solid var(--line)}.scopes button{border:0;border-bottom:2px solid transparent;background:transparent;padding:12px 0;font-size:12px;color:var(--muted);min-height:44px}.scopes button.active{border-bottom-color:var(--primary);color:var(--primary);font-weight:700}.filter-row{display:flex;gap:8px;padding:13px 18px}.filter-row input{flex:1;min-width:0;font-size:12px}.filter-row select{font-size:12px;width:126px}.scope-note{padding:0 18px 12px;color:var(--muted);font-size:11px;margin:0}.task-table{border-collapse:collapse;width:100%;table-layout:fixed;font-size:12px}.task-table th{padding:10px 14px;background:#f7f9f9;font-weight:500;color:var(--muted);text-align:left;font-size:11px}.task-table th:first-child{width:35%}.task-table th:nth-child(2){width:26%}.task-table th:nth-child(3){width:23%}.task-table th:last-child{width:16%;text-align:right}.task-table td{padding:15px 14px;border-top:1px solid #eef1f2;vertical-align:top;overflow-wrap:anywhere}.task-table td:last-child{text-align:right}.task-title{display:block;font-weight:650;font-size:12px;line-height:1.6}.task-no{display:block;font:10px/1.6 Consolas,monospace;color:var(--muted);margin-top:5px}.task-owner{display:block;color:var(--muted);font-size:10px;margin-top:3px}.status{display:inline-flex;align-items:center;gap:5px;color:var(--primary);font-size:10px}.status:before{content:"";display:block;width:5px;height:5px;background:currentColor;border-radius:50%}.status.blocked{color:var(--amber)}.status.overdue{color:var(--red)}.due{display:block;font-variant-numeric:tabular-nums;margin-top:3px;font-size:10px;color:var(--muted)}.task-link{color:var(--primary);background:transparent;border:0;font-size:11px;padding:2px 0;min-height:32px}.task-link:hover{text-decoration:underline}.task-footer{padding:11px 18px;border-top:1px solid var(--line);font-size:10px;color:var(--muted)}.empty{padding:50px 20px;text-align:center}.empty strong{display:block;font-size:14px}.empty p{font-size:12px;color:var(--muted)}.aside-stack{display:grid;gap:16px}.aside-body{padding:17px}.responsibilities{list-style:none;padding:0;margin:0;display:grid;gap:9px;font-size:12px}.responsibilities li{position:relative;padding-left:13px}.responsibilities li:before{position:absolute;left:0;top:8px;content:"";width:4px;height:4px;background:var(--primary);border-radius:50%}.boundary{margin:16px 0 0;padding-top:13px;border-top:1px solid var(--line);font-size:11px;color:var(--muted)}.boundary strong{display:block;color:var(--ink);margin-bottom:4px;font-size:12px}.flow{padding:17px}.flow-step{position:relative;padding:0 0 22px 22px;color:var(--muted);font-size:11px}.flow-step:before{content:"";position:absolute;left:4px;top:6px;width:6px;height:6px;border:1px solid #a9bbb4;background:white;border-radius:50%}.flow-step:after{content:"";position:absolute;left:7px;top:16px;width:1px;height:calc(100% - 12px);background:var(--line)}.flow-step:last-child{padding-bottom:0}.flow-step:last-child:after{display:none}.flow-step strong{display:block;color:var(--ink);font-size:12px}.flow-step.current:before{background:var(--primary);border-color:var(--primary)}.flow-step.current strong{color:var(--primary)}.flow small{font-size:10px;display:block;color:var(--muted);margin-top:3px}.bottom-note{font-size:11px;color:var(--muted);margin:17px 0 0}.mobile-dept{display:none}.matrix-intro{margin-bottom:20px}.matrix-intro p{max-width:850px;color:var(--muted);font-size:12px}.matrix-table{width:100%;border-collapse:collapse;text-align:left;font-size:12px}.matrix-table th{background:#f7f9f9;font-size:11px;color:var(--muted);font-weight:500}.matrix-table th,.matrix-table td{padding:13px 17px;border-bottom:1px solid var(--line);vertical-align:top}.matrix-table th:first-child{width:15%}.matrix-table th:nth-child(2){width:32%}.matrix-table th:nth-child(3){width:31%}.matrix-table th:last-child{width:22%}.matrix-table small{display:block;font-size:10px;color:var(--muted);margin-top:3px}.matrix-table button{color:var(--primary);background:none;border:0;font-weight:650;text-align:left;padding:0;min-height:32px;font-size:12px}.matrix-note{padding:16px;font-size:11px;color:var(--muted)}dialog{width:min(640px,calc(100% - 32px));max-height:88vh;border:1px solid var(--line);border-radius:10px;padding:0;box-shadow:0 20px 80px #142f2b35;color:var(--ink)}dialog::backdrop{background:#182f38a6}.dialog-heading{padding:21px 24px 17px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:flex-start;gap:16px}.dialog-heading h2{font-size:19px}.dialog-heading p{font-size:11px;color:var(--muted);margin:5px 0 0}.close{border:0;background:#f2f5f4;color:var(--muted);border-radius:5px;min-width:36px;min-height:36px;font-size:22px;line-height:1}.dialog-body{padding:20px 24px;overflow:auto}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding-bottom:18px;border-bottom:1px solid var(--line);margin-bottom:18px}.detail-grid small{display:block;color:var(--muted);font-size:11px}.detail-grid strong{font-size:12px;font-weight:600}.check-list{padding:0 0 0 18px;font-size:12px;color:var(--muted);display:grid;gap:6px}.handoff-box{background:var(--soft);border:1px solid #d9e8e1;border-radius:5px;padding:12px 14px;margin-top:18px;font-size:12px}.handoff-box small{display:block;color:var(--muted);font-size:11px;margin-bottom:3px}.dialog-footer{padding:15px 24px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px}.dialog-footer span{font-size:10px;color:var(--muted)}.primary-button{padding:9px 14px;min-height:38px;border:1px solid var(--primary);border-radius:5px;background:var(--primary);color:white;font-size:12px;white-space:nowrap}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+dialog[open]{display:flex;flex-direction:column;overflow:hidden}.dialog-heading,.dialog-footer{flex-shrink:0}.dialog-body{min-height:0;overflow:auto}
+@media(min-width:851px){.topbar{min-height:56px;padding:11px 24px}.content{padding:18px 24px 32px}.notice{padding:7px 11px;margin-bottom:16px}.page-heading{margin-bottom:12px}.eyebrow{font-size:10px;margin-bottom:3px}h1{font-size:22px}.subtitle{margin-top:4px}.responsibility-strip{padding:8px 12px;margin-bottom:14px}.metrics{margin-bottom:16px}.metric{min-height:88px;padding:10px 14px}.metric b{font-size:25px}.panel-header{padding:12px 15px}.scopes{padding-left:15px;padding-right:15px}.scopes button{padding:9px 0;min-height:40px}.filter-row{padding:10px 15px}.scope-note{padding:0 15px 9px;font-size:10px}.task-table td{padding-top:12px;padding-bottom:12px}}
+@media(min-width:1500px){.content{padding:30px 40px}.topbar{padding-left:40px;padding-right:40px}.board{grid-template-columns:minmax(0,1fr) 310px}.task-table td{padding-top:19px;padding-bottom:19px}}
+@media(max-width:1150px){.board{grid-template-columns:1fr}.aside-stack{grid-template-columns:1fr 1fr}.topbar small{display:none}.task-table th:first-child{width:36%}.task-table th:nth-child(2){width:25%}.task-table th:nth-child(3){width:23%}.task-table th:last-child{width:16%}}
+@media(max-width:850px){.shell{grid-template-columns:1fr}.sidebar{display:none}.mobile-dept{display:block;width:100%;margin-bottom:18px}.topbar{padding:12px 20px}.content{padding:20px}.page-heading{gap:16px}h1{font-size:23px}.notice{margin-bottom:17px}.matrix-table th:first-child{width:18%}.matrix-table th:last-child{width:20%}}
+@media(max-width:550px){body{font-size:14px}.topbar{padding:11px 16px;align-items:flex-start;flex-direction:column;gap:8px}.mode-nav{width:100%}.mode-nav button{flex:1;min-height:42px}.content{padding:16px}.notice{font-size:11px}.page-heading{flex-direction:column;gap:10px}.role-field{width:100%}.role-field select,.filter-row input,.filter-row select,.mobile-dept{min-height:44px}.responsibility-strip{align-items:flex-start;gap:10px}.metrics{grid-template-columns:1fr 1fr;gap:9px;margin-bottom:16px}.metric{min-height:105px;padding:13px}.metric b{font-size:28px}.aside-stack{grid-template-columns:1fr}.panel-header{padding:15px}.scopes{padding:0 15px;gap:21px}.filter-row{padding:12px 15px;flex-direction:column}.filter-row select{width:100%}.scope-note{padding-left:15px;padding-right:15px}.task-table,.task-table tbody{display:block;width:100%}.task-table thead{display:none}.task-table tr{display:grid;grid-template-columns:1fr 1fr;padding:13px 15px;border-top:1px solid var(--line);gap:8px 12px}.task-table td{border:0;padding:0}.task-table td:first-child{grid-column:1 / -1}.task-table td:last-child{text-align:left;grid-column:1 / -1}.task-link{min-height:40px;font-size:12px}.task-no{margin-top:2px}.task-owner,.due,.status{font-size:11px}.matrix-table,.matrix-table tbody{display:block}.matrix-table thead{display:none}.matrix-table tr{display:block;padding:15px;border-bottom:1px solid var(--line)}.matrix-table td{display:block;padding:4px 0;border:0}.matrix-table td:first-child{padding-bottom:6px}.matrix-table td:not(:first-child):before{content:attr(data-label);display:block;color:var(--muted);font-size:10px}.detail-grid{grid-template-columns:1fr 1fr}.dialog-heading,.dialog-body,.dialog-footer{padding-left:18px;padding-right:18px}.dialog-footer{align-items:flex-start;flex-direction:column;gap:10px}.dialog-footer button{width:100%;min-height:44px}.close{min-height:44px;min-width:44px}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main-content">跳到工作台内容</a>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand"><span class="brand-icon" aria-hidden="true">Z</span><span>ZEPHYR ERP<small>DEPARTMENT WORKSPACE</small></span></div>
+  <div class="nav-caption">部门与管理视角 · 12</div>
+  <nav id="department-nav" class="dept-nav" aria-label="设计评审部门切换"></nav>
+  <p class="sidebar-note">按现有十个业务部门设计。<br>资材采购、标签和发货分别配置岗位队列，允许按实际组织兼岗。</p>
+</aside>
+<div class="main">
+<header class="topbar">
+  <div><strong>部门工作台设计</strong><small>职责清晰 · 任务可办 · 交接有据</small></div>
+  <nav class="mode-nav" aria-label="设计视图"><button id="workspace-mode" type="button" class="active" aria-pressed="true">工作台原型</button><button id="matrix-mode" type="button" aria-pressed="false">职责全景</button></nav>
+</header>
+<main class="content" id="main-content">
+  <div class="notice" role="note"><strong>设计评审 · 示例数据</strong>部门切换只用于评审。本页不切换真实身份、不读写业务单据；示例日期 2026-10-18。</div>
+  <label class="sr-only" for="mobile-department">选择评审部门</label><select id="mobile-department" class="mobile-dept"></select>
+  <div id="workspace-view">
+    <header class="page-heading">
+      <div><p class="eyebrow" id="department-code"></p><h1 id="department-title"></h1><p class="subtitle" id="department-subtitle"></p></div>
+      <div class="role-field"><label for="role-select">岗位视角（设计示例）</label><select id="role-select"></select></div>
+    </header>
+    <section class="responsibility-strip" aria-label="当前职责与接收范围"><div><p id="responsibility-summary"></p><span id="coverage-note"></span></div><button type="button" id="show-responsibility" class="text-button">查看职责全景 ↗</button></section>
+    <section class="metrics" aria-label="所选队列示例统计">
+      <button class="metric" data-filter="ready" type="button" aria-pressed="false"><span class="metric-label">待处理<i aria-hidden="true"></i></span><b id="pending-count">0</b><small>当前可办理事项</small></button>
+      <button class="metric" data-filter="today" type="button" aria-pressed="false"><span class="metric-label">今日到期<i aria-hidden="true"></i></span><b id="today-count">0</b><small>待处理中的今日事项</small></button>
+      <button class="metric danger" data-filter="overdue" type="button" aria-pressed="false"><span class="metric-label">已逾期<i aria-hidden="true"></i></span><b id="overdue-count">0</b><small>待处理中的逾期事项</small></button>
+      <button class="metric warn" data-filter="blocked" type="button" aria-pressed="false"><span class="metric-label">等待前序<i aria-hidden="true"></i></span><b id="blocked-count">0</b><small>显示原因与上游责任岗</small></button>
+    </section>
+    <div class="board">
+      <section class="panel" aria-labelledby="queue-title">
+        <div class="panel-header"><div><h2 id="queue-title">当前岗位工作事项</h2><p>逾期优先，办理前查看完成条件与下一接收岗位。</p></div><span class="counter" id="row-count"></span></div>
+        <nav class="scopes" aria-label="队列范围"><button type="button" data-scope="mine" aria-pressed="false">我的待办</button><button type="button" class="active" data-scope="team" aria-pressed="true">岗位待办</button><button type="button" data-scope="created" aria-pressed="false">我发起的</button></nav>
+        <div class="filter-row"><label class="sr-only" for="search-input">搜索事项或单据</label><input type="search" id="search-input" placeholder="搜索事项、单据或岗位" maxlength="80"><label class="sr-only" for="status-filter">事项状态</label><select id="status-filter"><option value="all">全部状态</option><option value="ready">可办理事项</option><option value="today">今日到期</option><option value="overdue">已逾期</option><option value="blocked">等待前序</option></select></div>
+        <p class="scope-note" id="scope-description"></p>
+        <table class="task-table" aria-label="示例工作事项"><thead><tr><th scope="col">事项 / 业务单据</th><th scope="col">处理岗位 / 受理人</th><th scope="col">状态 / 完成期限</th><th scope="col">操作</th></tr></thead><tbody id="task-rows"></tbody></table>
+        <div id="empty-state" class="empty" hidden><strong>没有符合条件的示例事项</strong><p>可以调整岗位、范围、关键词或状态筛选。</p><button id="reset-filters" type="button" class="text-button">恢复全部岗位待办</button></div>
+        <footer class="task-footer">每项只有一个当前主责。共享队列与本人受理分开显示，原单完成后再更新待办。</footer>
+      </section>
+      <aside class="aside-stack">
+        <section class="panel"><div class="panel-header"><h2>部门职责边界</h2></div><div class="aside-body"><ul id="own-responsibilities" class="responsibilities"></ul><p class="boundary" id="boundary-text"></p></div></section>
+        <section class="panel"><div class="panel-header"><h2>上下游交接</h2></div><div class="flow" id="department-flow"></div></section>
+      </aside>
+    </div>
+    <p class="bottom-note">四类统计按当前队列计算，今日与逾期属于待处理子集。示例数字不代表真实业务量；具体期限由业务规则配置。</p>
+  </div>
+  <section id="matrix-view" hidden aria-labelledby="matrix-title">
+    <div class="matrix-intro"><p class="eyebrow">RESPONSIBILITY MAP</p><h1 id="matrix-title">每个部门负责什么，怎样交出去</h1><p>沿用现有部门结构。原料仓库内区分资材与收发，全检部内区分全检包装、标签、成品收发；各岗位可以由同一人兼任，任务与操作记录分别归属。点击部门可查看工作台。</p></div>
+    <div class="panel"><table class="matrix-table" aria-label="部门职责与交付矩阵"><thead><tr><th scope="col">部门 / 视角</th><th scope="col">主要责任</th><th scope="col">完成与交付标准</th><th scope="col">当前系统覆盖</th></tr></thead><tbody id="matrix-rows"></tbody></table><div class="matrix-note">正式部门归属、审批人/额度、人员兼岗与接收名单需要业务确认。本设计不改变现有账号授权。</div></div>
+  </section>
+  <p id="live-announcement" class="sr-only" aria-live="polite"></p>
+</main>
+</div>
+</div>
+<dialog id="task-dialog" aria-labelledby="detail-title">
+  <header class="dialog-heading"><div><p class="eyebrow">任务交接详情 · 设计示例</p><h2 id="detail-title"></h2><p id="detail-document"></p></div><button type="button" class="close" aria-label="关闭任务详情">×</button></header>
+  <div class="dialog-body" id="detail-body"></div>
+  <footer class="dialog-footer"><span>此处说明办理要求；正式业务动作在原单据页面完成。</span><button type="button" class="primary-button" id="detail-done">返回待办</button></footer>
+</dialog>
+<script>
+const TODAY='2026-10-18';
+function item(title,no,role,due,status,next,checks,mine=false,created=false,blocked=''){
+  return {title,no,role,due,status,next,checks,mine,created,blocked};
+}
+const departments=[
+{id:'sales',name:'业务部',code:'CUSTOMER & DELIVERY',subtitle:'把客户需求转成明确的订单，跟进客户确认与交付风险。',roles:['全部岗位','业务人员'],coverage:'部分接入',coverageNote:'现有：发货订单草稿与本人发起跟进；询报价、客户确认和风险待办需补接入。',own:['客户需求、商务报价与订单交期','样件客户确认、变更与取消协同','交付风险跟进与客户反馈'],boundary:'技术结论交开发，质量放行交品管，实物发运交发货岗。',upstream:'客户 / 开发 / 生产',downstream:'生产计划 / 标签与发货',delivery:'需求与交期明确，商务批准及客户确认有记录；下游收到可执行的需求。',tasks:[
+item('提交完整报价方案','RFQ-DEMO-018','业务人员','2026-10-17','ready','老板报价审批',['客户需求及数量完整','开发技术评审已完成','商务条款与审批附件齐全'],true,true),
+item('确认样件客户结论','SMP-DEMO-032','业务人员',TODAY,'ready','开发 / 生产计划',['客户结论及适用版本留档','整改项有责任人与期限','明确量产或继续试制的后续要求'],false,true),
+item('跟进订单交期风险','SO-DEMO-086','业务人员','2026-10-20','blocked','客户交付确认',['核对欠交明细','获取责任部门恢复计划','记录客户确认的交期调整'],false,true,'生产计划岗待反馈可交付日期')
+]},
+{id:'engineering',name:'开发部',code:'ENGINEERING & TOOLING',subtitle:'对工艺、图纸与模具的可执行性负责，让生产拿到有效版本。',roles:['全部岗位','设计工程师','模具工程师'],coverage:'已有部分源单',coverageNote:'现有零件/模具及不良品返工准备可复用；样件、图纸变更与项目页面含演示内容。',own:['技术评审与有效图纸/工艺','模具开发、维修与试模整改','返工方案、变更影响与技术交底'],boundary:'客户结论由业务登记；产品检验与量产质量放行由品管判定。',upstream:'业务需求 / 品管异常',downstream:'生产准备 / 品管验证',delivery:'工艺、图纸、模具及验证记录具备，执行岗位清楚版本和操作条件。',tasks:[
+item('完成新产品技术评审','ENG-DEMO-012','设计工程师','2026-10-17','ready','业务报价',['核对图纸及客户要求','确认T/W/P、工艺与可行性','给出技术风险及所需验证'],true,true),
+item('确认返工模具准备','NC-DEMO-024','模具工程师',TODAY,'ready','生产返工执行',['处置已由品管确认','返工模与产品/步骤关联','方案、模具状态及操作条件完整']),
+item('安排试模整改验证','TOOL-DEMO-008','模具工程师','2026-10-21','blocked','品管样件检验',['整改记录齐全','准备试模资源','提交验证批次及有效图纸'],false,true,'等待设备维修岗恢复指定机台')
+]},
+{id:'materials',name:'原料仓库',code:'MATERIAL READINESS',subtitle:'把物料可用承诺与实物收发分开记录，保证批次和数量可追溯。',roles:['全部岗位','资材采购岗','原料收发岗'],coverage:'部分接入',coverageNote:'已接入生产计划资材确认；采购跟催、批次收发与分条队列需补接入。',own:['核料、缺料、采购与外协跟催','收料送检、批次库位与分条','领退料、盘点与数量差异'],boundary:'仓库记录实物；品管给出IQC结论。在途物料不能直接记为可用。',upstream:'生产需求 / 供应到料',downstream:'品管IQC / 生产领料',delivery:'合格批次、可用数量和预计可用日期明确；收发记录可追溯。',tasks:[
+item('确认计划物料可用性','PLAN-DEMO-036','资材采购岗','2026-10-17','ready','生产排产',['核对需求与可用批次','区分可用、待检和在途数量','缺料时记录补料计划和日期'],true,true),
+item('登记到料并提交检验','MAT-DEMO-027','原料收发岗',TODAY,'ready','品管IQC',['登记供应批次与实际数量','记录库位及待检隔离','检验资料随批次移交']),
+item('发出指定生产批次物料','ISSUE-DEMO-011','原料收发岗','2026-10-20','blocked','生产操作岗',['领料需求获确认','批次检验合格','核对实发数量及领用机台'],false,true,'品管IQC尚未给出合格结论')
+]},
+{id:'production',name:'生产部',code:'PRODUCTION EXECUTION',subtitle:'从可执行计划到真实报工，及时处理机台、数量和工序异常。',roles:['全部岗位','生产计划岗','生产操作岗'],coverage:'部分接入',coverageNote:'已接入资材后的排产队列；机台执行和工艺流转入口当前未开放。',own:['计划、排产、机台与班组调度','按有效工艺开工和报工','在制异常、返工与工序交接'],boundary:'物料、模具、设备和首件门槛不足时显示阻塞；质量异常交品管判定。',upstream:'业务 / 开发 / 资材 / 品管',downstream:'下一实际工序 / 品管',delivery:'合格、不良和返工数量及批次记录完整，按实际路线移交。',tasks:[
+item('安排已齐套计划上机','PLAN-DEMO-038','生产计划岗','2026-10-17','ready','生产操作岗',['核对材料、模具及有效工艺','机台与工时安排合理','记录班组、顺序与完成期限'],true,true),
+item('补齐本班报工与交接','JOB-DEMO-062','生产操作岗',TODAY,'ready','喷涂 / 全检包装',['合格、不良、返工数量分开','批次与实际工序关联','仅移交已完成并符合条件的数量'],true),
+item('启动批次量产','JOB-DEMO-063','生产操作岗',TODAY,'blocked','下一实际工序',['首件按现行业务规则放行','材料、机台、模具与版本一致','开工操作人与时间留痕'],false,true,'品管首件岗待检验放行')
+]},
+{id:'quality',name:'品管部',code:'QUALITY & RELEASE',subtitle:'用检验记录和结论控制质量，让异常处置和放行有依据。',roles:['全部岗位','质量检验岗','质量验收岗'],coverage:'已有部分源单',coverageNote:'后端有首件、巡检、OQC与不良品流程；完整品管工作台尚未汇总。',own:['IQC、首件、巡检与OQC','不良品确认、处置跟踪与验收','质量放行与不合格数量追溯'],boundary:'数据质量控制台不等于产品检验；全检执行记录不自动代替OQC结论。',upstream:'原料 / 生产 / 全检 / 客户反馈',downstream:'原责任工序 / 合格品流转',delivery:'检验范围、数量、方法与结论齐全；合格放行，不合格受控处置。',tasks:[
+item('完成影响开工的首件检验','FAI-DEMO-014','质量检验岗','2026-10-17','ready','生产量产',['对应正确工单、版本与批次','检验项目和结果完整','记录判定人与放行范围'],true,true),
+item('验收返工完成数量','NC-DEMO-024','质量验收岗',TODAY,'ready','合格库存 / 后续工序',['按步骤核对实际送验数量','记录通过、不通过及剩余数量','放行核对满足后才关闭对应范围']),
+item('执行出货质量检验','OQC-DEMO-029','质量检验岗','2026-10-20','blocked','成品收发与发货',['箱号、数量和批次一致','检验结论与证据完整','不合格隔离并指明处置'],false,true,'全检包装岗待提交完整箱包明细')
+]},
+{id:'inspection',name:'全检部',code:'INSPECTION, PACK & DISPATCH',subtitle:'把全检包装、标签和成品发货分成岗位队列，分别记录完成证据。',roles:['全部岗位','全检包装岗','标签岗','成品发货岗'],coverage:'部分接入',coverageNote:'标签及发货待办已接入共用队列；全检包装入口禁用，岗位能力需细分。',own:['按标准全检、挑选、包装装箱','标签版本及订单匹配确认','成品收发、实际发运及物流记录'],boundary:'标签确认不等于发货；检验判定遵从品管门槛。各岗位可以兼任，但动作分别留痕。',upstream:'生产 / 喷涂 / 品管 / 业务',downstream:'品管OQC / 业务 / 会计',delivery:'全检箱包、质量放行、标签、实发数量、库存事件与物流记录相互一致。',tasks:[
+item('补齐全检与箱包记录','PACK-DEMO-021','全检包装岗','2026-10-17','ready','品管OQC',['记录全检合格与不良数量','箱号、包装规范及数量一致','准备移交记录'],true,true),
+item('确认客户标签版本','SO-DEMO-086','标签岗',TODAY,'ready','成品发货岗',['件号、数量、箱号与订单一致','使用客户有效标签版本','记录确认人及版本证据']),
+item('备货并核对实发明细','SHIP-DEMO-019','成品发货岗',TODAY,'blocked','业务交付跟进 / 会计',['核对可用库存及占用','质量及标签门槛满足','实际出库后记录数量和物流'],false,true,'品管OQC待放行，当前不能实际发运')
+]},
+{id:'coating',name:'喷涂部',code:'SURFACE PROCESSING',subtitle:'按工艺接收和完成后处理批次，区分合格、不良与返工数量。',roles:['全部岗位','喷涂作业岗','后处理主管'],coverage:'入口待恢复',coverageNote:'有喷涂作业源文件和后端接口；当前后处理菜单禁用，待修复及验收。',own:['接收需要后处理的批次','执行喷涂、回火及配方工艺','处理数量、返工与工序交接'],boundary:'只接实际路线需要的工序；发现异常交品管判定，不把全部产品强制送喷涂。',upstream:'生产 / 品管返工要求',downstream:'品管 / 全检包装',delivery:'批次、工艺条件、操作时间与数量完整，合格范围移交下一工序。',tasks:[
+item('补齐已完批次交接','COAT-DEMO-012','喷涂作业岗','2026-10-17','ready','全检包装岗',['关联有效工艺及生产批次','数量与参数记录完整','异常与返工数量单独交代'],true,true),
+item('核对本班后处理安排','COAT-DEMO-013','后处理主管',TODAY,'ready','喷涂作业岗',['实际工艺路线包含该工序','核对设备、配方与交期','给出可执行的批次顺序']),
+item('接收返工批次','NC-DEMO-028','喷涂作业岗','2026-10-20','blocked','品管返工验收',['处置要求明确','批次、数量与步骤匹配','按指定方案执行'],false,true,'开发待确认适用返工工艺')
+]},
+{id:'equipment',name:'设备部',code:'EQUIPMENT & MAINTENANCE',subtitle:'及时恢复设备可用性，把故障影响传递给关联生产计划。',roles:['全部岗位','设备维修岗','设备主管'],coverage:'待建设',coverageNote:'设备台账接口及占位页面存在；完整维修保养工单和部门入口需建设。',own:['故障报修受理与维修','预防维护、保养与到期任务','恢复状态与生产复机交接'],boundary:'维修完成只恢复设备状态；生产接收后安排剩余任务，不自动完成生产计划。',upstream:'生产报修 / 维护计划',downstream:'生产主管 / 机台操作岗',delivery:'故障、维修措施、检查结果和恢复时间完整，生产收到可用状态。',tasks:[
+item('受理冲床异常报修','EQ-DEMO-015','设备维修岗','2026-10-17','ready','生产复机确认',['故障现象与机台明确','维修措施和检查结果留档','恢复状态及时间完整'],true,true),
+item('安排到期预防维护','PM-DEMO-006','设备主管',TODAY,'ready','设备维修岗',['与生产确认停机窗口','维护项目和责任人明确','记录检查结果及遗留问题']),
+item('提交复机交接','EQ-DEMO-016','设备维修岗',TODAY,'blocked','生产操作岗',['维修与试运行记录完整','安全/设备检查按规则完成','生产确认接收恢复状态'],false,true,'等待所需维修备件到位')
+]},
+{id:'finance',name:'会计部',code:'FINANCE & RECONCILIATION',subtitle:'围绕真实业务单据核对账款、成本和凭证，及时关闭差异。',roles:['全部岗位','财务核对岗','成本复核岗'],coverage:'待建设',coverageNote:'未发现完整财务工作台；研发合规当前为演示台账，需实际数据源。',own:['应收应付与对账差异','成本核算与业务凭证核对','研发费用及证据完整性复核'],boundary:'财务记录不替代实物出入库；人事薪酬等敏感范围按实际授权配置。',upstream:'业务 / 仓储 / 采购 / 研发',downstream:'原责任部门 / 财务归档',delivery:'账款与源单一致，差异有处理结果，凭证与核算记录可追溯。',tasks:[
+item('核对客户发货对账差异','REC-DEMO-018','财务核对岗','2026-10-17','ready','业务确认 / 财务归档',['核对实际发货明细','定位差异单据及原因','双方处理结论留档'],true,true),
+item('复核研发费用来源证据','RD-DEMO-003','成本复核岗',TODAY,'ready','研发项目归档',['费用对应真实项目与源单','凭证与分摊依据齐全','差异返回责任部门补齐']),
+item('完成供应商账单核对','AP-DEMO-011','财务核对岗','2026-10-22','blocked','财务归档',['采购、验收、入库明细可关联','金额及数量差异明确','处理结论有依据'],false,true,'原料收发岗待补验收入库明细')
+]},
+{id:'hr',name:'人事部',code:'PEOPLE & QUALIFICATION',subtitle:'维护有效人员、岗位与资质，向业务提供可信的人员基础信息。',roles:['全部岗位','人事专员'],coverage:'待建设',coverageNote:'当前未发现完整人员、考勤与培训资质工作台，需另建数据源。',own:['人员资料与入转调离流程','考勤异常及岗位资料核对','培训资质和到期提醒'],boundary:'人事登记岗位变更；系统管理员按获批授权配置能力，不由岗位文本自动授予审批权。',upstream:'员工 / 部门主管',downstream:'部门主管 / 系统管理员',delivery:'人员与岗位资料有效，审批和资质记录齐全，授权请求来源明确。',tasks:[
+item('核对操作岗位资质到期','QUAL-DEMO-008','人事专员','2026-10-17','ready','生产主管',['岗位与所需资质对应','核对有效期和培训记录','到期影响通知责任主管'],true,true),
+item('处理本期考勤异常','ATT-DEMO-024','人事专员',TODAY,'ready','主管确认 / 人事归档',['异常来源与期间明确','补充所需记录','按流程留存核对结果']),
+item('移交岗位调整授权请求','STAFF-DEMO-019','人事专员','2026-10-21','blocked','系统管理员',['岗位调整已获批准','明确生效日期与业务范围','权限申请有责任审批来源'],false,true,'等待部门主管确认调整范围')
+]},
+{id:'boss',name:'老板',code:'COMPANY DECISION',subtitle:'处理需要决策和协调的事项，并穿透查看业务证据与责任人。',roles:['全部岗位','经营审批'],coverage:'布局预览',coverageNote:'当前老板总览为明确标注的示例数据；真实审批与经营统计尚需统一接入。',own:['报价终审与获授权例外决策','交付、开发及质量影响协调','跨部门阻塞责任与期限跟踪'],boundary:'审批有依据，执行回原部门；未接入经营数据应显示未接入，不能用示例代替。',upstream:'业务 / 各责任部门',downstream:'原责任部门执行',delivery:'决策及依据留痕，协调有主责与期限，后续执行能追踪到原单。',tasks:[
+item('审批已完成技术评审的报价','QUOTE-DEMO-026','经营审批','2026-10-17','ready','业务客户确认',['技术和商务资料齐全','核对风险及授权范围','批准或退回有明确结论'],true,true),
+item('协调影响交期的跨部门阻塞','RISK-DEMO-008','经营审批',TODAY,'ready','责任部门落实',['查看原单和受影响数量','明确一个协调主责','给出期限并跟踪执行']),
+item('审阅开发延期恢复方案','DEV-DEMO-009','经营审批','2026-10-20','blocked','开发主管',['恢复措施和资源需求明确','交付影响可追溯','责任人与期限完整'],false,true,'开发主管待提交恢复方案')
+]},
+{id:'admin',name:'系统管理员',code:'SYSTEM OPERATIONS',subtitle:'保证身份、任务接收和系统运行可追溯，及时处理配置缺口。',roles:['全部岗位','系统运维'],coverage:'基础能力待完善',coverageNote:'有视角切换基础；当前固定管理员验收模式，真实部门隔离与任务投递未完整验收。',own:['用户、部门、岗位能力与字典配置','无人接收任务及接口通知异常','审计与有效部门视角排障'],boundary:'系统管理权限不自动等于老板商务终审权；预览使用有效身份且默认只读。',upstream:'获批授权申请 / 系统事件',downstream:'对应部门接收岗',delivery:'配置有审批来源及审计，任务恢复投递，异常原因与处理结果可核查。',tasks:[
+item('修复无人接收的岗位任务','SYS-DEMO-014','系统运维','2026-10-17','ready','对应部门接收岗',['定位公司、部门及岗位映射','按获批配置选择接收范围','验证任务回补且不重复投递'],true,true),
+item('核对部门视角与有效权限','SYS-DEMO-015','系统运维',TODAY,'ready','部门验收',['前后端使用相同有效身份','检查同级跨部门与单据范围','保留验收证据']),
+item('配置新岗位能力范围','ACCESS-DEMO-007','系统运维','2026-10-21','blocked','岗位所属部门',['授权来源获批准','能力、公司与范围明确','配置和生效记录可审计'],false,true,'等待授权审批来源补齐')
+]}
+];
+const byId=Object.fromEntries(departments.map(d=>[d.id,d]));
+const initial=new URLSearchParams(location.hash.slice(1));
+let currentId=byId[initial.get('department')]?initial.get('department'):'production';
+let mode=initial.get('view')==='matrix'?'matrix':'workspace';
+let scope='team', filter='all', role='全部岗位', search='';
+const el=id=>document.getElementById(id);
+const dialog=el('task-dialog');
+const ready=t=>t.status==='ready';
+const overdue=t=>ready(t)&&t.due<TODAY;
+const today=t=>ready(t)&&t.due===TODAY;
+const selectedDept=()=>byId[currentId];
+function persist(){history.replaceState(null,'','#department='+currentId+'&view='+mode);}
+function baseTasks(){
+  return selectedDept().tasks.filter(t=>(role==='全部岗位'||t.role===role)&&(scope==='team'||(scope==='mine'?t.mine:t.created)));
+}
+function drawRows(){
+  const base=baseTasks();
+  el('pending-count').textContent=base.filter(ready).length;
+  el('today-count').textContent=base.filter(today).length;
+  el('overdue-count').textContent=base.filter(overdue).length;
+  el('blocked-count').textContent=base.filter(t=>t.status==='blocked').length;
+  const visible=base.filter(t=>{
+    const matches=!search||(t.title+' '+t.no+' '+t.role).toLowerCase().includes(search.toLowerCase());
+    return matches&&(filter==='all'||(filter==='ready'&&ready(t))||(filter==='today'&&today(t))||(filter==='overdue'&&overdue(t))||(filter==='blocked'&&t.status==='blocked'));
+  }).sort((a,b)=>Number(overdue(b))-Number(overdue(a))||a.due.localeCompare(b.due));
+  el('task-rows').innerHTML=visible.map(t=>{
+    const idx=selectedDept().tasks.indexOf(t);
+    const status=t.status==='blocked'?'等待前序':overdue(t)?'已逾期':'可办理';
+    const className=t.status==='blocked'?'blocked':overdue(t)?'overdue':'';
+    return '<tr><td><strong class="task-title">'+t.title+'</strong><span class="task-no">'+t.no+'</span>'+(t.blocked?'<span class="task-owner">'+t.blocked+'</span>':'')+'</td><td>'+t.role+'<span class="task-owner">'+(t.status==='blocked'?'前序未完成 · 尚未受理':t.mine?'演示本人已受理':'岗位共享 · 待认领')+'</span></td><td><span class="status '+className+'">'+status+'</span><span class="due">'+t.due+'</span></td><td><button type="button" class="task-link" data-task="'+idx+'" aria-label="查看要求：'+t.title+'">查看要求 →</button></td></tr>';
+  }).join('');
+  el('empty-state').hidden=visible.length>0;
+  el('row-count').textContent=visible.length+' 项 · 示例';
+  el('scope-description').textContent=scope==='mine'?'仅显示明确归属于演示本人的事项。':scope==='created'?'查看本人发起流程的当前主责；发起不代表获得后续办理权限。':'本岗位的共享队列；受理状态与部门职责分别展示。';
+  document.querySelectorAll('[data-scope]').forEach(b=>{b.classList.toggle('active',b.dataset.scope===scope);b.setAttribute('aria-pressed',String(b.dataset.scope===scope));});
+  document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('selected',b.dataset.filter===filter);b.setAttribute('aria-pressed',String(b.dataset.filter===filter));});
+  el('status-filter').value=filter;
+  el('live-announcement').textContent=selectedDept().name+'，'+visible.length+'项示例事项';
+}
+function render(){
+  const d=selectedDept();
+  el('department-code').textContent=d.code;
+  el('department-title').textContent=d.name+'工作台';
+  el('department-subtitle').textContent=d.subtitle;
+  el('responsibility-summary').innerHTML='<strong>接收：</strong>'+d.upstream+'　→　<strong>交付：</strong>'+d.downstream;
+  el('coverage-note').textContent='现状 · '+d.coverage+'｜'+d.coverageNote;
+  el('own-responsibilities').innerHTML=d.own.map(v=>'<li>'+v+'</li>').join('');
+  el('boundary-text').innerHTML='<strong>责任交接说明</strong>'+d.boundary;
+  el('department-flow').innerHTML='<div class="flow-step"><strong>'+d.upstream+'</strong><small>前序资料、数量与版本可核对</small></div><div class="flow-step current"><strong>'+d.name+' · 当前主责</strong><small>'+d.delivery+'</small></div><div class="flow-step"><strong>'+d.downstream+'</strong><small>满足门槛后移交，拒收有原因</small></div>';
+  el('role-select').innerHTML=d.roles.map(v=>'<option>'+v+'</option>').join('');
+  el('role-select').value=role;
+  el('mobile-department').value=currentId;
+  document.querySelectorAll('[data-department]').forEach(b=>{const active=b.dataset.department===currentId;b.classList.toggle('active',active);if(active)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  el('workspace-view').hidden=mode!=='workspace';
+  el('matrix-view').hidden=mode!=='matrix';
+  el('workspace-mode').classList.toggle('active',mode==='workspace');
+  el('matrix-mode').classList.toggle('active',mode==='matrix');
+  el('workspace-mode').setAttribute('aria-pressed',String(mode==='workspace'));
+  el('matrix-mode').setAttribute('aria-pressed',String(mode==='matrix'));
+  persist();drawRows();
+}
+function selectDepartment(id){
+  if(!byId[id])return;
+  currentId=id;role='全部岗位';scope='team';filter='all';search='';mode='workspace';el('search-input').value='';render();
+}
+function setMode(value){mode=value;render();}
+function openDetail(index){
+  const d=selectedDept(),t=d.tasks[index];
+  el('detail-title').textContent=t.title;
+  el('detail-document').textContent=t.no+' · '+d.name;
+  el('detail-body').innerHTML='<div class="detail-grid"><div><small>当前处理岗位</small><strong>'+t.role+'</strong></div><div><small>受理状态</small><strong>'+(t.status==='blocked'?'前序未完成 · 尚未受理':t.mine?'演示本人已受理':'岗位共享 · 待认领')+'</strong></div><div><small>完成期限</small><strong>'+t.due+'</strong></div><div><small>当前状态</small><strong>'+(t.status==='blocked'?'等待前序':overdue(t)?'已逾期 · 可办理':'可办理')+'</strong></div></div>'+(t.blocked?'<div class="notice"><strong>阻塞原因</strong>'+t.blocked+'</div>':'')+'<h3>办理与完成条件</h3><ol class="check-list">'+t.checks.map(c=>'<li>'+c+'</li>').join('')+'</ol><div class="handoff-box"><small>满足条件后交给</small><strong>'+t.next+'</strong><small style="margin-top:6px">移交原单、批次/明细、数量、资料版本与操作记录。</small></div><p class="boundary"><strong>本部门边界</strong>'+d.boundary+'</p>';
+  dialog.showModal();
+}
+el('department-nav').innerHTML=departments.map((d,i)=>'<button type="button" data-department="'+d.id+'"><span class="nav-number" aria-hidden="true">'+String(i+1).padStart(2,'0')+'</span>'+d.name+'</button>').join('');
+el('mobile-department').innerHTML=departments.map(d=>'<option value="'+d.id+'">'+d.name+'</option>').join('');
+el('matrix-rows').innerHTML=departments.map(d=>'<tr><td><button type="button" data-open-department="'+d.id+'">'+d.name+' ↗</button><small>'+d.roles.slice(1).join(' / ')+'</small></td><td data-label="主要责任">'+d.own.join('；')+'</td><td data-label="完成与交付标准">'+d.delivery+'</td><td data-label="当前系统覆盖"><span class="badge '+(d.coverage==='部分接入'?'partial':'')+'">'+d.coverage+'</span><small>'+d.coverageNote+'</small></td></tr>').join('');
+el('department-nav').addEventListener('click',e=>{const b=e.target.closest('[data-department]');if(b)selectDepartment(b.dataset.department);});
+el('matrix-rows').addEventListener('click',e=>{const b=e.target.closest('[data-open-department]');if(b)selectDepartment(b.dataset.openDepartment);});
+el('mobile-department').addEventListener('change',e=>selectDepartment(e.target.value));
+el('role-select').addEventListener('change',e=>{role=e.target.value;drawRows();});
+el('search-input').addEventListener('input',e=>{search=e.target.value.trim();drawRows();});
+el('status-filter').addEventListener('change',e=>{filter=e.target.value;drawRows();});
+document.querySelectorAll('[data-scope]').forEach(b=>b.addEventListener('click',()=>{scope=b.dataset.scope;filter='all';drawRows();}));
+document.querySelectorAll('[data-filter]').forEach(b=>b.addEventListener('click',()=>{filter=b.dataset.filter;drawRows();}));
+el('task-rows').addEventListener('click',e=>{const b=e.target.closest('[data-task]');if(b)openDetail(Number(b.dataset.task));});
+el('reset-filters').addEventListener('click',()=>{role='全部岗位';scope='team';filter='all';search='';el('search-input').value='';render();});
+el('workspace-mode').addEventListener('click',()=>setMode('workspace'));
+el('matrix-mode').addEventListener('click',()=>setMode('matrix'));
+el('show-responsibility').addEventListener('click',()=>setMode('matrix'));
+dialog.querySelector('.close').addEventListener('click',()=>dialog.close());
+el('detail-done').addEventListener('click',()=>dialog.close());
+dialog.addEventListener('click',e=>{if(e.target!==dialog)return;const r=dialog.getBoundingClientRect();if(e.clientX<r.left||e.clientX>r.right||e.clientY<r.top||e.clientY>r.bottom)dialog.close();});
+window.addEventListener('hashchange',()=>{const q=new URLSearchParams(location.hash.slice(1));if(byId[q.get('department')]){currentId=q.get('department');role='全部岗位';}mode=q.get('view')==='matrix'?'matrix':'workspace';render();});
+render();
+</script>
+</body>
+</html>

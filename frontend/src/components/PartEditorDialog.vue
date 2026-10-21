@@ -2,7 +2,7 @@
   <el-drawer
     v-model="visible"
     title="零件详情与编辑"
-    size="min(1180px, 96vw)"
+    :size="isMobile ? '100%' : 'min(1180px, 96vw)'"
     direction="rtl"
     :close-on-click-modal="false"
     destroy-on-close
@@ -31,6 +31,7 @@
           <div class="editor-subtitle">{{ baseForm.customer_part_no || '零件档案' }} · {{ editing ? '编辑中' : '只读档案' }}</div>
         </div>
         <div class="editor-actions">
+          <el-button v-if="!editing" @click="visible = false; router.push({ path: '/ppap', query: { company: 'tianyue', part_id: props.partId } })">查看PPAP</el-button>
           <el-tag :type="editing ? 'warning' : 'success'" effect="plain">{{ editing ? '编辑中' : '只读' }}</el-tag>
           <el-button v-if="!editing" type="primary" @click="startEditing"><el-icon><Edit /></el-icon>编辑</el-button>
           <el-button v-else @click="cancelEditing">放弃修改</el-button>
@@ -38,9 +39,9 @@
       </div>
 
       <div class="dossier-layout">
-      <el-tabs v-model="activeTab" tab-position="left" class="dossier-tabs" :class="{ 'is-read-only': !editing }">
+      <el-tabs v-model="activeTab" :tab-position="isMobile ? 'top' : 'left'" class="dossier-tabs" :class="{ 'is-read-only': !editing }">
         <el-tab-pane label="主信息" name="base">
-          <el-form label-width="112px" class="editor-form">
+          <el-form label-width="112px" :label-position="isMobile ? 'top' : 'right'" :disabled="!editing" class="editor-form">
             <el-divider content-position="left">业务标识</el-divider>
             <el-row :gutter="18">
               <el-col :span="12"><el-form-item label="零件名称"><el-input v-model="baseForm.internal_name" /></el-form-item></el-col>
@@ -155,8 +156,10 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit } from '@element-plus/icons-vue'
+import { useMobileViewport } from '@/composables/useMobileViewport'
 import { partsApi, partDisplayGroupsApi } from '@/api/parts'
 
 const props = defineProps({
@@ -164,6 +167,8 @@ const props = defineProps({
   partId: { type: [Number, String], default: null },
 })
 const emit = defineEmits(['update:modelValue', 'saved'])
+const isMobile = useMobileViewport()
+const router = useRouter()
 
 const visible = ref(false)
 const loading = ref(false)
@@ -228,7 +233,8 @@ const sortSpecs = () => twpSpecs.value.sort((left, right) => left.tooling_id - r
 const applyDetail = response => {
   detail.value = response
   BASE_FIELDS.forEach(field => {
-    const value = response[field] ?? null
+    // The editor contract exposes the internal name as part_name.
+    const value = field === 'internal_name' ? response.internal_name ?? response.part_name ?? null : response[field] ?? null
     baseForm[field] = NUMERIC_BASE_FIELDS.has(field) ? nullableNumber(value) : value
   })
   toolingParts.value = response.tooling_associations.map(item => copy(item))
@@ -471,7 +477,7 @@ watch(visible, value => emit('update:modelValue', value))
 .dossier-tabs :deep(.el-tabs__item) { justify-content: flex-start; min-width: 118px; height: 36px; padding: 0 12px; font-size: 13px; }
 .dossier-tabs :deep(.el-tabs__active-bar) { background-color: var(--zephyr-primary); }
 .dossier-tabs :deep(.el-tabs__item.is-active) { color: var(--zephyr-primary); font-weight: 650; }
-.dossier-tabs.is-read-only :deep(.el-tab-pane) { pointer-events: none; }
+.dossier-tabs.is-read-only :deep(.el-tab-pane :is(.el-input, .el-select, .el-input-number, .el-button, .el-checkbox, .el-radio-group)) { pointer-events: none; }
 .dossier-tabs.is-read-only :deep(.el-tab-pane .el-input__wrapper), .dossier-tabs.is-read-only :deep(.el-tab-pane .el-select__wrapper) { background: var(--zephyr-surface-muted); }
 .change-history-rail { align-self: start; max-height: calc(100vh - 170px); overflow: auto; padding: 14px; border: 1px solid var(--zephyr-border); border-radius: 6px; background: var(--zephyr-surface-muted); }
 .change-history-rail h3 { margin: 0 0 12px; color: var(--zephyr-ink); font-size: 14px; font-weight: 650; }
@@ -515,5 +521,12 @@ h4 { margin: 22px 0 10px; color: #30343a; font-size: 14px; }
   .add-select { width: 100%; }
   :global(.part-editor-drawer .el-drawer__body) { padding: 16px; }
   :global(.part-editor-drawer .el-drawer__footer) { padding: 12px 16px; }
+  .editor-heading strong { font-size: 18px; overflow-wrap: anywhere; }
+  .editor-actions { flex-direction: row; align-items: center; justify-content: space-between; }
+  .editor-form { padding: 0; }
+  .editor-form :deep(.el-col) { flex: 0 0 100%; max-width: 100%; }
+  .dossier-tabs :deep(.el-tabs__header) { float: none; }
+  :global(.part-editor-drawer .el-drawer__header) { padding: 0 16px; }
+  :global(.part-editor-drawer .el-drawer__footer) { padding-bottom: calc(12px + env(safe-area-inset-bottom)); flex-wrap: wrap; }
 }
 </style>

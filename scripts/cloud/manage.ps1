@@ -12,6 +12,7 @@ $LogDir = Join-Path $RuntimeDir 'logs'
 $StateFile = Join-Path $RuntimeDir 'server.json'
 $ServerScript = Join-Path $PSScriptRoot 'serve.py'
 $ServerProcess = $null
+$StartedCloudTask = $false
 $OperationLock = $null
 
 function Get-Sha256 {
@@ -48,6 +49,11 @@ function Get-ManagedProcess {
 }
 
 function Stop-ManagedProcess {
+    $cloudTask = if ($Port -eq 8080) { Get-ScheduledTask -TaskName 'ZephyrERP-Cloud8080' -ErrorAction SilentlyContinue } else { $null }
+    if ($cloudTask) {
+        # Cancel its retry policy as well as its process tree for an intentional stop.
+        Stop-ScheduledTask -TaskName $cloudTask.TaskName -ErrorAction Stop
+    }
     $managed = Get-ManagedProcess
     if ($managed) {
         Stop-AppProcessTree $managed
@@ -215,14 +221,22 @@ try {
     Write-Host '[5/5] Starting ERP...'
     Stop-ManagedProcess
     if (-not (Test-PortBindable)) { throw "Port $Port is unavailable. Start with -Port 8081." }
-    $arguments = @('-X', 'utf8', $ServerScript, '--port', [string]$Port) | ForEach-Object { '"' + $_ + '"' }
-    $ServerProcess = Start-Process -FilePath $python -ArgumentList $arguments -WorkingDirectory (Join-Path $ProjectRoot 'backend') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogDir 'server.stdout.log') -RedirectStandardError (Join-Path $LogDir 'server.stderr.log')
-    @{ pid = $ServerProcess.Id; startedUtcTicks = $ServerProcess.StartTime.ToUniversalTime().Ticks.ToString(); port = $Port } |
-        ConvertTo-Json | Set-Content -LiteralPath $StateFile -Encoding UTF8
+    $cloudTask = if ($Port -eq 8080) { Get-ScheduledTask -TaskName 'ZephyrERP-Cloud8080' -ErrorAction SilentlyContinue } else { $null }
+    if ($cloudTask) {
+        Start-ScheduledTask -TaskName $cloudTask.TaskName
+        $StartedCloudTask = $true
+    } else {
+        $arguments = @('-X', 'utf8', $ServerScript, '--port', [string]$Port) | ForEach-Object { '"' + $_ + '"' }
+        $ServerProcess = Start-Process -FilePath $python -ArgumentList $arguments -WorkingDirectory (Join-Path $ProjectRoot 'backend') -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $LogDir 'server.stdout.log') -RedirectStandardError (Join-Path $LogDir 'server.stderr.log')
+        @{ pid = $ServerProcess.Id; startedUtcTicks = $ServerProcess.StartTime.ToUniversalTime().Ticks.ToString(); port = $Port } |
+            ConvertTo-Json | Set-Content -LiteralPath $StateFile -Encoding UTF8
+    }
     $ready = $false
     for ($attempt = 0; $attempt -lt 40; $attempt++) {
-        $ServerProcess.Refresh()
-        if ($ServerProcess.HasExited) { throw 'ERP exited during startup. See logs\cloud-runtime\logs\server.stderr.log.' }
+        if ($ServerProcess) {
+            $ServerProcess.Refresh()
+            if ($ServerProcess.HasExited) { throw 'ERP exited during startup. See logs\cloud-runtime\logs\server.stderr.log.' }
+        }
         try {
             $health = Invoke-RestMethod -Uri "http://127.0.0.1:$Port/health" -TimeoutSec 2
             $page = Invoke-WebRequest -Uri "http://127.0.0.1:$Port/" -UseBasicParsing -TimeoutSec 2
@@ -236,7 +250,7 @@ try {
     Write-Host 'Close this window to leave ERP running. Double-click stop-cloud.cmd to stop it.'
     Write-Host 'Startup checks passed: database, API health, frontend HTML. Business/browser acceptance is separate.'
 } catch {
-    if ($ServerProcess) {
+    if ($ServerProcess -or $StartedCloudTask) {
         try { Stop-ManagedProcess } catch { Write-Host 'Automatic cleanup failed; inspect the saved process state.' }
     }
     Write-Host "FAILED: $($_.Exception.Message)" -ForegroundColor Red

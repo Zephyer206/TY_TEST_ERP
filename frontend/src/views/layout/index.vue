@@ -2,7 +2,7 @@
   <div class="app-shell">
     <header class="app-topbar">
       <div class="topbar-leading">
-        <button ref="appSwitcherRef" class="app-switcher" type="button" aria-label="打开应用菜单" aria-controls="application-launcher" :aria-expanded="appMenuOpen" @click="toggleLauncher" @keydown.down.prevent="openLauncher">
+        <button ref="appSwitcherRef" class="app-switcher" type="button" aria-label="切换模块" title="切换模块" aria-haspopup="menu" aria-controls="application-launcher" :aria-expanded="appMenuOpen" @click="toggleLauncher" @keydown.down.prevent="openLauncher">
           <el-icon><Grid /></el-icon>
         </button>
         <button
@@ -62,17 +62,15 @@
       </div>
     </header>
 
-    <div v-if="appMenuOpen" id="application-launcher" ref="launcherRef" class="app-launcher" role="menu" aria-label="应用菜单" @keydown="handleMenuKeydown">
-      <div class="launcher-title">应用</div>
+
+    <div v-if="appMenuOpen" id="application-launcher" ref="launcherRef" class="app-launcher" role="menu" aria-label="模块切换菜单" @keydown="handleMenuKeydown">
       <template v-for="item in primaryNav" :key="item.key">
-        <button class="launcher-item" :class="{ disabled: item.disabled }" type="button" role="menuitem" :disabled="item.disabled || (!item.route && !item.tabs.some(tab => tab.route))" @click="goToArea(item)">
+        <button class="launcher-item" type="button" role="menuitem" :aria-current="activeArea === item.key ? 'page' : undefined" :disabled="item.disabled || (!item.route && !item.tabs.some(tab => tab.route && !tab.disabled))" @click="goToArea(item)">
           <span class="launcher-icon"><el-icon><component :is="item.icon" /></el-icon></span>
           <span>{{ item.label }}</span>
         </button>
         <div v-if="item.tabs.length" class="launcher-subitems" :aria-label="`${item.label}子入口`">
-          <button v-for="tab in item.tabs" :key="tab.label" class="launcher-subitem" type="button" role="menuitem" :disabled="tab.disabled || !tab.route" @click="tab.route && go(tab.route)">
-            {{ tab.label }}
-          </button>
+          <button v-for="tab in item.tabs" :key="tab.label" class="launcher-subitem" type="button" role="menuitem" :aria-current="tab.route && isRouteActive(tab.route) ? 'page' : undefined" :disabled="tab.disabled || !tab.route" @click="tab.route && go(tab.route)">{{ tab.label }}</button>
         </div>
       </template>
     </div>
@@ -91,6 +89,7 @@
           @click="tab.route && go(tab.route)"
         >{{ tab.label }}</button>
       </nav>
+      <p v-if="route.path !== '/parts'" class="mobile-table-hint">表格可左右滑动，查看全部字段。</p>
       <router-view />
     </main>
   </div>
@@ -99,11 +98,11 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch, type Component } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { ArrowDown, Box, Briefcase, Document, Grid, House, Setting, Tools } from '@element-plus/icons-vue'
+import { ArrowDown, Box, Briefcase, Document, Grid, House, Setting, Tools, Warning } from '@element-plus/icons-vue'
 import { useUserStore } from '@/stores/user'
 import { useCompanyStore, type CompanyKey } from '@/stores/company'
 
-type AreaKey = 'productEngineering' | 'tooling' | 'projectManagement' | 'manufacturing' | 'procurement' | 'warehouseProcessing' | 'pricing' | 'permissions'
+type AreaKey = 'workbench' | 'productEngineering' | 'projectManagement' | 'manufacturing' | 'procurement' | 'warehouseProcessing' | 'nonconforming' | 'pricing' | 'permissions'
 
 interface WorkspaceTab { label: string; route?: string; disabled?: boolean }
 interface WorkspaceArea {
@@ -120,10 +119,10 @@ const router = useRouter()
 const userStore = useUserStore()
 const companyStore = useCompanyStore()
 const appMenuOpen = ref(false)
-const openMenuKey = ref<AreaKey | null>(null)
-const submenuPosition = ref({ left: 0 })
 const appSwitcherRef = ref<HTMLButtonElement | null>(null)
 const launcherRef = ref<HTMLElement | null>(null)
+const openMenuKey = ref<AreaKey | null>(null)
+const submenuPosition = ref({ left: 0 })
 const submenuRef = ref<HTMLElement | null>(null)
 let activeMenuTrigger: HTMLElement | null = null
 
@@ -136,15 +135,15 @@ const closeMenus = (restoreFocus = false) => {
 const focusFirstMenuItem = (menu: HTMLElement | null) => {
   menu?.querySelector<HTMLButtonElement>('[role="menuitem"]:not(:disabled)')?.focus()
 }
-const toggleLauncher = () => {
-  openMenuKey.value = null
-  appMenuOpen.value = !appMenuOpen.value
-}
 const openLauncher = async () => {
   openMenuKey.value = null
   appMenuOpen.value = true
   await nextTick()
   focusFirstMenuItem(launcherRef.value)
+}
+const toggleLauncher = () => {
+  if (appMenuOpen.value) closeMenus(true)
+  else void openLauncher()
 }
 const handleMenuKeydown = (event: KeyboardEvent) => {
   if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return
@@ -186,10 +185,15 @@ onUnmounted(() => {
 
 const areas: WorkspaceArea[] = [
   {
-    key: 'productEngineering', label: '零件', route: '/parts', icon: Box, tabs: [],
+    key: 'workbench', label: '工作台', route: '/workbench', icon: House, tabs: [],
   },
   {
-    key: 'tooling', label: '模具', route: '/tooling', icon: Tools, tabs: [],
+    key: 'productEngineering', label: '零件', icon: Box,
+    tabs: [
+      { label: '零件台账', route: '/parts' },
+      { label: '模具台账', route: '/tooling' },
+      { label: 'PPAP', route: '/ppap' },
+    ],
   },
   {
     key: 'projectManagement', label: '项目管理', icon: Briefcase,
@@ -228,11 +232,17 @@ const areas: WorkspaceArea[] = [
     ],
   },
   {
+    key: 'nonconforming', label: '不良品', icon: Warning,
+    tabs: [
+      { label: '不良品处理', route: '/nonconforming' },
+      { label: '返工模', route: '/tooling/rework' },
+    ],
+  },
+  {
     key: 'pricing', label: '价格中心', icon: Document,
     tabs: [
-      { label: '价格查询', disabled: true },
-      { label: '报价', disabled: true },
-      { label: '客户', disabled: true },
+      { label: '客户价格查询', route: '/price-management' },
+      { label: '客户档案', route: '/customers' },
     ],
   },
   {
@@ -257,8 +267,9 @@ const companyLabel = computed(() => companyStore.selectedCompany === 'gaibo' ? '
 const nextCompanyLabel = computed(() => companyStore.selectedCompany === 'gaibo' ? '天越' : '盖博')
 
 const go = (target: string) => {
-  appMenuOpen.value = false
-  openMenuKey.value = null
+  closeMenus()
+  if (target === '/parts' || (target.startsWith('/tooling') && !target.startsWith('/tooling/rework'))) companyStore.setCompany('tianyue')
+  if (target === '/after-sales') companyStore.setCompany('gaibo')
   if (route.path !== target) router.push(target)
 }
 const goToArea = (item: WorkspaceArea) => {
@@ -268,6 +279,9 @@ const goToArea = (item: WorkspaceArea) => {
 
 const handleCompanySwitch = (company: CompanyKey) => {
   companyStore.setCompany(company)
+  // Company-scoped quality pages keep the selected module when switching.
+  if (activeArea.value === 'nonconforming') return
+  if (route.path === '/ppap' || route.path.startsWith('/ppap/')) return
   const target = company === 'gaibo' ? '/after-sales' : '/parts'
   if (route.path !== target) void router.push(target)
 }
@@ -282,9 +296,9 @@ const handlePrimaryClick = (item: WorkspaceArea, event: MouseEvent) => {
     go(item.route)
     return
   }
+  appMenuOpen.value = false
   openMenuKey.value = openMenuKey.value === item.key ? null : item.key
   if (!openMenuKey.value) return
-  appMenuOpen.value = false
   const menuTrigger = event.currentTarget as HTMLElement | null
   if (!menuTrigger) return
   activeMenuTrigger = menuTrigger
@@ -296,8 +310,8 @@ const handlePrimaryClick = (item: WorkspaceArea, event: MouseEvent) => {
 
 const openPrimaryMenu = async (item: WorkspaceArea, event: KeyboardEvent) => {
   if (item.disabled || !item.tabs.length) return
-  activeMenuTrigger = event.currentTarget as HTMLElement
   appMenuOpen.value = false
+  activeMenuTrigger = event.currentTarget as HTMLElement
   openMenuKey.value = item.key
   const rect = activeMenuTrigger.getBoundingClientRect()
   submenuPosition.value.left = Math.min(Math.max(rect.left, 12), window.innerWidth - 190)
@@ -305,9 +319,12 @@ const openPrimaryMenu = async (item: WorkspaceArea, event: KeyboardEvent) => {
   focusFirstMenuItem(submenuRef.value)
 }
 
-const isRouteActive = (target: string) => target === '/projects'
-  ? route.path === target
-  : route.path === target || route.path.startsWith(`${target}/`)
+const isRouteActive = (target: string) => {
+  if (target === '/projects') return route.path === target
+  // Rework molds belong to quality; other tooling pages belong to parts.
+  if (target === '/tooling' && (route.path === '/tooling/rework' || route.path.startsWith('/tooling/rework/'))) return false
+  return route.path === target || route.path.startsWith(`${target}/`)
+}
 
 const handleCommand = (command: string) => {
   if (command === 'technical-review') {
@@ -330,9 +347,18 @@ const handleCommand = (command: string) => {
 .app-topbar { position: relative; z-index: 20; display: flex; align-items: center; justify-content: space-between; flex: 0 0 56px; height: 56px; padding: 0 20px; background: #242b3d; color: #fff; box-shadow: 0 2px 8px rgb(19 27 46 / 10%); }
 .topbar-leading, .topbar-actions, .module-nav, .profile-trigger { display: flex; align-items: center; }
 .topbar-leading { min-width: 0; height: 56px; flex: 1; }
-.app-switcher { flex: 0 0 auto; display: grid; place-items: center; width: 30px; height: 30px; margin-right: 12px; border: 1px solid rgb(255 255 255 / 12%); border-radius: 6px; background: transparent; color: #c8d0e2; cursor: pointer; }
-.app-switcher:hover, .app-switcher[aria-expanded='true'] { border-color: rgb(255 255 255 / 24%); background: rgb(255 255 255 / 8%); color: #fff; }
-.app-switcher .el-icon { font-size: 15px; }
+.app-switcher { display: grid; flex: 0 0 auto; place-items: center; width: 34px; height: 34px; margin-right: 12px; padding: 0; border: 1px solid rgb(255 255 255 / 14%); border-radius: 6px; background: transparent; color: #c8d0e2; cursor: pointer; }
+.app-switcher:hover, .app-switcher[aria-expanded='true'] { border-color: rgb(255 255 255 / 28%); background: rgb(255 255 255 / 8%); color: #fff; }
+.app-switcher .el-icon { font-size: 17px; }
+.app-launcher { position: fixed; z-index: 60; top: 64px; left: 12px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 8px; width: min(380px, calc(100vw - 24px)); max-height: calc(100dvh - 80px - env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; padding: 10px; border: 1px solid var(--zephyr-border); border-radius: 9px; background: var(--zephyr-surface); box-shadow: var(--zephyr-shadow-overlay); }
+.launcher-item { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 40px; padding: 5px 7px; border: 0; border-radius: 5px; background: transparent; color: var(--zephyr-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.launcher-icon { display: grid; flex: 0 0 auto; place-items: center; width: 26px; height: 26px; border-radius: 5px; background: var(--zephyr-primary-soft); color: var(--zephyr-primary); }
+.launcher-icon .el-icon { font-size: 14px; }
+.launcher-subitems { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: -4px 0 4px 34px; }
+.launcher-subitem { min-height: 34px; padding: 4px 8px; border: 0; border-radius: 4px; background: var(--zephyr-surface-muted); color: var(--zephyr-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
+.launcher-item:hover:not(:disabled), .launcher-subitem:hover:not(:disabled), .app-launcher [aria-current='page'] { background: var(--zephyr-primary-soft); color: var(--zephyr-primary-hover); }
+.app-launcher button:disabled { cursor: default; opacity: .45; }
+.app-launcher button:focus-visible { outline: 2px solid var(--zephyr-primary); outline-offset: -2px; }
 .brand-lockup { display: flex; flex: 0 0 auto; align-items: center; gap: 8px; min-height: 36px; margin-right: 14px; padding: 0; border: 0; border-radius: 5px; background: transparent; color: #fff; font: inherit; cursor: pointer; }
 .brand-lockup:hover .brand-name { color: #e2e7ff; }
 .brand-mark { display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid #c1c9e0; border-radius: 7px; background: #f4f6ff; color: #46558c; font-size: 17px; font-weight: 750; letter-spacing: -.04em; }
@@ -361,17 +387,7 @@ const handleCommand = (command: string) => {
 .profile-trigger .el-icon { color: #9faac2; font-size: 10px; }
 .avatar { display: grid; place-items: center; width: 23px; height: 23px; border-radius: 50%; background: #45516d; color: #e6ecff; font-size: 11px; font-weight: 600; }
 .profile-name { font-size: 12px; white-space: nowrap; }
-.app-launcher { position: absolute; z-index: 30; top: 63px; left: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; width: 346px; max-height: calc(100dvh - 76px); overflow-y: auto; overscroll-behavior: contain; padding: 12px; border: 1px solid var(--zephyr-border); border-radius: 10px; background: #fff; box-shadow: var(--zephyr-shadow-overlay); }
-.launcher-title { grid-column: 1 / -1; padding: 2px 6px 8px; color: var(--zephyr-muted); font-size: 11px; font-weight: 600; }
-.launcher-item { display: flex; align-items: center; gap: 9px; min-height: 38px; padding: 5px 7px; border: 0; border-radius: 6px; background: #fff; color: var(--zephyr-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
-.launcher-item:hover:not(:disabled) { background: var(--zephyr-primary-soft); color: var(--zephyr-primary); }
-.launcher-item:disabled { cursor: default; opacity: .45; }
-.launcher-subitems { display: grid; grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; margin: -2px 0 4px 36px; }
-.launcher-subitem { min-height: 30px; padding: 4px 8px; border: 0; border-radius: 5px; background: var(--zephyr-surface-muted); color: var(--zephyr-muted); font: inherit; font-size: 12px; text-align: left; cursor: pointer; }
-.launcher-subitem:hover:not(:disabled) { color: var(--zephyr-primary); background: var(--zephyr-primary-soft); }
-.launcher-subitem:disabled { opacity: .45; cursor: default; }
-.launcher-icon { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 6px; background: var(--zephyr-primary-soft); color: var(--zephyr-primary); }
-.launcher-icon .el-icon { font-size: 14px; }
+.mobile-table-hint { display: none; }
 .workspace { display: flex; flex: 1 1 auto; flex-direction: column; min-width: 0; min-height: 0; padding: 0 20px 20px; overflow: auto; }
 .secondary-nav { display: flex; flex: 0 0 auto; align-items: center; gap: 4px; min-height: 46px; margin: 0 -20px 2px; padding: 0 20px; border-bottom: 1px solid var(--zephyr-border); background: #fff; }
 .secondary-title { flex: 0 0 auto; margin-right: 14px; padding-right: 18px; border-right: 1px solid var(--zephyr-border); color: var(--zephyr-ink); font-size: 13px; font-weight: 650; }
@@ -391,12 +407,21 @@ const handleCommand = (command: string) => {
   .workspace { padding: 0 14px 18px; }
   .secondary-nav { margin-right: -14px; margin-left: -14px; padding: 0 14px; overflow-x: auto; }
 }
-@media (max-width: 620px) {
+@media (max-width: 767px) {
+  .app-shell { height: 100dvh; min-height: 100dvh; }
+  .app-topbar { position: sticky; top: 0; padding: 0 12px; }
+  .brand-lockup { margin-right: 0; }
+  .app-switcher { width: 44px; height: 44px; margin-right: 10px; }
+  .launcher-item, .launcher-subitem { min-height: 44px; }
+  .profile-trigger { min-width: 44px; min-height: 44px; }
+  .topbar-divider { display: none; }
   .module-nav { display: none; }
   .profile-name { display: none; }
-  .app-launcher { left: 8px; width: calc(100vw - 16px); }
+  .workspace { padding: 0 12px calc(16px + env(safe-area-inset-bottom)); overscroll-behavior-y: contain; }
+  .mobile-table-hint { display: block; margin: 12px 0 0; color: var(--zephyr-muted); font-size: 12px; }
+  .secondary-nav { margin: 0 -12px 4px; padding: 0 12px; }
   .topbar-leading { flex: 1; }
   .secondary-title { margin-right: 4px; padding-right: 10px; }
-  .workspace-tab { padding: 0 10px; font-size: 12px; }
+  .workspace-tab { min-height: 44px; padding: 0 10px; font-size: 13px; }
 }
 </style>

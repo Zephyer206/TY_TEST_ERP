@@ -9,25 +9,26 @@
       </div>
       <div class="search-control">
         <el-icon><Search /></el-icon>
-        <el-input v-model="filter.search" placeholder="搜索客户名称、客户件号、零件名称或模具号" clearable @keyup.enter="fetchParts" @clear="handleSearchClear" />
+        <el-input v-model="filter.search" aria-label="搜索零件" placeholder="搜索客户、客户件号、零件或模具" clearable @keyup.enter="applyFilters" @clear="handleSearchClear" />
       </div>
-      <div class="filter-controls">
+      <el-button v-if="isMobile" class="mobile-filter-toggle" :aria-expanded="mobileFiltersOpen" aria-controls="parts-filter-controls" @click="mobileFiltersOpen = !mobileFiltersOpen">筛选{{ activeFilterCount ? ` (${activeFilterCount})` : '' }}</el-button>
+      <div v-show="!isMobile || mobileFiltersOpen" id="parts-filter-controls" class="filter-controls">
         <el-select v-model="companyStore.selectedCompany" placeholder="公司" @change="handleCompanyChange">
           <el-option label="天越" value="tianyue" />
           <el-option label="盖博" value="gaibo" />
         </el-select>
-        <el-select v-model="filter.customer_id" clearable placeholder="客户" filterable @change="fetchParts">
+        <el-select v-model="filter.customer_id" clearable placeholder="客户" aria-label="按客户筛选" filterable @change="applyFilters">
             <el-option v-for="c in customers" :key="c.id" :value="c.id"
               :label="c.customer_code ? `${c.customer_code} ${c.name}` : c.name" />
         </el-select>
-        <el-input v-model="filter.material" placeholder="材料" clearable @keyup.enter="fetchParts" />
-        <el-select v-model="filter.part_status" clearable placeholder="状态" @change="fetchParts">
+        <el-input v-model="filter.material" placeholder="材料" aria-label="按材料筛选" clearable @keyup.enter="applyFilters" />
+        <el-select v-model="filter.part_status" clearable placeholder="状态" aria-label="按状态筛选" @change="applyFilters">
           <el-option label="草稿" value="DRAFT" />
           <el-option label="打样" value="SAMPLING" />
           <el-option label="量产" value="MASS_PRODUCTION" />
           <el-option label="淘汰" value="OBSOLETE" />
         </el-select>
-        <el-button type="primary" @click="fetchParts">筛选</el-button>
+        <el-button type="primary" @click="applyFilters">筛选</el-button>
         <el-button text @click="resetFilter">重置</el-button>
         <el-button type="primary" @click="openCreate" v-if="userStore.userInfo?.role_level >= 4">
           <el-icon><Plus /></el-icon>新建
@@ -37,16 +38,31 @@
 
     <div class="table-meta">
       <span>{{ page.total }} 条记录 <span v-if="visibleParts.length !== parts.length">· 当前筛选 {{ visibleParts.length }} 条</span></span>
-      <span>选择一行打开零件档案</span>
+      <span>{{ isMobile ? '点击零件查看详情' : '选择一行打开零件档案' }}</span>
     </div>
 
-    <div class="batch-bar" aria-live="polite">
+    <el-alert v-if="listError" :title="listError" type="error" :closable="false" show-icon><el-button text @click="fetchParts">重新加载</el-button></el-alert>
+
+    <div v-if="!isMobile" class="batch-bar" aria-live="polite">
       <span v-if="selectedParts.length">已选 {{ selectedParts.length }} 条</span>
       <span v-else>列表优先：选择行后可批量处理</span>
       <el-button v-if="selectedParts.length" text type="primary" size="small" @click="markSelectedForReview">批量标记复核</el-button>
     </div>
 
-    <el-table class="parts-table" :data="visibleParts" :row-key="row => row._groupKey || row.id" v-loading="loading" :span-method="spanMethod" :row-class-name="tableRowClassName" @selection-change="handleSelectionChange" @row-click="openEdit">
+    <section v-if="isMobile" class="mobile-parts-list" aria-label="零件档案列表" :aria-busy="loading" v-loading="loading">
+      <button v-for="row in visibleParts" :key="row._groupKey || row.id" type="button" class="mobile-part-card" :aria-label="`查看零件 ${row.customer_part_no || row.part_name || '未命名零件'} 的详情`" @click="openEdit(row)">
+        <span class="mobile-part-fields">
+          <span class="mobile-part-field"><span class="mobile-part-label">零件编号</span><span class="mobile-part-value mobile-part-number">{{ row.customer_part_no || '—' }}</span></span>
+          <span class="mobile-part-field"><span class="mobile-part-label">零件名称</span><span class="mobile-part-value">{{ row.part_name || '—' }}</span></span>
+          <span class="mobile-part-field"><span class="mobile-part-label">客户</span><span class="mobile-part-value">{{ row.customer_name || '—' }}</span></span>
+          <span class="mobile-part-field"><span class="mobile-part-label">模具类型</span><span class="mobile-part-value">{{ row.tooling_type || '—' }}</span></span>
+        </span>
+      </button>
+      <el-empty v-if="!loading && !visibleParts.length && !listError" description="没有符合条件的零件，请调整筛选条件" :image-size="72" />
+      <el-skeleton v-if="loading && !visibleParts.length" :rows="8" animated />
+    </section>
+
+    <el-table v-else class="parts-table" :data="visibleParts" :row-key="row => row._groupKey || row.id" v-loading="loading" :span-method="spanMethod" :row-class-name="tableRowClassName" @selection-change="handleSelectionChange" @row-click="openEdit">
       <el-table-column type="selection" width="32" fixed="left" />
       <el-table-column label="零件编号" width="96" fixed>
         <template #default="{ row }">
@@ -103,6 +119,7 @@
       <el-table-column prop="tooling_type" label="模具类型" width="78" />
       <el-table-column prop="press_tonnage" label="冲床吨位" width="92" />
       <el-table-column prop="stock_pcs" label="库存" width="64" align="right" />
+      <!-- 整件删除入口待可访问的回收与恢复流程完善后再开放。 -->
       <el-table-column label="操作" width="100" fixed="right">
         <template #default="{ row }">
           <template v-if="row._isPair">
@@ -116,35 +133,24 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-dropdown trigger="click" @click.stop @command="handleDelete"
-              v-if="row._members.some(member => member.part_status !== 'OBSOLETE')">
-              <el-button link type="danger" size="small">删除</el-button>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item v-for="member in row._members" :key="`delete-${member.id}`" :command="member"
-                    :disabled="member.part_status === 'OBSOLETE'">
-                    删除{{ positionLabel(member.part_position) }}件
-                  </el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
           </template>
           <template v-else>
-            <el-button link type="danger" size="small" @click.stop="handleDelete(row)"
-              v-if="row.part_status !== 'OBSOLETE'">删除</el-button>
+            <el-button link type="primary" size="small" @click.stop="openEdit(row)">查看详情</el-button>
           </template>
         </template>
       </el-table-column>
     </el-table>
 
     <div class="pagination">
+      <div v-if="isMobile" class="mobile-page-summary"><span>第 {{ page.current }} / {{ Math.max(1, Math.ceil(page.total / page.size)) }} 页</span><el-select :model-value="page.size" aria-label="每页记录数" @change="changePageSize"><el-option v-for="size in [20, 50, 100]" :key="size" :label="`每页 ${size} 条`" :value="size" /></el-select></div>
       <el-pagination
         v-model:current-page="page.current"
         v-model:page-size="page.size"
         :total="page.total"
         :page-sizes="[20, 50, 100]"
-        layout="total, sizes, prev, pager, next"
-        @size-change="fetchParts"
+        :layout="isMobile ? 'prev, pager, next' : 'total, sizes, prev, pager, next'"
+        :pager-count="isMobile ? 5 : 7"
+        @size-change="changePageSize"
         @current-change="fetchParts"
       />
     </div>
@@ -191,8 +197,9 @@
 
 <script setup>
 import { computed, ref, reactive, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
+import { useMobileViewport } from '@/composables/useMobileViewport'
 import { useRouter } from 'vue-router'
 import { useCompanyStore } from '@/stores/company'
 import { useUserStore } from '@/stores/user'
@@ -203,6 +210,9 @@ import PartEditorDialog from '@/components/PartEditorDialog.vue'
 const userStore = useUserStore()
 const router = useRouter()
 const companyStore = useCompanyStore()
+const isMobile = useMobileViewport()
+const mobileFiltersOpen = ref(false)
+const listError = ref('')
 
 const parts = ref([])
 const customers = ref([])
@@ -216,6 +226,7 @@ const selectedParts = ref([])
 const appliedSearch = ref('')
 
 const filter = reactive({ search: '', customer_id: null, part_status: '', material: '' })
+const activeFilterCount = computed(() => [filter.customer_id, filter.part_status, filter.material].filter(Boolean).length)
 const page = reactive({ current: 1, size: 20, total: 0 })
 const form = reactive({
   customer_part_no: '', internal_name: '', customer_id: null,
@@ -444,6 +455,7 @@ const handleCompanyChange = (company) => {
 
 const fetchParts = async () => {
   loading.value = true
+  listError.value = ''
   try {
     const filterParams = {
       ...(filter.search && { search: filter.search }),
@@ -461,10 +473,21 @@ const fetchParts = async () => {
     parts.value = (data.items || []).flatMap(toDisplayRows)
     page.total = data.total || 0
   } catch (e) {
+    listError.value = e.message || '零件加载失败，请重试'
     ElMessage.error(e.message || '获取失败')
   } finally {
     loading.value = false
   }
+}
+
+const applyFilters = () => {
+  page.current = 1
+  if (isMobile.value) mobileFiltersOpen.value = false
+  fetchParts()
+}
+const changePageSize = size => {
+  page.size = size
+  applyFilters()
 }
 
 const fetchCustomers = async () => {
@@ -527,17 +550,6 @@ const doSave = async () => {
     ElMessage.error(e.message)
   } finally {
     saving.value = false
-  }
-}
-
-const handleDelete = async (row) => {
-  await ElMessageBox.confirm(`确认删除零件「${row.part_name || row.customer_part_no}」？删除后将不再显示，历史记录仍会保留。`, '确认', { type: 'warning' })
-  try {
-    await partsApi.remove(row.id)
-    ElMessage.success('已删除')
-    fetchParts()
-  } catch (e) {
-    ElMessage.error(e.message)
   }
 }
 
@@ -645,5 +657,23 @@ onMounted(() => {
 }
 @media (max-width: 620px) {
   .filter-controls :deep(.el-select), .filter-controls :deep(.el-input) { width: 100%; }
+}
+@media (max-width: 767px) {
+  .parts-container .list-view-toolbar { grid-template-columns: minmax(0, 1fr) auto; min-height: 0; gap: 8px; margin-bottom: 8px; }
+  .parts-container .list-title-block, .parts-container .filter-controls { grid-column: 1 / -1; }
+  .parts-container .list-caption { display: none; }
+  .parts-container .table-meta { flex-direction: row; align-items: center; margin-bottom: 8px; font-size: 12px; }
+  .mobile-filter-toggle { margin-left: 0; }
+  .mobile-parts-list { display: grid; gap: 6px; min-height: 120px; }
+  .mobile-part-card { display: block; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--zephyr-border); border-radius: 6px; background: var(--zephyr-surface); color: var(--zephyr-text); font: inherit; text-align: left; cursor: pointer; }
+  .mobile-part-card:active { background: var(--zephyr-primary-soft); }
+  .mobile-part-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 16px; }
+  .mobile-part-field { min-width: 0; }
+  .mobile-part-label { display: block; margin-bottom: 2px; color: var(--zephyr-muted); font-size: 11px; line-height: 14px; }
+  .mobile-part-value { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: var(--zephyr-text); font-size: 13px; line-height: 18px; overflow-wrap: anywhere; }
+  .mobile-part-number { color: var(--zephyr-primary); font-weight: 600; }
+  .pagination { flex-direction: column; gap: 12px; padding-bottom: 12px; }
+  .mobile-page-summary { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; color: var(--zephyr-muted); font-size: 13px; }
+  .mobile-page-summary .el-select { width: 130px; }
 }
 </style>

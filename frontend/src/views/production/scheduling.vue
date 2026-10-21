@@ -13,6 +13,9 @@
       </div>
     </header>
 
+    <el-alert v-if="linkedPlanId" class="linked-plan-notice" type="info" :closable="false" show-icon :title="`从工作台打开：生产计划 #${linkedPlanId}`">
+      <template #default>{{ focusedPlan ? '已定位对应计划。' : loading ? '正在定位计划…' : '此计划已不在当前排产队列中。' }}<router-link to="/production/scheduling">查看完整排产</router-link></template>
+    </el-alert>
     <section class="toolbar" aria-label="排产筛选">
       <label class="search-control">
         <el-icon><Search /></el-icon>
@@ -46,6 +49,7 @@
             v-for="plan in filteredPending"
             :key="plan.id"
             class="plan-card"
+            :data-plan-id="plan.id"
             :class="{ selected: selectedPlanId === plan.id, urgent: plan.is_urgent, dragging: dragPlanId === plan.id || pointerDragPlanId === plan.id }"
             :draggable="false"
             tabindex="0"
@@ -109,7 +113,8 @@
                       v-for="(plan, index) in machine.queue"
                       :key="plan.id"
                       class="queue-item"
-                      :class="{ current: index === 0 && machine.state === 'running' }"
+                      :class="{ current: index === 0 && machine.state === 'running', 'workbench-focus': linkedPlanId === plan.id }"
+                      :data-plan-id="plan.id"
                       :draggable="plan.status === 'queued'"
                       @dragstart.stop="plan.status === 'queued' && startQueueDrag(plan.id)"
                       @dragend="clearQueueDrag"
@@ -176,7 +181,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { Close, Edit, Refresh, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { productionApi } from '@/api/production'
@@ -223,6 +229,9 @@ interface MachineGroup { key: string; tonnage: number | null; dualAxis: boolean;
 type TonnageFilter = 'all' | 'dual-axis' | number
 
 const board = ref<SchedulingBoard>({ pending: [], machines: [] })
+const route = useRoute()
+const linkedPlanId = computed(() => /^\d+$/.test(String(route.query.plan_id)) && Number(route.query.plan_id) > 0 ? Number(route.query.plan_id) : undefined)
+const focusedPlan = computed(() => [...board.value.pending, ...board.value.machines.flatMap(machine => machine.queue)].find(plan => plan.id === linkedPlanId.value))
 const loading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
@@ -295,11 +304,15 @@ const loadBoard = async (): Promise<void> => {
   errorMessage.value = ''
   try {
     board.value = await productionApi.schedulingWorkbench<SchedulingBoard>()
-    selectedPlanId.value = null
+    selectedPlanId.value = board.value.pending.some(plan => plan.id === linkedPlanId.value) ? linkedPlanId.value! : null
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : '获取排产工作台失败'
   } finally {
     loading.value = false
+    if (linkedPlanId.value) {
+      await nextTick()
+      document.querySelector(`[data-plan-id="${linkedPlanId.value}"]`)?.scrollIntoView({ block: 'nearest' })
+    }
   }
 }
 
@@ -459,10 +472,13 @@ const saveMachineDetails = async () => {
 }
 
 onMounted(loadBoard)
+watch(linkedPlanId, loadBoard)
 onBeforeUnmount(stopPointerDrag)
 </script>
 
 <style scoped>
+.linked-plan-notice { margin: 14px 0; }
+.queue-item.workbench-focus { outline: 2px solid var(--zephyr-primary); outline-offset: -2px; background: var(--zephyr-primary-soft); }
 .scheduling-page { min-width: 0; padding: 18px 0 28px; color: var(--zephyr-ink, var(--zephyr-ink)); }
 .page-header, .toolbar, .scheduling-board { min-width: 0; }
 .page-header { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; padding-bottom: 16px; border-bottom: 1px solid var(--zephyr-border, var(--zephyr-border)); }

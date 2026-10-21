@@ -1,0 +1,6 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": { "types": [] },
+  "include": ["src/env.d.ts", "src/api/ppap.ts", "src/views/ppap/**/*.vue"],
+  "references": []
+}

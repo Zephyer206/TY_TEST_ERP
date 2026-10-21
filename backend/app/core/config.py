@@ -83,6 +83,8 @@ class Settings(BaseSettings):
 
     # Upload directory
     UPLOAD_DIR: str = Field(default="uploads", description="Local upload directory for drawings and files")
+    PPAP_STORAGE_ROOT: str = Field(default="", description="Private PPAP originals and preview cache; outside public uploads")
+    PPAP_SOFFICE: str = Field(default="", description="Optional LibreOffice executable for local Excel preview")
 
     # Email (optional)
     SMTP_HOST: str = ""

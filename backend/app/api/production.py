@@ -461,6 +461,7 @@ async def list_plan_workbench(
     status_filter: Optional[str] = Query(default=None, alias="status"),
     material_status: Optional[str] = Query(default=None),
     search: Optional[str] = Query(default=None, max_length=120),
+    plan_id: Optional[int] = Query(default=None, ge=1),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=200),
 ) -> ProductionPlanWorkbenchPage:
@@ -477,6 +478,8 @@ async def list_plan_workbench(
     )
     if status_filter:
         query = query.where(ProductionPlan.status == status_filter)
+    if plan_id is not None:
+        query = query.where(ProductionPlan.id == plan_id)
     if material_status in {"pending", "ready"}:
         query = query.where(ProductionPlan.material_status == material_status)
     if search and search.strip():

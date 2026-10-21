@@ -6,6 +6,38 @@
  * limited to endpoint identity and lifecycle information.
  */
 export const apiRegistry = Object.freeze({
+  'ppap.list': { key: 'ppap.list', method: 'GET', path: '/ppap', auth: true, lifecycle: 'active', description: 'List company PPAP archives with exact source-reference filters and server write capability' },
+  'ppap.options': { key: 'ppap.options', method: 'GET', path: '/ppap/options', auth: true, lifecycle: 'active', description: 'Search company customers and customer-scoped part/package references' },
+  'ppap.create': { key: 'ppap.create', method: 'POST', path: '/ppap/{company}/archives', auth: true, lifecycle: 'active', description: 'Quality creates a customer PPAP archive with verified multi-object links' },
+  'ppap.detail': { key: 'ppap.detail', method: 'GET', path: '/ppap/{company}/archives/{archive_id}', auth: true, lifecycle: 'active', description: 'Read archive folders, immutable file versions, submissions and audit history' },
+  'ppap.update': { key: 'ppap.update', method: 'PATCH', path: '/ppap/{company}/archives/{archive_id}', auth: true, lifecycle: 'active', description: 'Quality updates revision-checked archive metadata and linked objects' },
+  'ppap.folderCreate': { key: 'ppap.folderCreate', method: 'POST', path: '/ppap/{company}/archives/{archive_id}/folders', auth: true, lifecycle: 'active', description: 'Quality creates a nested PPAP folder scoped to an archive' },
+  'ppap.folderRename': { key: 'ppap.folderRename', method: 'PATCH', path: '/ppap/{company}/archives/{archive_id}/folders/{folder_id}', auth: true, lifecycle: 'active', description: 'Quality renames a folder without changing existing submission snapshots' },
+  'ppap.upload': { key: 'ppap.upload', method: 'POST', path: '/ppap/{company}/archives/{archive_id}/files', auth: true, lifecycle: 'active', description: 'Quality uploads validated PDF/XLS/XLSX, explicitly resolving same-name versions' },
+  'ppap.preview': { key: 'ppap.preview', method: 'GET', path: '/ppap/{company}/archives/{archive_id}/versions/{version_id}/preview', auth: true, lifecycle: 'active', description: 'Read a private PDF preview of an immutable PDF or Excel source version' },
+  'ppap.original': { key: 'ppap.original', method: 'GET', path: '/ppap/{company}/archives/{archive_id}/versions/{version_id}/original', auth: true, lifecycle: 'active', description: 'Quality downloads the original private source file version' },
+  'ppap.submit': { key: 'ppap.submit', method: 'POST', path: '/ppap/{company}/archives/{archive_id}/submissions', auth: true, lifecycle: 'active', description: 'Quality records a customer submission and freezes directory, references, composition and file versions' },
+  'ppap.feedback': { key: 'ppap.feedback', method: 'PATCH', path: '/ppap/{company}/archives/{archive_id}/submissions/{submission_id}', auth: true, lifecycle: 'active', description: 'Quality records whole-package customer feedback and temporary approval conditions, expiry and evidence' },
+  'nonconforming.workspace': {
+    key: 'nonconforming.workspace', method: 'GET', path: '/nonconforming', auth: true, lifecycle: 'active',
+    description: 'Read company nonconforming records, source batch metadata, rework molds and server identity from PostgreSQL',
+  },
+  'nonconforming.create': {
+    key: 'nonconforming.create', method: 'POST', path: '/nonconforming/{company}/records', auth: true, lifecycle: 'active',
+    description: 'Quality creates a pending-confirmation record with server validation',
+  },
+  'nonconforming.action': {
+    key: 'nonconforming.action', method: 'POST', path: '/nonconforming/{company}/records/{record_id}/actions', auth: true, lifecycle: 'active',
+    description: 'Execute a revision-checked workflow command with server permissions, quantities and audit history',
+  },
+  'nonconforming.saveMold': {
+    key: 'nonconforming.saveMold', method: 'POST', path: '/nonconforming/{company}/molds', auth: true, lifecycle: 'active',
+    description: 'Development saves a revision-checked rework mold and validates company/part/history links and photos',
+  },
+  'workbench.list': {
+    key: 'workbench.list', method: 'GET', path: '/workbench', auth: true, lifecycle: 'active',
+    description: 'Read authenticated personal tasks, role queues and initiated workflows with filters, due counts and pagination; never modifies business records',
+  },
   'auth.login': {
     key: 'auth.login',
     method: 'POST',
@@ -328,7 +360,7 @@ export const apiRegistry = Object.freeze({
   },
   'production.workbench': {
     key: 'production.workbench', method: 'GET', path: '/production/plans/workbench', auth: true, lifecycle: 'active',
-    description: 'List production workbench plans',
+    description: 'List production workbench plans; optional plan_id focuses a single unscheduled plan from the personal workbench',
   },
   'production.planningPartOptions': {
     key: 'production.planningPartOptions', method: 'GET', path: '/production/planning-part-options', auth: true, lifecycle: 'active',

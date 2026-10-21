@@ -81,6 +81,7 @@ from .tooling_step import ToolingStep
 from .tooling_customer_link import ToolingCustomerLink
 from .excel_import import ImportBatch, ExcelImportRow
 from .user import User  # Department 和 Position 已移除，因为与数据库不匹配
+from .nonconforming import NonconformingRecord, NonconformingImportBatch, NonconformingReworkMold
 from .shipping_order import (
     ShippingOrder, ShippingOrderLine, ShippingLabelConfirmation,
     ShippingCancellationConsent, ShippingShipment, ShippingShipmentLine,
@@ -105,6 +106,9 @@ from .machine_tonnage_dict import MachineTonnageDict
 from .mold_type_dict import MoldTypeDict
 
 __all__ = [
+    "NonconformingImportBatch",
+    "NonconformingRecord",
+    "NonconformingReworkMold",
     "AdminContextSwitch",
     "AfterSalesInstallationKit",
     "AfterSalesKitChangeLog",
@@ -213,3 +217,6 @@ __all__ = [
     "ShippingShipmentLine",
     "ShippingLogistics",
 ]
+
+# PPAP metadata is included in Alembic discovery without changing legacy exports.
+from app.models.ppap import PpapArchive, PpapFolder, PpapDocument, PpapFileVersion, PpapSubmission, PpapAuditLog

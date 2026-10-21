@@ -127,6 +127,9 @@ from app.api.sampling_tasks import router as sampling_tasks_router
 from app.api.toolings import router as toolings_router
 from app.api.treatments import router as treatments_router
 from app.api.warehouse import router as warehouse_router
+from app.api.workbench import router as workbench_router
+from app.api.nonconforming import router as nonconforming_router
+from app.api.ppap import router as ppap_router
 from app.api.shipping_orders import router as shipping_orders_router, contract_router as shipping_contract_router
 # Dictionary routers
 from app.api.part_names import router as part_names_router
@@ -165,6 +168,9 @@ app.include_router(sampling_tasks_router, prefix=settings.API_V1_PREFIX)
 app.include_router(toolings_router, prefix=settings.API_V1_PREFIX)
 app.include_router(treatments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(warehouse_router, prefix=settings.API_V1_PREFIX)
+app.include_router(workbench_router, prefix=settings.API_V1_PREFIX)
+app.include_router(nonconforming_router, prefix=settings.API_V1_PREFIX)
+app.include_router(ppap_router, prefix=settings.API_V1_PREFIX)
 app.include_router(shipping_orders_router, prefix=settings.API_V1_PREFIX)
 app.include_router(shipping_contract_router, prefix=settings.API_V1_PREFIX)
 # Dictionary endpoints

@@ -201,3 +201,47 @@ button { touch-action: manipulation; }
   .el-button:active { transform: none !important; }
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0s !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Phone layouts keep every field reachable without fixed columns covering data. */
+@media (max-width: 767px) {
+  html:root { --zephyr-control: 44px; --el-font-size-base: 14px; }
+  .app-shell .workspace > * { min-width: 0; max-width: 100%; }
+  .app-shell .workspace :is(.filter-controls, .filters, .toolbar, .page-head, .workspace-header, .page-header) { flex-wrap: wrap; min-width: 0; gap: 10px; }
+  .app-shell .workspace .filter-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .app-shell .workspace .filter-controls > :is(.el-select, .el-input) { width: 100%; min-width: 0; }
+  .app-shell .workspace .filter-controls > .el-button { margin-left: 0; }
+  .app-shell .workspace .search-control { box-sizing: border-box; height: 44px; }
+  .app-shell .workspace .table-meta { align-items: flex-start; font-size: 13px; }
+  .el-button:not(.is-link), .el-pagination :is(button, .el-pager li) { min-height: 44px; }
+  .el-pagination :is(button, .el-pager li) { min-width: 40px; }
+  .el-input__wrapper, .el-select__wrapper { min-height: 44px; box-sizing: border-box; }
+  .el-input__inner, .el-select__selected-item, .el-textarea__inner { font-size: 16px; }
+  :is(.el-select, .el-input, .el-autocomplete, .el-date-editor) { max-width: 100%; }
+  .app-shell .workspace .el-table { max-width: 100%; }
+  .el-table .el-table__cell:is(.is-fixed-column--left, .is-fixed-column--right, .el-table-fixed-column--left, .el-table-fixed-column--right) { position: static !important; left: auto !important; right: auto !important; }
+  .el-table .el-table__cell:is(.is-fixed-column--left, .is-fixed-column--right, .el-table-fixed-column--left, .el-table-fixed-column--right)::before { display: none; }
+  .app-shell .workspace .el-table .cell { font-size: 13px; overflow-wrap: anywhere; }
+  .el-table .el-scrollbar__wrap { -webkit-overflow-scrolling: touch; }
+  .el-scrollbar__bar.is-horizontal { height: 8px; }
+  .app-shell .workspace .pagination { justify-content: center; flex-wrap: wrap; }
+  .el-pagination { max-width: 100%; flex-wrap: wrap; justify-content: center; row-gap: 8px; }
+  .el-pagination__sizes { margin-right: 0; }
+  .el-dialog { width: calc(100% - 24px) !important; max-width: calc(100% - 24px); margin: 12px auto; }
+  .el-drawer.rtl, .el-drawer.ltr { width: 100% !important; }
+  .el-dialog__body, .el-drawer__body { min-width: 0; overflow-x: hidden; }
+  .el-form-item { min-width: 0; }
+  :is(.el-dialog, .el-drawer) .el-form-item { flex-direction: column; align-items: stretch; }
+  :is(.el-dialog, .el-drawer) .el-form-item__label { justify-content: flex-start; width: auto !important; height: auto; padding-bottom: 6px; line-height: 1.5; }
+  :is(.el-dialog, .el-drawer) .el-form-item__content { min-width: 0; margin-left: 0 !important; }
+  :is(.el-dialog, .el-drawer) .el-form .el-col { flex: 0 0 100%; max-width: 100%; }
+  .el-message-box { width: calc(100% - 32px); max-width: 420px; }
+  .app-shell .workspace .view-toggle { display: none; }
+  .app-shell .workspace .inventory-workspace .summary-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .app-shell .workspace .inventory-workspace .summary-card { min-width: 0; padding: 12px; }
+  .app-shell .workspace .inventory-workspace .summary-card strong { font-size: 22px; overflow-wrap: anywhere; }
+  .part-editor-drawer .el-input.is-disabled .el-input__inner { color: var(--zephyr-text); -webkit-text-fill-color: var(--zephyr-text); }
+  .price-management-container, .customer-prices-container { padding: 12px 0 !important; }
+  .customer-prices-container .el-card__body { padding: 12px; }
+  .customer-prices-container .el-form--inline .el-form-item { display: flex; margin-right: 0; }
+  .customer-prices-container .el-select { width: 100% !important; }
+}
