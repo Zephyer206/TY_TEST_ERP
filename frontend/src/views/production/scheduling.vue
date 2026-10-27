@@ -24,8 +24,7 @@
       <div class="tonnage-filters" aria-label="机台吨位和类型筛选">
         <span>机台吨位/类型</span>
         <button type="button" :class="{ active: tonnageFilter === 'all' }" @click="tonnageFilter = 'all'">全部</button>
-        <button v-for="tonnage in availableTonnages" :key="tonnage" type="button" :class="{ active: tonnageFilter === tonnage }" @click="tonnageFilter = tonnage">{{ tonnage }}T</button>
-        <button type="button" :class="{ active: tonnageFilter === 'dual-axis' }" @click="tonnageFilter = 'dual-axis'">双轴</button>
+        <button v-for="option in availablePressTypes" :key="option.key" type="button" :class="{ active: tonnageFilter === option.key }" :aria-pressed="tonnageFilter === option.key" @click="tonnageFilter = option.key">{{ option.label }}</button>
       </div>
       <button class="refresh-button" type="button" :disabled="loading" @click="loadBoard">
         <el-icon><Refresh /></el-icon>刷新
@@ -208,6 +207,9 @@ interface SchedulingMachine {
   name: string
   machine_type: string | null
   tonnage: number | null
+  press_type_key: string
+  press_type_label: string
+  is_dual_axis: boolean
   max_stroke: number | null
   bed_size: string | null
   state: string
@@ -226,7 +228,6 @@ interface MachineEditForm {
 
 interface SchedulingBoard { pending: SchedulingPlan[]; machines: SchedulingMachine[] }
 interface MachineGroup { key: string; tonnage: number | null; dualAxis: boolean; label: string; machines: SchedulingMachine[] }
-type TonnageFilter = 'all' | 'dual-axis' | number
 
 const board = ref<SchedulingBoard>({ pending: [], machines: [] })
 const route = useRoute()
@@ -235,7 +236,7 @@ const focusedPlan = computed(() => [...board.value.pending, ...board.value.machi
 const loading = ref(false)
 const errorMessage = ref('')
 const search = ref('')
-const tonnageFilter = ref<TonnageFilter>('all')
+const tonnageFilter = ref('all')
 const selectedPlanId = ref<number | null>(null)
 const dragPlanId = ref<number | null>(null)
 const queueDragPlanId = ref<number | null>(null)
@@ -258,10 +259,6 @@ const machineForm = ref<MachineEditForm>({
 const formatQty = (value: number) => value.toLocaleString('zh-CN')
 const formatTonnage = (value: number | null) => value === null ? '未标注吨位' : `${value}T`
 const formatMachineType = (machine: SchedulingMachine) => machine.machine_type || formatTonnage(machine.tonnage)
-const isDualAxisMachine = (machine: SchedulingMachine) => {
-  const machineType = machine.machine_type || ''
-  return machineType.includes('双') && !machineType.includes('料架')
-}
 const displayPartNumbers = (plan: SchedulingPlan) => [plan.customer_part_no, plan.paired_customer_part_no].filter(Boolean).join(' / ') || '未维护客户件号'
 const planAriaLabel = (plan: SchedulingPlan) => `${displayPartNumbers(plan)}，订单量 ${formatQty(plan.total_qty)}`
 const machineStateLabel = (state: string) => ({ running: '生产中', idle: '空闲', fault: '故障', pending_check: '待确认', repairing: '维修中', offline: '离线' }[state] || state)
@@ -269,7 +266,9 @@ const machineStateLabel = (state: string) => ({ running: '生产中', idle: '空
 const scheduledPlans = computed(() => board.value.machines.flatMap(machine => machine.queue))
 const scheduledCount = computed(() => scheduledPlans.value.length)
 const runningCount = computed(() => board.value.machines.filter(machine => machine.state === 'running').length)
-const availableTonnages = computed(() => [...new Set(board.value.machines.map(machine => machine.tonnage).filter((tonnage): tonnage is number => tonnage !== null))].sort((a, b) => a - b))
+const availablePressTypes = computed(() => [...new Map(board.value.machines.map(machine => [machine.press_type_key, {
+  key: machine.press_type_key, label: machine.press_type_label, tonnage: machine.tonnage, dualAxis: machine.is_dual_axis,
+}])).values()].sort((a, b) => (a.tonnage ?? Infinity) - (b.tonnage ?? Infinity) || Number(a.dualAxis) - Number(b.dualAxis)))
 const filteredPending = computed(() => {
   const keyword = search.value.trim().toLowerCase()
   return board.value.pending.filter(plan => !keyword || `${displayPartNumbers(plan)} ${plan.tooling_number || ''}`.toLowerCase().includes(keyword))
@@ -277,10 +276,9 @@ const filteredPending = computed(() => {
 const visibleGroups = computed<MachineGroup[]>(() => {
   const groups = new Map<string, { tonnage: number | null; dualAxis: boolean; machines: SchedulingMachine[] }>()
   board.value.machines.forEach(machine => {
-    const dualAxis = isDualAxisMachine(machine)
-    if (tonnageFilter.value === 'dual-axis' && !dualAxis) return
-    if (typeof tonnageFilter.value === 'number' && machine.tonnage !== tonnageFilter.value) return
-    const key = `${machine.tonnage ?? 'unknown'}-${dualAxis ? 'dual-axis' : 'standard'}`
+    const dualAxis = machine.is_dual_axis
+    const key = machine.press_type_key
+    if (tonnageFilter.value !== 'all' && key !== tonnageFilter.value) return
     const group = groups.get(key) || { tonnage: machine.tonnage, dualAxis, machines: [] }
     group.machines.push(machine)
     groups.set(key, group)
@@ -291,7 +289,7 @@ const visibleGroups = computed<MachineGroup[]>(() => {
       key,
       tonnage: group.tonnage,
       dualAxis: group.dualAxis,
-      label: group.dualAxis ? `${formatTonnage(group.tonnage)}（双轴）` : formatTonnage(group.tonnage),
+      label: group.machines[0].press_type_label,
       machines: group.machines,
     }))
 })

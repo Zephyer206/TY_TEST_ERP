@@ -12,6 +12,10 @@ export interface QuoteGroupItem {
   pitch?: number | null
   utilization?: number | null
   press_tonnage?: number | null
+  press_type_key?: string | null
+  press_type_label?: string | null
+  press_is_dual_axis?: boolean | null
+  press_tonnage_source?: 'type' | 'manual' | null
   cavity_count: number
   tooling_cost: number
   tooling_lead_time: number
@@ -75,6 +79,7 @@ export interface QuoteGroupUpdate {
 }
 
 export const quoteGroupsApi = {
+  syncPress: (id: number | string) => callApi<QuoteGroupRecord>('quoteGroups.syncPress', { pathParams: { group_id: id } }),
   list: (params: ApiParams = {}) => callApi<QuoteGroupRecord[]>('quoteGroups.list', { params }),
   detail: (id: number | string) => callApi<QuoteGroupRecord>('quoteGroups.detail', { pathParams: { group_id: id } }),
   create: (inquiryId: number | string) => callApi<QuoteGroupRecord>('quoteGroups.create', { data: { inquiry_id: inquiryId } }),

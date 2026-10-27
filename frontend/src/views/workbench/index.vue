@@ -1,7 +1,7 @@
 <template>
   <div class="workbench-entry">
     <nav v-if="canViewBoss" class="workbench-views" aria-label="工作台视角">
-      <button type="button" :class="{ active: showBoss }" :aria-pressed="showBoss" @click="selectView('boss')"><el-icon><DataAnalysis /></el-icon>老板总览</button>
+      <button type="button" :class="{ active: showBoss }" :aria-pressed="showBoss" @click="selectView('boss')"><el-icon><DataAnalysis /></el-icon>总览</button>
       <button type="button" :class="{ active: !showBoss }" :aria-pressed="!showBoss" @click="selectView('tasks')"><el-icon><List /></el-icon>岗位待办</button>
       <span>{{ showBoss ? '全公司经营视角' : '现有业务处理事项' }}</span>
     </nav>

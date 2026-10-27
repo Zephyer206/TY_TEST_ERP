@@ -1,9 +1,12 @@
 """Business logic for material batch management."""
 
 from datetime import datetime
+from decimal import Decimal
+import math
+from uuid import uuid4
 from typing import Optional, Sequence
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -23,14 +26,14 @@ def generate_batch_no() -> str:
     """Generate a unique material batch number."""
     now = datetime.utcnow()
     prefix = now.strftime("%Y%m%d")
-    return f"MAT-{prefix}-{now.strftime('%H%M%S')}"
+    return f"MAT-{prefix}-{uuid4().hex[:16]}"
 
 
 def generate_qr_uid() -> str:
     """Generate a unique QR UID (used as the actual unique identifier)."""
     now = datetime.utcnow()
     prefix = now.strftime("%Y%m%d")
-    return f"MAT-{prefix}-{now.strftime('%H%M%S')}"
+    return f"MAT-{prefix}-{uuid4().hex[:16]}"
 
 
 def generate_child_batch_no(parent_batch_no: str, index: int) -> str:
@@ -47,9 +50,13 @@ async def create_material_batch(
     width: Optional[float] = None,
     length: Optional[float] = None,
     po_no: Optional[str] = None,
+    operator_id: Optional[int] = None,
+    commit: bool = True,
 ) -> MaterialBatch:
     """Create a new material batch with auto QR code generation."""
     from app.services.qr_service import generate_material_batch_qr
+
+    _positive_weight(gross_weight)
 
     qr_uid = generate_qr_uid()
     batch_no = generate_batch_no()
@@ -73,9 +80,12 @@ async def create_material_batch(
     await db.flush()
 
     batch.qr_code = generate_material_batch_qr(batch.id)
-    await db.commit()
-    await db.refresh(batch)
-    return batch
+    await _record_transaction(db, batch.id, batch.batch_no, "receive", gross_weight, gross_weight,
+                              operator_id=operator_id, reference_type="inbound")
+    await db.flush()
+    if commit:
+        await db.commit()
+    return await get_batch_by_id(db, batch.id)
 
 
 async def get_batch_by_id(
@@ -146,6 +156,7 @@ async def perform_iqc(
     result: IQCResult,
     operator_id: int,
     notes: Optional[str] = None,
+    commit: bool = True,
 ) -> MaterialBatch:
     """Perform IQC inspection on a material batch."""
     if batch.status != BatchStatus.PENDING_IQC:
@@ -171,12 +182,14 @@ async def perform_iqc(
         weight_after=batch.current_weight,
         reference_type="iqc",
         reference_id=operator_id,
+        operator_id=operator_id,
         notes=f"IQC result: {result.value}",
     )
 
-    await db.commit()
-    await db.refresh(batch)
-    return batch
+    await db.flush()
+    if commit:
+        await db.commit()
+    return await get_batch_by_id(db, batch.id)
 
 
 async def split_batch(
@@ -184,6 +197,7 @@ async def split_batch(
     batch: MaterialBatch,
     splits: list[dict],
     operator_id: Optional[int] = None,
+    commit: bool = True,
 ) -> list[MaterialBatch]:
     """Split a material batch into child batches (single-table design).
 
@@ -191,6 +205,12 @@ async def split_batch(
     Every child gets its own unique QR code.
     """
     from app.services.qr_service import generate_material_batch_qr
+
+    batch = await _locked_batch(db, batch.id)
+    if not splits:
+        raise ValueError("At least one split is required")
+    for split in splits:
+        _positive_weight(split.get("weight"))
 
     if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.PARTIAL):
         raise ValueError(f"Batch not splittable: {batch.status.value}")
@@ -201,11 +221,22 @@ async def split_batch(
             f"Split weight exceeds current weight: {total_split_weight} > {batch.current_weight}"
         )
 
+    existing_names = list((await db.execute(select(MaterialBatch.batch_no).where(
+        MaterialBatch.parent_batch_id == batch.id))).scalars())
+    existing_names += list((await db.execute(select(MaterialBatchChild.child_batch_no).where(
+        MaterialBatchChild.parent_batch_id == batch.id))).scalars())
+    existing_indices = [int(name.rsplit("-CH", 1)[-1]) for name in existing_names
+                        if name and "-CH" in name and name.rsplit("-CH", 1)[-1].isdigit()]
+    next_index = max(existing_indices, default=0) + 1
+    parent_number = batch.batch_no or batch.qr_uid
+    names = [generate_child_batch_no(parent_number, i) for i in range(next_index, next_index + len(splits))]
+    if any(len(name) > 100 for name in names):
+        raise ValueError("Child batch number is too long")
     children: list[MaterialBatch] = []
-    for idx, split in enumerate(splits, start=1):
-        child_batch_no = generate_child_batch_no(batch.batch_no, idx)
+    for child_batch_no, split in zip(names, splits):
 
         child = MaterialBatch(
+            qr_uid=generate_qr_uid(),
             batch_no=child_batch_no,
             qr_code=None,  # 生成后赋值
             material_id=batch.material_id,
@@ -261,8 +292,12 @@ async def split_batch(
             notes=f"Split from parent batch {batch.batch_no}",
         )
 
-    await db.commit()
-    return children
+    await db.flush()
+    if commit:
+        await db.commit()
+    return list((await db.execute(select(MaterialBatch).options(
+        joinedload(MaterialBatch.material), joinedload(MaterialBatch.supplier)).where(
+        MaterialBatch.id.in_([child.id for child in children])).order_by(MaterialBatch.id))).scalars())
 
 
 async def consume_material(
@@ -272,9 +307,12 @@ async def consume_material(
     reference_type: Optional[str] = None,
     reference_id: Optional[int] = None,
     operator_id: Optional[int] = None,
+    commit: bool = True,
 ) -> MaterialBatch:
     """Consume material from a batch."""
-    if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.IN_USE):
+    _positive_weight(weight)
+    batch = await _locked_batch(db, batch.id)
+    if batch.status not in (BatchStatus.AVAILABLE, BatchStatus.IN_USE, BatchStatus.PARTIAL):
         raise ValueError(f"Batch not available for consumption: {batch.status.value}")
 
     if weight > batch.current_weight:
@@ -300,9 +338,25 @@ async def consume_material(
         operator_id=operator_id,
     )
 
-    await db.commit()
-    await db.refresh(batch)
-    return batch
+    await db.flush()
+    if commit:
+        await db.commit()
+    return await get_batch_by_id(db, batch.id)
+
+
+def _positive_weight(weight):
+    if (isinstance(weight, bool) or not isinstance(weight, (int, float, Decimal))
+            or not math.isfinite(weight) or weight <= 0):
+        raise ValueError("Weight must be a positive finite number")
+
+
+async def _locked_batch(db, batch_id):
+    row = (await db.execute(select(MaterialBatch).where(
+        MaterialBatch.id == batch_id, MaterialBatch.is_deleted.is_(False)).with_for_update()
+        .execution_options(populate_existing=True))).scalar_one_or_none()
+    if row is None or row.current_weight is None or not math.isfinite(row.current_weight):
+        raise ValueError("Material batch is unavailable")
+    return row
 
 
 async def scrap_batch(
@@ -476,9 +530,12 @@ async def get_materials(
     grade: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
+    include_inactive: bool = False,
 ) -> Sequence[Material]:
     """Get materials with optional filters."""
-    query = select(Material).where(Material.is_active == True)
+    query = select(Material).options(joinedload(Material.supplier))
+    if not include_inactive:
+        query = query.where(Material.is_active == True)
 
     if grade:
         query = query.where(Material.grade.ilike(f"%{grade}%"))
@@ -549,8 +606,6 @@ async def get_child_batch_by_id(
         .options(
             joinedload(MaterialBatch.material),
             joinedload(MaterialBatch.supplier),
-            joinedload(MaterialBatch.parent_batch).joinedload(MaterialBatch.material),
-            joinedload(MaterialBatch.parent_batch).joinedload(MaterialBatch.supplier),
         )
         .where(MaterialBatch.id == child_id, MaterialBatch.is_deleted == False)
     )
@@ -593,4 +648,4 @@ async def get_sibling_batches(
     )
     if exclude_id is not None:
         query = query.where(MaterialBatch.id != exclude_id)
-    return (await db.execute(query)).scalars().all()
+    return (await db.execute(query.order_by(MaterialBatch.created_at, MaterialBatch.id))).scalars().all()

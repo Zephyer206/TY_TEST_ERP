@@ -11,9 +11,9 @@ from app.models.customer import Customer
 from app.models.customer_inquiry import CustomerInquiry
 from app.models.quote_group import QuoteGroup, QuoteGroupItem
 from app.schemas.quote_group import QuoteGroupCreate, QuoteGroupItemResponse, QuoteGroupResponse, QuoteGroupUpdate
+from app.services.quote_press_service import LOCKED_QUOTE_GROUP_STATUSES, press_metadata, sync_quote_presses
 
 router = APIRouter(prefix="/quote-groups", tags=["Quote Groups"])
-LOCKED_QUOTE_GROUP_STATUSES = {"已提交审批", "已审批", "已定点"}
 
 
 def assert_quote_group_editable(group: QuoteGroup) -> None:
@@ -55,8 +55,13 @@ async def _response(db: DbSession, group: QuoteGroup) -> QuoteGroupResponse:
         packaging_fee=group.packaging_fee, freight_fee=group.freight_fee,
         management_fee=group.management_fee, profit_margin=group.profit_margin,
         material_adjustment=group.material_adjustment, quote_note=group.quote_note,
-        updated_at=group.updated_at, items=[QuoteGroupItemResponse.model_validate(item) for item in group.items],
+        updated_at=group.updated_at, items=[_item_response(item) for item in group.items],
     )
+
+
+def _item_response(item: QuoteGroupItem) -> QuoteGroupItemResponse:
+    result = QuoteGroupItemResponse.model_validate(item)
+    return result.model_copy(update=press_metadata(item.technical_snapshot, item.press_tonnage))
 
 
 def _group_query():
@@ -64,8 +69,10 @@ def _group_query():
 
 
 async def ensure_quote_group(db: DbSession, inquiry: CustomerInquiry, user_id: int) -> QuoteGroup:
-    existing = (await db.execute(select(QuoteGroup).where(QuoteGroup.inquiry_id == inquiry.id))).scalar_one_or_none()
+    existing = (await db.execute(select(QuoteGroup).options(selectinload(QuoteGroup.items)).where(QuoteGroup.inquiry_id == inquiry.id))).scalar_one_or_none()
     if existing is not None:
+        if existing.status not in LOCKED_QUOTE_GROUP_STATUSES:
+            sync_quote_presses(existing, inquiry)
         return existing
     group = QuoteGroup(
         group_no=f"QG-{inquiry.id:06d}", inquiry_id=inquiry.id, customer_id=inquiry.customer_id,
@@ -134,6 +141,21 @@ async def create_quote_group(data: QuoteGroupCreate, db: DbSession, current_user
     group = await ensure_quote_group(db, inquiry, current_user.id)
     await db.commit()
     group = (await db.execute(_group_query().where(QuoteGroup.id == group.id))).scalars().unique().first()
+    return await _response(db, group)
+
+
+@router.post("/{group_id}/sync-press", response_model=QuoteGroupResponse)
+async def sync_quote_group_press(group_id: int, db: DbSession, current_user: CurrentUser) -> QuoteGroupResponse:
+    """Refresh only press engineering fields from the approved inquiry; preserve prices."""
+    require_role(current_user, min_level=2)
+    group = (await db.execute(_group_query().where(QuoteGroup.id == group_id))).scalars().unique().first()
+    if group is None:
+        raise HTTPException(404, detail="Quote group not found")
+    inquiry = await db.get(CustomerInquiry, group.inquiry_id)
+    if inquiry is None:
+        raise HTTPException(404, detail="Customer inquiry not found")
+    sync_quote_presses(group, inquiry)
+    await db.commit()
     return await _response(db, group)
 
 

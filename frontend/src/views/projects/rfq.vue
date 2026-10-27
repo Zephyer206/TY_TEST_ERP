@@ -49,12 +49,12 @@
         <div class="attachment-heading"><strong>询价附件</strong><span>{{ selectedRfq.attachments.length }} 个文件</span></div>
         <ul v-if="selectedRfq.attachments.length" class="attachment-list"><li v-for="file in selectedRfq.attachments" :key="file.name"><a :href="file.url" target="_blank" rel="noopener">{{ file.name }}</a><small>{{ formatSize(file.size) }}</small></li></ul>
         <el-empty v-else description="暂未上传询价文件" :image-size="64" />
-        <section class="technical-sheet">
+        <section class="technical-sheet" v-loading="technicalSaving">
           <div class="technical-heading">
             <div><strong>技术分析结果</strong><span>按零件填写，作为后续报价的依据</span></div>
             <el-button v-if="selectedRfq.technicalReview !== '已完成'" size="small" type="primary" plain @click="addTechnicalItem">新增零件</el-button>
           </div>
-          <div class="technical-legend">TWP：料厚、宽度、步距，单位均为 mm；利用率、冲床吨位、模具费和模具周期由技术分析后提供。</div>
+          <div class="technical-legend">TWP：料厚、宽度、步距，单位均为 mm；按吨位及普通／双轴选择冲床类型，特殊情况可手动填写吨位。</div>
           <div v-for="(item, index) in selectedRfq.technicalItems" :key="item.key" class="technical-item">
             <div class="technical-item-heading"><strong>零件 {{ index + 1 }}</strong><el-button v-if="selectedRfq.technicalReview !== '已完成'" link type="danger" size="small" @click="removeTechnicalItem(index)">移除</el-button></div>
             <div class="technical-grid">
@@ -66,7 +66,23 @@
               <label><span>宽度 / W (mm)</span><el-input v-model="item.width" size="small" placeholder="mm" :disabled="selectedRfq.technicalReview === '已完成'" /></label>
               <label><span>步距 / P (mm)</span><el-input v-model="item.pitch" size="small" placeholder="mm" :disabled="selectedRfq.technicalReview === '已完成'" /></label>
               <label><span>材料利用率 (%)</span><el-input v-model="item.utilization" size="small" placeholder="%" :disabled="selectedRfq.technicalReview === '已完成'" /></label>
-              <label><span>冲床吨位 (t)</span><el-input v-model="item.pressTonnage" size="small" placeholder="吨" :disabled="selectedRfq.technicalReview === '已完成'" /></label>
+              <div class="press-field">
+                <div class="press-field-heading">
+                  <label :for="`press-${item.key}`">冲床类型 / 吨位</label>
+                  <el-button v-if="selectedRfq.technicalReview !== '已完成'" link type="primary" size="small" :disabled="technicalSaving" @click="switchPressSource(item)">{{ item.pressTonnageSource === 'manual' ? '选择冲床类型' : '手动填写' }}</el-button>
+                </div>
+                <el-select v-if="item.pressTonnageSource === 'type'" :id="`press-${item.key}`" v-model="item.pressTypeKey" filterable clearable size="small" placeholder="选择冲床类型" :loading="pressTypesLoading" :disabled="selectedRfq.technicalReview === '已完成' || technicalSaving" :aria-describedby="`press-hint-${item.key}`" @change="selectPressType(item)">
+                  <el-option v-if="item.pressTypeKey && !pressTypes.some(option => option.key === item.pressTypeKey)" :value="item.pressTypeKey" :label="item.pressTypeLabel || '原冲床类型'" disabled />
+                  <el-option v-for="option in pressTypes" :key="option.key" :value="option.key" :label="option.label" />
+                </el-select>
+                <el-input v-else :id="`press-${item.key}`" v-model="item.pressTonnage" size="small" inputmode="numeric" placeholder="特殊情况填写吨位" :disabled="selectedRfq.technicalReview === '已完成' || technicalSaving" :aria-describedby="`press-hint-${item.key}`" />
+                <div :id="`press-hint-${item.key}`" class="press-hint" aria-live="polite">
+                  <template v-if="item.pressTonnageSource === 'manual'">特殊情况手填，单位 t</template>
+                  <template v-else-if="pressTypesError">类型加载失败 <el-button link type="primary" size="small" @click="loadPressTypes">重试</el-button></template>
+                  <template v-else-if="item.pressTypeKey">吨位：{{ item.pressTonnage }} t · {{ item.pressIsDualAxis ? '双轴' : '普通' }}</template>
+                  <template v-else>{{ pressTypesLoading ? '正在加载冲床类型…' : pressTypes.length ? '按吨位、普通／双轴搜索' : '暂无现有冲床类型，可手动填写' }}</template>
+                </div>
+              </div>
               <label><span>穴数</span><el-input v-model="item.cavityCount" size="small" placeholder="如 1、2" :disabled="selectedRfq.technicalReview === '已完成'" /></label>
               <label v-if="Number(item.cavityCount) >= 2"><span>一出二左右件</span><el-switch v-model="item.isLeftRightPair" size="small" :disabled="selectedRfq.technicalReview === '已完成'" @change="handlePairToggle(item)" /></label>
               <label><span>模具费 (元)</span><el-input v-model="item.toolingCost" size="small" placeholder="报价用" :disabled="selectedRfq.technicalReview === '已完成'" /></label>
@@ -75,13 +91,13 @@
           </div>
           <div class="technical-footer">
             <span>{{ technicalDataCount }} 个零件已填写技术资料<span v-if="leftRightPairCount">，{{ leftRightPairCount }} 件标记为一出二左右件</span><em v-if="leftRightPairInvalid">一出二左右件必须填写零件号1和零件号2</em></span>
-            <el-button v-if="selectedRfq.technicalReview !== '已完成'" size="small" type="primary" @click="saveTechnicalData">保存技术资料</el-button>
+            <el-button v-if="selectedRfq.technicalReview !== '已完成'" size="small" type="primary" :loading="technicalSaving" @click="saveTechnicalData">保存技术资料</el-button>
           </div>
         </section>
         <p class="review-note">资料已随询价单提交给技术评审，技术资料完整后才进入报价组。</p>
         <div class="review-actions" v-if="selectedRfq.technicalReview !== '已完成'">
-          <el-button type="danger" plain @click="reviewRfq('待补充')">退回补充资料</el-button>
-          <el-button type="primary" :disabled="!canPassTechnicalReview" @click="reviewRfq('已完成')">通过技术评审</el-button>
+          <el-button type="danger" plain :disabled="technicalSaving" @click="reviewRfq('待补充')">退回补充资料</el-button>
+          <el-button type="primary" :disabled="!canPassTechnicalReview || technicalSaving" @click="reviewRfq('已完成')">通过技术评审</el-button>
         </div>
       </template>
     </el-dialog>
@@ -89,13 +105,14 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { Plus, Search } from '@element-plus/icons-vue'
 import { ElMessage, type UploadUserFile } from 'element-plus'
 import { persistWorkspace, projects } from './data'
 import { customersApi } from '@/api/customers'
-import { customerInquiriesApi, type CustomerInquiryRecord } from '@/api/customerInquiries'
+import { customerInquiriesApi, type CustomerInquiryRecord, type InquiryPressSelection } from '@/api/customerInquiries'
+import { machinesApi, type PressTypeOption } from '@/api/machines'
 
 const route = useRoute()
 const technicalMode = computed(() => route.query.review === 'technical')
@@ -109,7 +126,12 @@ const customerSaving = ref(false)
 const customerForm = reactive({ name: '', sheet_key: '' })
 const detailVisible = ref(false)
 const loading = ref(false)
+const inquiriesLoaded = ref(false)
 const creating = ref(false)
+const technicalSaving = ref(false)
+const pressTypes = ref<PressTypeOption[]>([])
+const pressTypesLoading = ref(false)
+const pressTypesError = ref(false)
 type InquiryView = {
   backendId: number
   id: string
@@ -126,7 +148,7 @@ type InquiryView = {
   attachments: CustomerInquiryRecord['attachments']
   technicalItems: TechnicalReviewItem[]
 }
-type TechnicalReviewItem = {
+type TechnicalReviewItem = InquiryPressSelection & {
   key: string
   customerPartNo: string
   customerPartNo2: string
@@ -136,7 +158,6 @@ type TechnicalReviewItem = {
   width: string
   pitch: string
   utilization: string
-  pressTonnage: string
   cavityCount: string
   isLeftRightPair: boolean
   pairGroupKey?: string
@@ -146,7 +167,6 @@ type TechnicalReviewItem = {
 }
 const inquiries = ref<InquiryView[]>([])
 const selectedRfq = ref<InquiryView | null>(null)
-const technicalReviewStore = reactive<Record<number, TechnicalReviewItem[]>>({})
 const createTechnicalItem = (): TechnicalReviewItem => ({
   key: `technical-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   customerPartNo: '',
@@ -158,6 +178,10 @@ const createTechnicalItem = (): TechnicalReviewItem => ({
   pitch: '',
   utilization: '',
   pressTonnage: '',
+  pressTonnageSource: 'type',
+  pressTypeKey: null,
+  pressTypeLabel: '',
+  pressIsDualAxis: null,
   cavityCount: '',
   isLeftRightPair: false,
   toolingCost: '',
@@ -167,6 +191,8 @@ const normalizeTechnicalItem = (item: Partial<TechnicalReviewItem>): TechnicalRe
   ...createTechnicalItem(),
   ...item,
   key: item.key || `technical-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  pressTonnage: String(item.pressTonnage ?? ''),
+  pressTonnageSource: item.pressTonnageSource === 'type' ? 'type' : item.pressTonnageSource === 'manual' || item.pressTonnage ? 'manual' : 'type',
   isLeftRightPair: Boolean(item.isLeftRightPair),
   pairGroupKey: item.pairGroupKey,
   pairIndex: item.pairIndex === 1 || item.pairIndex === 2 ? item.pairIndex : undefined,
@@ -190,10 +216,6 @@ const normalizeTechnicalItems = (items: TechnicalReviewItem[]) => {
   })
   return collapsed
 }
-const restoreTechnicalReviewStore = () => {
-  // Technical review data is loaded from the inquiry API.
-}
-restoreTechnicalReviewStore()
 const toView = (record: CustomerInquiryRecord): InquiryView => ({
   backendId: record.id,
   id: record.inquiry_no,
@@ -207,10 +229,11 @@ const toView = (record: CustomerInquiryRecord): InquiryView => ({
   technicalReview: record.technical_review,
   technicalReviewNote: record.technical_review_note,
   attachments: record.attachments || [],
-  technicalItems: normalizeTechnicalItems((record.technical_data || []) as TechnicalReviewItem[]),
+  technicalItems: normalizeTechnicalItems((record.technical_data || []) as unknown as TechnicalReviewItem[]),
 })
 const loadInquiries = async () => {
   loading.value = true
+  inquiriesLoaded.value = false
   try {
     const rows = await customerInquiriesApi.list({ search: keyword.value || undefined })
     inquiries.value = rows.map(toView)
@@ -218,6 +241,7 @@ const loadInquiries = async () => {
     ElMessage.error(error instanceof Error ? error.message : '获取询价列表失败')
   } finally {
     loading.value = false
+    inquiriesLoaded.value = true
   }
 }
 const filtered = computed(() => inquiries.value.filter(row => {
@@ -261,14 +285,55 @@ const formatSize = (size: number) => size >= 1024 * 1024 ? (size / 1024 / 1024).
 const technicalDataCount = computed(() => selectedRfq.value?.technicalItems.filter(item => item.partName.trim() || item.customerPartNo.trim() || item.customerPartNo2.trim()).length || 0)
 const leftRightPairCount = computed(() => (selectedRfq.value?.technicalItems.filter(item => Number(item.cavityCount) >= 2 && item.isLeftRightPair).length || 0) * 2)
 const leftRightPairInvalid = computed(() => selectedRfq.value?.technicalItems.some(item => item.isLeftRightPair && (Number(item.cavityCount) < 2 || !item.customerPartNo2.trim())) || false)
-const canPassTechnicalReview = computed(() => technicalDataCount.value > 0 && !leftRightPairInvalid.value)
+const isPositiveTonnage = (value: string) => /^\d+$/.test(value.trim()) && Number(value) > 0 && Number(value) <= 2147483647
+const canPassTechnicalReview = computed(() => technicalDataCount.value > 0 && !leftRightPairInvalid.value && selectedRfq.value?.technicalItems.every(item => isPositiveTonnage(item.pressTonnage) && (item.pressTonnageSource === 'manual' || Boolean(item.pressTypeKey))))
 const partNoLabel = (item: TechnicalReviewItem) => item.isLeftRightPair ? '零件号1' : '客户件号'
+const loadPressTypes = async () => {
+  if (pressTypesLoading.value) return
+  pressTypesLoading.value = true
+  pressTypesError.value = false
+  try {
+    pressTypes.value = await machinesApi.pressTypes()
+  } catch {
+    pressTypesError.value = true
+  } finally {
+    pressTypesLoading.value = false
+  }
+}
+const selectPressType = (item: TechnicalReviewItem) => {
+  const option = pressTypes.value.find(option => option.key === item.pressTypeKey)
+  item.pressTypeKey = option?.key ?? null
+  item.pressTypeLabel = option?.label ?? ''
+  item.pressIsDualAxis = option?.is_dual_axis ?? null
+  item.pressTonnage = option ? String(option.tonnage) : ''
+}
+const switchPressSource = (item: TechnicalReviewItem) => {
+  item.pressTonnageSource = item.pressTonnageSource === 'type' ? 'manual' : 'type'
+  item.pressTypeKey = null
+  item.pressTypeLabel = ''
+  item.pressIsDualAxis = null
+  item.pressTonnage = ''
+}
 const openDetail = (row: InquiryView) => {
   row.technicalItems = row.technicalItems.length ? normalizeTechnicalItems(row.technicalItems) : [createTechnicalItem()]
-  technicalReviewStore[row.backendId] = row.technicalItems
   selectedRfq.value = row
   detailVisible.value = true
+  void loadPressTypes()
 }
+let inquiryLinkRequest = 0
+watch(() => [route.query.inquiry_id, inquiriesLoaded.value] as const, async ([value, loaded]) => {
+  const request = ++inquiryLinkRequest
+  if (!loaded || typeof value !== 'string' || !/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) return
+  const id = Number(value)
+  detailVisible.value = false
+  try {
+    const row = inquiries.value.find(item => item.backendId === id) || toView(await customerInquiriesApi.detail(id))
+    if (request !== inquiryLinkRequest || route.query.inquiry_id !== value) return
+    openDetail(row)
+  } catch (error) {
+    if (request === inquiryLinkRequest) ElMessage.error(error instanceof Error ? error.message : '无法打开关联询价')
+  }
+}, { immediate: true })
 const addTechnicalItem = () => {
   if (!selectedRfq.value) return
   selectedRfq.value.technicalItems.push(createTechnicalItem())
@@ -296,7 +361,7 @@ const removeTechnicalItem = (index: number) => {
     selectedRfq.value.technicalItems.splice(index, 1)
   }
 }
-const saveTechnicalData = () => {
+const validateTechnicalData = () => {
   if (!selectedRfq.value) return false
   if (!technicalDataCount.value) {
     ElMessage.warning('请至少填写一个零件名称或客户件号')
@@ -306,8 +371,10 @@ const saveTechnicalData = () => {
     ElMessage.warning('一出二左右件需要同时填写零件号1和零件号2')
     return false
   }
-  technicalReviewStore[selectedRfq.value.backendId] = selectedRfq.value.technicalItems.map(item => ({ ...item }))
-  ElMessage.success('技术资料已保存')
+  if (selectedRfq.value.technicalItems.some(item => item.pressTonnage && !isPositiveTonnage(item.pressTonnage))) {
+    ElMessage.warning('冲床吨位必须为正整数')
+    return false
+  }
   return true
 }
 /* Legacy local workspace synchronization is intentionally removed; quote groups are persisted by the API. */
@@ -384,23 +451,29 @@ const syncQuoteGroup = (rfq: InquiryView) => {
   persistWorkspace()
 }
 */
-const reviewRfq = async (status: '待补充' | '已完成') => {
-  if (!selectedRfq.value) return
-  if (status === '已完成' && !saveTechnicalData()) return
+const persistTechnicalData = async (status?: '待补充' | '已完成') => {
+  if (!selectedRfq.value || technicalSaving.value) return
+  if (status !== '待补充' && !validateTechnicalData()) return
+  const inquiryId = selectedRfq.value.backendId
+  technicalSaving.value = true
   try {
-    const updated = await customerInquiriesApi.technicalReview(selectedRfq.value.backendId, {
+    const updated = await customerInquiriesApi.technicalReview(inquiryId, {
       status,
-      technical_data: selectedRfq.value.technicalItems as unknown as Record<string, unknown>[],
+      technical_data: selectedRfq.value.technicalItems.map(item => ({ ...item })),
     })
     const mapped = toView(updated)
-    selectedRfq.value = mapped
+    if (selectedRfq.value?.backendId === inquiryId) selectedRfq.value = mapped
     const index = inquiries.value.findIndex(row => row.backendId === mapped.backendId)
     if (index >= 0) inquiries.value[index] = mapped
-    ElMessage.success(status === '已完成' ? '技术评审已通过，可进入报价组' : '已退回，等待补充技术资料')
+    ElMessage.success(status === '已完成' ? '技术评审已通过，可进入报价组' : status === '待补充' ? '已退回，等待补充技术资料' : '技术资料已保存')
   } catch (error) {
-    ElMessage.error(error instanceof Error ? error.message : '提交技术评审失败')
+    ElMessage.error(error instanceof Error ? error.message : '保存技术资料失败')
+  } finally {
+    technicalSaving.value = false
   }
 }
+const saveTechnicalData = () => persistTechnicalData()
+const reviewRfq = (status: '待补充' | '已完成') => persistTechnicalData(status)
 const create = async () => {
   if (!form.customerId || !form.customer) return ElMessage.warning('请选择客户')
   if (!form.attachments.length) return ElMessage.warning('请至少上传一份询价文件供技术评审')
@@ -457,6 +530,12 @@ onMounted(() => { void loadInquiries() })
 .technical-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 9px 10px; }
 .technical-grid label { display: grid; min-width: 0; gap: 4px; }
 .technical-grid label span { color: var(--zephyr-muted); font-size: 10px; }
+.press-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.press-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-height: 16px; }
+.press-field-heading label { color: var(--zephyr-muted); font-size: 10px; }
+.press-field-heading .el-button { padding: 0; min-height: 16px; font-size: 10px; }
+.press-field .el-select { width: 100%; }
+.press-hint { color: var(--zephyr-muted); font-size: 10px; line-height: 1.5; }
 .technical-grid :deep(.el-input__wrapper) { min-height: 28px; padding: 0 8px; box-shadow: 0 0 0 1px #d5e1dc inset; }
 .technical-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; color: var(--zephyr-muted); font-size: 11px; }
 .technical-footer em { margin-left: 8px; color: var(--zephyr-danger); font-style: normal; }

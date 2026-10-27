@@ -17,6 +17,10 @@ export interface PartLine {
   pitch?: string
   utilization?: string
   pressTonnage?: string
+  pressTypeKey?: string
+  pressTypeLabel?: string
+  pressIsDualAxis?: boolean
+  pressTonnageSource?: 'type' | 'manual'
   cavityCount?: string
   toolingLeadTime?: string
 }
@@ -97,10 +101,26 @@ export function mapQuoteGroup(record: QuoteGroupRecord): QuoteGroup {
       pitch: item.pitch == null ? '' : String(item.pitch),
       utilization: item.utilization == null ? '' : String(item.utilization),
       pressTonnage: item.press_tonnage == null ? '' : String(item.press_tonnage),
+      pressTypeKey: item.press_type_key ?? undefined,
+      pressTypeLabel: item.press_type_label ?? undefined,
+      pressIsDualAxis: item.press_is_dual_axis ?? undefined,
+      pressTonnageSource: item.press_tonnage_source ?? undefined,
       cavityCount: String(item.cavity_count || 1),
       toolingLeadTime: String(item.tooling_lead_time || 0),
     })),
   }
+}
+
+export function formatQuotePress(part: PartLine): string {
+  const label = part.pressTypeLabel || (part.pressTonnage ? `${part.pressTonnage}T` : '')
+  if (!label) return '未提供'
+  return part.pressTonnageSource === 'manual' ? `${label}（手填）` : label
+}
+
+export function quotePressNote(part: PartLine): string {
+  if (part.pressTonnageSource === 'manual') return '特殊情况手填'
+  if (part.pressIsDualAxis != null) return `${part.pressIsDualAxis ? '双轴' : '普通'} · 技术评审`
+  return part.pressTonnage ? '类型未明确' : '等待技术资料'
 }
 
 export interface ProjectRecord {

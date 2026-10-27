@@ -16,7 +16,7 @@
     <el-table v-if="!loading && !loadError && filtered.length" :data="filtered" stripe>
       <el-table-column label="报价组" width="145"><template #default="{ row }"><span class="mono">{{ row.id }}</span></template></el-table-column>
       <el-table-column label="客户 / 项目" min-width="190"><template #default="{ row }"><div class="stacked"><strong>{{ row.customer }}</strong><small>{{ row.projectName }}</small></div></template></el-table-column>
-      <el-table-column label="零件 / 技术资料" min-width="270"><template #default="{ row }"><div v-for="part in row.parts" :key="part.id" class="part-line"><span class="pair-dot"></span><span class="mono">{{ part.customerPartNo }}</span><span>{{ part.name }}</span><small v-if="part.cavityCount">{{ part.cavityCount }}穴<span v-if="part.pairLabel"> · {{ part.pairLabel }}</span></small></div></template></el-table-column>
+      <el-table-column label="零件 / 技术资料" min-width="300"><template #default="{ row }"><div v-for="part in row.parts" :key="part.id" class="part-line"><span class="pair-dot"></span><span class="mono">{{ part.customerPartNo }}</span><span>{{ part.name }}</span><small v-if="part.cavityCount">{{ part.cavityCount }}穴<span v-if="part.pairLabel"> · {{ part.pairLabel }}</span></small><small>冲床 {{ formatQuotePress(part) }}</small></div></template></el-table-column>
       <el-table-column label="推荐方案" width="180"><template #default="{ row }"><div class="stacked"><strong>{{ row.toolingType }}</strong><small>{{ row.path }}</small></div></template></el-table-column>
       <el-table-column label="模具费" width="120" align="right"><template #default="{ row }"><span class="mono">¥{{ Number(row.toolingCost || 0).toLocaleString() }}</span></template></el-table-column>
       <el-table-column label="状态" width="125"><template #default="{ row }"><el-tag size="small" :type="row.status === '已报价' ? 'success' : 'warning'">{{ row.status }}</el-tag></template></el-table-column>
@@ -30,15 +30,19 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { InfoFilled, Search, WarningFilled } from '@element-plus/icons-vue'
-import { mapQuoteGroup, quoteGroups, type QuoteGroup } from './data'
+import { formatQuotePress, mapQuoteGroup, quoteGroups, type QuoteGroup } from './data'
 import { quoteGroupsApi } from '@/api/quoteGroups'
 import QuoteGroupDialog from './QuoteGroupDialog.vue'
 
+const route = useRoute()
 const keyword = ref('')
 const status = ref('')
 const loading = ref(false)
+const groupsLoaded = ref(false)
 const loadError = ref('')
 const quoteDialogVisible = ref(false)
 const activeGroup = ref<QuoteGroup | null>(null)
@@ -51,8 +55,23 @@ const filtered = computed(() => quoteGroups.filter(row => {
   return (!keyword.value.trim() || text.includes(keyword.value.trim().toLowerCase())) && (!status.value || row.status === status.value)
 }))
 const openQuote = (group: QuoteGroup) => { activeGroup.value = group; quoteDialogVisible.value = true }
+let groupLinkRequest = 0
+watch(() => [route.query.group_id, groupsLoaded.value] as const, async ([value, loaded]) => {
+  const request = ++groupLinkRequest
+  if (!loaded || typeof value !== 'string' || !/^[1-9]\d*$/.test(value) || !Number.isSafeInteger(Number(value))) return
+  const id = Number(value)
+  quoteDialogVisible.value = false
+  try {
+    const group = quoteGroups.find(item => item.backendId === id) || mapQuoteGroup(await quoteGroupsApi.detail(id))
+    if (request !== groupLinkRequest || route.query.group_id !== value) return
+    openQuote(group)
+  } catch (error) {
+    if (request === groupLinkRequest) ElMessage.error(error instanceof Error ? error.message : '无法打开关联报价组')
+  }
+}, { immediate: true })
 const loadQuoteGroups = async () => {
   loading.value = true
+  groupsLoaded.value = false
   loadError.value = ''
   quoteGroups.splice(0, quoteGroups.length)
   try {
@@ -63,6 +82,7 @@ const loadQuoteGroups = async () => {
     loadError.value = !message || message === 'Network Error' ? '网络连接异常，请检查连接后重试' : message
   } finally {
     loading.value = false
+    groupsLoaded.value = true
   }
 }
 onMounted(loadQuoteGroups)

@@ -1,14 +1,14 @@
 # 订单、工艺路线与产出来源合同
 
-**日期**：2026-10-13（Asia/Hong_Kong）  
-**依据**：FR-008、FR-011、FR-019、FR-024、FR-032 及现有 ProductionPlan。  
-**性质**：按“执行下一步”形成的设计默认值，非第四条用户确认；尚未实现。
+**日期**：2026-10-27（Asia/Hong_Kong）
+**依据**：FR-008、FR-011、FR-019、FR-024、FR-032 及现有 ProductionPlan。
+**性质**：按“执行下一步”形成的工程基准，非第四条用户确认；已实现配置读写、生产上下文、数量/用途分配及连续推进/材料追溯，拆框已实现，转换仍待实施。所有验收使用隔离合成配置。
 
 ## 订单来源与产品配置
 
 - 所有新增接口的 `order_id` 均指 `production_plans.id`，机台分配引用 `plan_machine_assignments.id`。现有计划状态、material_status 和调度不被新工艺状态覆盖。
 - 独立 `ProductOrderContext` 保存 `order_id UNIQUE`、`business_owner_id`、`version` 和配置审计。负责人必须为有效 sales LV2+ 账号；创建人、客户负责人名称、部门等级都不能替代明确引用。
-- `ProductOrderProduct` 保存订单实际产品、`part_id`、B/C 类型、目标量、路线版本和预授权转换配置。计划只允许主件及配对件；配对计划必须明确每件目标量，不把现有 total_qty 同时复制为两个目标量。
+- `ProductOrderProduct` 保存订单实际产品、`part_id`、B/C 类型、目标量、路线版本和预授权转换配置。直接绑定配置只允许主件及配对件（binding_allowed=true）；显式转换目标可以引用有效目标件号，但须关联源配置conversion_source_id，binding_allowed=false、target_qty=0，不增加原单需求且不能直接绑定或用于跨单分配；配对计划必须明确每件目标量，不把现有 total_qty 同时复制为两个目标量。
 - 已产生产品框后，订单引用和产品引用不可原地改；负责人可授权变更并保留审计，路线改版仅用于新绑定框。目标量变更不得小于已有效分配的订单量，保留前后值；不通过二维码接口修改原计划 total_qty。
 - 新的配置写入使用版本和幂等键。旧计划没有配置时允许查询，生产页提示缺失项；不自动回填历史客户、负责人或产品类型。
 
@@ -63,6 +63,20 @@ B 的 1→2→3→4 和 C 的 1→2→3→4→5 是验收夹具示例。预授�
 - 校验负责人、主/配对件、机台分配、非负整数目标量、有序步骤与转换对应；所有配置一次成功或全部拒绝。已有框使用的路线版本不可覆盖，变更创建新版本；默认值不能替代真实工艺。
 - 响应持久化版本、配置审计和缺失项。旧计划 total_qty、调度及已有产品框归属不变。
 
+已实现请求的嵌套字段：
+
+| 对象 | 字段 |
+|---|---|
+| products[] | key（本次请求的唯一引用）、id?（更新既有配置必须提供）、part_id、product_code、target_qty、binding_allowed（默认true）、conversion_source_key?、route、pre_authorized_conversions[] |
+| route | route_code、revision、steps[]、first_output_process_code |
+| steps[] | code、name?、machine_ids[] / machine_types[]（至少一种非空限制） |
+| machine_process_targets[] | product_key、assignment_id、process_code、target_qty |
+| pre_authorized_conversions[] | target_key、difference_process_codes[] |
+
+请求须保留全部既有产品配置并覆盖主/配对件。直接产品目标为正整数，每道工艺各机台份额之和等于产品目标；显式转换目标binding_allowed=false、target_qty=0。已发布的相同route_code/revision只允许复用完全一致内容，修改须新增版本。预授权人、时间及双方路线引用由服务端生成，客户端不能自报授权事实。HTTP层及服务层均拒绝额外字段和非整数数量。
+
+选单接受可选state_id：省略时取产品当前发布路线，显式给出时核验该状态的固定旧版本路线，已有旧框可继续本版本生产。新框只能绑定当前发布路线。机台响应的route_revision为实际业务版本号；route_revision_id仅为数据库引用。
+
 ## 验收例子
 
 1. 有两张机台分配时，甲选单1后提交单2框数量被拒绝；乙复用甲上下文被拒绝；上下文过期必须重扫。
@@ -71,3 +85,5 @@ B 的 1→2→3→4 和 C 的 1→2→3→4→5 是验收夹具示例。预授�
 4. 来源80、订单剩余70，默认70+10，授权改60+20；同一实物进入下道工艺后没有第二份80产出。
 5. 先订单分配60、备货20，拆出订单10、备货5时父保留50+15、子10+5；重复请求不再扣15。
 6. 工艺配置或目标量缺失时，显示缺失项并拒绝生产写入；不会写入示例工艺1～5。
+
+2026-10-27拆框实施约束：首次产出且未进入下游的有效余额可重复分割；每份自有source_quantity_id，origin_allocation_id保留父分配链。跨单必须明确兼容接收state及版本，实际件号、B/C、完整已发布路线相同，源/目标均在当前账号范围，需求按服务端锁后余额核对。拆后首次来源量只读，不能覆盖恢复拆前数量；正余量可继续下一工艺，最新后续工艺更正不改变最初分配和其他框。该规则为既有确认下的工程默认，未新增业务回答。

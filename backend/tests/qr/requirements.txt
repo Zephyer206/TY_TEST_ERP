@@ -1,0 +1,2 @@
+# Test-only sync PostgreSQL driver; application runtime continues to use asyncpg.
+psycopg2-binary==2.9.12

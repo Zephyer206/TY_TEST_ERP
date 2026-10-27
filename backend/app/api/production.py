@@ -48,6 +48,7 @@ from app.schemas.production import (
     MaterialConfirmationBatch,
 )
 from app.services import production_service, process_flow_service, session_service
+from app.services.press_type_service import classify_press, group_press_types
 
 router = APIRouter(prefix="/production", tags=["Production"])
 
@@ -915,7 +916,10 @@ async def get_scheduling_workbench(
     cards = {plan.id: _scheduling_plan(plan, context) for plan in plans}
     machine_payload: list[ProductionSchedulingMachine] = []
     assigned_ids: set[int] = set()
+    press_types = {option.key: option for option in group_press_types(machines)}
     for machine in machines:
+        press_type = classify_press(machine)
+        press_type = press_types.get(press_type.key, press_type)
         queue = [
             cards[plan.id]
             for plan in plans
@@ -929,6 +933,9 @@ async def get_scheduling_workbench(
             name=machine.name,
             machine_type=machine.machine_type,
             tonnage=machine.tonnage,
+            press_type_key=press_type.key,
+            press_type_label=press_type.label,
+            is_dual_axis=press_type.is_dual_axis,
             max_stroke=machine.max_stroke,
             bed_size=machine.bed_size,
             state=machine.state.value if hasattr(machine.state, "value") else str(machine.state),

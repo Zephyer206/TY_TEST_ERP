@@ -119,6 +119,8 @@ from app.api.part_display_groups import router as part_display_groups_router
 from app.api.price_accounts import router as price_accounts_router
 from app.api.price_adjustments import router as price_adjustments_router
 from app.api.production import router as production_router
+from app.api.product_boxes import router as product_boxes_router, qr_error_handler
+from app.services.qr_transaction_service import QrError
 from app.api.quality import router as quality_router
 from app.api.qr import router as qr_router
 from app.api.quotes import router as quotes_router
@@ -160,6 +162,8 @@ app.include_router(part_display_groups_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_accounts_router, prefix=settings.API_V1_PREFIX)
 app.include_router(price_adjustments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(production_router, prefix=settings.API_V1_PREFIX)
+app.include_router(product_boxes_router, prefix=settings.API_V1_PREFIX)
+app.add_exception_handler(QrError, qr_error_handler)
 app.include_router(quality_router, prefix=settings.API_V1_PREFIX)
 app.include_router(qr_router, prefix=settings.API_V1_PREFIX)
 app.include_router(quotes_router, prefix=settings.API_V1_PREFIX)

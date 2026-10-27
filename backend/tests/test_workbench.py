@@ -118,7 +118,7 @@ async def test_api_uses_authenticated_identity_and_validates_query(monkeypatch):
     from app.api import workbench
     received = []
 
-    async def load(_db, actor):
+    async def load(_db, actor, company="tianyue"):
         received.append(actor.id)
         return [task("one", scope="mine")]
 

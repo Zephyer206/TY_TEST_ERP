@@ -78,8 +78,8 @@ async def test_ensure_quote_group_expands_left_right_pair_into_two_items():
 
 @pytest.mark.asyncio
 async def test_ensure_quote_group_is_idempotent_for_existing_inquiry():
-    existing = SimpleNamespace(id=3)
-    inquiry = CustomerInquiry(id=42, customer_id=7, project_name="已存在", technical_data=[])
+    existing = QuoteGroup(id=3, status="待报价", items=[])
+    inquiry = CustomerInquiry(id=42, customer_id=7, project_name="已存在", technical_review="已完成", technical_data=[])
     db = _FakeDb(existing=existing)
 
     result = await ensure_quote_group(db, inquiry, user_id=9)

@@ -21,6 +21,10 @@ Zephyr ERP 是一套面向冲压制造企业的综合性企业资源管理系统
 
 ## 🚀 快速开始
 
+### Windows 一键启动
+
+项目根目录双击 `start-cloud.cmd`，等待显示 `READY` 后访问 `http://localhost:8080`；双击 `stop-cloud.cmd` 停止。首次运行需要 Python 3.11 或 3.12、Node.js 22+、网络连接和已配置的 `backend/.env`。启动器会准备依赖并构建前端，不会自动执行数据库迁移。部署、更新和故障排查详见 [Windows 部署指南](CLOUD_WINDOWS.md)。
+
 ### 环境要求
 
 - Python 3.11+

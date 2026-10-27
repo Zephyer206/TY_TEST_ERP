@@ -2,6 +2,21 @@ import { callApi, type ApiParams } from './client'
 
 export type TechnicalReviewStatus = '待评审' | '评审中' | '待补充' | '已完成'
 
+export interface InquiryPressSelection {
+  pressTonnage: string
+  pressTonnageSource: 'type' | 'manual'
+  pressTypeKey: string | null
+  pressTypeLabel: string
+  pressIsDualAxis: boolean | null
+}
+
+/** Legacy machine references are accepted only for compatibility, never assigned by the picker. */
+export type CustomerInquiryTechnicalData = Record<string, unknown> & Omit<Partial<InquiryPressSelection>, 'pressTonnageSource'> & {
+  pressTonnageSource?: 'type' | 'manual' | 'machine'
+  pressMachineId?: number | null
+  pressMachineLabel?: string
+}
+
 export interface CustomerInquiryAttachment {
   id: number
   name: string
@@ -21,7 +36,7 @@ export interface CustomerInquiryRecord {
   status: string
   technical_review: TechnicalReviewStatus
   technical_review_note?: string | null
-  technical_data?: Record<string, unknown>[]
+  technical_data?: CustomerInquiryTechnicalData[]
   owner_name: string
   received_at?: string | null
   created_at?: string | null
@@ -42,9 +57,10 @@ export interface CreateCustomerInquiryInput {
 }
 
 export interface TechnicalReviewInput {
-  status: TechnicalReviewStatus
+  /** Omit to persist technical data without changing the review status. */
+  status?: '待补充' | '已完成'
   note?: string
-  technical_data?: Record<string, unknown>[]
+  technical_data?: CustomerInquiryTechnicalData[]
 }
 
 function createInquiryForm(input: CreateCustomerInquiryInput): FormData {

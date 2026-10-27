@@ -11,6 +11,7 @@ from app.api.deps import CurrentUser, DbSession, require_role
 from app.models.machine import Machine, MachineState
 from app.services import tooling_service
 from app.services import machine_service
+from app.services.press_type_service import PressTypeOption, list_installed_press_types
 
 router = APIRouter(prefix="/machines", tags=["Machines"])
 
@@ -74,6 +75,12 @@ def _machine_to_response(machine: Machine) -> MachineResponse:
         created_at=machine.created_at.isoformat(),
         updated_at=machine.updated_at.isoformat(),
     )
+
+
+@router.get("/press-types", response_model=list[PressTypeOption])
+async def list_press_types(db: DbSession, current_user: CurrentUser) -> list[PressTypeOption]:
+    """Installed press types, grouped by tonnage and standard/dual-axis."""
+    return await list_installed_press_types(db)
 
 
 @router.get("/{machine_id}", response_model=MachineResponse)

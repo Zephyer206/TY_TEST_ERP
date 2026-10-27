@@ -2,7 +2,7 @@
 
 from datetime import datetime
 from decimal import Decimal
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -60,6 +60,10 @@ class QuoteGroupItemResponse(BaseModel):
     pitch: Optional[Decimal]
     utilization: Optional[Decimal]
     press_tonnage: Optional[int]
+    press_type_key: Optional[str] = None
+    press_type_label: Optional[str] = None
+    press_is_dual_axis: Optional[bool] = None
+    press_tonnage_source: Optional[Literal["type", "manual"]] = None
     cavity_count: int
     tooling_cost: Decimal
     tooling_lead_time: int

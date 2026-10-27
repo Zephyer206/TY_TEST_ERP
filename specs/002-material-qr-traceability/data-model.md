@@ -1,6 +1,6 @@
 # 数据模型：产品框二维码扩展
 
-本模型新增产品框追溯域与必要支持记录；原材料 `material_batches`、`MaterialBatchChild`、`parent_batch_id` 作为既有来源保留，待基线迁移评估后再决定兼容清理。所有表使用现有 SQLAlchemy async/Alembic 约定，关键写入在服务层事务中完成。订单、权限及暂停方案是设计默认值，见 [订单合同](./contracts/order-routing.md) 和 [权限合同](./contracts/permissions.md)，本轮没有创建表。
+本模型新增产品框追溯域与必要支持记录；原材料 `material_batches`、`MaterialBatchChild`、`parent_batch_id` 作为既有来源保留，待基线迁移评估后再决定兼容清理。所有表使用现有 SQLAlchemy async/Alembic 约定，关键写入在服务层事务中完成。订单、权限及暂停方案是设计默认值，见 [订单合同](./contracts/order-routing.md) 和 [权限合同](./contracts/permissions.md)，本模型是迁移实施基准，建表状态以独立验收记录为准。
 
 ## 1. ProductQrPoolItem（产品二维码池项）
 
@@ -16,7 +16,7 @@
 | print_batch_no | varchar(50) | 生成/打印批次 |
 | printed_at | timestamp | 首次用户确认已打印时间；不代表打印机遥测 |
 | print_count | integer | 默认 0；首次/补打确认后递增，取消对话框不增加 |
-| bound_box_id | bigint nullable | FK `product_boxes.id`，绑定后不可改 |
+| bound_box_id | 派生只读字段 | 从 product_boxes.qr_pool_item_id 唯一关系查询，不冗余存双向FK |
 | created_by | bigint | FK users |
 | created_at/updated_at | timestamp | 审计时间 |
 
@@ -95,7 +95,7 @@
 | 实体/表 | 主要字段及约束 |
 |---|---|
 | ProductOrderContext / product_order_contexts | order_id FK production_plans UNIQUE、business_owner_id FK users、version、配置人/时间 |
-| ProductOrderProduct / product_order_products | order_id、part_id、product_code、target_qty 非负整数、route_revision_id、转换授权；同订单/实际产品唯一，配对件单独配置 |
+| ProductOrderProduct / product_order_products | order_id、part_id、product_code、target_qty 非负整数、route_revision_id、转换授权、binding_allowed、conversion_source_id；直接项为计划主件/配对件，显式转换目标不可直接绑定且target_qty=0；同订单/实际产品唯一，配对件单独配置 |
 | ProductRouteRevision / product_route_revisions | route_code、revision、product_code、steps_json、首次产出步骤；(route_code, revision) UNIQUE，发布使用后不可覆盖；步骤引用实际字典并校验机台能力 |
 | MachineOrderProcessState / machine_order_process_states | assignment_id、order_product_id、route_revision_id、process_code、target_qty、production_status、version、完成人/时间/差异确认；前四项工艺范围唯一，待生产/生产中/已完成与旧计划状态分离 |
 | MachineProductionContext / machine_production_contexts | user_id、machine_id、scan_ticket_digest、scanned_at、state_id nullable、last_activity_at、expires_at、closed_at、version；扫码票据摘要持久化且一次选单，不存认证令牌 |
@@ -104,13 +104,15 @@
 
 来源只在首次产出工艺初始化；后续工艺关联来源，不重复新增产出。普通拆框/转换按父子分割来源分配；跨单拆框新子分配有 origin_allocation_id 并原子减少源分配，不复制原数量。需求锁按订单产品 ID 排序；调整当前记录时从已分配合计中排除自身旧值再算剩余。已有下游事实时禁止直接改旧用途，更正历史数量不自动覆写下游或当前框。
 
+2026-10-27连续工艺实现：BoxProcessQuantity.material_batch_id在首次数量登记时可明确关联实际批次，之后不可替换；推进复制material_batch_id与source_quantity_id，并将当前框量保存为目标input_qty。ProductFlowEvent.process_start的before_snapshot保存源步骤/状态/出量，after_snapshot保存目标步骤/状态/入量/首次来源；不把进入后续工艺当作新产出。材料关联不扣卷料重量；历史缺材料保持null，查询按真实parent_batch_id上溯并标示断链、循环或深度限制。
+
 机台 target_qty 明确配置，单件/单机不能直接借联合订单 total_qty。source_quantity_id、order_id、order_product_id、box_id 与源事实必须一致，由服务端推导而非客户端拼接。涉及人工分配的数量变化必须同事务提交有效分配，不能静默恢复默认覆盖用户选择。
 
 ## 10. 权限、通知与打印支持记录
 
 - QrCapabilityGrant / qr_capability_grants：user_id、capability、granted_by/at、revoked_at；有效用户/能力唯一，未配置拒绝；本轮不回填真实授权。
 - ExceptionRecipientGroup / exception_recipient_groups：exception_id、group_type（supervisor/business_owner）、resolution_status（pending_configuration/resolved）、recipient_ids、missing_reason、resolved_at；异常/组别唯一，配置补齐后幂等回补 outbox。
-- QrPrintJob / qr_print_jobs：申请人、模板、申请类型、项集合、创建时间；QrPrintConfirmation / qr_print_confirmations：作业、池项、确认人/时间，(job_id, pool_item_id) UNIQUE。同作业任一项只确认一次，新补打作业可再次计数。
+- QrPrintJob / qr_print_jobs：申请人、模板、申请类型、项集合、创建时间；QrPrintJobItem / qr_print_job_items 保存作业、池项及发放快照，(job_id,pool_item_id) UNIQUE；QrPrintConfirmation / qr_print_confirmations：作业、池项、确认人/时间，(job_id, pool_item_id) UNIQUE。同作业任一项只确认一次，新补打作业可再次计数。
 - QrIdempotencyRecord / qr_idempotency_records：操作者、动作、实体、请求键、规范化内容摘要、结果/HTTP 状态、创建时间；业务结果与记录同事务，组合唯一，不保存凭据或敏感请求头。
 - QrNotificationAttempt / qr_notification_attempts：outbox_id、attempt_no、触发类型、结果、安全错误码、时间；人工重试独立批次，不擦除先前五次自动尝试。
 
@@ -125,3 +127,22 @@
 - 所有失败必须回滚父子数量、绑定状态、关系和事件。
 - 新事件使用 UTC、至少毫秒精度，API 返回带时区 ISO 8601，前端按 Asia/Hong_Kong 展示；旧无时区字段单独兼容。
 - 关键操作幂等记录按操作者/动作/实体/请求键持久化规范化请求摘要与业务结果，结果同事务提交；同键异内容冲突。表/支持记录随迁移评审，不使用进程内存作为事实源。
+
+
+## Phase 1 SQL 实施约定（2026-10-22）
+
+新实体bigint identity，旧表FK沿用integer；新时间TIMESTAMP WITH TIME ZONE及数据库CURRENT_TIMESTAMP默认值。version>=1、数量非负、B/C及状态CHECK保护；路线步骤和快照用JSONB，持久化关联用真实FK。
+
+ProductBox的(order_product_id,order_id,part_id,product_code)复合FK匹配订单实际产品，(route_revision_id,product_code)复合FK匹配路线。池绑定只存product_boxes.qr_pool_item_id，bound_box_id为查询字段。身份、既有框订单、使用中的路线和追加事件使用数据库触发器保护，服务层仍执行权限/锁/业务校验。转换目标配置保存binding_allowed=false、conversion_source_id、target_qty=0，不新增原单需求；分配按源产品需求归属核算。
+
+新增QrNotification/qr_notifications(outbox_id UNIQUE,recipient_user_id,payload_json,read_at,created_at)，站内写入后才标sent。新增QrCapabilitySet/qr_capability_sets(user_id PK,version)保护授权集合版本，grants保留撤销历史。通知尝试增加retry_batch，同outbox/retry_batch/attempt_no唯一，人工批次保留原五次尝试。
+
+qr_scan_logs现有PostgreSQL scantype/scanoperation先核对实际标签，再增量添加PFB及新动作；保留旧标签。空测试库降级保留新增枚举标签；已有产品身份或事件时拒绝破坏性降级。单独测试升级→空库降级→重升、约束/不可变保护及旧QR无回归，不以metadata建表代替迁移执行。
+
+2026-10-23实现补充：QrPrintJob(id,requested_by)与打印确认(job_id,confirmed_by)通过复合FK匹配申请人；NotificationOutbox(id,recipient_user_id)与站内通知通过复合FK匹配收件人。父子框关系的来源/目标订单与框、实际产品用复合FK匹配，转换的两端产品与原订单匹配。PFB扫码及新动作审计也阻止不兼容降级。23表和迁移限定验收见phase1-acceptance.md；本段不是业务库已建表的声明。
+
+## 2026-10-27 已实现拆框余额
+
+首次来源未进入下游时拆框，同事务减少父ProductBox、首次BoxProcessQuantity.current_qty及ProductOutputAllocation余额；同单/跨单子份额均创建自身来源量和分配，origin_allocation_id指向父分配。原始制造数量由不可变qty_save和split快照追溯，不能将各份额再相加为新增制造产量。子入量保存拆出量，原料来源继承；重复拆分保留分配链，零父框保留绑定并置empty。锁需求/状态/父框/子池项/用途，expected_version、allocation_version及跨单target_state_version全部校验。
+
+首次来源拆后禁止覆盖或历史更正，防止重复恢复已拆数量；下一工艺新量仍可覆盖，最新后续工艺更正更新当前框，保留来源分配、兄弟框和入量。trace派生双方当前余量，relation.source_snapshot不变；跨单双方订单不可见时不显示关系和快照。

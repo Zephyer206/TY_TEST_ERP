@@ -127,9 +127,14 @@ import { useCompanyStore } from '@/stores/company'
 import { activeStep, businessDate, dispositionLabels, dispositions, draftFrom, emptyDefectDraft, hasRework, makeInspectionItem, makeStep, mondayOf, planLabel, remainingQty, stepLabels, submittedQty, sourceOptions, statuses, statusLabels, type DefectDraft, type DefectRecord, type DefectStatus, type InspectionEvidence } from '@/domain/nonconforming'
 import '@/styles/nonconforming.css'
 
-const store = useNonconformingPreview(); const route = useRoute(); const router = useRouter()
+const route = useRoute(); const router = useRouter()
 const company = useCompanyStore()
-if (route.query.company === 'tianyue' && route.query.scope === 'imported') company.setCompany('tianyue')
+const linkedCompany = route.query.company
+if (linkedCompany === 'tianyue' || linkedCompany === 'gaibo') company.setCompany(linkedCompany)
+const store = useNonconformingPreview()
+watch(() => route.query.company, value => {
+  if ((value === 'tianyue' || value === 'gaibo') && value !== company.selectedCompany) company.setCompany(value)
+}, { flush: 'sync' })
 onMounted(() => { void store.reload() })
 const today = businessDate(); const activeTab = ref('ledger'); const anchorWeek = ref(mondayOf(today))
 const dataScope = ref(route.query.scope === 'manual' ? 'manual' : route.query.scope === 'imported' ? 'imported' : 'all')
@@ -162,7 +167,8 @@ async function perform(action: () => void | Promise<void>, message = '') { try {
 
 const detailVisible = ref(false); const selectedId = ref('')
 const selected = computed(() => store.records.find(row => row.id === selectedId.value))
-function openDetail(row: DefectRecord) { selectedId.value = row.id; detailVisible.value = true; void router.replace({ query: { ...route.query, record: row.id } }) }
+watch(() => company.selectedCompany, () => { detailVisible.value = false; selectedId.value = '' }, { flush: 'sync' })
+function openDetail(row: DefectRecord) { selectedId.value = row.id; detailVisible.value = true; void router.replace({ query: { ...route.query, company: company.selectedCompany, record: row.id } }) }
 function clearDetailQuery() { if (route.query.record) { const query = { ...route.query }; delete query.record; void router.replace({ query }) } }
 watch(() => [route.query.record, store.records] as const, ([id]) => { if (typeof id === 'string') { const row = store.records.find(item => item.id === id); if (row) { selectedId.value = row.id; detailVisible.value = true } } }, { immediate: true })
 const needsPlanReview = (row: DefectRecord) => !!row.importedProgress && !row.importInfo?.reviewed

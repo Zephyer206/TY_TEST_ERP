@@ -22,6 +22,15 @@ from .gaibo import (
     GaiboViewPreference,
 )
 from .audit import AuditLog
+from .product_box import (
+    ProductRouteRevision, ProductOrderContext, ProductOrderProduct,
+    MachineOrderProcessState, MachineProductionContext, ProductQrPoolItem,
+    ProductBox, BoxProcessQuantity, ProductOutputAllocation, ProductFlowEvent,
+    ProductBoxRelation, CoilSpecException, ProductConversionRecord,
+    QrCapabilitySet, QrCapabilityGrant, QrPrintJob, QrPrintJobItem,
+    QrPrintConfirmation, QrIdempotencyRecord, ExceptionRecipientGroup,
+    NotificationOutbox, QrNotification, QrNotificationAttempt,
+)
 from .customer import Customer
 from .customer_inquiry import CustomerInquiry, CustomerInquiryAttachment
 from .quote_group import QuoteGroup, QuoteGroupItem
@@ -106,6 +115,13 @@ from .machine_tonnage_dict import MachineTonnageDict
 from .mold_type_dict import MoldTypeDict
 
 __all__ = [
+    "ProductRouteRevision", "ProductOrderContext", "ProductOrderProduct",
+    "MachineOrderProcessState", "MachineProductionContext", "ProductQrPoolItem",
+    "ProductBox", "BoxProcessQuantity", "ProductOutputAllocation", "ProductFlowEvent",
+    "ProductBoxRelation", "CoilSpecException", "ProductConversionRecord",
+    "QrCapabilitySet", "QrCapabilityGrant", "QrPrintJob", "QrPrintJobItem",
+    "QrPrintConfirmation", "QrIdempotencyRecord", "ExceptionRecipientGroup",
+    "NotificationOutbox", "QrNotification", "QrNotificationAttempt",
     "NonconformingImportBatch",
     "NonconformingRecord",
     "NonconformingReworkMold",
@@ -220,3 +236,5 @@ __all__ = [
 
 # PPAP metadata is included in Alembic discovery without changing legacy exports.
 from app.models.ppap import PpapArchive, PpapFolder, PpapDocument, PpapFileVersion, PpapSubmission, PpapAuditLog
+
+from app.models.workbench_assignment import WorkbenchAssignment, WorkbenchAssignmentEvent

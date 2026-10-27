@@ -16,6 +16,9 @@ DEFAULT_SECRET_KEY = "change-me-in-production"
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
+    # Product QR generation/print batch limit; validated on the server.
+    PRODUCT_QR_BATCH_LIMIT: int = Field(default=500, ge=1, le=5000)
+
     model_config = SettingsConfigDict(
         env_file=str(BACKEND_DIR / ".env"),
         env_file_encoding="utf-8",

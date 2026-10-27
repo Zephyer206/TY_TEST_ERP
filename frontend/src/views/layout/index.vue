@@ -211,8 +211,8 @@ const areas: WorkspaceArea[] = [
     tabs: [
       { label: '生产计划', route: '/production' },
       { label: '生产排产', route: '/production/scheduling' },
-      { label: '机台执行', disabled: true },
-      { label: '工艺流转', disabled: true },
+      { label: '机台生产', route: '/product-box-production' },
+      { label: '工艺流转', route: '/product-box-trace' },
     ],
   },
   {
@@ -227,6 +227,8 @@ const areas: WorkspaceArea[] = [
     tabs: [
       { label: '发货订单', route: '/shipping-orders' },
       { label: '仓库', route: '/warehouse' },
+      { label: '原材料台账', route: '/material-qr' },
+      { label: '产品框管理', route: '/product-box-qr' },
       { label: '全检与包装', disabled: true },
       { label: '后处理', disabled: true },
     ],

@@ -164,6 +164,30 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/views/warehouse/index.vue'),
         meta: { roleLevel: 1 },
       },
+      {
+        path: 'material-qr',
+        name: 'MaterialQr',
+        component: () => import('@/views/material-qr/index.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
+        path: 'product-box-qr',
+        name: 'ProductBoxQr',
+        component: () => import('@/views/product-box-qr/index.vue'),
+        meta: { roleLevel: 1 },
+      },
+      {
+        path: 'product-box-production',
+        name: 'ProductBoxProduction',
+        component: () => import('@/views/product-box-qr/production.vue'),
+        meta: { roleLevel: 1 },
+      },
+        {
+          path: 'product-box-trace',
+          name: 'ProductBoxTrace',
+          component: () => import('@/views/product-box-qr/trace.vue'),
+          meta: { roleLevel: 1 },
+        },
     ],
   },
   {

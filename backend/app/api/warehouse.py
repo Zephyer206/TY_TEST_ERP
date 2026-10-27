@@ -7,6 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import text, select
 
 from app.api.deps import CurrentUser, DbSession, require_role
+from app.services.qr_service import generate_qr_base64
 from app.models.audit import AuditAction, AuditLog
 from app.models.packaging import Inventory, InventoryTransaction
 from app.models.part import Part
@@ -649,11 +650,18 @@ def _batch_to_response(batch: MaterialBatch) -> MaterialBatchResponse:
     )
 
 
-def _batch_detail_to_response(batch: MaterialBatch) -> MaterialBatchDetailResponse:
+def _batch_detail_to_response(batch: MaterialBatch, current_children=()) -> MaterialBatchDetailResponse:
     """Convert MaterialBatch to detail response."""
-    children = []
+    children = [MaterialBatchChildResponse(
+        id=child.id, child_batch_no=child.batch_no, child_qr_code=child.qr_code,
+        width=child.width, length=child.length, current_weight=child.current_weight,
+        status=child.status, created_at=child.created_at,
+    ) for child in current_children]
+    represented_names = {child.batch_no for child in current_children}
     if batch.children:
         for child in batch.children:
+            if child.child_batch_no in represented_names:
+                continue
             children.append(
                 MaterialBatchChildResponse(
                     id=child.id,
@@ -704,6 +712,9 @@ async def create_material_batch(
     """Create a new material batch (register incoming material). Requires LV2 (warehouse manager)."""
     require_role(current_user, min_level=2)
 
+    if data.gross_weight is None:
+        raise HTTPException(status_code=400, detail="Gross weight is required")
+
     # Verify material exists
     result = await db.execute(select(Material).where(Material.id == data.material_id))
     material = result.scalar_one_or_none()
@@ -726,6 +737,8 @@ async def create_material_batch(
         width=data.width,
         length=data.length,
         po_no=data.po_no,
+        operator_id=current_user.id,
+        commit=False,
     )
     return _batch_to_response(batch)
 
@@ -760,7 +773,8 @@ async def get_material_batch(
     batch = await material_batch_service.get_batch_by_id(db, batch_id)
     if not batch:
         raise HTTPException(status_code=404, detail="Material batch not found")
-    return _batch_detail_to_response(batch)
+    return _batch_detail_to_response(batch, await material_batch_service.get_sibling_batches(
+        db, parent_batch_id=batch.id))
 
 
 @router.get("/material-batches/by-no/{batch_no}", response_model=MaterialBatchDetailResponse)
@@ -773,7 +787,8 @@ async def get_material_batch_by_no(
     batch = await material_batch_service.get_batch_by_no(db, batch_no)
     if not batch:
         raise HTTPException(status_code=404, detail="Material batch not found")
-    return _batch_detail_to_response(batch)
+    return _batch_detail_to_response(batch, await material_batch_service.get_sibling_batches(
+        db, parent_batch_id=batch.id))
 
 
 @router.put("/material-batches/{batch_id}/iqc", response_model=MaterialBatchResponse)
@@ -792,7 +807,7 @@ async def perform_iqc(
 
     try:
         batch = await material_batch_service.perform_iqc(
-            db, batch, data.result, current_user.id, data.notes
+            db, batch, data.result, current_user.id, data.notes, commit=False
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -822,7 +837,7 @@ async def split_material_batch(
 
     try:
         children = await material_batch_service.split_batch(
-            db, batch, splits, current_user.id
+            db, batch, splits, current_user.id, commit=False
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -843,7 +858,7 @@ async def split_material_batch(
             id=c.id,
             batch_no=c.batch_no,
             qr_code=c.qr_code,
-            qr_image_base64=generate_material_batch_qr_base64(c.id) if c.qr_code else None,
+            qr_image_base64=generate_qr_base64(c.qr_code) if c.qr_code else None,
             material_id=c.material_id,
             material_name=c.material.name if c.material else None,
             material_grade=c.material.grade if c.material else None,
@@ -887,6 +902,7 @@ async def consume_material(
             reference_type=data.reference_type,
             reference_id=data.reference_id,
             operator_id=current_user.id,
+            commit=False,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
@@ -932,7 +948,8 @@ async def trace_material_batch(
     transactions = await material_batch_service.get_batch_transactions(db, batch_id)
 
     return BatchTraceResponse(
-        batch=_batch_detail_to_response(batch),
+        batch=_batch_detail_to_response(batch, await material_batch_service.get_sibling_batches(
+            db, parent_batch_id=batch.id)),
         transactions=[
             BatchTransactionResponse(
                 id=t.id,
@@ -987,7 +1004,7 @@ async def scan_material_batch(
         id=batch.id,
         batch_no=batch.batch_no,
         qr_code=batch.qr_code,
-        qr_image_base64=generate_material_batch_qr_base64(batch.id) if batch.qr_code else None,
+        qr_image_base64=generate_qr_base64(batch.qr_code) if batch.qr_code else None,
         material_id=batch.material_id,
         material_name=batch.material.name if batch.material else None,
         material_grade=batch.material.grade if batch.material else None,
@@ -1030,7 +1047,10 @@ async def scan_child_batch(
         operator_id=current_user.id,
     )
 
-    parent = child.parent_batch
+    parent = (
+        await material_batch_service.get_batch_by_id(db, child.parent_batch_id)
+        if child.parent_batch_id else None
+    )
     siblings: list[MaterialBatchScanResponse] = []
     parent_response = None
 
@@ -1039,7 +1059,7 @@ async def scan_child_batch(
             id=parent.id,
             batch_no=parent.batch_no,
             qr_code=parent.qr_code,
-            qr_image_base64=generate_material_batch_qr_base64(parent.id) if parent.qr_code else None,
+            qr_image_base64=generate_qr_base64(parent.qr_code) if parent.qr_code else None,
             material_id=parent.material_id,
             material_name=parent.material.name if parent.material else None,
             material_grade=parent.material.grade if parent.material else None,
@@ -1066,7 +1086,7 @@ async def scan_child_batch(
                     id=sib.id,
                     batch_no=sib.batch_no,
                     qr_code=sib.qr_code,
-                    qr_image_base64=generate_material_batch_qr_base64(sib.id) if sib.qr_code else None,
+                    qr_image_base64=generate_qr_base64(sib.qr_code) if sib.qr_code else None,
                     material_id=sib.material_id,
                     material_name=sib.material.name if sib.material else None,
                     material_grade=sib.material.grade if sib.material else None,
@@ -1090,7 +1110,7 @@ async def scan_child_batch(
         id=child.id,
         batch_no=child.batch_no,
         qr_code=child.qr_code,
-        qr_image_base64=generate_material_batch_qr_base64(child.id) if child.qr_code else None,
+        qr_image_base64=generate_qr_base64(child.qr_code) if child.qr_code else None,
         material_id=child.material_id,
         material_name=child.material.name if child.material else None,
         material_grade=child.material.grade if child.material else None,
@@ -1139,6 +1159,23 @@ async def list_child_batches(
         operator_id=current_user.id,
     )
 
+    # Current split children are independent MaterialBatch rows. Legacy child
+    # table IDs belong to another sequence and must never be used as batch IDs.
+    current_children = await material_batch_service.get_sibling_batches(db, parent_batch_id=batch_id)
+    responses: list[MaterialBatchScanResponse] = [
+        MaterialBatchScanResponse(
+            id=c.id, batch_no=c.batch_no, qr_code=c.qr_code,
+            qr_image_base64=generate_qr_base64(c.qr_code) if c.qr_code else None,
+            material_id=c.material_id, material_name=c.material.name if c.material else None,
+            material_grade=c.material.grade if c.material else None,
+            supplier_name=c.supplier.name if c.supplier else None,
+            thickness=c.thickness, width=c.width, length=c.length,
+            gross_weight=c.gross_weight, current_weight=c.current_weight, status=c.status,
+            iqc_result=c.iqc_result, iqc_time=c.iqc_time, received_at=c.received_at,
+            created_at=c.created_at, parent_batch_id=batch_id, parent_batch_no=parent.batch_no,
+        ) for c in current_children
+    ]
+    represented_names = {c.batch_no for c in current_children}
     result = await db.execute(
         select(MaterialBatchChild)
         .where(MaterialBatchChild.parent_batch_id == batch_id)
@@ -1146,21 +1183,19 @@ async def list_child_batches(
     )
     children = result.scalars().all()
 
-    responses: list[MaterialBatchScanResponse] = []
     for c in children:
-        child_batch = await material_batch_service.get_batch_by_id(db, c.id)
-        if child_batch:
+        if c.child_batch_no not in represented_names:
             responses.append(
                 MaterialBatchScanResponse(
                     id=c.id,
                     batch_no=c.child_batch_no,
                     qr_code=c.child_qr_code,
-                    qr_image_base64=None,
-                    material_id=child_batch.material_id,
-                    material_name=child_batch.material.name if child_batch.material else None,
-                    material_grade=child_batch.material.grade if child_batch.material else None,
-                    supplier_name=child_batch.supplier.name if child_batch.supplier else None,
-                    thickness=child_batch.thickness,
+                    qr_image_base64=generate_qr_base64(c.child_qr_code) if c.child_qr_code else None,
+                    material_id=parent.material_id,
+                    material_name=parent.material.name if parent.material else None,
+                    material_grade=parent.material.grade if parent.material else None,
+                    supplier_name=parent.supplier.name if parent.supplier else None,
+                    thickness=parent.thickness,
                     width=c.width,
                     length=c.length,
                     gross_weight=c.current_weight,
@@ -1284,10 +1319,11 @@ async def list_materials(
     grade: Optional[str] = Query(default=None),
     skip: int = Query(default=0, ge=0),
     limit: int = Query(default=50, ge=1, le=100),
+    include_inactive: bool = Query(default=False),
 ) -> list[MaterialResponse]:
     """List materials in the catalog."""
     materials = await material_batch_service.get_materials(
-        db, grade=grade, skip=skip, limit=limit
+        db, grade=grade, skip=skip, limit=limit, include_inactive=include_inactive
     )
 
     return [
@@ -1400,7 +1436,7 @@ async def reprint_material_batch_qr(
         scan_type="MAT",
         entity_id=batch.id,
         entity_no=batch.batch_no,
-        operation="reprint",
+        operation=ScanOperation.QUERY,
         operator_id=current_user.id,
         notes="QR code reprint",
     )
@@ -1415,12 +1451,13 @@ async def reprint_material_batch_qr(
         material_grade=batch.material.grade if batch.material else None,
         supplier_name=batch.supplier.name if batch.supplier else None,
         status=batch.status.value if batch.status else None,
-        lifecycle_status=batch.lifecycle_status.value if batch.lifecycle_status else None,
+        lifecycle_status=batch.lifecycle_status,
         gross_weight=batch.gross_weight,
         current_weight=batch.current_weight,
         thickness=batch.thickness,
         width=batch.width,
         length=batch.length,
         received_at=batch.received_at,
+        created_at=batch.created_at,
         iqc_result=batch.iqc_result.value if batch.iqc_result else None,
     )

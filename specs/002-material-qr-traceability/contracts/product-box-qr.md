@@ -1,169 +1,129 @@
 # 产品框二维码 API 契约
 
-所有路径相对于现有 `/api/v1`。以下是产品框扩展的新增契约；实现前须同步写入 `shared/api/registry.js`，由 `frontend/src/api/registry.ts` 提供类型桥接，再由 `frontend/src/api/qrTraceability.ts` 或领域模块调用。页面不得直接使用 axios/fetch。
+**实施基准**：2026-10-27。按已有三条业务确认及可评审默认方案整理；没有新增业务回答。池、打印、绑定、扫描、元数据、配置读写、机台生产、工艺推进/追溯、拆框和能力维护共22个端点已在代码中挂载，其余9项仍为设计清单；基线32个旧QR端点已完成登记和typed wrapper映射。业务库尚未迁移，尚未上线。
 
-## 已确认业务状态（2026-10-13）
+路径相对 /api/v1；API 清单和请求字段如下。所有端点要求认证，服务端逐次检查部门、等级、显式能力、订单范围、实体状态及需要时的扫码上下文；完整规则见 [permissions.md](./permissions.md)。低等级、其他订单业务及无上下文的管理账号不能绕过规则。
 
-| 对象/响应字段 | 业务显示 | 技术值 |
+## 状态
+
+| 对象/字段 | 允许值 | 含义 |
 |---|---|---|
-| 规格异常 `status` | 待确认、已确认 | `pending_confirmation`, `confirmed` |
-| 异常 `resolution` | 接受继续生产、暂停生产、重新确认卷料 | `accept_continue`, `pause`, `reconfirm_coil` |
-| 转换 `confirmation_status` | 待操作工确认、已确认、已取消 | `pending_operator_confirmation`, `confirmed`, `cancelled` |
-| 机台/订单/工艺 `production_status` | 待生产、生产中、已完成 | `pending`, `in_progress`, `completed` |
-| 通知 `delivery_status` | 待发送、已发送、发送失败 | `pending`, `sent`, `failed` |
+| 池 pool_status | unused/bound/void | 本期仅unused→bound；void保留，无作废入口 |
+| 异常 status | pending_confirmation/confirmed | 确认是负责人决定，不表示规格差异消除 |
+| 异常 resolution | accept_continue/pause/reconfirm_coil | 与确认及通知状态分列 |
+| 转换 confirmation_status | pending_operator_confirmation/confirmed/cancelled | 未确认和取消不改框产品/数量 |
+| 机台工艺 production_status | pending/in_progress/completed | 完成不关闭框后续工艺或全局计划 |
+| 通知 delivery_status | pending/sent/failed | 投递或已读不确认业务异常 |
 
-异常已确认仅表示负责人作出处理决定，不能表示差异已经消除；暂停的具体操作影响待角色/流程决定。通知采用站内通知/待办，投递状态与异常确认状态独立；工作器正常时首投递目标 60 秒内，总计 5 次自动尝试（首次 + 前次失败后 1、5、15、30 分钟的四次重试），超过上限保留失败及人工重试入口。FR-032 数量分配和 FR-033 实际完成数量转换规则已确认。本契约为设计文档，尚未挂载新增端点。
+## 端点与请求
 
-## QR 池
+| Key | Method | Relative path | Description / request |
+|---|---|---|---|
+| `productQrPool.list` | GET | `/product-qr-pool` | 按查询范围列出池项；pool_status/print_batch_no/page/page_size |
+| `productQrPool.generateBatch` | POST | `/product-qr-pool/batches` | 生成稳定身份；{count,print_batch_no?,idempotency_key}，默认上限500 |
+| `productQrPool.reprint` | POST | `/product-qr-pool/{item_id}/reprint` | 原身份补打；{template_code?,idempotency_key}；返回作业及当前确认次数 |
+| `productQrPool.printData` | POST | `/product-qr-pool/print-data` | {item_ids,template_code?,idempotency_key}；发放数据和快照，不确认物理成功 |
+| `productQrPool.confirmPrint` | POST | `/product-qr-pool/print-confirmations` | {print_job_id,confirmed_item_ids,idempotency_key}；仅申请人确认，每项每作业一次 |
+| `productBoxes.bind` | POST | `/product-boxes/bind` | {qr_payload,order_product_id,context_id?,idempotency_key}；一次绑定，数量初始0，配置推导订单/件号/产品/路线 |
+| `productBoxes.scan` | POST | `/product-boxes/scan` | {qr_payload,split_parent_id?}；验证完整存储身份；未绑定返回身份和允许绑定动作，已绑定只返回当前框及允许动作 |
+| `productBoxes.trace` | GET | `/product-boxes/{box_id}/trace` | 当前框/订单/路线、工艺数量/原料祖先链、最近业务事件及父子/异常/转换；page/page_size分页关联事实，按账号范围 |
+| `productBoxes.events` | GET | `/product-boxes/{box_id}/events` | page_size/before_id；按occurred_at/id倒序游标查询事实，含操作者、前后量及来源 |
+| `productBoxes.saveQuantity` | POST | `/product-boxes/{box_id}/quantities` | {context_id,current_qty,material_batch_id?,expected_version,state_version,idempotency_key}；覆盖当前值；首次可记录真实材料来源 |
+| `productBoxes.metadata` | PATCH | `/product-boxes/{box_id}/metadata` | {customer_name_snapshot?,customer_part_no?,next_process_code?,expected_version,idempotency_key}；不改身份/订单/实际产品/历史 |
+| `productBoxes.correctQuantity` | POST | `/product-boxes/{box_id}/quantity-corrections` | {state_id,current_qty,reason,expected_version,state_version,idempotency_key}；主管历史更正，不覆写下游 |
+| `productBoxes.advance` | POST | `/product-boxes/{box_id}/advance` | {context_id,expected_version,state_version,idempotency_key}；仅合法下一步骤，记录出入量快照 |
+| `productBoxes.split` | POST | `/product-boxes/{parent_id}/split` | {child_qr_payload,quantity,order_qty,stock_qty,expected_version,allocation_version,target_order_product_id?,target_state_id?,target_state_version?,idempotency_key}；同单/跨单原子拆框 |
+| `machines.scanProduction` | POST | `/machines/scan-production` | {machine_qr,context_id?}；初扫返回当前用户票据/有效分配，再扫明确上下文返回完成意向 |
+| `machines.selectProduction` | POST | `/machines/production-contexts` | {scan_ticket,assignment_id,order_product_id,process_code,state_id?,idempotency_key}；建立用户/机台/单/工艺上下文；state_id显式选择旧版本状态 |
+| `machines.productionComplete` | POST | `/machines/{machine_id}/production-complete` | {context_id,confirm_quantity_difference,expected_version,idempotency_key}；版本指机台工艺状态 |
+| `production.qrContext` | GET | `/production/plans/{order_id}/qr-context` | 配置、version和missing_configuration，仅当前账号可见订单 |
+| `production.saveQrContext` | PUT | `/production/plans/{order_id}/qr-context` | {business_owner_id,products,machine_process_targets,expected_version,idempotency_key}；首次版本0，配置原子保存 |
+| `production.allocateOutput` | POST | `/production/output-allocations` | {source_quantity_id,order_qty,stock_qty,expected_version,idempotency_key}；来源/剩余需求由服务端查询 |
+| `coilSpecExceptions.create` | POST | `/coil-spec-exceptions` | {context_id,material_batch_id,product_box_id?,continue_production,idempotency_key}；服务端比较订单/卷料事实 |
+| `coilSpecExceptions.confirm` | POST | `/coil-spec-exceptions/{exception_id}/confirm` | {resolution,remark?,expected_version,idempotency_key}；任一授权负责人确认，备注可空 |
+| `coilSpecExceptions.resume` | POST | `/coil-spec-exceptions/{exception_id}/resume` | {rechecked_material_batch_id,reason,expected_version,idempotency_key}；独立解除，不覆盖原处理结果 |
+| `productConversions.create` | POST | `/product-conversions` | {box_id,target_order_product_id,proposed_qty?,expected_version,idempotency_key}；人工发起仅manual，预授权由服务端内部触发 |
+| `productConversions.confirm` | POST | `/product-conversions/{conversion_id}/confirm` | {context_id,actual_qty,confirm:true,child_qr_payload?,expected_version,conversion_version,idempotency_key}；仅当前操作工实物确认 |
+| `productConversions.cancel` | POST | `/product-conversions/{conversion_id}/cancel` | {context_id?,conversion_version,reason?,idempotency_key}；仅待确认，确认/取消竞争只允许一个终态 |
+| `notifications.list` | GET | `/notifications` | delivery_status/unread_only；仅本人，异常状态与投递/已读状态分列 |
+| `qrAdmin.capabilities` | GET | `/qr-admin/capabilities` | LV4+qr.admin，授权维护所需字段 |
+| `qrAdmin.saveCapabilities` | PUT | `/qr-admin/capabilities/{user_id}` | {capabilities,expected_version,idempotency_key}；LV4+qr.admin，授权/撤销保留审计 |
+| `qrAdmin.deliveries` | GET | `/qr-admin/notification-deliveries` | LV4+qr.admin，失败投递及安全错误码 |
+| `qrAdmin.retryDelivery` | POST | `/qr-admin/notification-deliveries/{delivery_id}/retry` | {expected_version,idempotency_key}；LV4+qr.admin，新重试批次保留历史 |
 
-### `POST /product-qr-pool/batches`
+## 身份、绑定和打印
 
-- 权限：管理员/授权主管（正式角色级别待 P0 冻结）
-- 请求：`{count, print_batch_no?, payload_version?, idempotency_key}`
-- 响应：批次、生成数量、`[{id, public_code, qr_payload, pool_status}]`
-- 规则：count > 0 且不超过服务端配置上限（默认 500）；类型 PFB、版本 v1，编号/完整 payload 全局唯一；编号、打印模板和确认合同见 [qr-printing.md](./qr-printing.md)。
+已实现的22个key为 `productQrPool.list/generateBatch/reprint/printData/confirmPrint`、`productBoxes.bind/scan/metadata/saveQuantity/correctQuantity/advance/trace/events/split`、`production.qrContext/saveQrContext/allocateOutput`、`machines.scanProduction/selectProduction/productionComplete`、`qrAdmin.capabilities/saveCapabilities`。严格请求/响应定义见 `backend/app/schemas/product_box.py` 和 `frontend/src/types/productBox.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`：新领域bigint ID输出十进制字符串，引用既有订单/用户/件号的int4 ID仍输出整数；请求可用规范正整数或十进制字符串传新ID，拒绝bool、浮点和前导零。数量必须为整数，请求禁止额外字段，操作者只能取有效登录账号，幂等键为8～120位字母数字及 `._:-`。生成、打印数据、补打、绑定、选单和拆框返回201，其余已实现端点成功响应返回200。
 
-### `POST /product-qr-pool/{item_id}/reprint`
+PFB:v1:<pool_item_id>:<public_code> 完整校验；编号PFB-YYYYMMDD-至少六位数据库ID，Asia/Hong_Kong创建日持久化。身份/编号唯一且不可修改，绑定最多一次；池外404、再次绑定409。人工检索只解析已有身份，不能绕过池、权限及绑定校验。直接绑定的实际产品必须是订单主件/配对件，产品仅B/C，禁止A。
 
-- 权限：授权仓库/主管
-- 响应：原身份、二维码图片/打印作业数据、已有累计确认次数。
-- 规则：不得创建新池项或改变绑定；申请补打与用户确认已打印分开，取消打印对话框不增加打印确认次数，见 [qr-printing.md](./qr-printing.md)。
+生成默认最多500项，失败无半批次；绑定一框一订单，不可追加第二订单或改绑。查询已有绑定框不返回绑定入口。二维码池 bound_box_id 从框的唯一FK派生，不存双向可变绑定字段。
 
-### `GET /product-qr-pool`
+A4 3×7和系统打印出口按 [qr-printing.md](./qr-printing.md)；打印数据、作业项快照、用户确认分开持久化。取消对话框不增加次数，补打不生成新身份；确认人必须是作业申请人且有qr.print，每作业每项只确认一次。
 
-- 权限：登录用户
-- 参数：`pool_status`、`print_batch_no`、`page`、`page_size`
+产品打印页面的软件PDF验收已验证500标签生成24页A4；这是版式和分页证据。系统打印对话框、实体打印及纸质扫码尚未验收，不能由PDF或操作者确认计数推定通过。
 
-## 产品框绑定与查询
+PFB的通用扫码日志 `QRScanLog.entity_id` 指池项ID；对应框从唯一 `qr_pool_item_id` 查找，不能假设池项ID等于框ID。旧MAT/MCN/PFC/PRT实体语义保留。原材料补打及扫码图像编码已存 `qr_code`，不会按补打当天日期重新编码；原材料补打沿用QUERY操作并在notes记明补打。
 
-### `POST /product-boxes/bind`
+原材料仓库目录GET `/warehouse/materials`的 `include_inactive` 默认false；历史追溯目录可显式传true读取停用项以显示历史名称及筛选，原材料入库选择仍只提供有效材料。旧32项的registry/wrapper/类型位置和合同检查见 [api-registry.md](./api-registry.md)。
 
-- 权限：授权生产/仓库人员
-- 请求：`{qr_payload|public_code, order_id, product_code, part_id?, customer_id?, customer_part_no?, next_process_code?, idempotency_key}`
-- 响应：产品框当前信息、二维码身份和首次事件。
-- 拒绝：池外、已绑定、无效产品 A、订单不存在、同框二次订单、权限不足。重复提交应返回已存在身份或明确 `409 QR_ALREADY_BOUND`，不能覆盖。
+## 订单、上下文与数量
 
-### `POST /product-boxes/scan`
+order_id=production_plans.id，明确负责人和实际产品/路线/单机目标量，缺配置返回缺失项并拒绝生产写入。配置请求结构和来源见 [order-routing.md](./order-routing.md)。直接产品与显式转换目标分开，转换目标不能直接绑定/跨单占用需求。
 
-- 权限：登录用户
-- 请求：`{qr_payload, operation}`
-- 响应：当前框、当前订单/产品/工艺/数量、允许动作。
-- 规则：池外拒绝；已绑定只读查询，不返回绑定入口。
+已实现的GET `/production/plans/{order_id}/qr-context`只读当前账号可见订单的持久化配置，返回订单/主配对件、负责人、配置version和missing_configuration，以及实际产品、已发布路线及机台工艺目标；每个产品包含binding_allowed、can_bind和自身缺失项。无配置返回明确缺失项及version=0，不凭旧计划数据补造默认负责人或路线。PUT原子保存完整配置，各工艺机台份额合计须等于该产品目标量；已发布路线内容不可覆盖，新版本仅用于新框。
 
-### `GET /product-boxes/{box_id}/trace`
+已实现的PATCH `/product-boxes/{box_id}/metadata`只接受至少一个客户名称、客户件号或后续工艺快照字段，加expected_version和idempotency_key。字段可显式null；长度上限分别为200、150、50。仅active/empty框允许编辑，按当前qr.metadata能力和订单范围校验；版本冲突409，成功递增框版本并追加前后快照审计。非空next_process_code须属于本框固定路线尚未经过的后续步骤，编辑快照不执行工艺推进，也不修改身份、订单、实际产品或既有历史。
 
-- 权限：登录用户，字段按角色脱敏
-- 响应：当前框、全部 FlowEvent、父子关系、异常、转换、原材料批次/子卷反查。
+首次扫码机台只给当前用户票据；选单核验有效机台分配并建立context_id。30分钟无业务写入失效，机台状态完成或分配关闭立即失效，不同机台互不覆盖。再次扫同机台须有明确当前选单上下文，不能自动完成第一单或全部单；完成接口还须校验该次扫码意向及有效版本。
 
-## 机台生产与数量
+机台候选响应包含实际route_code/route_revision，不能把数据库ID显示成版本。选单省略state_id时使用产品当前发布路线；显式state_id可选择已有旧路线状态并校验该固定路线，已有框仍可登记，旧路线不能绑定新框。主管或本单负责人可建立只读选单用于更正/用途分配，不因此获得普通登记或完成权限。客户端各机台上下文只存页面内存，刷新后重新扫码选单。
 
-### `POST /machines/scan-production`
+在产数量使用覆盖值current_qty，不累加扫描；锁状态及框，校验state_version与expected_version。完成后普通登记拒绝，主管更正使用独立入口、非空reason及历史版本；后续工艺开始后不改其当前框/下游事实。完成时按该机台工艺份额比较目标量，数量差异提示但可确认完成。
 
-- 权限：生产操作工及以上
-- 请求：`{machine_qr}`
-- 响应：机台状态、当前工艺、可选已绑定订单列表；每项包含该机台/订单/工艺范围的 `production_status`，不能用全局订单完成状态替代。
+产出只在首次产出步骤建立来源；source_quantity_id→BoxProcessQuantity，订单/实际产品/框由来源推导。默认订单量=min(实际可分配量,剩余需求)，余量备货；授权主管/本单业务可调，无额外审批。两项非负整数、合计available_qty，订单量不超服务端计算剩余需求。当前分配排除旧值再计算余量，锁实际产品需求防重复占用。数量变更与分配同事务；已人工调整且新量无法满足时冲突，不静默恢复默认。
 
-### `POST /product-boxes/{box_id}/quantities`
+## 工艺推进、拆框与转换
 
-- 权限：生产操作工；已完成机台仅主管/更高
-- 请求：`{machine_id, order_id, current_qty, expected_version, idempotency_key}`
-- 响应：新数量、版本、事件。
-- 规则：先扫机台并选择订单；current_qty 为覆盖值；版本冲突返回 `409 STALE_BOX_VERSION`，调用方必须重读。
+推进只允许固定路线合法下一步，记录出入量和原料，不产生第二份产出。next_process_code编辑不能跳过推进校验。
 
-### `POST /machines/{machine_id}/production-complete`
+已实现advance的context_id指向目标机台、订单产品和下一步骤。当前框须active且已有正数工艺数量；来源和目标暂停时均拒绝。允许上一机台工艺已经完成，其关闭的上下文不会阻止新的目标上下文流转。事务锁产品需求→按ID排序状态→框，校验框/目标状态版本，新增目标BoxProcessQuantity的input_qty与上一工艺出量快照，继承material_batch_id/source_quantity_id。首次产出工艺仍只在保存数量时初始化订单用途；不能在同一道工艺的其他机台重复建立来源。
 
-- 权限：生产操作工及以上
-- 请求：`{order_id, confirm_quantity_difference, expected_version, idempotency_key}`；版本指当前机台/订单/工艺生产状态，具体来源记录待 D-P004 冻结。
-- 响应：`production_status=completed`、计划量/框汇总量、差异提示。允许差异确认；机台完成不关闭二维码后续流转。
+数量首次保存可提供有效material_batch_id（既有int4整数）；旧调用可省略。已有工艺来源不可替换，后续工艺只继承。此关联不扣原材料重量，不代替US6规格比较。trace返回missing_material_source及material_lineage_incomplete，历史缺失、循环、断链不得伪造完整来源；历史无物料主数据/余重允许null。
 
-## 订单量/备货量分配（FR-032 已确认，结构待 D-P004 冻结）
+scan额外返回latest_event（最近非scan业务事件）；events保留包括scan在内的全部事实，按(occurred_at,id)倒序、before_id定位同框游标，每页1～100默认50。trace初始含最近5条事件及next_cursor，其他历史通过events继续读取；quantities/relations/exceptions/conversions使用page/page_size，均返回总数。跨订单父子关系仅在两边订单均可见时返回；不通过快照泄漏隐藏订单。
 
-### 建议 `POST /production/output-allocations`
+拆框数量>0且<=父框当前量；子QR池内unused，用途order_qty+stock_qty=quantity且不超父余额；同单子框继承来源。跨单仅主管/源单负责人选择兼容且剩余需求足够的目标产品配置，父保留原单，子一次绑定目标单，记录来源/目标及快照。已有下游工艺/转换/出库事实时禁止直接改旧用途或跨单转移；失败全部回滚。父余量0不能作为有数量框流转或再拆，余量>0允许。
 
-- 权限：授权生产主管或该订单业务人员；普通操作工只登记产量，不可提交分配调整。无额外审批。
-- 请求草案：`{order_id, source_ref, order_qty, stock_qty, expected_version, idempotency_key}`；产出来源及订单主表待 D-P004 冻结，来源数量与剩余需求由服务端查询，不采信客户端提供的可分配总量。
-- 响应草案：当前有效分配、实际可分配数量、订单剩余需求、版本和操作审计。
-- 默认：订单量为实际可分配数量与订单剩余需求中的较小值，剩余作为备货。主管/本订单业务人员可调整。
-- 校验：两项均为非负整数，合计等于实际可分配量，订单量不超过剩余需求；无权限、超量、重复占用及并发版本冲突不能改变已保存分配。
-- 审计：操作者、时间、前后订单量/备货量；重复同请求返回原结果，不重复分配。不更改订单计划量。
-- 验收例子：80 个实际可分配量、订单剩余 70，默认 70+10；授权调整 60+20 成功；70+20、订单量超过 70、负数/小数及普通工调整拒绝。
+已实现split返回201，校验父框expected_version及来源allocation_version；跨单还必须显式给出target_state_id与target_state_version，服务端再次核对需求、有效机台分配和固定路线。只拆首次产出步骤尚未进入下游的有效余额；允许此前已拆过的正余量继续拆，父零余量保留身份并置empty。来源/目标订单都须在账号可见范围，跨单要求实际part_id、B/C产品及完整已发布steps_json与首次产出步骤一致，不只比较工艺名称。
 
-## 拆框
+同单每个份额建立自身source_quantity_id及用途记录，子分配的origin_allocation_id指父分配，继承材料和固定路线版本；父当前数量、来源余额、用途同步减少。跨单子数量全部计入目标需求，不新造制造产量；source_snapshot记录源/目标状态、来源数量及拆前用途。锁顺序为排序后的需求→状态→父框→子池项→来源用途，关系/事件/审计/二维码日志和完成意向失效同事务，失败整体回滚，幂等重放不重复扣量。
 
-### `POST /product-boxes/{parent_id}/split`
+拆后的首次产出余额禁止普通数量覆盖和历史更正，production行返回quantity_locked/can_correct；进入后续工艺后可登记该新工艺当前数量。最新后续工艺主管更正只更新当前物理量，不回写源用途、其他框或入量快照。trace.split返回允许动作、来源用途版本及分页兼容接收状态，关系附双方当前余量及来源快照。扫码携带split_parent_id时，只向有源框拆分/主管权限的账号核对unused子标签，返回box=null与空allowed_actions；不扩大未绑定池读取或直接绑定权限。
 
-- 权限：授权生产/仓库/主管
-- 请求：`{child_qr_payload, quantity, expected_version, idempotency_key}`；版本指父框当前版本。
-- 响应：父框、子框、父子关系和事件。
-- 拒绝：数量 <= 0、超过父当前数量、子二维码池外/已绑定、父数量为 0；失败整笔回滚。
+转换create只建立pending_operator_confirmation，proposed_qty默认当前全部，actual_qty待确认前为空。人工manual与服务端pre_authorized都不能直接改产品；目标须明确配置、版本路线和转换授权，不能用客户端trigger_type冒充预授权。全量actual_qty=current_qty原QR保留；部分0<actual_qty<current_qty须有效child_qr_payload，同事务拆子框并转换，父产品和余量不变。来源框版本expected_version和记录conversion_version均检查；确认与取消只产生一个终态。操作工确认必须匹配上下文，管理员不能仅凭等级代理实物确认。
 
-## 规格异常
+## 异常、暂停与通知
 
-### `POST /coil-spec-exceptions`
+规格由服务端订单和实际卷料事实比较，匹配不建异常；不匹配可确认继续且必须创建异常/两组收件人/outbox。主管或明确订单业务任一确认，remark可空。pause/reconfirm_coil仅阻断该state_id新的数量登记、完成及推进；不控制物理机台。独立resume记录复核卷料和依据，不改原resolution；同状态其他未解除异常仍阻断。
 
-- 权限：生产现场
-- 请求：`{order_id, product_box_id?, expected_spec, actual_spec, continue_production, idempotency_key}`；订单/实际卷料来源必须在服务端核验。
-- 响应：异常 `status=pending_confirmation` 和独立的通知投递状态。规格一致不得创建异常；不一致允许继续但必须留痕，写站内通知/待办 outbox。
+收件组缺负责人或主管时保留pending_configuration，补配置后幂等回补；不得丢弃或随机群发。正常工作器首投递目标60秒内，最多5次自动尝试，四次退避为前次失败后1、5、15、30分钟；超限保留failed及人工重试入口。站内待办有唯一outbox来源，持久化后才标sent；尝试历史不能擦除。
 
-### `POST /coil-spec-exceptions/{exception_id}/confirm`
+## 错误、幂等和时间
 
-- 权限：主管或该订单业务人员
-- 请求：`{resolution, remark?, expected_version, idempotency_key}`；版本指该异常记录，确认与其他修改竞争必须检查最新状态。
-- 响应：确认人/时间、`status=confirmed`、处理结果 `resolution=accept_continue` / `pause` / `reconfirm_coil`。任一合格角色确认即可；备注可空，重复确认不得产生第二次状态变更。已确认不等于规格差异消除。
-
-## B/C 转换
-
-### `POST /product-conversions`
-
-- 权限：业务或主管手动发起；预授权差异工艺可由系统创建待确认记录
-- 请求：`{box_id, target_product_code, actual_qty?, trigger_type, expected_version, idempotency_key}`；创建时 actual_qty 仅为提议数量，最终值以操作工确认请求为准，版本指来源框。
-- 响应：`confirmation_status=pending_operator_confirmation` 的待确认转换记录；操作工通过专用确认动作完成，创建请求不能直接跳过确认。
-- 规则：人工发起与预授权触发均先建待确认记录，默认带出当前框全部数量供操作工确认或修改，不能直接改产品/数量。记录原订单、原工艺与来源框，保存时的默认数量不能替代确认时的最新框版本。
-
-### `POST /product-conversions/{conversion_id}/confirm`
-
-- 权限：当前操作工/主管按规则
-- 请求：`{actual_qty, confirm: true, child_qr_payload?, expected_version, conversion_version, idempotency_key}`；expected_version 指来源框版本，conversion_version 指转换记录版本；子二维码在部分转换时必填，全量时不需要新二维码。
-- 响应：`confirmation_status=confirmed`、转换记录、父框当前产品和数量，以及部分转换的子框/新二维码身份/父子关系。
-- 全量：`actual_qty == current_qty`，原框变更为目标产品，数量及二维码身份保持，记录原订单、原工艺和转换方向。
-- 部分：`0 < actual_qty < current_qty`，子 QR 必须为池内未绑定；先拆框再在同一事务内转换子框，父框保留原产品及余量。子框继承原订单及追溯来源，保存父子和转换记录。
-- 拒绝与并发：数量 <= 0、超量、子 QR 缺失/池外/已绑定、权限不足或父框版本冲突时，整笔回滚；相同幂等请求不重复拆框，版本改变须重读并重新确认。
-
-### 建议 `POST /product-conversions/{conversion_id}/cancel`
-
-- 权限：取消待确认记录的角色与订单范围由 D-P006 冻结；已确认结果不得通过取消回退，反向转换须新建独立记录并由操作工确认。
-- 请求：`{conversion_version, idempotency_key, reason?}`；版本指待确认转换记录，取消只改变此记录状态，不修改框。
-- 响应：`confirmation_status=cancelled`，保存取消人/时间/可选原因，保留原转换记录，框当前产品和数量不变。
-- 规则：仅待确认记录可以取消，已确认记录须拒绝此动作；取消/确认并发只能有一个终态，失败不得改变框。重复取消同请求幂等。
-
-## 审计与通知
-
-### `GET /product-boxes/{box_id}/events`
-
-- 权限：登录用户
-- 响应：扫描、绑定、数量、拆框、完成、异常、转换事件，含操作者和前后数量。
-
-### `GET /notifications`
-
-- 权限：登录用户
-- 参数：`status`（通知投递 `pending` / `sent` / `failed`）、`unread_only`。
-- 响应：仅当前用户有权查看的站内通知/待办，分别包含 `delivery_status` 及关联异常的 `exception_status`；已读/送达不能自动确认业务异常。
-- 用于查看规格异常通知及失败重试状态；自动尝试上限与退避按 D-P007，业务确认状态不随重试改变。
-
-## 错误契约
-
-产品框新领域错误使用 `{code, message, details?, request_id?}`，旧 QR lookup 的 200 + found=false 保留。字段缺失/类型错误保持现有 HTTP 422 `{detail, errors}` 验证格式，领域 wrapper 同时识别两种格式。
+新领域错误{code,message,details?,request_id?}；422保持现有字段验证格式{detail,errors}，旧QR lookup的HTTP200+found=false保留。
 
 | HTTP | code | 条件 |
 |---|---|---|
-| 400 | `INVALID_QR` | 格式、类型、版本或完整身份校验错误 |
-| 400 | `INVALID_QUANTITY` | 非正转换/拆框数量、超量或分配合计错误等业务数量边界 |
-| 400 | `INVALID_PRODUCT` / `ORDER_MISMATCH` | 无效产品 A 或当前订单/框归属不匹配 |
-| 403 | `FORBIDDEN` | 等级、部门、能力或订单范围无权限 |
-| 404 | `QR_NOT_IN_POOL` / `ENTITY_NOT_FOUND` | 完整有效 QR 不在池，或订单/机台/框等实体不存在 |
-| 409 | `QR_ALREADY_BOUND` | 再次绑定/改绑或已绑定子二维码 |
-| 409 | `STALE_BOX_VERSION` | 框版本已改变，必须重读并重新确认 |
-| 409 | `IDEMPOTENCY_CONFLICT` | 同操作者/动作/实体请求键对应不同请求内容 |
-| 409 | `STATE_CONFLICT` | 当前状态不允许操作或确认/取消终态冲突 |
+| 400 | INVALID_QR / INVALID_QUANTITY / INVALID_PRODUCT / ORDER_MISMATCH | 身份/数量/产品/归属校验失败 |
+| 400 | INVALID_TEMPLATE / INVALID_CAPABILITY / INVALID_IDEMPOTENCY_KEY | 服务层模板、能力集合或请求键无效；schema字段错误仍为422 |
+| 401 | 现有认证detail格式 | 缺少/失效/非access票据或账号不存在 |
+| 403 | FORBIDDEN | 部门/等级/能力/订单/上下文无权限 |
+| 404 | QR_NOT_IN_POOL / ENTITY_NOT_FOUND | 有效完整身份不在池或实体不存在 |
+| 409 | QR_ALREADY_BOUND / STALE_BOX_VERSION | 重复绑定或过期框版本，重读后再确认 |
+| 409 | IDEMPOTENCY_CONFLICT / STATE_CONFLICT | 同键异请求，或配置/状态/版本冲突 |
+| 503 | STATE_CONFLICT | 新QR域遇到AUTH_DISABLED或数据库暂不可用；不返回数据库异常细节 |
 
-关键写入请求均携带幂等键；同键同请求重用已提交结果，未完成请求不能重放为成功。新增事件时间为带时区 ISO 8601 UTC、至少毫秒精度。异常与领域操作不打印令牌或连接设置。
+关键写入按操作者/动作/实体/请求键唯一持久化内容摘要和结果，同事务提交；同键同请求重放已提交结果，同键异内容409，未完成不能当成功。重放前仍重新检查当前权限；先按用户ID排序取得权限事务锁，再取得请求锁，多实体同类锁按ID排序，需求→状态→框→池项→分配的顺序全域一致。新时间为UTC毫秒及带偏移ISO8601，前端按Asia/Hong_Kong展示。日志只记安全错误码，不输出原始未知扫码、票据、认证头或连接设置。
+
+现有前端认证绕过配置仍是上线前置整改项；本轮没有修改真实账号授权或全局认证开关。浏览器和API验收使用独立数据库、合成账号及真实JWT；页面软件行为、A4 PDF、系统打印对话框和实物扫码分别记录，不以客户端接口测试或PDF代替物理打印验收。

@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum as PyEnum
 from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import (Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
+from sqlalchemy import (BigInteger, Boolean, DateTime, Enum, Float, ForeignKey, Integer, String, Text)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -39,6 +39,7 @@ class ScanType(str, PyEnum):
     MCN = "MCN"  # 机台
     PFC = "PFC"  # 工艺流转单
     PRT = "PRT"  # 零件
+    PFB = "PFB"  # 产品框
 
 
 class ScanOperation(str, PyEnum):
@@ -49,6 +50,11 @@ class ScanOperation(str, PyEnum):
     CONSUME = "consume"  # 消耗扫码
     REPORT = "report"  # 报工扫码
     INBOUND = "inbound"  # 入库扫码
+    BIND = "bind"
+    QTY_SAVE = "qty_save"
+    COMPLETE = "complete"
+    CONVERSION = "conversion"
+    EXCEPTION = "exception"
 
 
 class Supplier(Base):
@@ -269,7 +275,7 @@ class QRScanLog(Base):
     scan_type: Mapped[ScanType] = mapped_column(
         Enum(ScanType), nullable=False, index=True
     )
-    entity_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    entity_id: Mapped[int] = mapped_column(BigInteger, nullable=False)
     entity_no: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
     operator_id: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     operation: Mapped[ScanOperation] = mapped_column(

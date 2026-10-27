@@ -15,6 +15,7 @@ from app.api.deps import CurrentUser, DbSession, require_role
 from app.core.file_service import get_inquiry_attachment_path, get_upload_root
 from app.models.customer import Customer
 from app.models.customer_inquiry import CustomerInquiry, CustomerInquiryAttachment
+from app.services.inquiry_technical_service import resolve_inquiry_presses
 
 router = APIRouter(prefix="/customer-inquiries", tags=["Customer Inquiries"])
 MAX_FILES = 10
@@ -50,9 +51,16 @@ class CustomerInquiryResponse(BaseModel):
 
 
 class TechnicalReviewInput(BaseModel):
-    status: str = Field(pattern=r"^(待补充|已完成)$")
+    # Omit status to save a draft without changing the review workflow.
+    status: Optional[str] = Field(default=None, pattern=r"^(待补充|已完成)$")
     note: Optional[str] = Field(default=None, max_length=4000)
-    technical_data: list[dict] = Field(default_factory=list, max_length=100)
+    technical_data: list[dict] = Field(
+        default_factory=list, max_length=100,
+        description="Per-part technical data. pressTonnageSource is type or manual; "
+        "pressTypeKey selects /machines/press-types. pressTonnage, pressTypeLabel and "
+        "pressIsDualAxis are resolved by the server. No individual press is assigned. "
+        "Legacy machine references are converted to types; tonnage-only rows remain manual.",
+    )
 
 
 def _as_response(
@@ -252,8 +260,12 @@ async def review_customer_inquiry(
     inquiry = await db.get(CustomerInquiry, inquiry_id)
     if inquiry is None:
         raise HTTPException(status_code=404, detail="Customer inquiry not found")
-    inquiry.technical_review = data.status
-    inquiry.technical_data = data.technical_data
+    technical_data = await resolve_inquiry_presses(
+        db, data.technical_data, completing=data.status == "已完成"
+    )
+    if data.status is not None:
+        inquiry.technical_review = data.status
+    inquiry.technical_data = technical_data
     if data.note is not None:
         inquiry.technical_review_note = data.note.strip() or None
     inquiry.updated_at = datetime.utcnow()

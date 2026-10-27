@@ -150,6 +150,9 @@ class ProductionSchedulingMachine(BaseModel):
     name: str
     machine_type: Optional[str] = None
     tonnage: Optional[float] = None
+    press_type_key: str
+    press_type_label: str
+    is_dual_axis: bool
     max_stroke: Optional[float] = None
     bed_size: Optional[str] = None
     state: str

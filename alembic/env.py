@@ -55,5 +55,11 @@ async def run_migrations_online() -> None:
 if context.is_offline_mode():
     run_migrations_offline()
 else:
-    import asyncio
-    asyncio.run(run_migrations_online())
+    # Programmatic migration/acceptance callers can supply an already verified
+    # isolated connection. Never open the configured application DB in that case.
+    supplied_connection = config.attributes.get("connection")
+    if supplied_connection is not None:
+        do_run_migrations(supplied_connection)
+    else:
+        import asyncio
+        asyncio.run(run_migrations_online())

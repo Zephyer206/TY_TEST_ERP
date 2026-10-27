@@ -17,7 +17,7 @@ class MaterialBatchBase(BaseModel):
     thickness: Optional[float] = None
     width: Optional[float] = None
     length: Optional[float] = None
-    gross_weight: Optional[float] = Field(default=None, gt=0)
+    gross_weight: Optional[float] = Field(default=None, gt=0, allow_inf_nan=False)
     po_no: Optional[str] = None
 
 
@@ -45,13 +45,13 @@ class SplitItem(BaseModel):
 
     width: Optional[float] = None
     length: Optional[float] = None
-    weight: float = Field(gt=0)
+    weight: float = Field(gt=0, allow_inf_nan=False)
 
 
 class BatchConsumeRequest(BaseModel):
     """Schema for consuming material from batch."""
 
-    weight: float = Field(gt=0)
+    weight: float = Field(gt=0, allow_inf_nan=False)
     reference_type: Optional[str] = None
     reference_id: Optional[int] = None
     notes: Optional[str] = None

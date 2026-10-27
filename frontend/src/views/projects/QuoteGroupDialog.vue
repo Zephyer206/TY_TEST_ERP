@@ -39,9 +39,14 @@
           <label><span>本次报价原料价 (元/kg)</span><el-input-number v-model="draft.materialUnitPrice" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
           <label><span>本次报价废料价 (元/kg)</span><el-input-number v-model="draft.materialScrapPrice" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
         </div>
-        <div class="technical-table-heading"><strong>技术审核资料</strong><span>TWP、利用率及材料属性按零件自动计算</span></div>
+        <div class="technical-table-heading">
+          <div><strong>技术审核资料</strong><span>冲床参数来自技术评审，只读；材料成本按本次报价计算</span></div>
+          <el-button size="small" :icon="Refresh" :loading="syncingPress" :disabled="!canSyncPress || saving" @click="syncPress">同步冲床资料</el-button>
+        </div>
+        <p class="press-sync-note">{{ canSyncPress ? '技术评审更新后可同步冲床类型、吨位及双轴属性，已填写的报价和费用保留。' : '报价已锁定，保留原技术审核快照。' }}</p>
         <el-table :data="draft.parts" size="small" border>
           <el-table-column label="零件号" min-width="170"><template #default="{ row }"><span class="mono">{{ row.customerPartNo || '-' }}</span></template></el-table-column>
+          <el-table-column label="冲床类型 / 吨位" min-width="150"><template #default="{ row }"><span class="technical-value">{{ formatQuotePress(row) }}</span><small>{{ quotePressNote(row) }}</small></template></el-table-column>
           <el-table-column label="毛料重量 (g/件)" width="145"><template #default="{ row }"><span class="technical-value">{{ formatWeight(materialWeight(row, 'gross')) }}</span></template></el-table-column>
           <el-table-column label="净料重量 (g/件)" width="145"><template #default="{ row }"><span class="technical-value">{{ formatWeight(materialWeight(row, 'net')) }}</span></template></el-table-column>
           <el-table-column label="材料净成本 (元/件)" width="155"><template #default="{ row }"><span class="technical-value">{{ formatCurrency(materialCost(row)) }}</span></template></el-table-column>
@@ -64,14 +69,14 @@
           <el-table-column label="零件号" min-width="150"><template #default="{ row }"><span class="mono">{{ row.customerPartNo }}</span></template></el-table-column>
           <el-table-column prop="name" label="零件名称" min-width="150" />
           <el-table-column label="技术资料" min-width="170"><template #default="{ row }"><span>{{ row.material || '-' }}</span><small>{{ row.thickness || '-' }}mm · {{ row.cavityCount || '-' }}穴<span v-if="row.pairLabel"> · 左右件</span></small></template></el-table-column>
-          <el-table-column label="产品报价 (元/件)" width="180"><template #default="{ row }"><el-input-number v-model="row.price" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:150px" /></template></el-table-column>
+          <el-table-column label="产品报价 (元/件)" width="180"><template #default="{ row }"><el-input-number v-model="row.price" :aria-label="`${row.customerPartNo} 产品报价 (元/件)`" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:150px" /></template></el-table-column>
           <el-table-column label="年用量" width="110"><template #default="{ row }"><el-input-number v-model="row.annualUsage" :min="0" :precision="0" controls-position="right" style="width:100px" /></template></el-table-column>
         </el-table>
         <div class="quote-total"><span>预计年度销售额</span><strong>¥{{ annualTotal.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</strong></div>
       </section>
       <label class="note-field"><span>报价备注</span><el-input v-model="draft.quoteNote" type="textarea" :rows="2" placeholder="可填写报价有效期、特殊商务条件或说明" /></label>
     </template>
-    <template #footer><div class="quote-footer"><span v-if="draft" class="footer-total">预计年销售额 <strong>¥{{ annualTotal.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) }}</strong></span><div class="quote-footer-actions"><el-button @click="visible = false">取消</el-button><el-button type="primary" :loading="saving" @click="save">保存报价</el-button></div></div></template>
+    <template #footer><div class="quote-footer"><span v-if="draft" class="footer-total">预计年销售额 <strong>¥{{ annualTotal.toLocaleString('zh-CN', { maximumFractionDigits: 2 }) }}</strong></span><div class="quote-footer-actions"><el-button @click="visible = false">取消</el-button><el-button type="primary" :loading="saving" :disabled="syncingPress" @click="save">保存报价</el-button></div></div></template>
   </el-dialog>
 
   <el-dialog v-model="materialDialogVisible" :title="materialEditId ? '编辑材料' : '新增材料'" width="min(520px, 92vw)" append-to-body destroy-on-close>
@@ -91,8 +96,8 @@
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Delete, Edit, Plus } from '@element-plus/icons-vue'
-import { mapQuoteGroup, type QuoteGroup } from './data'
+import { Delete, Edit, Plus, Refresh } from '@element-plus/icons-vue'
+import { formatQuotePress, mapQuoteGroup, quotePressNote, type QuoteGroup } from './data'
 import { materialsApi } from '@/api/dictionary'
 import { quoteGroupsApi } from '@/api/quoteGroups'
 
@@ -101,6 +106,31 @@ const emit = defineEmits<{ 'update:modelValue': [value: boolean]; saved: [group:
 const quotePaths: QuoteGroup['path'][] = ['待确定方案', '仅打样', '先打样后开量产模具', '直接开量产模具']
 const draft = ref<QuoteGroup | null>(null)
 const saving = ref(false)
+const syncingPress = ref(false)
+const canSyncPress = computed(() => Boolean(props.group?.backendId) && !['已提交审批', '已审批', '已定点'].includes(props.group?.status || ''))
+const syncPress = async () => {
+  if (!props.group?.backendId || !draft.value || !canSyncPress.value || syncingPress.value || saving.value) return
+  const groupId = props.group.backendId
+  syncingPress.value = true
+  try {
+    const updated = mapQuoteGroup(await quoteGroupsApi.syncPress(groupId))
+    if (props.group?.backendId !== groupId || draft.value?.backendId !== groupId) return
+    Object.assign(props.group, updated)
+    const parts = new Map(updated.parts.map(part => [part.id, part]))
+    // A technical refresh must preserve every unsaved commercial value in the dialog.
+    draft.value.parts = draft.value.parts.map(part => {
+      const source = parts.get(part.id)
+      return source ? { ...part, pressTonnage: source.pressTonnage, pressTypeKey: source.pressTypeKey,
+        pressTypeLabel: source.pressTypeLabel, pressIsDualAxis: source.pressIsDualAxis,
+        pressTonnageSource: source.pressTonnageSource } : part
+    })
+    ElMessage.success('冲床资料已同步，报价和费用保持不变')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '同步冲床资料失败')
+  } finally {
+    syncingPress.value = false
+  }
+}
 const toolingDiscount = ref<number | undefined>()
 const canDiscountTooling = computed(() => Number(draft.value?.developmentToolingCost) > 0)
 const formatToolingPrice = (value: number) => `¥${value.toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -340,6 +370,7 @@ const costSubtotal = computed(() => {
   return material + additionalCost.value
 })
 const save = async () => {
+  if (syncingPress.value || saving.value) return
   if (!draft.value || !props.group || !props.group.backendId) return ElMessage.error('报价组尚未落库，无法保存')
   if (draft.value.path === '待确定方案') return ElMessage.warning('请选择报价路径')
   if (!draft.value.toolingType.trim()) return ElMessage.warning('请填写模具类型')
@@ -390,6 +421,8 @@ const save = async () => {
 .section-heading strong, .technical-table-heading strong { color: var(--zephyr-ink); font-size: 14px; font-weight: 600; }
 .technical-table-heading { flex-wrap: wrap; margin: 16px 0 8px; }
 .technical-table-heading strong { font-size: 12px; }
+.technical-table-heading > div { display: grid; gap: 4px; }
+.press-sync-note { margin: 0 0 10px; color: var(--zephyr-muted); font-size: 12px; line-height: 1.6; }
 .quote-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .tooling-pricing-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); align-items: start; gap: 12px; margin-top: 16px; }
 .tooling-pricing-grid label, .development-tooling { display: grid; gap: 6px; min-width: 0; }
