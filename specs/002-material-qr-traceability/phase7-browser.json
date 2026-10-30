@@ -1,0 +1,107 @@
+{
+  "status": "PASS",
+  "record_type": "Observed real Vue browser acceptance; this file does not control a browser",
+  "started_client_date": "2026-10-27",
+  "completed_client_date": "2026-10-28",
+  "sessions": [
+    "in-app Chromium browser 2, tab 5",
+    "in-app Chromium browser 2, resumed tab 1"
+  ],
+  "urls": [
+    "http://127.0.0.1:18125/product-box-production",
+    "http://127.0.0.1:18125/product-box-notifications"
+  ],
+  "identities": [
+    101,
+    102,
+    104,
+    105,
+    107
+  ],
+  "synthetic_jwt_in_memory_only": true,
+  "checks": [
+    {
+      "key": "business_hierarchy",
+      "status": "PASS",
+      "observed": "订单、产品、工艺、数量主显示，二维码身份辅助"
+    },
+    {
+      "key": "preview",
+      "status": "PASS",
+      "observed": "实际宽900与订单1000对照，预览不建异常/不改0件，保存禁用"
+    },
+    {
+      "key": "input_invalidation",
+      "status": "PASS",
+      "observed": "修改材料输入清除旧核对及继续决定，保存禁用"
+    },
+    {
+      "key": "explicit_continue",
+      "status": "PASS",
+      "observed": "明确记录并继续后保存12件，异常待确认"
+    },
+    {
+      "key": "two_groups",
+      "status": "PASS",
+      "observed": "生产主管102和订单负责人104各收到站内通知，业务仍待确认"
+    },
+    {
+      "key": "owner_accept",
+      "status": "PASS",
+      "observed": "负责人104接受继续，空备注允许，通知投递状态独立"
+    },
+    {
+      "key": "second_exception",
+      "status": "PASS",
+      "observed": "另一卷料宽850新建独立异常，保存5件，累计17"
+    },
+    {
+      "key": "pause",
+      "status": "PASS",
+      "observed": "负责人104暂停第二异常，工人数量及完成入口关闭"
+    },
+    {
+      "key": "source_handoff_guard",
+      "status": "PASS",
+      "observed": "从暂停CUT框进入FINISH被服务端拒绝，17件及来源不变"
+    },
+    {
+      "key": "other_state",
+      "status": "PASS",
+      "observed": "402/CUT生产入口仍可用，不受401/CUT暂停牵连"
+    },
+    {
+      "key": "resume_mismatch",
+      "status": "PASS",
+      "observed": "核对不匹配卷料并填理由，恢复被拒绝"
+    },
+    {
+      "key": "resume_match",
+      "status": "PASS",
+      "observed": "核对9501符合原规格并填理由解除，保留原pause及确认人"
+    },
+    {
+      "key": "production_resumes",
+      "status": "PASS",
+      "observed": "工人新框用匹配卷料保存7件，三框12/5/7累计24，无新异常"
+    },
+    {
+      "key": "admin_role",
+      "status": "PASS",
+      "observed": "管理员107可管理投递，无主管能力不显示业务确认/恢复"
+    },
+    {
+      "key": "manual_retry",
+      "status": "PASS",
+      "observed": "一条failed5人工新批次后实站内投递成功，另一条仍failed，业务仍pending"
+    },
+    {
+      "key": "history_scope",
+      "status": "PASS",
+      "observed": "重试详情保留原5失败+新1成功；负责人105仅见402、不见401及管理入口"
+    }
+  ],
+  "fault_fixture": "Order 402 failures replayed with real dispatch and synthetic past clock; not real elapsed retry intervals",
+  "local_worker_poll_seconds": 1,
+  "physical_scanner": "NOT_RUN"
+}

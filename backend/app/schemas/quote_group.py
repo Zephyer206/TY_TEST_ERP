@@ -18,6 +18,8 @@ class QuoteGroupCreate(BaseModel):
 
 
 class QuoteGroupUpdate(BaseModel):
+    surface_rule_id: Optional[int] = Field(default=None, gt=0)
+    refresh_surface_rule: bool = False
     quote_path: Optional[str] = Field(default=None, max_length=60)
     tooling_type: Optional[str] = Field(default=None, max_length=100)
     tooling_cost: Optional[Annotated[Decimal, Field(ge=0, le=Decimal("9999999999.99"), decimal_places=2)]] = Field(
@@ -75,6 +77,7 @@ class QuoteGroupItemResponse(BaseModel):
 
 
 class QuoteGroupResponse(BaseModel):
+    surface_rule_snapshot: Optional[dict] = None
     id: int
     group_no: str
     inquiry_id: int

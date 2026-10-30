@@ -1,0 +1,70 @@
+{
+  "recorded_at": "2026-10-23T05:34:29.218991+08:00",
+  "scope": "Phase 1 persistence foundation only",
+  "implementation": {
+    "new_tables": 23,
+    "code_head": [
+      "20261022_product_box_foundation"
+    ],
+    "business_database_migration_applied": false
+  },
+  "acceptance": {
+    "postgresql_tests": 35,
+    "failures": 0,
+    "errors": 0,
+    "legacy_helpers": 5,
+    "invalid_input_api_checks": 3,
+    "api_usage_violations": 0,
+    "standard_alembic_round_trip": "PASS",
+    "fixture_schema": "synthetic legacy prerequisites; not all historical migrations",
+    "browser": "NOT_RUN; no frontend changes",
+    "physical_labels": "NOT_RUN",
+    "business_services_and_new_endpoints": "NOT_IMPLEMENTED"
+  },
+  "business_database_after": {
+    "inspection": "READ_ONLY",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "product_main_tables": 0,
+    "temporary_test_databases_remaining": 0,
+    "legacy_enum_labels": [
+      {
+        "typname": "scanoperation",
+        "enumlabel": "QUERY"
+      },
+      {
+        "typname": "scanoperation",
+        "enumlabel": "SPLIT"
+      },
+      {
+        "typname": "scanoperation",
+        "enumlabel": "CONSUME"
+      },
+      {
+        "typname": "scanoperation",
+        "enumlabel": "REPORT"
+      },
+      {
+        "typname": "scanoperation",
+        "enumlabel": "INBOUND"
+      },
+      {
+        "typname": "scantype",
+        "enumlabel": "MAT"
+      },
+      {
+        "typname": "scantype",
+        "enumlabel": "MCN"
+      },
+      {
+        "typname": "scantype",
+        "enumlabel": "PFC"
+      },
+      {
+        "typname": "scantype",
+        "enumlabel": "PRT"
+      }
+    ]
+  }
+}

@@ -1,0 +1,272 @@
+{
+  "recorded_at": "2026-10-28T12:46:08.887350+00:00",
+  "client_date": "2026-10-28",
+  "implementation_status": "PASS",
+  "acceptance_status": "PASS",
+  "completed_tasks": 49,
+  "total_tasks": 59,
+  "active_new_endpoints": 31,
+  "planned_new_endpoints": 31,
+  "pytest": {
+    "unique_total": 344,
+    "failures": 0,
+    "skipped": 0,
+    "reports": [
+      "runtime/qr-conversion-final-full.xml",
+      "runtime/qr-conversion-old-route.xml"
+    ]
+  },
+  "checks": {
+    "build": "PASS",
+    "api_usage": "PASS",
+    "design": "PASS",
+    "diff": "PASS",
+    "api_usage_violations": 0,
+    "build_log": "runtime/qr-conversion-final-build.log",
+    "design_log": "runtime/qr-conversion-design.log",
+    "diff_log": "runtime/qr-conversion-diff.log",
+    "existing_build_warnings": "Sass/Rollup and large chunk warnings; no compilation errors"
+  },
+  "browser": {
+    "status": "PASS",
+    "record_type": "Observed actual Vue browser actions; this record does not control a browser",
+    "client_date": "2026-10-28",
+    "session": "in-app Chromium browser 2, tab 3",
+    "urls": [
+      "http://127.0.0.1:18125/product-box-trace",
+      "http://127.0.0.1:18125/product-box-production"
+    ],
+    "identities": [
+      101,
+      104,
+      105,
+      107
+    ],
+    "synthetic_jwt_in_memory_only": true,
+    "checks": [
+      {
+        "key": "hierarchy",
+        "status": "PASS",
+        "observed": "订单、产品、工艺、数量主显示，标签身份折叠辅助"
+      },
+      {
+        "key": "manual_pending",
+        "status": "PASS",
+        "observed": "负责人发起仅待操作工确认，原B100和标签不变"
+      },
+      {
+        "key": "close_and_rescan",
+        "status": "PASS",
+        "observed": "关闭并重扫仍待确认，无默认实物确认，不静默转换"
+      },
+      {
+        "key": "full_b_to_c",
+        "status": "PASS",
+        "observed": "操作工C/CUT确认100，原框保留标签并转C100，源B当前余额归零"
+      },
+      {
+        "key": "full_c_to_b",
+        "status": "PASS",
+        "observed": "同框反向确认100恢复B100，C当前余额归零，B工艺合计恢复400"
+      },
+      {
+        "key": "quantity_bounds",
+        "status": "PASS",
+        "observed": "实际0、101均不能提交"
+      },
+      {
+        "key": "missing_child",
+        "status": "PASS",
+        "observed": "部分数量未提供子标签即使勾选也不能提交"
+      },
+      {
+        "key": "bound_child",
+        "status": "PASS",
+        "observed": "已绑定标签拒绝，父框不变"
+      },
+      {
+        "key": "outside_child",
+        "status": "PASS",
+        "observed": "池外标签提示不在系统池中，不能提交"
+      },
+      {
+        "key": "changed_child",
+        "status": "PASS",
+        "observed": "核对后修改子标签清除旧核对与勾选，提交禁用"
+      },
+      {
+        "key": "partial_b_to_c",
+        "status": "PASS",
+        "observed": "100拆出C30，父B70；子框材料及原订单保留"
+      },
+      {
+        "key": "partial_c_to_b",
+        "status": "PASS",
+        "observed": "子C30再拆出B10，父C20，两个方向关系留痕"
+      },
+      {
+        "key": "auto_pending",
+        "status": "PASS",
+        "observed": "C/EXTRA差异扫码只建预授权待确认，原B100不变"
+      },
+      {
+        "key": "auto_rescan",
+        "status": "PASS",
+        "observed": "关闭重扫复用同一待确认项，无重复转换记录"
+      },
+      {
+        "key": "auto_actual",
+        "status": "PASS",
+        "observed": "操作工修改为40并核对子标签，父B60/子C40"
+      },
+      {
+        "key": "lineage",
+        "status": "PASS",
+        "observed": "C20详情可见B→C30及C→B10关系、原材料9001/50kg与原订单401"
+      },
+      {
+        "key": "next_process",
+        "status": "PASS",
+        "observed": "C20子框沿CUT→EXTRA进入，入量20、沿用原标签/来源，不新增产出"
+      },
+      {
+        "key": "cancel",
+        "status": "PASS",
+        "observed": "负责人取消框4转换，保留已取消/未执行提示，B100不变"
+      },
+      {
+        "key": "admin",
+        "status": "PASS",
+        "observed": "管理员可查看待确认，但无创建/实物确认/取消入口"
+      },
+      {
+        "key": "scope",
+        "status": "PASS",
+        "observed": "其他订单负责人105读取401框被拒绝，旧详情不展示"
+      }
+    ],
+    "iterations": "Initial UI boundary observations retained; all business conversion flows repeated after fixing source balance on a fresh owned fixture. Expired original context was rejected; fresh scan/select resumed acceptance.",
+    "final_owned_original_oid": 418387,
+    "physical_scanner": "NOT_RUN"
+  },
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_checked": 23,
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 2,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "historical_temporary_cleanup": {
+      "status": "INCOMPLETE",
+      "unowned_residue_deleted": false,
+      "reason": "Historical residue has no original creation name/OID ownership proof; prefix matching is insufficient"
+    }
+  },
+  "owned_ui_cleanup": {
+    "database": "qrtmp_82b9a826c3a740358c9f3f863d6111e5",
+    "original_oid": 418387,
+    "purpose": "synthetic QR UI acceptance",
+    "state": "cleaned"
+  },
+  "owned_service_ports": {
+    "18124": "STOPPED",
+    "18125": "STOPPED"
+  },
+  "artifacts": [
+    {
+      "name": "phase8-admin-no-confirm.png",
+      "bytes": 50750,
+      "sha256": "10c5878f88027afb55ddf28b30d47fe4a59f9d3b9fef212ef5f56512c235f519"
+    },
+    {
+      "name": "phase8-auto-pending.png",
+      "bytes": 53640,
+      "sha256": "a327c033612815a95cf60c1d954d9b1ed804f7f42b09607180682dd0d7213844"
+    },
+    {
+      "name": "phase8-auto-result.png",
+      "bytes": 52784,
+      "sha256": "7e75a7bcb5f32d4e03520d55a8c6db56b4bab2d9ff3511936e30f2ecf78cac41"
+    },
+    {
+      "name": "phase8-cancel-result.png",
+      "bytes": 52501,
+      "sha256": "65c9da689e64a30304b1511f21bb01165c32cafd4937e51471c7bc2ef941dc07"
+    },
+    {
+      "name": "phase8-child-lineage.png",
+      "bytes": 59023,
+      "sha256": "fea2a057077717a9741e57cb49fd983480505e49196ae00b0a69460d1301cb59"
+    },
+    {
+      "name": "phase8-child-next-step.png",
+      "bytes": 59895,
+      "sha256": "73fec414d3a2b8bac1e31faacb707c6caa2c9dc1b0a56e44c5ce25b9d51007b4"
+    },
+    {
+      "name": "phase8-conversion-overview.png",
+      "bytes": 56253,
+      "sha256": "4a18b9c79c77a95a1148e978981e015142b5a67bcc70fd03e15318c92e28b3c8"
+    },
+    {
+      "name": "phase8-full-confirm.png",
+      "bytes": 62544,
+      "sha256": "48854cc304a3b2a518d633e8fe0d2832898c6953674acff74c22c7e986344214"
+    },
+    {
+      "name": "phase8-full-result.png",
+      "bytes": 52921,
+      "sha256": "139496e6f323469b5c5180e57ee0f7688674c56482cd135b1ef1cf3633803d20"
+    },
+    {
+      "name": "phase8-invalid-child.png",
+      "bytes": 65979,
+      "sha256": "e4b00716f2933b6a2c15c12c74498b838f954753c947af172e9f6685c5abcdbc"
+    },
+    {
+      "name": "phase8-manual-pending.png",
+      "bytes": 55612,
+      "sha256": "ad3d51bc8f27ec5f4be1b1ed89040559d5209d0c7df9fea4d32f90958d0cb932"
+    },
+    {
+      "name": "phase8-other-owner.png",
+      "bytes": 35636,
+      "sha256": "913ed823fc869158f963778c60a8bfd38e0e2802232e4eae726e13ea26a0b876"
+    },
+    {
+      "name": "phase8-partial-confirm.png",
+      "bytes": 65552,
+      "sha256": "9e6a5ff62ed138916f1e07bd1bdfc55b04ccab9cd8311b18ac3c9769d6784b5c"
+    },
+    {
+      "name": "phase8-partial-result.png",
+      "bytes": 52699,
+      "sha256": "9ad9b6c289e7a70c77990d00a3aa8885976ccffdf3b9aa9ad578df3594d13181"
+    },
+    {
+      "name": "phase8-reverse-full.png",
+      "bytes": 53225,
+      "sha256": "014275636518b1ef21369f31a2ccebaeb4d835dd07eb92bd5f55875f6b6e50bf"
+    },
+    {
+      "name": "phase8-reverse-partial.png",
+      "bytes": 53270,
+      "sha256": "94396cd3a2e270054b280de6ef70660304767c195fb38a865b157ea7e0ed2b31"
+    },
+    {
+      "name": "phase8-db.json",
+      "bytes": 20441,
+      "sha256": "998ad4d2b22abb99166223e7c3dc6d6f5db6249b566b4d7bb328c3e974947e81"
+    },
+    {
+      "name": "phase8-browser.json",
+      "bytes": 3813,
+      "sha256": "8b74ee47b84a1d7ae88b447984b4f8d8d5af3b4641d2310b6273100e2334c590"
+    }
+  ]
+}

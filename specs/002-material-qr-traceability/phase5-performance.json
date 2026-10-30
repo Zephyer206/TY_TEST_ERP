@@ -1,0 +1,11 @@
+{
+  "browser": "in-app Chromium browser 2, tab 3",
+  "url": "http://127.0.0.1:18125/product-box-trace",
+  "measurement": "UI input/click through visible material ancestry, includes automation overhead; loopback synthetic single user",
+  "scan_to_full_trace_ms": [
+    1659,
+    1619,
+    1716
+  ],
+  "under_3000": true
+}

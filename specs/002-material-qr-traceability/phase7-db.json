@@ -1,0 +1,411 @@
+{
+  "boxes": [
+    {
+      "id": 1,
+      "order_id": 401,
+      "current_qty": 12,
+      "bound_by": 103
+    },
+    {
+      "id": 2,
+      "order_id": 401,
+      "current_qty": 5,
+      "bound_by": 101
+    },
+    {
+      "id": 3,
+      "order_id": 401,
+      "current_qty": 7,
+      "bound_by": 101
+    }
+  ],
+  "quantities": [
+    {
+      "box_id": 1,
+      "state_id": 1001,
+      "current_qty": 12,
+      "source_quantity_id": 1,
+      "id": 1,
+      "material_batch_id": 9502,
+      "updated_by": 101
+    },
+    {
+      "box_id": 2,
+      "state_id": 1001,
+      "current_qty": 5,
+      "source_quantity_id": 2,
+      "id": 2,
+      "material_batch_id": 9503,
+      "updated_by": 101
+    },
+    {
+      "box_id": 3,
+      "state_id": 1001,
+      "current_qty": 7,
+      "source_quantity_id": 3,
+      "id": 3,
+      "material_batch_id": 9501,
+      "updated_by": 101
+    }
+  ],
+  "allocations": [
+    {
+      "box_id": 1,
+      "available_qty": 12,
+      "order_qty": 12,
+      "stock_qty": 0
+    },
+    {
+      "box_id": 2,
+      "available_qty": 5,
+      "order_qty": 5,
+      "stock_qty": 0
+    },
+    {
+      "box_id": 3,
+      "available_qty": 7,
+      "order_qty": 7,
+      "stock_qty": 0
+    }
+  ],
+  "exceptions": [
+    {
+      "id": 1,
+      "order_id": 402,
+      "state_id": 1002,
+      "status": "pending_confirmation",
+      "resolution": null,
+      "expected_spec": {
+        "width": "1000.000",
+        "thickness": "0.800",
+        "material_name": "追溯冷轧钢"
+      },
+      "actual_spec": {
+        "width": "900.000",
+        "thickness": "0.800",
+        "material_name": "追溯冷轧钢"
+      },
+      "confirmed_by": null,
+      "released_by": null,
+      "rechecked_material_batch_id": null,
+      "resume_reason": null
+    },
+    {
+      "id": 2,
+      "order_id": 401,
+      "state_id": 1001,
+      "status": "confirmed",
+      "resolution": "accept_continue",
+      "expected_spec": {
+        "width": "1000.000",
+        "thickness": "0.800",
+        "material_name": "追溯冷轧钢"
+      },
+      "actual_spec": {
+        "width": "900.000",
+        "thickness": "0.800",
+        "material_name": "追溯冷轧钢"
+      },
+      "confirmed_by": 104,
+      "released_by": null,
+      "rechecked_material_batch_id": null,
+      "resume_reason": null
+    },
+    {
+      "id": 3,
+      "order_id": 401,
+      "state_id": 1001,
+      "status": "confirmed",
+      "resolution": "pause",
+      "expected_spec": {
+        "width": "1000.000",
+        "thickness": "0.800",
+        "material_name": "追溯冷轧钢"
+      },
+      "actual_spec": {
+        "width": "850.000",
+        "thickness": "0.800",
+        "material_name": "追溯冷轧钢"
+      },
+      "confirmed_by": 104,
+      "released_by": 104,
+      "rechecked_material_batch_id": 9501,
+      "resume_reason": "复核实际卷料规格"
+    }
+  ],
+  "groups": [
+    {
+      "exception_id": 1,
+      "group_type": "supervisor",
+      "resolution_status": "resolved",
+      "recipient_ids": [
+        102
+      ]
+    },
+    {
+      "exception_id": 1,
+      "group_type": "business_owner",
+      "resolution_status": "resolved",
+      "recipient_ids": [
+        105
+      ]
+    },
+    {
+      "exception_id": 2,
+      "group_type": "supervisor",
+      "resolution_status": "resolved",
+      "recipient_ids": [
+        102
+      ]
+    },
+    {
+      "exception_id": 2,
+      "group_type": "business_owner",
+      "resolution_status": "resolved",
+      "recipient_ids": [
+        104
+      ]
+    },
+    {
+      "exception_id": 3,
+      "group_type": "supervisor",
+      "resolution_status": "resolved",
+      "recipient_ids": [
+        102
+      ]
+    },
+    {
+      "exception_id": 3,
+      "group_type": "business_owner",
+      "resolution_status": "resolved",
+      "recipient_ids": [
+        104
+      ]
+    }
+  ],
+  "deliveries": [
+    {
+      "id": 1,
+      "exception_id": 1,
+      "recipient_user_id": 102,
+      "status": "failed",
+      "attempts": 5,
+      "retry_batch": 0,
+      "last_error": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "id": 2,
+      "exception_id": 1,
+      "recipient_user_id": 105,
+      "status": "sent",
+      "attempts": 1,
+      "retry_batch": 1,
+      "last_error": null
+    },
+    {
+      "id": 3,
+      "exception_id": 2,
+      "recipient_user_id": 102,
+      "status": "sent",
+      "attempts": 1,
+      "retry_batch": 0,
+      "last_error": null
+    },
+    {
+      "id": 4,
+      "exception_id": 2,
+      "recipient_user_id": 104,
+      "status": "sent",
+      "attempts": 1,
+      "retry_batch": 0,
+      "last_error": null
+    },
+    {
+      "id": 5,
+      "exception_id": 3,
+      "recipient_user_id": 102,
+      "status": "sent",
+      "attempts": 1,
+      "retry_batch": 0,
+      "last_error": null
+    },
+    {
+      "id": 6,
+      "exception_id": 3,
+      "recipient_user_id": 104,
+      "status": "sent",
+      "attempts": 1,
+      "retry_batch": 0,
+      "last_error": null
+    }
+  ],
+  "tasks": [
+    {
+      "id": 1,
+      "outbox_id": 3,
+      "recipient_user_id": 102
+    },
+    {
+      "id": 2,
+      "outbox_id": 4,
+      "recipient_user_id": 104
+    },
+    {
+      "id": 3,
+      "outbox_id": 5,
+      "recipient_user_id": 102
+    },
+    {
+      "id": 4,
+      "outbox_id": 6,
+      "recipient_user_id": 104
+    },
+    {
+      "id": 5,
+      "outbox_id": 2,
+      "recipient_user_id": 105
+    }
+  ],
+  "attempts": [
+    {
+      "outbox_id": 1,
+      "retry_batch": 0,
+      "attempt_no": 1,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 2,
+      "retry_batch": 0,
+      "attempt_no": 1,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 1,
+      "retry_batch": 0,
+      "attempt_no": 2,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 2,
+      "retry_batch": 0,
+      "attempt_no": 2,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 1,
+      "retry_batch": 0,
+      "attempt_no": 3,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 2,
+      "retry_batch": 0,
+      "attempt_no": 3,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 1,
+      "retry_batch": 0,
+      "attempt_no": 4,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 2,
+      "retry_batch": 0,
+      "attempt_no": 4,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 1,
+      "retry_batch": 0,
+      "attempt_no": 5,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 2,
+      "retry_batch": 0,
+      "attempt_no": 5,
+      "result": "failed",
+      "safe_error_code": "INAPP_DELIVERY_FAILED"
+    },
+    {
+      "outbox_id": 3,
+      "retry_batch": 0,
+      "attempt_no": 1,
+      "result": "sent",
+      "safe_error_code": null
+    },
+    {
+      "outbox_id": 4,
+      "retry_batch": 0,
+      "attempt_no": 1,
+      "result": "sent",
+      "safe_error_code": null
+    },
+    {
+      "outbox_id": 5,
+      "retry_batch": 0,
+      "attempt_no": 1,
+      "result": "sent",
+      "safe_error_code": null
+    },
+    {
+      "outbox_id": 6,
+      "retry_batch": 0,
+      "attempt_no": 1,
+      "result": "sent",
+      "safe_error_code": null
+    },
+    {
+      "outbox_id": 2,
+      "retry_batch": 1,
+      "attempt_no": 1,
+      "result": "sent",
+      "safe_error_code": null
+    }
+  ],
+  "materials": [
+    {
+      "id": 9501,
+      "current_weight": 70.0
+    },
+    {
+      "id": 9502,
+      "current_weight": 30.0
+    },
+    {
+      "id": 9503,
+      "current_weight": 20.0
+    }
+  ],
+  "latencies": [
+    {
+      "seconds": 2.380815
+    },
+    {
+      "seconds": 2.380815
+    },
+    {
+      "seconds": 2.980701
+    },
+    {
+      "seconds": 2.980701
+    }
+  ],
+  "status": "PASS",
+  "transaction_read_only": "on",
+  "owned_original_oid": 308767,
+  "preview_no_mutation": true,
+  "paused_handoff_no_mutation": true,
+  "synthetic_data_only": true,
+  "fault_fixture": "Order 402 failures replayed using the real dispatch service and a synthetic past clock; not elapsed retry time"
+}

@@ -1,6 +1,6 @@
 # 产品框 API registry 实施清单
 
-**基准**：2026-10-27；31项新领域设计清单中共22项已登记并挂载，余9项待实现；已交付22项均为auth=true、lifecycle=active，未向业务库部署。基线32个旧QR端点已全部补齐registry、领域wrapper和请求/响应类型映射，旧接口保留。
+**基准**：2026-10-28；31项新领域设计清单中共31项已登记并挂载；已交付31项均为auth=true、lifecycle=active，未向业务库部署。基线32个旧QR端点已全部补齐registry、领域wrapper和请求/响应类型映射，旧接口保留。
 
 新增接口先登记 shared/api/registry.js，再由 frontend/src/api/registry.ts 类型桥接，frontend/src/api/productBoxes.ts 领域模块和 frontend/src/types/productBox.ts 请求/响应类型使用。/api/v1 只在 request client 配置；页面不得直接写路径或调用 axios/fetch。
 
@@ -12,7 +12,7 @@
 | `productQrPool.printData` | POST | `/product-qr-pool/print-data` | {item_ids,template_code?,idempotency_key}；发放数据和快照，不确认物理成功 |
 | `productQrPool.confirmPrint` | POST | `/product-qr-pool/print-confirmations` | {print_job_id,confirmed_item_ids,idempotency_key}；仅申请人确认，每项每作业一次 |
 | `productBoxes.bind` | POST | `/product-boxes/bind` | {qr_payload,order_product_id,context_id?,idempotency_key}；一次绑定，数量初始0，配置推导订单/件号/产品/路线 |
-| `productBoxes.scan` | POST | `/product-boxes/scan` | {qr_payload,split_parent_id?}；验证完整存储身份；未绑定返回身份和允许绑定动作，已绑定只返回当前框及允许动作 |
+| `productBoxes.scan` | POST | `/product-boxes/scan` | {qr_payload,split_parent_id?,context_id?}；context_id仅在操作工目标选单中触发服务端预授权或读取匹配的人工待确认项，不能与split_parent_id同用；验证完整存储身份；未绑定返回身份和允许绑定动作，已绑定只返回当前框及允许动作 |
 | `productBoxes.trace` | GET | `/product-boxes/{box_id}/trace` | 当前框/订单/路线、工艺数量/原料祖先链、最近业务事件及父子/异常/转换；page/page_size分页关联事实，按账号范围 |
 | `productBoxes.events` | GET | `/product-boxes/{box_id}/events` | page_size/before_id；按occurred_at/id倒序游标查询事实，含操作者、前后量及来源 |
 | `productBoxes.saveQuantity` | POST | `/product-boxes/{box_id}/quantities` | {context_id,current_qty,material_batch_id?,expected_version,state_version,idempotency_key}；覆盖当前值；首次可记录真实材料来源 |
@@ -32,7 +32,7 @@
 | `productConversions.create` | POST | `/product-conversions` | {box_id,target_order_product_id,proposed_qty?,expected_version,idempotency_key}；人工发起仅manual，预授权由服务端内部触发 |
 | `productConversions.confirm` | POST | `/product-conversions/{conversion_id}/confirm` | {context_id,actual_qty,confirm:true,child_qr_payload?,expected_version,conversion_version,idempotency_key}；仅当前操作工实物确认 |
 | `productConversions.cancel` | POST | `/product-conversions/{conversion_id}/cancel` | {context_id?,conversion_version,reason?,idempotency_key}；仅待确认，确认/取消竞争只允许一个终态 |
-| `notifications.list` | GET | `/notifications` | delivery_status/unread_only；仅本人，异常状态与投递/已读状态分列 |
+| `notifications.list` | GET | `/notifications` | delivery_status/unread_only/page/page_size；仅本人及当前订单范围，返回can_manage_deliveries，异常状态与投递/已读状态分列 |
 | `qrAdmin.capabilities` | GET | `/qr-admin/capabilities` | LV4+qr.admin，授权维护所需字段 |
 | `qrAdmin.saveCapabilities` | PUT | `/qr-admin/capabilities/{user_id}` | {capabilities,expected_version,idempotency_key}；LV4+qr.admin，授权/撤销保留审计 |
 | `qrAdmin.deliveries` | GET | `/qr-admin/notification-deliveries` | LV4+qr.admin，失败投递及安全错误码 |
@@ -40,7 +40,7 @@
 
 每个端点交付时同步 registry、wrapper、类型、后端路由合同与测试。此表不要求提前将未实现接口放进运行时 active registry；旧接口保持。删除前必须执行 scripts/check_api_usage.ps1 -FailOnViolation。
 
-当前22项的实际类型见 `frontend/src/types/productBox.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`，调用见 `frontend/src/api/productBoxes.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`；bigint身份通过字符串往返，旧int4引用保持整数。上一批新增`productBoxes.advance/trace/events`；本批新增`productBoxes.split`，scan增加可选split_parent_id的范围内子标签预览，trace增加拆分动作/版本/目标及父子余量，生产响应增加quantity_locked/can_correct。异常、通知及转换的其余9项仍未交付。选单请求的state_id可显式定位旧版本状态；省略则取产品当前发布路线。
+当前31项的实际类型见 `frontend/src/types/productBox.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`，调用见 `frontend/src/api/productBoxes.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`；bigint身份通过字符串往返，旧int4引用保持整数。上一批新增`productBoxes.advance/trace/events`；本批新增`productBoxes.split`，scan增加可选split_parent_id的范围内子标签预览，trace增加拆分动作/版本/目标及父子余量，生产响应增加quantity_locked/can_correct。本批新增coilSpecExceptions.create/confirm/resume、notifications.list、qrAdmin.deliveries/retryDelivery六项；类型及领域wrapper分别见 `frontend/src/types/coilException.ts` 和 `frontend/src/api/coilExceptions.ts`。本批补齐productConversions.create/confirm/cancel三项；对应 `frontend/src/api/productConversions.ts` 和 `frontend/src/types/productConversion.ts`。原31项设计清单全部active，不代表US8与上线验收完成。选单请求的state_id可显式定位旧版本状态；省略则取产品当前发布路线。
 
 基线B001～B032全部映射到共享registry，旧领域类型集中在 `frontend/src/types/legacyQr.ts`；原材料和扫码日志调用使用 `frontend/src/api/materialQr.ts`，通用二维码使用 `frontend/src/api/qr.ts`，机台和生产/流转卡沿用 `frontend/src/api/machines.ts`、`frontend/src/api/production.ts`。`scripts/verification/verify_legacy_qr_registry.mjs` 将这32项与冻结库存比对，并用实际wrapper及请求构造器检查方法、编码后路径、query和body；`backend/tests/qr/test_legacy_api_contract.py` 再与应用OpenAPI核对。旧机台维修扫码和投料校验的POST参数保持在query，不改成JSON body；旧lookup的HTTP200及found=false语义保留。使用扫描零违规与上述32项覆盖检查分别记录。
 

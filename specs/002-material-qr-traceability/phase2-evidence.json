@@ -1,0 +1,95 @@
+{
+  "recorded_at": "2026-10-23T07:12:38+00:00",
+  "scope": "backend pool/print/bind and actual client wrapper; product UI/physical printing pending",
+  "pytest": {
+    "total": 103,
+    "failures": 0,
+    "skipped": 0,
+    "runs": [
+      {
+        "report": "qr-phase2-tests.xml",
+        "total": 103,
+        "failures": 0
+      },
+      {
+        "report": "qr-phase2-api-final.xml",
+        "total": 18,
+        "failures": 0
+      }
+    ],
+    "status": "PASS"
+  },
+  "legacy_helpers": [
+    {
+      "name": "material_payload_round_trip",
+      "status": "PASS"
+    },
+    {
+      "name": "machine_payload_round_trip",
+      "status": "PASS"
+    },
+    {
+      "name": "process_flow_payload_round_trip",
+      "status": "PASS"
+    },
+    {
+      "name": "invalid_format_and_unknown_prefix",
+      "status": "PASS"
+    },
+    {
+      "name": "printable_png_300px",
+      "status": "PASS"
+    }
+  ],
+  "legacy_invalid_api_checks": [
+    {
+      "name": "invalid_qr_format",
+      "status": "PASS",
+      "http_status": 200
+    },
+    {
+      "name": "unknown_qr_prefix",
+      "status": "PASS",
+      "http_status": 200
+    },
+    {
+      "name": "manual_lookup_requires_type",
+      "status": "PASS",
+      "http_status": 200
+    }
+  ],
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 1,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "temporary_database_cleanup": {
+      "status": "INCOMPLETE",
+      "policy": "Only delete with the original creation name/OID proof; do not infer ownership from a prefix",
+      "unowned_residue_deleted": false
+    }
+  },
+  "browser": {
+    "session": "ChatGPT in-app browser (IAB), browser id 2, tab 2",
+    "url": "http://127.0.0.1:18123/acceptance",
+    "status": "PASS",
+    "checks_passed": 7,
+    "evidence": "phase2-browser.png",
+    "sha256": "17a87c1b15c118757fc9e33742dabbf2aa29bf3b993b3f6f53d6b2ea4716baf6",
+    "record_type": "observed browser run recorded with screenshot; this evidence script does not operate a browser",
+    "product_pages": "NOT_RUN",
+    "system_print_dialog": "NOT_RUN",
+    "physical_label_scan": "NOT_RUN",
+    "authentication": "synthetic users, real JWT, owned disposable database"
+  },
+  "active_new_endpoints": 9,
+  "planned_new_endpoints": 31,
+  "business_migration_applied": false,
+  "real_account_grants_changed": false
+}

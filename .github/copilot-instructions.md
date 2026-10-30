@@ -1,7 +1,7 @@
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/008-ppap-archive/plan.md
+at specs/009-pricing-business-center/plan.md
 <!-- SPECKIT END -->
 
 ---

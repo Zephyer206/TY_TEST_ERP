@@ -1,0 +1,138 @@
+{
+  "recorded_at": "2026-10-26T18:00:21+00:00",
+  "client_date": "2026-10-27",
+  "scope": "T029-T033 ordered handoff, material sources, event pagination and real browser trace",
+  "pytest": {
+    "status": "PASS",
+    "unique_total": 231,
+    "failures": 0,
+    "skipped": 0,
+    "runs": [
+      {
+        "report": "qr-trace-full.xml",
+        "total": 229,
+        "failures": 0
+      },
+      {
+        "report": "qr-trace-final.xml",
+        "total": 22,
+        "failures": 0
+      },
+      {
+        "report": "qr-trace-compat-final.xml",
+        "total": 3,
+        "failures": 0
+      }
+    ]
+  },
+  "completed_tasks": 32,
+  "total_tasks": 59,
+  "active_new_endpoints": 21,
+  "planned_new_endpoints": 31,
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_checked": 23,
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 1,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "historical_temporary_cleanup": {
+      "status": "INCOMPLETE",
+      "unowned_residue_deleted": false,
+      "reason": "Historical residue has no original creation name/OID ownership proof; prefix matching is insufficient"
+    }
+  },
+  "browser": {
+    "status": "PASS",
+    "session": "in-app Chromium browser 2, tab 3",
+    "production_url": "http://127.0.0.1:18125/product-box-production",
+    "trace_url": "http://127.0.0.1:18125/product-box-trace",
+    "identities": [
+      101,
+      105
+    ],
+    "synthetic_jwt_in_memory_only": true
+  },
+  "performance": {
+    "browser": "in-app Chromium browser 2, tab 3",
+    "url": "http://127.0.0.1:18125/product-box-trace",
+    "measurement": "UI input/click through visible material ancestry, includes automation overhead; loopback synthetic single user",
+    "scan_to_full_trace_ms": [
+      1659,
+      1619,
+      1716
+    ],
+    "under_3000": true
+  },
+  "checks": {
+    "frontend_type_and_build": "PASS",
+    "api_usage_violations": 0,
+    "physical_print": "NOT_RUN"
+  },
+  "owned_ui_cleanup": {
+    "status": "PASS",
+    "database": {
+      "database": "qrtmp_85397ac7bb73468fa9fb651def76ae01",
+      "original_oid": 214584,
+      "purpose": "synthetic QR UI acceptance",
+      "state": "cleaned"
+    }
+  },
+  "artifacts": [
+    {
+      "name": "phase5-trace.png",
+      "bytes": 77722,
+      "sha256": "0154826e4de1c135fe12bcce1b113d5affe7a35ac383ab2ec135621bc421ebaa"
+    },
+    {
+      "name": "phase5-trace-overview.png",
+      "bytes": 63160,
+      "sha256": "f5699340413cc35ab8c8a6a22912a0724b239e16e7db323fa6db94f9d0611f78"
+    },
+    {
+      "name": "phase5-material-lineage.png",
+      "bytes": 65540,
+      "sha256": "f076c6cce0749a794e99ef290eba96742c117f2684cdd8c82785d24990f5f3ee"
+    },
+    {
+      "name": "phase5-invalid-flow.png",
+      "bytes": 54127,
+      "sha256": "c884c0d05fd8366ef82feeb0778525fa9c62e90bf512b7580536a61f1d88e149"
+    },
+    {
+      "name": "phase5-material-guard.png",
+      "bytes": 56061,
+      "sha256": "c8ad974d69f6c337fa1c6df969405f1023ca366d331a843665836572800d20ca"
+    },
+    {
+      "name": "phase5-material-recovered.png",
+      "bytes": 59073,
+      "sha256": "b87ff5f346422de2d32515b966e891315ea5a07b10b4a5fb5b09173af8b78379"
+    },
+    {
+      "name": "phase5-other-owner.png",
+      "bytes": 35118,
+      "sha256": "7164a2ddd5dd282f13f1df730cd483b7de4aab094d81de5e8e65a46a2c5eba43"
+    },
+    {
+      "name": "phase5-db.json",
+      "bytes": 3582,
+      "sha256": "059ae74627c38ae82aadae6cf4f9c7afd30e530529e433f76c782f5151275f3f"
+    },
+    {
+      "name": "phase5-guard-db.json",
+      "bytes": 1590,
+      "sha256": "36d3cd85ce6abed8c09e4c175301b4e9932cb19584a458aa4c98587df568f3cf"
+    },
+    {
+      "name": "phase5-performance.json",
+      "bytes": 320,
+      "sha256": "fe4042dc97969583f6f28fbff2f7b08cb3d320cb4fe172ef63ba2a68ad323758"
+    }
+  ]
+}

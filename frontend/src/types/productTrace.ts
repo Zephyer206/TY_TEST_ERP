@@ -31,6 +31,7 @@ export interface BoxTrace {
   relations: TraceRelation[]; relations_total: number; exceptions: TraceException[]; exceptions_total: number
   conversions: TraceConversion[]; conversions_total: number; page: number; page_size: number
   split: SplitInfo | null
+  conversion: import('./productConversion').ConversionOptions | null
 }
 
 export interface SplitTarget {order_product_id: QrId; state_id: QrId; state_version: number; order_id: number; plan_no: string; product_name: string | null; customer_part_no: string | null; process_code: string; machine_no: string; remaining_qty: number}

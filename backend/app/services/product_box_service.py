@@ -373,10 +373,12 @@ async def record_scan(db, actor_id, item, operation):
     await db.flush()
 
 
-async def scan_box(db, actor, *, qr_payload, split_parent_id=None):
+async def scan_box(db, actor, *, qr_payload, split_parent_id=None, context_id=None):
     from app.services.product_process_service import latest_event
     await permissions.require_action(db, actor, "pool_read", lock=True)
     if split_parent_id is not None:
+        if context_id is not None:
+            raise QrError(400, "STATE_CONFLICT", "子标签核对不能同时提交生产上下文")
         from app.services.product_split_service import permitted, source_partition
         parent = await db.get(m.ProductBox, split_parent_id, populate_existing=True)
         if parent is None:
@@ -393,6 +395,9 @@ async def scan_box(db, actor, *, qr_payload, split_parent_id=None):
     box = (await db.execute(select(m.ProductBox).where(m.ProductBox.qr_pool_item_id == item.id))).scalar_one_or_none()
     if box:
         await permissions.require_action(db, actor, "trace", order_id=box.order_id)
+        if context_id is not None:
+            from app.services.product_conversion_service import scan_trigger
+            await scan_trigger(db, actor, box, context_id)
         db.add(m.ProductFlowEvent(product_box_id=box.id, event_type="scan", order_id=box.order_id,
             order_product_id=box.order_product_id, operator_id=actor.id,
             before_qty=box.current_qty, after_qty=box.current_qty, box_version=box.version))
@@ -404,6 +409,8 @@ async def scan_box(db, actor, *, qr_payload, split_parent_id=None):
         actions = ["bind"] if ((actor.dept == "warehouse" and "qr.bind" in caps)
                                or (actor.dept == "prod" and "qr.production" in caps)) else []
     await record_scan(db, actor.id, item, ScanOperation.QUERY)
+    from app.services.product_conversion_service import options as conversion_options
     return {"pool_item": pool_info(item, box.id if box else None),
             "box": box_info(box, item) if box else None, "allowed_actions": actions,
+            "conversion": await conversion_options(db, actor, box) if box else None,
             "latest_event": await latest_event(db, box.id) if box else None}

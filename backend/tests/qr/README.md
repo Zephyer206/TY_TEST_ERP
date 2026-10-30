@@ -130,8 +130,8 @@ Automated suites and the earlier wrapper diagnostic do not substitute for real
 browser checks of the Vue pages. UI acceptance is recorded separately from test
 results. Neither workflow prints physical labels or authorizes real users, and
 the fixtures do not replay unrelated historical migrations. Production quantities
-and process advancement/trace are implemented; split boxes are now implemented; notifications and
-conversions remain future suites.
+and process advancement/trace are implemented; split boxes are now implemented; specification exceptions and in-app notifications are implemented;
+B/C conversions are implemented with their own service/API suites.
 Database defaults and business writes should use the database clock consistently;
 client clocks can differ by milliseconds and are not the audit authority.
 
@@ -155,3 +155,47 @@ an explicitly read-only transaction. It preserves physical/use conservation,
 origin allocation links, source snapshots, material and continued-process facts.
 Normal server shutdown cleans only this run's database; no real grants, tokens
 or business migrations are stored by this workflow.
+
+## Specification exceptions and notifications (2026-10-28)
+
+`test_exceptions_notifications.py` has 24 PostgreSQL cases; `test_exceptions_api.py`
+has 10 authenticated HTTP cases. They cover exact decimal comparisons, missing
+configuration/history, preview without mutation, explicit continuation, active
+dedupe, three decisions, concurrent confirmation, independent state blocks,
+original-snapshot resume, recipient backfill, current permission revocation,
+five attempts with 1/5/15/30-minute backoff, durable task uniqueness, concurrent
+workers, scoped lists and admin retry batches preserving history. Final full-suite
+results are recorded in phase7 evidence; counts from overlapping runs are not added.
+
+`serve_qr_ui_acceptance.py --exception-fixture` seeds synthetic bad/good coils,
+two orders, four labels and a failed notification history. The five failures use
+the real dispatch service with a synthetic past clock; they do not demonstrate
+elapsed retry time. A real dedicated worker polls every second for UI acceptance.
+Production deployment is explicit via `python -m app.workers.qr_notifications`
+(default 15 seconds); it rejects bypassed authentication or missing schema.
+
+After interruption, `--resume-owned` verifies the original journalled name/OID,
+opens exactly that database, and skips seeding. This mode does not drop the DB on
+shutdown: stop the diagnostic first, then run `cleanup_owned_qr_ui.py` to verify
+the original OID and no active sessions before deletion. `verify_qr_phase7.py
+--snapshot` records read-only evidence before cleanup; run without the flag after
+all acceptance artifacts and cleanup exist. Never infer ownership from a prefix.
+
+
+## B/C conversions (2026-10-28)
+
+`test_conversion.py` has 25 owned PostgreSQL cases; `test_conversion_api.py`
+has 13 authenticated HTTP cases. They cover both directions, full identity,
+partial ancestry/uses, strict actual confirmation, pending dedupe/cancellation,
+current-context and role guards, difference-route authorization and revocation,
+atomic rejection/rollback, confirm-vs-cancel competition, frozen entry balances,
+continued process/recount and source/current totals after full transfer. Final
+full regression has 344 distinct cases; overlapping reports are not added.
+
+`serve_qr_ui_acceptance.py --conversion-fixture` seeds four 100-piece source
+boxes, explicit B/C routes and pre-authorization, material 9001 and child labels.
+Browser actions perform all conversions; seeding is not browser acceptance.
+`verify_qr_phase8.py --snapshot` verifies the journalled original OID in a read-only
+transaction. After normal shutdown and owned cleanup, run without the flag for
+full test, browser, build, registry and business-baseline evidence. No business
+DB migration or real user grant is performed by this diagnostic.

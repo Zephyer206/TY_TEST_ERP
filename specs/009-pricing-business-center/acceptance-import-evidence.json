@@ -1,0 +1,107 @@
+{
+  "master_net_weight_g": "12.000",
+  "master_surface": {
+    "status": "pending",
+    "revision": 0,
+    "items": []
+  },
+  "import_source": {
+    "sheet": "核算验收",
+    "row": 2,
+    "original_part_no": "QA-001",
+    "original_tooling": "QA-DIE",
+    "values": {
+      "net_weight_g": 12,
+      "gross_weight_g": 20,
+      "surface_treatment": "电镀"
+    }
+  },
+  "task_items": 1,
+  "saved_versions": [
+    {
+      "revision_no": 2,
+      "source_row": 2,
+      "result": {
+        "rule_version": "simple-2026-10-29.1",
+        "mode": "basic",
+        "currency": "CNY",
+        "unit": "元/件",
+        "comparison": {
+          "reference_price": "1.000000",
+          "basis": "both_tax_excluded",
+          "difference": "0.816000",
+          "difference_rate_pct": "81.600000",
+          "issues": [],
+          "scope": "售价与简易成本差额，不代表完整利润"
+        },
+        "material": {
+          "amount": "0.184000",
+          "gross_weight_g": "20.000000",
+          "net_weight_g": "12.000000",
+          "net_weight_basis": "measured",
+          "gross_weight_source": "recorded",
+          "issues": []
+        },
+        "surface_amount": "0.000000",
+        "treatments": [],
+        "optional_costs": [
+          {
+            "category": "tooling_amortization",
+            "name": "模摊",
+            "selected": false,
+            "amount": null
+          }
+        ],
+        "known_subtotal": "0.184000",
+        "total": "0.184000",
+        "completeness": "complete",
+        "issues": []
+      }
+    },
+    {
+      "revision_no": 1,
+      "source_row": 2,
+      "result": {
+        "rule_version": "simple-2026-10-29.1",
+        "mode": "basic",
+        "currency": "CNY",
+        "unit": "元/件",
+        "comparison": {
+          "reference_price": "1.000000",
+          "basis": "unknown",
+          "difference": null,
+          "difference_rate_pct": null,
+          "issues": [
+            "本次简易成本尚有缺项",
+            "请核对成本与售价的币种、单位和含税口径"
+          ],
+          "scope": "售价与简易成本差额，不代表完整利润"
+        },
+        "material": {
+          "amount": "0.184000",
+          "gross_weight_g": "20.000000",
+          "net_weight_g": "12.000000",
+          "net_weight_basis": "measured",
+          "gross_weight_source": "recorded",
+          "issues": []
+        },
+        "surface_amount": null,
+        "treatments": [],
+        "optional_costs": [
+          {
+            "category": "tooling_amortization",
+            "name": "模摊",
+            "selected": false,
+            "amount": null
+          }
+        ],
+        "known_subtotal": "0.184000",
+        "total": null,
+        "completeness": "incomplete",
+        "issues": [
+          "表面处理要求待确认"
+        ]
+      }
+    }
+  ]
+}

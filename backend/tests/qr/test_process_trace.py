@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 from sqlalchemy.pool import NullPool
 
 from app.models import product_box as m
-from app.models.production import PlanMachineAssignment
+from app.models.production import PlanMachineAssignment, ProductionPlan
 from app.models.warehouse import Material, MaterialBatch, BatchStatus, IQCResult
 from app.services import product_box_service as boxes, product_production_service as production
 from app.services import product_process_service as service
@@ -29,12 +29,14 @@ async def route_fixture(db, first_output="CUT"):
         m.MachineOrderProcessState(id=1004, assignment_id=501, order_product_id=801,
         route_revision_id=704, process_code="PACK", target_qty=100)])
     db.add(Material(id=850, material_no="TRACE-MATERIAL", name="追溯冷轧钢", grade="SPCC"))
+    await db.execute(update(ProductionPlan).where(ProductionPlan.id == 401).values(
+        material_name_snapshot="追溯冷轧钢", twp_thickness=0.8, twp_width=1000))
     await db.flush()
     db.add(MaterialBatch(id=9501, qr_uid="TRACE-MOTHER", material_id=850, batch_no="TRACE-MOTHER", qr_code="MAT:9501:20261026",
-        gross_weight=100, current_weight=70, status=BatchStatus.AVAILABLE, iqc_result=IQCResult.PASSED))
+        gross_weight=100, current_weight=70, thickness=0.8, width=1000, status=BatchStatus.AVAILABLE, iqc_result=IQCResult.PASSED))
     await db.flush()
     db.add(MaterialBatch(id=9502, qr_uid="TRACE-CHILD", material_id=850, batch_no="TRACE-CHILD", qr_code="MAT:9502:20261026",
-        gross_weight=30, current_weight=30, parent_batch_id=9501, status=BatchStatus.AVAILABLE, iqc_result=IQCResult.PASSED))
+        gross_weight=30, current_weight=30, thickness=0.8, width=1000, parent_batch_id=9501, status=BatchStatus.AVAILABLE, iqc_result=IQCResult.PASSED))
     await db.flush()
 
 

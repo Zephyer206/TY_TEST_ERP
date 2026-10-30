@@ -107,6 +107,8 @@ from app.api.auth import router as auth_router
 from app.api.coating import router as coating_router
 from app.api.customer_prices import router as customer_prices_router
 from app.api.customers import router as customers_router
+from app.api.costing import router as costing_router
+from app.api.part_treatments import router as part_treatments_router
 from app.api.customer_inquiries import router as customer_inquiries_router
 from app.api.machines import router as machines_router
 from app.api.migrations import router as migrations_router
@@ -147,6 +149,8 @@ app.include_router(auth_router, prefix=settings.API_V1_PREFIX)
 app.include_router(coating_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customer_prices_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customers_router, prefix=settings.API_V1_PREFIX)
+app.include_router(costing_router, prefix=settings.API_V1_PREFIX)
+app.include_router(part_treatments_router, prefix=settings.API_V1_PREFIX)
 app.include_router(customer_inquiries_router, prefix=settings.API_V1_PREFIX)
 app.include_router(machines_router, prefix=settings.API_V1_PREFIX)
 # Legacy in-process migrations stay disabled by default. Use Alembic from the

@@ -25,6 +25,7 @@ export interface QuoteGroupItem {
 }
 
 export interface QuoteGroupRecord {
+  surface_rule_snapshot?: {id:number;name:string;rate:string;method:string;unit:string;updated_at:string} | null
   id: number
   group_no: string
   inquiry_id: number
@@ -57,6 +58,8 @@ export interface QuoteGroupRecord {
 }
 
 export interface QuoteGroupUpdate {
+  refresh_surface_rule?: boolean
+  surface_rule_id?: number | null
   quote_path?: string
   tooling_type?: string
   /** Final customer tooling price; discounts are applied before saving. */

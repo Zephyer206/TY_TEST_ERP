@@ -110,6 +110,9 @@
           </div>
         </el-tab-pane>
 
+        <el-tab-pane label="表面处理" name="surface">
+          <SurfaceTreatmentEditor v-if="activeTab === 'surface'" :part-id="props.partId" source="零件详情维护" @saved="loadHistory" />
+        </el-tab-pane>
         <el-tab-pane label="修改历史" name="history">
           <el-table :data="changeHistory" v-loading="historyLoading" border empty-text="暂无修改历史">
             <el-table-column prop="created_at" label="时间" width="180" />
@@ -161,6 +164,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Edit } from '@element-plus/icons-vue'
 import { useMobileViewport } from '@/composables/useMobileViewport'
 import { partsApi, partDisplayGroupsApi } from '@/api/parts'
+import SurfaceTreatmentEditor from '@/components/SurfaceTreatmentEditor.vue'
 
 const props = defineProps({
   modelValue: { type: Boolean, default: false },

@@ -15,7 +15,7 @@ export const productBoxesApi = {
   reprint: (id: QrId, data: QrReprintRequest) =>
     callApi<QrPrintJob>('productQrPool.reprint', { pathParams: { item_id: id }, data }),
   bind: (data: BindProductBox) => callApi<ProductBoxScan>('productBoxes.bind', { data }),
-  scan: (qr_payload: string, split_parent_id?: QrId) => callApi<ProductBoxScan>('productBoxes.scan', { data: { qr_payload, ...(split_parent_id ? {split_parent_id} : {}) } }),
+  scan: (qr_payload: string, split_parent_id?: QrId, context_id?:QrId) => callApi<ProductBoxScan>('productBoxes.scan', { data: { qr_payload, ...(split_parent_id ? {split_parent_id} : {}),...(context_id?{context_id}:{}) } }),
   qrContext: (orderId: number) => callApi<ProductQrContext>('production.qrContext', { pathParams: { order_id: orderId } }),
   updateMetadata: (boxId: QrId, data: ProductBoxMetadata) =>
     callApi<ProductBox>('productBoxes.metadata', { pathParams: { box_id: boxId }, data }),

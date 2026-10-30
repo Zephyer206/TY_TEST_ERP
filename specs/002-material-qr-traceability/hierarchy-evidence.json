@@ -1,0 +1,112 @@
+{
+  "recorded_at": "2026-10-24T07:38:23+00:00",
+  "user_principle": "Business information first; QR is auxiliary in presentation",
+  "scope": "frontend hierarchy refinement, unchanged API and stored QR identities",
+  "implementation": "PASS",
+  "browser": {
+    "session": "Edge extension, browser 4, tab 1212116555",
+    "urls": [
+      "http://127.0.0.1:18125/material-qr",
+      "http://127.0.0.1:18125/product-box-qr"
+    ],
+    "identities": "synthetic JWT actors 102 and 103",
+    "status": "PASS",
+    "observed": [
+      "business titles and primary fields",
+      "collapsed optional scan/identity/label manager",
+      "material split 50 to 35 + 10 + 5 with parent/child business table",
+      "stored old MAT identity tab and scan",
+      "single product label generation and warehouse order binding",
+      "bound product business title, quantity, order and process",
+      "same-identity repeated scan",
+      "metadata form loads current values",
+      "reprint preview closes with zero confirmations"
+    ],
+    "native_print_dialog": "NOT_RUN",
+    "physical_print_scanner": "NOT_RUN",
+    "record_type": "Independent observed browser acceptance; this evidence collection does not operate the browser"
+  },
+  "checks": {
+    "type_check": "PASS",
+    "final_build": "PASS",
+    "api_usage_violations": 0,
+    "design_consistency": "PASS",
+    "diff_check": "PASS",
+    "backend_tests": "NOT_RERUN: frontend presentation only; prior backend test reports are separate"
+  },
+  "print_css": {
+    "material_qr_mm": 32,
+    "product_qr_mm": 24,
+    "measured_material_qr_mm": 31.998,
+    "measured_product_qr_mm": 23.999,
+    "material_pdf_pages": 1,
+    "product_pdf_pages": 1,
+    "paper": "A4",
+    "render_review": "PASS",
+    "stored_identities_unchanged": true
+  },
+  "owned_database_cleanup": {
+    "original_oid": 152986,
+    "state": "cleaned"
+  },
+  "dedicated_ports_stopped": [
+    18124,
+    18125
+  ],
+  "normal_service_processes_changed": false,
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_checked": 23,
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 1,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "historical_temporary_cleanup": {
+      "status": "INCOMPLETE",
+      "unowned_residue_deleted": false,
+      "reason": "Historical residue has no original creation name/OID ownership proof; prefix matching is insufficient"
+    }
+  },
+  "tasks": {
+    "completed": 20,
+    "total": 59,
+    "newly_checked_this_refinement": 0
+  },
+  "artifacts": [
+    {
+      "name": "hierarchy-material-list.png",
+      "bytes": 78752,
+      "sha256": "6c09fb0f74ca335820df06f52036bb645f8708340cf3681e50cd284e9c5e024a"
+    },
+    {
+      "name": "hierarchy-material-detail.png",
+      "bytes": 82580,
+      "sha256": "bf389be6c6a8ee093db044af3bd47819a02b9d62fb03f3df7f13ae32cf7406c9"
+    },
+    {
+      "name": "hierarchy-product-detail.png",
+      "bytes": 58000,
+      "sha256": "52428ef0defa39cd0578f675486416c704c374ebc717955af33cb093908e1c55"
+    },
+    {
+      "name": "hierarchy-material-labels.pdf",
+      "bytes": 47663,
+      "sha256": "9a4e9aa5e31483ecb1102b3907e68fb587db4aab352149cb9b9524ac8ec87fe2"
+    },
+    {
+      "name": "hierarchy-product-label.pdf",
+      "bytes": 46090,
+      "sha256": "2fb48ca9e54bdfceff84abe9295142e9f5ec74d8585842cff105263e29b71131"
+    },
+    {
+      "name": "hierarchy-db.json",
+      "bytes": 772,
+      "sha256": "f23c1f430cadbb0414b9e4336415c86a48e090f293d534dee5dbb8e8fd08150e"
+    }
+  ]
+}

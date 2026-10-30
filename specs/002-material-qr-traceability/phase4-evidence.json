@@ -1,0 +1,128 @@
+{
+  "recorded_at": "2026-10-26T12:56:56+00:00",
+  "scope": "T022-T028 configuration, machine production, quantity and allocation",
+  "pytest": {
+    "status": "PASS",
+    "unique_total": 209,
+    "failures": 0,
+    "skipped": 0,
+    "runs": [
+      {
+        "report": "qr-production-full.xml",
+        "total": 209,
+        "failures": 1
+      },
+      {
+        "report": "qr-production-routes-final.xml",
+        "total": 34,
+        "failures": 0
+      }
+    ]
+  },
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_checked": 23,
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 1,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "historical_temporary_cleanup": {
+      "status": "INCOMPLETE",
+      "unowned_residue_deleted": false,
+      "reason": "Historical residue has no original creation name/OID ownership proof; prefix matching is insufficient"
+    }
+  },
+  "active_new_endpoints": 18,
+  "planned_new_endpoints": 31,
+  "legacy_registered_endpoints": 32,
+  "completed_tasks": 27,
+  "total_tasks": 59,
+  "browser": {
+    "status": "PASS",
+    "first_session": "Chrome extension 3, tab 1952681252",
+    "resumed_session": "in-app Chromium browser 2, tab 2",
+    "url": "http://127.0.0.1:18125/product-box-production",
+    "identities": [
+      101,
+      102,
+      104,
+      105
+    ],
+    "synthetic_jwt_in_memory_only": true
+  },
+  "checks": {
+    "frontend_type_and_build": "PASS",
+    "api_usage_violations": 0,
+    "physical_print_and_paper_scan": "NOT_RUN",
+    "continuous_process_trace": "NOT_IMPLEMENTED"
+  },
+  "owned_ui_cleanup": {
+    "status": "PASS",
+    "databases": [
+      {
+        "database": "qrtmp_b456e86639d3423f8e5ed96431015f66",
+        "original_oid": 178490,
+        "purpose": "synthetic QR UI acceptance",
+        "state": "cleaned"
+      },
+      {
+        "database": "qrtmp_fc4340a11d3f47b08d3f6ca56157b74e",
+        "original_oid": 196973,
+        "purpose": "synthetic QR UI acceptance",
+        "state": "cleaned"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "name": "phase4-production-completed.png",
+      "bytes": 72113,
+      "sha256": "55440bffbcc1029668858cc1786ebb9d33db6061c99ef7bb65278ceac315d26b"
+    },
+    {
+      "name": "phase4-production-confirm.png",
+      "bytes": 72891,
+      "sha256": "16973133cebce9de0fc419299a163606699d5a3236c3fbab6f1d70bd442019a9"
+    },
+    {
+      "name": "phase4-production-other-owner.png",
+      "bytes": 44589,
+      "sha256": "19d0c98bbb3234445fd4247bdaa39a4734ab690cccfecaa0726590e8174c2846"
+    },
+    {
+      "name": "phase4-production-owner.png",
+      "bytes": 60544,
+      "sha256": "66486e3649ca70797ace1dea04e425eea1251ff39e59b107965eec1a08803853"
+    },
+    {
+      "name": "phase4-production-quantity.png",
+      "bytes": 78386,
+      "sha256": "335b10896ba20a5e7071f9631ec8c3f716bf95309711e14ef7c6192479d6e8ff"
+    },
+    {
+      "name": "phase4-production-supervisor.png",
+      "bytes": 61078,
+      "sha256": "16778e6f0130ff2dea0426a37d4ac6b7266b43fa1915d5a9b0c4005157179457"
+    },
+    {
+      "name": "phase4-production-wrong-order.png",
+      "bytes": 81395,
+      "sha256": "e3b9239ab8c2657cd31f567e3cb11092a3e596ef4ae6d089c4c418ff32979bf8"
+    },
+    {
+      "name": "phase4-production-db.json",
+      "bytes": 1829,
+      "sha256": "078f3aa57074ae8417860f668b89e507e02caa2dcf003b7aaa563089b0fd5748"
+    },
+    {
+      "name": "phase4-production-first-db.json",
+      "bytes": 523,
+      "sha256": "9c94630a0b48408d0d5536399b85b941ad275e21d2fce7dbce12c9a198fd8944"
+    }
+  ]
+}

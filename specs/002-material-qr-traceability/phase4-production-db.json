@@ -1,0 +1,92 @@
+{
+  "boxes": [
+    {
+      "id": 1,
+      "order_id": 401,
+      "bound_by": 101,
+      "current_qty": 20,
+      "version": 3
+    }
+  ],
+  "production_states": [
+    {
+      "id": 1001,
+      "production_status": "completed",
+      "version": 4,
+      "completed_by": 101
+    },
+    {
+      "id": 1002,
+      "production_status": "pending",
+      "version": 1,
+      "completed_by": null
+    }
+  ],
+  "quantities": [
+    {
+      "id": 1,
+      "state_id": 1001,
+      "box_id": 1,
+      "current_qty": 20,
+      "updated_by": 102,
+      "version": 2
+    }
+  ],
+  "allocations": [
+    {
+      "source_quantity_id": 1,
+      "available_qty": 20,
+      "order_qty": 10,
+      "stock_qty": 10,
+      "assigned_by": 104,
+      "version": 4
+    }
+  ],
+  "events": [
+    {
+      "event_type": "bind",
+      "operator_id": 101,
+      "before_qty": 0,
+      "after_qty": 0,
+      "remark": null
+    },
+    {
+      "event_type": "qty_save",
+      "operator_id": 101,
+      "before_qty": 0,
+      "after_qty": 25,
+      "remark": null
+    },
+    {
+      "event_type": "process_complete",
+      "operator_id": 101,
+      "before_qty": 25,
+      "after_qty": 25,
+      "remark": null
+    },
+    {
+      "event_type": "quantity_correction",
+      "operator_id": 102,
+      "before_qty": 25,
+      "after_qty": 20,
+      "remark": "隔离验收实物复核"
+    },
+    {
+      "event_type": "allocation",
+      "operator_id": 102,
+      "before_qty": 20,
+      "after_qty": 20,
+      "remark": null
+    },
+    {
+      "event_type": "allocation",
+      "operator_id": 104,
+      "before_qty": 20,
+      "after_qty": 20,
+      "remark": null
+    }
+  ],
+  "transaction_read_only": "on",
+  "synthetic_data_only": true,
+  "owned_original_oid_matched": true
+}

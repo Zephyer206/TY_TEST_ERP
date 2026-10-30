@@ -213,6 +213,7 @@ const areas: WorkspaceArea[] = [
       { label: '生产排产', route: '/production/scheduling' },
       { label: '机台生产', route: '/product-box-production' },
       { label: '工艺流转', route: '/product-box-trace' },
+      { label: '规格通知', route: '/product-box-notifications' },
     ],
   },
   {
@@ -244,6 +245,7 @@ const areas: WorkspaceArea[] = [
     key: 'pricing', label: '价格中心', icon: Document,
     tabs: [
       { label: '客户价格查询', route: '/price-management' },
+      { label: '简易成本核算', route: '/price-management/costing' },
       { label: '客户档案', route: '/customers' },
     ],
   },

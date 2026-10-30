@@ -17,6 +17,7 @@ from app.services.qr_transaction_service import QrError
 from app.services import product_order_service as orders, product_production_service as production
 from app.services import product_process_service as processes
 from app.services import product_split_service as splitting
+from app.services import coil_exception_service as exceptions, notification_service as notifications
 
 router = APIRouter(tags=["product-box-qr"])
 
@@ -187,3 +188,60 @@ async def box_events(box_id: schemas.NewId, db: DbSession, user: QrUser,
 async def save_capabilities(user_id: int, body: schemas.CapabilitiesRequest, db: DbSession, user: QrUser):
     return await run(db, lambda: permissions.replace_capabilities(db, user, user_id,
         body.capabilities, body.expected_version, body.idempotency_key), schemas.CapabilitiesResult)
+
+
+@router.post("/coil-spec-exceptions", response_model=schemas.CoilCheckResult)
+async def check_coil(body: schemas.CoilCheckRequest, db: DbSession, user: QrUser):
+    return await run(db, lambda: exceptions.create_exception(db, user, **body.model_dump()), schemas.CoilCheckResult)
+
+
+@router.post("/coil-spec-exceptions/{exception_id}/confirm", response_model=schemas.CoilExceptionInfo)
+async def confirm_coil(exception_id: schemas.NewId, body: schemas.CoilConfirmRequest, db: DbSession, user: QrUser):
+    return await run(db, lambda: exceptions.confirm_exception(db, user, exception_id=exception_id,
+        **body.model_dump()), schemas.CoilExceptionInfo)
+
+
+@router.post("/coil-spec-exceptions/{exception_id}/resume", response_model=schemas.CoilExceptionInfo)
+async def resume_coil(exception_id: schemas.NewId, body: schemas.CoilResumeRequest, db: DbSession, user: QrUser):
+    return await run(db, lambda: exceptions.resume_exception(db, user, exception_id=exception_id,
+        **body.model_dump()), schemas.CoilExceptionInfo)
+
+
+@router.get("/notifications", response_model=schemas.NotificationPage)
+async def list_notifications(db: DbSession, user: QrUser,
+        delivery_status: Literal["pending", "sent", "failed"] | None = None, unread_only: bool = False,
+        page: Annotated[int, Query(ge=1)] = 1, page_size: Annotated[int, Query(ge=1, le=100)] = 25):
+    return await run(db, lambda: notifications.list_notifications(db, user, delivery_status=delivery_status,
+        unread_only=unread_only, page=page, page_size=page_size), schemas.NotificationPage)
+
+
+@router.get("/qr-admin/notification-deliveries", response_model=schemas.NotificationPage)
+async def list_deliveries(db: DbSession, user: QrUser,
+        delivery_status: Literal["pending", "sent", "failed"] | None = None,
+        page: Annotated[int, Query(ge=1)] = 1, page_size: Annotated[int, Query(ge=1, le=100)] = 25):
+    return await run(db, lambda: notifications.list_deliveries(db, user, delivery_status=delivery_status,
+        page=page, page_size=page_size), schemas.NotificationPage)
+
+
+@router.post("/qr-admin/notification-deliveries/{delivery_id}/retry", response_model=schemas.NotificationDelivery)
+async def retry_delivery(delivery_id: schemas.NewId, body: schemas.DeliveryRetryRequest, db: DbSession, user: QrUser):
+    return await run(db, lambda: notifications.retry_delivery(db, user, delivery_id=delivery_id,
+        **body.model_dump()), schemas.NotificationDelivery)
+
+
+@router.post('/product-conversions', response_model=schemas.ConversionRecord, status_code=201)
+async def create_conversion(body: schemas.ConversionCreateRequest, db: DbSession, user: QrUser):
+    from app.services import product_conversion_service as conversions
+    return await run(db, lambda: conversions.create_conversion(db, user, **body.model_dump()), schemas.ConversionRecord)
+
+
+@router.post('/product-conversions/{conversion_id}/confirm', response_model=schemas.ConversionResult)
+async def confirm_conversion(conversion_id: Annotated[int, Path(ge=1)], body: schemas.ConversionConfirmRequest, db: DbSession, user: QrUser):
+    from app.services import product_conversion_service as conversions
+    return await run(db, lambda: conversions.confirm_conversion(db, user, conversion_id=conversion_id, **body.model_dump()), schemas.ConversionResult)
+
+
+@router.post('/product-conversions/{conversion_id}/cancel', response_model=schemas.ConversionRecord)
+async def cancel_conversion(conversion_id: Annotated[int, Path(ge=1)], body: schemas.ConversionCancelRequest, db: DbSession, user: QrUser):
+    from app.services import product_conversion_service as conversions
+    return await run(db, lambda: conversions.cancel_conversion(db, user, conversion_id=conversion_id, **body.model_dump()), schemas.ConversionRecord)

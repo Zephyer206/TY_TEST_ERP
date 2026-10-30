@@ -1,0 +1,122 @@
+{
+  "status": "PASS",
+  "record_type": "Observed actual Vue browser actions; this record does not control a browser",
+  "client_date": "2026-10-28",
+  "session": "in-app Chromium browser 2, tab 3",
+  "urls": [
+    "http://127.0.0.1:18125/product-box-trace",
+    "http://127.0.0.1:18125/product-box-production"
+  ],
+  "identities": [
+    101,
+    104,
+    105,
+    107
+  ],
+  "synthetic_jwt_in_memory_only": true,
+  "checks": [
+    {
+      "key": "hierarchy",
+      "status": "PASS",
+      "observed": "订单、产品、工艺、数量主显示，标签身份折叠辅助"
+    },
+    {
+      "key": "manual_pending",
+      "status": "PASS",
+      "observed": "负责人发起仅待操作工确认，原B100和标签不变"
+    },
+    {
+      "key": "close_and_rescan",
+      "status": "PASS",
+      "observed": "关闭并重扫仍待确认，无默认实物确认，不静默转换"
+    },
+    {
+      "key": "full_b_to_c",
+      "status": "PASS",
+      "observed": "操作工C/CUT确认100，原框保留标签并转C100，源B当前余额归零"
+    },
+    {
+      "key": "full_c_to_b",
+      "status": "PASS",
+      "observed": "同框反向确认100恢复B100，C当前余额归零，B工艺合计恢复400"
+    },
+    {
+      "key": "quantity_bounds",
+      "status": "PASS",
+      "observed": "实际0、101均不能提交"
+    },
+    {
+      "key": "missing_child",
+      "status": "PASS",
+      "observed": "部分数量未提供子标签即使勾选也不能提交"
+    },
+    {
+      "key": "bound_child",
+      "status": "PASS",
+      "observed": "已绑定标签拒绝，父框不变"
+    },
+    {
+      "key": "outside_child",
+      "status": "PASS",
+      "observed": "池外标签提示不在系统池中，不能提交"
+    },
+    {
+      "key": "changed_child",
+      "status": "PASS",
+      "observed": "核对后修改子标签清除旧核对与勾选，提交禁用"
+    },
+    {
+      "key": "partial_b_to_c",
+      "status": "PASS",
+      "observed": "100拆出C30，父B70；子框材料及原订单保留"
+    },
+    {
+      "key": "partial_c_to_b",
+      "status": "PASS",
+      "observed": "子C30再拆出B10，父C20，两个方向关系留痕"
+    },
+    {
+      "key": "auto_pending",
+      "status": "PASS",
+      "observed": "C/EXTRA差异扫码只建预授权待确认，原B100不变"
+    },
+    {
+      "key": "auto_rescan",
+      "status": "PASS",
+      "observed": "关闭重扫复用同一待确认项，无重复转换记录"
+    },
+    {
+      "key": "auto_actual",
+      "status": "PASS",
+      "observed": "操作工修改为40并核对子标签，父B60/子C40"
+    },
+    {
+      "key": "lineage",
+      "status": "PASS",
+      "observed": "C20详情可见B→C30及C→B10关系、原材料9001/50kg与原订单401"
+    },
+    {
+      "key": "next_process",
+      "status": "PASS",
+      "observed": "C20子框沿CUT→EXTRA进入，入量20、沿用原标签/来源，不新增产出"
+    },
+    {
+      "key": "cancel",
+      "status": "PASS",
+      "observed": "负责人取消框4转换，保留已取消/未执行提示，B100不变"
+    },
+    {
+      "key": "admin",
+      "status": "PASS",
+      "observed": "管理员可查看待确认，但无创建/实物确认/取消入口"
+    },
+    {
+      "key": "scope",
+      "status": "PASS",
+      "observed": "其他订单负责人105读取401框被拒绝，旧详情不展示"
+    }
+  ],
+  "iterations": "Initial UI boundary observations retained; all business conversion flows repeated after fixing source balance on a fresh owned fixture. Expired original context was rejected; fresh scan/select resumed acceptance.",
+  "final_owned_original_oid": 418387,
+  "physical_scanner": "NOT_RUN"
+}

@@ -1,0 +1,228 @@
+{
+  "recorded_at": "2026-10-26T23:30:43+00:00",
+  "client_date": "2026-10-27",
+  "scope": "T034-T038 same/cross order split, quantity conservation, ancestry, zero and continued production",
+  "completed_tasks": 37,
+  "total_tasks": 59,
+  "active_new_endpoints": 22,
+  "planned_new_endpoints": 31,
+  "implementation_status": "PASS",
+  "acceptance_status": "PASS",
+  "pytest": {
+    "status": "PASS",
+    "unique_total": 272,
+    "failures": 0,
+    "skipped": 0,
+    "runs": [
+      {
+        "report": "qr-split-related.xml",
+        "total": 84,
+        "sha256": "db7f0319dcff83783a231e6de83ee80eedab2ce97b06c2a4e383904e2a402305",
+        "failures": 0
+      },
+      {
+        "report": "qr-split-full.xml",
+        "total": 272,
+        "sha256": "20bfb6bb3d96c316b4fc41811d568a7bae9a792d748689de29c23ab73e1aaf29",
+        "failures": 0
+      }
+    ]
+  },
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_checked": 23,
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 1,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "historical_temporary_cleanup": {
+      "status": "INCOMPLETE",
+      "unowned_residue_deleted": false,
+      "reason": "Historical residue has no original creation name/OID ownership proof; prefix matching is insufficient"
+    }
+  },
+  "browser": {
+    "status": "PASS",
+    "record_type": "Observed real Vue browser acceptance; this record does not control a browser",
+    "session": "in-app Chromium browser 2, tab 4",
+    "urls": [
+      "http://127.0.0.1:18125/product-box-trace",
+      "http://127.0.0.1:18125/product-box-production"
+    ],
+    "identities": [
+      101,
+      102,
+      103,
+      104,
+      105
+    ],
+    "synthetic_jwt_in_memory_only": true,
+    "checks": [
+      {
+        "key": "business_hierarchy",
+        "status": "PASS",
+        "observed": "订单、产品、工艺、数量为主，来源快照及标签编号折叠辅助"
+      },
+      {
+        "key": "cancel",
+        "status": "PASS",
+        "observed": "100件父框核对子标签后取消，DB仍1框/100件、子标签unused"
+      },
+      {
+        "key": "same_order",
+        "status": "PASS",
+        "observed": "100拆30后父70子30，同单用途及材料继承"
+      },
+      {
+        "key": "repeated_split",
+        "status": "PASS",
+        "observed": "父70再拆10后父60，已拆正余量可继续拆"
+      },
+      {
+        "key": "cross_order",
+        "status": "PASS",
+        "observed": "主管明确选403/CUT/TEST-M601，拆20后父40属401、子20属403"
+      },
+      {
+        "key": "zero_balance",
+        "status": "PASS",
+        "observed": "10件子框全拆后原框0/empty，标签与来源保留、无拆框入口"
+      },
+      {
+        "key": "overdraw",
+        "status": "PASS",
+        "observed": "10件框输入11件，确认按钮不可用"
+      },
+      {
+        "key": "invalid_child",
+        "status": "PASS",
+        "observed": "已绑定标签提示已使用，池外标签提示不在系统池中，均不可确认"
+      },
+      {
+        "key": "changed_child",
+        "status": "PASS",
+        "observed": "核对后修改子标签立即清空核对结果并禁用确认"
+      },
+      {
+        "key": "source_readonly",
+        "status": "PASS",
+        "observed": "工人选401/CUT后父框首次数量只读，没有保存入口"
+      },
+      {
+        "key": "continued_production",
+        "status": "PASS",
+        "observed": "工人明确选择401/FINISH，父40及子30分别进入，合计70且材料来源继承"
+      },
+      {
+        "key": "zero_handoff",
+        "status": "PASS",
+        "observed": "0件框提示无余量且进入所选工艺按钮禁用"
+      },
+      {
+        "key": "scope",
+        "status": "PASS",
+        "observed": "工人无拆框入口，其他订单负责人105查询401被拒绝"
+      },
+      {
+        "key": "owner_preview",
+        "status": "PASS",
+        "observed": "源单负责人104可在子框5拆框范围预览unused标签6，未选目标不能提交，取消不绑定"
+      },
+      {
+        "key": "relation_navigation",
+        "status": "PASS",
+        "observed": "父子与跨单导航显示正确订单、余量和来源快照，导航后旧扫码输入清空"
+      }
+    ],
+    "physical_print_and_scanner": "NOT_RUN",
+    "stock_mixed_and_concurrency": "Automated PostgreSQL evidence, not browser claims"
+  },
+  "checks": {
+    "frontend_build": "PASS",
+    "api_usage_violations": 0,
+    "design": "PASS",
+    "diff_check": "PASS",
+    "system_print_dialog": "NOT_RUN",
+    "physical_print_and_scanner": "NOT_RUN",
+    "owned_ports_stopped": [
+      18124,
+      18125
+    ]
+  },
+  "owned_ui_cleanup": {
+    "status": "PASS",
+    "database": {
+      "database": "qrtmp_4cfcf9bb285a49469c235eb3e460afe6",
+      "original_oid": 257276,
+      "purpose": "synthetic QR UI acceptance",
+      "state": "cleaned"
+    }
+  },
+  "artifacts": [
+    {
+      "name": "phase6-split-confirm.png",
+      "bytes": 64571,
+      "sha256": "6645785ef94315911d573c9f6f39ef4fbf086c1e9ca13fda5569e53a92757783"
+    },
+    {
+      "name": "phase6-cross-confirm.png",
+      "bytes": 70890,
+      "sha256": "9f65dd358d67d2b4cb18d04f0ee2af8a6ab2fa645ca70ce142e57648326d4555"
+    },
+    {
+      "name": "phase6-zero-trace.png",
+      "bytes": 58517,
+      "sha256": "ae16c75d4fe7b45e930f68e65aaac363b37eea5a90263464dcf14a34573990af"
+    },
+    {
+      "name": "phase6-zero-handoff.png",
+      "bytes": 55969,
+      "sha256": "659e30585e1401458ebe6b0ef177a66d17922c6044096c9ce6dd26454930c04c"
+    },
+    {
+      "name": "phase6-source-readonly.png",
+      "bytes": 60222,
+      "sha256": "ad4596a8a5e52aca15d5908ff773ff84b62cbefc464940fbaf7707c05c57e5f2"
+    },
+    {
+      "name": "phase6-parent-child-handoff.png",
+      "bytes": 60819,
+      "sha256": "e6b79ed8cb79e4befad23f99f3fa4f9d3cfcfcc9b3ac7573e2d265a4aa149bdc"
+    },
+    {
+      "name": "phase6-other-owner.png",
+      "bytes": 35120,
+      "sha256": "3dbcbd411dd7fab18a900833aa60aefa95fb2627b7a3b4897255cbc06c918d03"
+    },
+    {
+      "name": "phase6-split-overview.png",
+      "bytes": 61675,
+      "sha256": "b60ea859ae55f27ae4095652ce36e69dc052eb35e9a9e80d8d2762e434d95334"
+    },
+    {
+      "name": "phase6-child-trace.png",
+      "bytes": 61057,
+      "sha256": "4e15333df4f9fe4c69afc86467ded96b5a275b2f71a704ea68a8dde3d551a9b5"
+    },
+    {
+      "name": "phase6-owner-preview.png",
+      "bytes": 66265,
+      "sha256": "9afa586c34b584a75aca925be4712d7900225fbbc63f62469add44bf1d4645eb"
+    },
+    {
+      "name": "phase6-db.json",
+      "bytes": 9817,
+      "sha256": "227cfcfe98d49013c6b23340a291ef08854d4d768c7d4bd3337750823b2315f2"
+    },
+    {
+      "name": "phase6-browser.json",
+      "bytes": 3016,
+      "sha256": "b8cf5524693c5c5dde782040e35d75e90ab08a7e0f6f649c1c3c385bff311315"
+    }
+  ]
+}

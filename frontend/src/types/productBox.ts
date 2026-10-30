@@ -81,6 +81,7 @@ export interface ProductBoxScan {
   box: ProductBox | null
   allowed_actions: Array<'bind' | 'trace'>
   latest_event?: import('./productTrace').FlowEvent | null
+  conversion?: import('./productConversion').ConversionOptions | null
 }
 
 export interface QrPrintTemplate {

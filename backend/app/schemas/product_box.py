@@ -42,6 +42,7 @@ class BindRequest(QrModel):
 class ScanRequest(QrModel):
     qr_payload: Annotated[str, Field(min_length=1, max_length=200)]
     split_parent_id: NewId | None = None
+    context_id: NewId | None = None
 
 
 class PrintDataRequest(QrModel):
@@ -158,11 +159,57 @@ class FlowEvent(QrModel):
     occurred_at: str
 
 
+class ConversionRecord(QrModel):
+    id: str
+    product_box_id: str
+    order_id: int
+    source_order_product_id: str
+    target_order_product_id: str
+    source_product_code: str
+    target_product_code: str
+    source_process_code: str | None
+    target_process_code: str | None
+    proposed_qty: int | None
+    actual_qty: int | None
+    trigger_type: str
+    confirmation_status: str
+    version: int
+    created_by: int
+    confirmed_by: int | None
+    confirmed_at: str | None
+    cancelled_by: int | None
+    cancelled_at: str | None
+    cancel_reason: str | None
+    relation_id: str | None
+    child_box_id: str | None
+    remark: str | None
+    created_at: str
+    can_cancel: bool
+
+
+class ConversionTarget(QrModel):
+    order_product_id: str
+    product_code: str
+    product_name: str | None
+    customer_part_no: str | None
+    target_process_code: str
+    route_code: str
+    route_revision: int
+
+
+class ConversionOptions(QrModel):
+    can_create: bool
+    reason: str | None
+    targets: list[ConversionTarget]
+    pending: list[ConversionRecord]
+
+
 class BoxScan(QrModel):
     pool_item: PoolItem
     box: ProductBox | None
     allowed_actions: list[Literal["bind", "trace"]]
     latest_event: FlowEvent | None = None
+    conversion: ConversionOptions | None = None
 
 
 class PrintTemplate(QrModel):
@@ -443,6 +490,50 @@ class ProductionBox(ProcessQuantity):
     quantity_locked: bool = False
 
 
+class CoilSpec(QrModel):
+    material_name: str | None = None
+    thickness: str | None = None
+    width: str | None = None
+
+
+class CoilRecipientGroup(QrModel):
+    group_type: Literal["supervisor", "business_owner"]
+    resolution_status: Literal["pending_configuration", "resolved"]
+    recipient_ids: list[int]
+    missing_reason: str | None
+
+
+class CoilExceptionInfo(QrModel):
+    id: str
+    state_id: str
+    order_id: int
+    plan_no: str
+    product_name: str | None
+    process_code: str
+    product_box_id: str | None
+    material_batch_id: int
+    batch_no: str | None
+    expected_spec: CoilSpec
+    actual_spec: CoilSpec
+    spec_incomplete: bool
+    status: Literal["pending_confirmation", "confirmed"]
+    resolution: Literal["accept_continue", "pause", "reconfirm_coil"] | None
+    remark: str | None
+    version: int
+    created_by: int
+    created_at: str
+    confirmed_by: int | None
+    confirmed_at: str | None
+    released_by: int | None
+    released_at: str | None
+    resume_reason: str | None
+    rechecked_material_batch_id: int | None
+    blocked: bool
+    allowed_actions: list[Literal["confirm", "resume"]]
+    recipient_groups: list[CoilRecipientGroup]
+    delivery_summary: dict[Literal["pending", "sent", "failed"], int]
+
+
 class ProductionState(QrModel):
     id: str
     assignment_id: int
@@ -470,6 +561,8 @@ class ProductionState(QrModel):
     blocked: bool
     allowed_actions: list[Literal["quantity", "complete", "bind", "correct"]]
     boxes: list[ProductionBox]
+    can_check_material: bool = False
+    exceptions: list[CoilExceptionInfo] = Field(default_factory=list)
 
 
 class ProductionSelection(QrModel):
@@ -639,3 +732,113 @@ class BoxTrace(QrModel):
     conversions: list[TraceConversion]
     conversions_total: int
     split: SplitInfo | None = None
+    conversion: ConversionOptions | None = None
+
+
+class CoilCheckRequest(QrModel):
+    context_id: NewId
+    material_batch_id: Annotated[StrictInt, Field(ge=1, le=2_147_483_647)]
+    product_box_id: NewId | None = None
+    continue_production: StrictBool
+    idempotency_key: RequestKey
+
+
+class CoilCheckResult(QrModel):
+    matches: bool
+    requires_confirmation: bool
+    production_allowed: bool
+    expected_spec: CoilSpec
+    actual_spec: CoilSpec
+    exception: CoilExceptionInfo | None
+    state_version: int
+
+
+class CoilConfirmRequest(QrModel):
+    resolution: Literal["accept_continue", "pause", "reconfirm_coil"]
+    remark: Annotated[str, Field(max_length=500)] | None = None
+    expected_version: Annotated[StrictInt, Field(ge=1)]
+    idempotency_key: RequestKey
+
+
+class CoilResumeRequest(QrModel):
+    rechecked_material_batch_id: Annotated[StrictInt, Field(ge=1, le=2_147_483_647)]
+    reason: Annotated[str, Field(min_length=1, max_length=500)]
+    expected_version: Annotated[StrictInt, Field(ge=1)]
+    idempotency_key: RequestKey
+
+    @model_validator(mode="after")
+    def require_reason(self):
+        if not self.reason.strip():
+            raise ValueError("Resume requires a reason")
+        return self
+
+
+class DeliveryRetryRequest(QrModel):
+    expected_version: Annotated[StrictInt, Field(ge=1)]
+    idempotency_key: RequestKey
+
+
+class NotificationAttempt(QrModel):
+    retry_batch: int
+    attempt_no: int
+    trigger_type: Literal["automatic", "manual"]
+    result: Literal["sent", "failed"]
+    safe_error_code: str | None
+    created_at: str
+
+
+class NotificationDelivery(QrModel):
+    id: str
+    recipient_user_id: int
+    delivery_status: Literal["pending", "sent", "failed"]
+    attempts: int
+    retry_batch: int
+    version: int
+    next_retry_at: str
+    last_error: str | None
+    sent_at: str | None
+    created_at: str
+    notification_id: str | None
+    read_at: str | None
+    exception: CoilExceptionInfo
+    attempt_history: list[NotificationAttempt] = Field(default_factory=list)
+
+
+class NotificationPage(QrModel):
+    items: list[NotificationDelivery]
+    total: int
+    page: int
+    page_size: int
+    can_manage_deliveries: bool
+
+
+class ConversionCreateRequest(QrModel):
+    box_id: NewId
+    target_order_product_id: NewId
+    proposed_qty: Annotated[StrictInt, Field(ge=1, le=2_147_483_647)] | None = None
+    expected_version: Annotated[StrictInt, Field(ge=1)]
+    idempotency_key: RequestKey
+
+
+class ConversionConfirmRequest(QrModel):
+    context_id: NewId
+    actual_qty: Annotated[StrictInt, Field(ge=1, le=2_147_483_647)]
+    confirm: StrictBool
+    child_qr_payload: Annotated[str, Field(min_length=1, max_length=200)] | None = None
+    expected_version: Annotated[StrictInt, Field(ge=1)]
+    conversion_version: Annotated[StrictInt, Field(ge=1)]
+    idempotency_key: RequestKey
+
+
+class ConversionCancelRequest(QrModel):
+    context_id: NewId | None = None
+    conversion_version: Annotated[StrictInt, Field(ge=1)]
+    reason: Annotated[str, Field(max_length=500)] | None = None
+    idempotency_key: RequestKey
+
+
+class ConversionResult(QrModel):
+    conversion: ConversionRecord
+    source_box: ProductBox
+    converted_box: ProductBox
+    relation: TraceRelation | None

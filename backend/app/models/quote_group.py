@@ -30,6 +30,7 @@ class QuoteGroup(Base):
     material_unit_price: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=0)
     material_scrap_price: Mapped[Optional[Decimal]] = mapped_column(Numeric(12, 4), nullable=True)
     surface_treatment_fee: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=0)
+    surface_rule_snapshot: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
     inspection_fee: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=0)
     packaging_fee: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=0)
     freight_fee: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False, default=0)

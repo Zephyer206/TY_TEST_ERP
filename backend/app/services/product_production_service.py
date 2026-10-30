@@ -131,12 +131,14 @@ async def state_info(db, actor, state):
     actions = []
     if actor.dept == "prod" and "qr.production" in caps and state.production_status != "completed" and not blocked:
         actions.extend(["quantity", "complete"])
-        if state.route_revision_id == product.route_revision_id:
+        if product.binding_allowed and state.route_revision_id == product.route_revision_id:
             actions.append("bind")
     if actor.dept == "prod" and actor.role_level >= 2 and "qr.supervise" in caps and state.production_status == "completed":
         actions.append("correct")
     entries = []
     for value, box in values:
+        from app.services.product_conversion_service import quantity_locked
+        converted_locked = await quantity_locked(db, box.id, value.id)
         was_partitioned = await partitioned(db, box.id)
         allocation = await db.scalar(select(m.ProductOutputAllocation).where(
             m.ProductOutputAllocation.source_quantity_id == value.source_quantity_id)) if value.source_quantity_id else None
@@ -144,8 +146,9 @@ async def state_info(db, actor, state):
             "box_version": box.version, "product_name": box.product_name_snapshot,
             "customer_part_no": box.customer_part_no,
             "allocation": await allocation_info(db, actor, allocation) if allocation else None,
-            "can_correct": "correct" in actions and not (was_partitioned and value.source_quantity_id == value.id),
-            "quantity_locked": was_partitioned and value.source_quantity_id == value.id})
+            "can_correct": "correct" in actions and not converted_locked and not (was_partitioned and value.source_quantity_id == value.id),
+            "quantity_locked": converted_locked or (was_partitioned and value.source_quantity_id == value.id)})
+    from app.services.coil_exception_service import state_exceptions
     return {"id": str(state.id), "assignment_id": assignment.id, "machine_id": assignment.machine_id,
         "machine_no": machine.machine_no if machine else "", "machine_name": machine.name if machine else "",
         "order_id": product.order_id, "plan_no": f"PP-{plan.id:06d}", "part_id": product.part_id,
@@ -156,7 +159,9 @@ async def state_info(db, actor, state):
         "target_qty": state.target_qty, "current_qty": total, "difference_qty": total - state.target_qty,
         "production_status": state.production_status, "version": state.version,
         "completed_at": boxes.iso(state.completed_at), "completed_by": state.completed_by,
-        "blocked": blocked, "allowed_actions": actions, "boxes": entries}
+        "blocked": blocked, "allowed_actions": actions, "boxes": entries,
+        "can_check_material": actor.dept == "prod" and "qr.production" in caps and state.production_status != "completed",
+        "exceptions": await state_exceptions(db, actor, state.id)}
 
 
 async def scan_machine(db, actor, *, machine_qr, context_id=None):
@@ -248,8 +253,10 @@ async def select_production(db, actor, *, scan_ticket, assignment_id, order_prod
         configuration_product = product if state.route_revision_id == product.route_revision_id else SimpleNamespace(
             id=product.id, order_id=product.order_id, part_id=product.part_id,
             product_code=product.product_code, binding_allowed=product.binding_allowed,
-            target_qty=product.target_qty, route_revision_id=state.route_revision_id)
-        await boxes.binding_configuration(db, configuration_product)
+            target_qty=product.target_qty, route_revision_id=state.route_revision_id,
+            conversion_source_id=product.conversion_source_id)
+        from app.services.product_conversion_service import configuration
+        await configuration(db, configuration_product, state.route_revision_id)
         route = await db.get(m.ProductRouteRevision, state.route_revision_id)
         step = next((step for step in route.steps_json if step.get("code") == process_code), None) if route else None
         machine = await db.get(Machine, current.machine_id)
@@ -325,18 +332,23 @@ async def save_quantity(db, actor, *, box_id, context_id, current_qty, expected_
             conflict("请先按固定路线进入当前工艺")
         value = await db.scalar(select(m.BoxProcessQuantity).where(m.BoxProcessQuantity.state_id == state.id,
             m.BoxProcessQuantity.box_id == box.id))
-        latest = await db.scalar(select(m.BoxProcessQuantity).where(m.BoxProcessQuantity.box_id == box.id)
-            .order_by(m.BoxProcessQuantity.id.desc()).limit(1))
+        from app.services.product_conversion_service import current_quantity, quantity_locked
+        latest = await current_quantity(db, box)
         if latest and latest.state_id != state.id:
             conflict("该框已属于其他机台工艺，请按固定路线流转后登记")
         if value and value.source_quantity_id == value.id and await partitioned(db, box.id):
             conflict("该来源已经拆分，不能重新登记拆分前数量；余量可继续流转或拆框")
+        if value and await quantity_locked(db, box.id, value.id):
+            conflict("该数量已参与产品转换，请保留转换余额并进入后续工艺")
         if material_batch_id is not None:
             if (type(material_batch_id) is not int or not 0 < material_batch_id <= 2_147_483_647
                     or await db.get(MaterialBatch, material_batch_id) is None):
                 raise QrError(400, "INVALID_MATERIAL", "原材料批次不存在")
             if value and value.material_batch_id != material_batch_id:
                 conflict("既有工艺材料来源不可替换，请核对实物及历史记录")
+        from app.services.coil_exception_service import ensure_material_decision
+        await ensure_material_decision(db, current_state, product.order_id,
+            value.material_batch_id if value else material_batch_id, historical=value is not None)
         now = await db.scalar(select(func.clock_timestamp()))
         before = box.current_qty
         if value is None:
@@ -346,7 +358,7 @@ async def save_quantity(db, actor, *, box_id, context_id, current_qty, expected_
             await db.flush()
         else:
             value.current_qty, value.version, value.updated_by, value.updated_at = current_qty, value.version + 1, actor.id, now
-        if state.process_code == route.first_output_process_code:
+        if state.process_code == route.first_output_process_code and (value.source_quantity_id is None or value.source_quantity_id == value.id):
             value.source_quantity_id = value.id
             await effective_allocation(db, actor, value, locked["order_products"][product.id], current_qty, now)
         box.current_qty, box.current_process_code = current_qty, state.process_code
@@ -391,6 +403,10 @@ async def complete_production(db, actor, *, machine_id, context_id, confirm_quan
         if not fresh.completion_scan_at or fresh.completion_scan_at < fresh.last_activity_at or await paused(db, current.id):
             conflict("请重新扫描当前机台，再确认本次完成")
         summary = await state_info(db, actor, current)
+        from app.services.coil_exception_service import ensure_material_decision
+        for value in await db.scalars(select(m.BoxProcessQuantity).where(m.BoxProcessQuantity.state_id == current.id)):
+            if value.current_qty > 0:
+                await ensure_material_decision(db, current, product.order_id, value.material_batch_id, historical=True)
         if summary["difference_qty"] != 0 and confirm_quantity_difference is not True:
             conflict("实际数量与本机台目标不同，请核对后明确确认", {"confirmation_required": True,
                 "target_qty": summary["target_qty"], "current_qty": summary["current_qty"]})
@@ -472,9 +488,12 @@ async def correct_quantity(db, actor, *, box_id, state_id, current_qty, reason, 
             conflict("该框没有对应工艺数量")
         if value.source_quantity_id == value.id and await partitioned(db, box.id):
             conflict("该框已拆分，不能直接更正拆分前数量；请保留既有余量与用途事实")
+        from app.services.product_conversion_service import quantity_locked, current_quantity
+        if await quantity_locked(db, box.id, value.id):
+            conflict("该数量已有转换事实，不能直接改写转换余额")
         before, now = value.current_qty, await db.scalar(select(func.clock_timestamp()))
-        latest_quantity_id = await db.scalar(select(m.BoxProcessQuantity.id).where(m.BoxProcessQuantity.box_id == box.id)
-            .order_by(m.BoxProcessQuantity.id.desc()).limit(1))
+        latest = await current_quantity(db, box)
+        latest_quantity_id = latest.id if latest else None
         has_downstream = latest_quantity_id != value.id
         value.current_qty, value.updated_by, value.updated_at, value.version = current_qty, actor.id, now, value.version + 1
         if not has_downstream:

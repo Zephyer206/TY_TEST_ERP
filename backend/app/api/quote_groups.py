@@ -10,6 +10,10 @@ from app.api.deps import CurrentUser, DbSession, require_role
 from app.models.customer import Customer
 from app.models.customer_inquiry import CustomerInquiry
 from app.models.quote_group import QuoteGroup, QuoteGroupItem
+from app.models.price import TreatmentDict
+from app.services.costing_service import encode
+from app.schemas.costing import MaterialCalculation
+from app.services.costing_calculator import quotation_material
 from app.schemas.quote_group import QuoteGroupCreate, QuoteGroupItemResponse, QuoteGroupResponse, QuoteGroupUpdate
 from app.services.quote_press_service import LOCKED_QUOTE_GROUP_STATUSES, press_metadata, sync_quote_presses
 
@@ -52,6 +56,7 @@ async def _response(db: DbSession, group: QuoteGroup) -> QuoteGroupResponse:
         material_name=group.material_name, material_density=group.material_density,
         material_unit_price=group.material_unit_price, material_scrap_price=group.material_scrap_price,
         surface_treatment_fee=group.surface_treatment_fee, inspection_fee=group.inspection_fee,
+        surface_rule_snapshot=group.surface_rule_snapshot,
         packaging_fee=group.packaging_fee, freight_fee=group.freight_fee,
         management_fee=group.management_fee, profit_margin=group.profit_margin,
         material_adjustment=group.material_adjustment, quote_note=group.quote_note,
@@ -168,6 +173,17 @@ async def update_quote_group(group_id: int, data: QuoteGroupUpdate, db: DbSessio
     assert_quote_group_editable(group)
     values = data.model_dump(exclude_unset=True)
     item_values = values.pop("items", None)
+    refresh_rule = values.pop('refresh_surface_rule',False)
+    if 'surface_rule_id' in values:
+        rule_id = values.pop('surface_rule_id')
+        if rule_id is None:
+            group.surface_rule_snapshot = None
+        elif refresh_rule or not group.surface_rule_snapshot or group.surface_rule_snapshot.get('id') != rule_id:
+            rule = await db.get(TreatmentDict, rule_id)
+            if not rule or not rule.is_active or (rule.calc_mode,rule.unit) not in {('manual','元/件'),('net_weight','元/kg')}:
+                raise HTTPException(422,'请选择有效的按件或净重收费规则')
+            group.surface_rule_snapshot = encode(dict(id=rule.id,name=rule.name,rate=rule.default_rate,
+                method='net_kg' if rule.calc_mode=='net_weight' else 'piece',unit=rule.unit,updated_at=rule.updated_at))
     for field, value in values.items():
         setattr(group, field, value)
     if item_values is not None:
@@ -176,6 +192,23 @@ async def update_quote_group(group_id: int, data: QuoteGroupUpdate, db: DbSessio
         for item, item_data in zip(group.items, item_values):
             for field, value in item_data.items():
                 setattr(item, field, value)
+    # Preserve the legacy per-piece fee field for older consumers while keeping
+    # the selected rule/rate snapshot authoritative for each quote line.
+    if group.surface_rule_snapshot:
+        snapshot=group.surface_rule_snapshot
+        if snapshot['method']=='piece':
+            group.surface_treatment_fee=Decimal(snapshot['rate'])
+        else:
+            amounts=[]
+            for item in group.items:
+                estimate=quotation_material(MaterialCalculation(thickness=item.thickness,width=item.width,pitch=item.pitch,
+                    density=group.material_density,utilization_pct=item.utilization))
+                if estimate['net_weight_g'] is None:
+                    raise HTTPException(422,'按净重收费需要每个报价零件的规格、密度和材料利用率')
+                amounts.append(Decimal(estimate['net_weight_g'])/Decimal(1000)*Decimal(snapshot['rate']))
+            if not amounts:
+                raise HTTPException(422,'按净重收费需要至少一个报价零件')
+            group.surface_treatment_fee=amounts[0]
     group.status = "已报价"
     await db.commit()
     group = (await db.execute(_group_query().where(QuoteGroup.id == group.id))).scalars().unique().first()

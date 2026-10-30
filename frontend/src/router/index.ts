@@ -109,6 +109,12 @@ const routes: RouteRecordRaw[] = [
         meta: { roleLevel: 2 },
       },
       {
+        path: 'price-management/costing',
+        name: 'SimpleCosting',
+        component: () => import('@/views/price-management/Costing.vue'),
+        meta: { roleLevel: 2 },
+      },
+      {
         path: 'admin/context-switch',
         name: 'AdminContextSwitch',
         component: () => import('@/views/admin/context-switch.vue'),
@@ -186,6 +192,12 @@ const routes: RouteRecordRaw[] = [
           path: 'product-box-trace',
           name: 'ProductBoxTrace',
           component: () => import('@/views/product-box-qr/trace.vue'),
+          meta: { roleLevel: 1 },
+        },
+        {
+          path: 'product-box-notifications',
+          name: 'ProductBoxNotifications',
+          component: () => import('@/views/product-box-qr/notifications.vue'),
           meta: { roleLevel: 1 },
         },
     ],

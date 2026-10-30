@@ -1,0 +1,250 @@
+{
+  "recorded_at": "2026-10-28T06:48:10.531560+00:00",
+  "client_date": "2026-10-28",
+  "completed_tasks": 43,
+  "total_tasks": 59,
+  "active_new_endpoints": 28,
+  "planned_new_endpoints": 31,
+  "implementation_status": "PASS",
+  "acceptance_status": "PASS",
+  "pytest": {
+    "unique_total": 306,
+    "failures": 0,
+    "skipped": 0,
+    "report": "runtime/qr-exceptions-full.xml"
+  },
+  "business_database": {
+    "transaction_read_only": "on",
+    "migration_versions": [
+      "20261020_ppap"
+    ],
+    "new_domain_tables_checked": 23,
+    "new_domain_tables_present": 0,
+    "legacy_qr_enum_label_count": 9,
+    "remaining_temporary_database_count": 2,
+    "auth_disabled": true,
+    "business_writes": 0,
+    "status": "PASS",
+    "historical_temporary_cleanup": {
+      "status": "INCOMPLETE",
+      "unowned_residue_deleted": false,
+      "reason": "Historical residue has no original creation name/OID ownership proof; prefix matching is insufficient"
+    }
+  },
+  "checks": {
+    "build": "PASS",
+    "api_usage": "PASS",
+    "design": "PASS",
+    "diff": "PASS",
+    "api_usage_violations": 0,
+    "build_command": "npm run build (vue-tsc + Vite)",
+    "build_log": "runtime/qr-exceptions-build.log",
+    "design_log": "runtime/qr-exceptions-design.log",
+    "diff_log": "runtime/qr-exceptions-diff.log",
+    "existing_build_warnings": "Sass/Rollup and large chunk warnings; no compilation errors"
+  },
+  "owned_ui_cleanup": {
+    "database": "qrtmp_59e2b7bb306845a1868ee804b354a920",
+    "original_oid": 308767,
+    "purpose": "synthetic QR UI acceptance",
+    "state": "cleaned"
+  },
+  "browser": {
+    "status": "PASS",
+    "record_type": "Observed real Vue browser acceptance; this file does not control a browser",
+    "started_client_date": "2026-10-27",
+    "completed_client_date": "2026-10-28",
+    "sessions": [
+      "in-app Chromium browser 2, tab 5",
+      "in-app Chromium browser 2, resumed tab 1"
+    ],
+    "urls": [
+      "http://127.0.0.1:18125/product-box-production",
+      "http://127.0.0.1:18125/product-box-notifications"
+    ],
+    "identities": [
+      101,
+      102,
+      104,
+      105,
+      107
+    ],
+    "synthetic_jwt_in_memory_only": true,
+    "checks": [
+      {
+        "key": "business_hierarchy",
+        "status": "PASS",
+        "observed": "订单、产品、工艺、数量主显示，二维码身份辅助"
+      },
+      {
+        "key": "preview",
+        "status": "PASS",
+        "observed": "实际宽900与订单1000对照，预览不建异常/不改0件，保存禁用"
+      },
+      {
+        "key": "input_invalidation",
+        "status": "PASS",
+        "observed": "修改材料输入清除旧核对及继续决定，保存禁用"
+      },
+      {
+        "key": "explicit_continue",
+        "status": "PASS",
+        "observed": "明确记录并继续后保存12件，异常待确认"
+      },
+      {
+        "key": "two_groups",
+        "status": "PASS",
+        "observed": "生产主管102和订单负责人104各收到站内通知，业务仍待确认"
+      },
+      {
+        "key": "owner_accept",
+        "status": "PASS",
+        "observed": "负责人104接受继续，空备注允许，通知投递状态独立"
+      },
+      {
+        "key": "second_exception",
+        "status": "PASS",
+        "observed": "另一卷料宽850新建独立异常，保存5件，累计17"
+      },
+      {
+        "key": "pause",
+        "status": "PASS",
+        "observed": "负责人104暂停第二异常，工人数量及完成入口关闭"
+      },
+      {
+        "key": "source_handoff_guard",
+        "status": "PASS",
+        "observed": "从暂停CUT框进入FINISH被服务端拒绝，17件及来源不变"
+      },
+      {
+        "key": "other_state",
+        "status": "PASS",
+        "observed": "402/CUT生产入口仍可用，不受401/CUT暂停牵连"
+      },
+      {
+        "key": "resume_mismatch",
+        "status": "PASS",
+        "observed": "核对不匹配卷料并填理由，恢复被拒绝"
+      },
+      {
+        "key": "resume_match",
+        "status": "PASS",
+        "observed": "核对9501符合原规格并填理由解除，保留原pause及确认人"
+      },
+      {
+        "key": "production_resumes",
+        "status": "PASS",
+        "observed": "工人新框用匹配卷料保存7件，三框12/5/7累计24，无新异常"
+      },
+      {
+        "key": "admin_role",
+        "status": "PASS",
+        "observed": "管理员107可管理投递，无主管能力不显示业务确认/恢复"
+      },
+      {
+        "key": "manual_retry",
+        "status": "PASS",
+        "observed": "一条failed5人工新批次后实站内投递成功，另一条仍failed，业务仍pending"
+      },
+      {
+        "key": "history_scope",
+        "status": "PASS",
+        "observed": "重试详情保留原5失败+新1成功；负责人105仅见402、不见401及管理入口"
+      }
+    ],
+    "fault_fixture": "Order 402 failures replayed with real dispatch and synthetic past clock; not real elapsed retry intervals",
+    "local_worker_poll_seconds": 1,
+    "physical_scanner": "NOT_RUN"
+  },
+  "owned_service_ports": {
+    "18124": "STOPPED",
+    "18125": "STOPPED"
+  },
+  "artifacts": [
+    {
+      "name": "phase7-continued-pending.png",
+      "bytes": 56679,
+      "sha256": "b137f79b38eca8c34f497aedc2f60a7202b09a695b99c983463d7f59a187f66d"
+    },
+    {
+      "name": "phase7-failed-queue.png",
+      "bytes": 77420,
+      "sha256": "21aed3b7c3b064fbde2d212e03548b76674d6499697b2b5a9431289ceeeb07d8"
+    },
+    {
+      "name": "phase7-mismatch-preview.png",
+      "bytes": 50083,
+      "sha256": "d58a479d3e2fe673d0cb03e4fd1692de9a0fb3db0f6ac646087185e38dfa7fe5"
+    },
+    {
+      "name": "phase7-notification-overview.png",
+      "bytes": 76009,
+      "sha256": "6129b8fc6a18d950afe4f6fb8ada9fefb6ef8bcdcc8e0f4b90add8c47b9a9a00"
+    },
+    {
+      "name": "phase7-notified-pending.png",
+      "bytes": 40816,
+      "sha256": "d94a9d96614f475ac2470bd7ea6551abd5c3a1744099a5b0cbfa44bc676aa9c3"
+    },
+    {
+      "name": "phase7-other-owner.png",
+      "bytes": 41299,
+      "sha256": "2a33b59ff074200c592edec1a5c0cf367ae3dad53db6f666661e688cfc60ca56"
+    },
+    {
+      "name": "phase7-other-state.png",
+      "bytes": 54461,
+      "sha256": "069951791890a4bfc4eade7577fc041be621cb250354beb93d314eaf7943dae9"
+    },
+    {
+      "name": "phase7-owner-accepted.png",
+      "bytes": 40362,
+      "sha256": "a2480dfd47fd172bbed7d9abd2cc0ba8e7e8e8c27ba720aed9649c9e97ab6117"
+    },
+    {
+      "name": "phase7-owner-paused.png",
+      "bytes": 47654,
+      "sha256": "6ece22aff759a5f5ab26ddd7456442095d4127c7e0d0976093859941767a8b6e"
+    },
+    {
+      "name": "phase7-owner-resumed.png",
+      "bytes": 46953,
+      "sha256": "13279fb23072d91ebcef865a96e2340855c082553065b2d4b1608a9af25a1574"
+    },
+    {
+      "name": "phase7-paused-handoff-rejected.png",
+      "bytes": 50932,
+      "sha256": "0ef51a221b50265dc1f28e3f9122932c4337bbabb179cf48361b0484a34a87b4"
+    },
+    {
+      "name": "phase7-production-resumed.png",
+      "bytes": 57338,
+      "sha256": "3265ab61f462db9767e96c3c755eedf438b407b163491f538b6d6b7b354829e5"
+    },
+    {
+      "name": "phase7-resume-rejected.png",
+      "bytes": 61333,
+      "sha256": "5764a5d7e4da37eada6baca580c21118b992cab47e24d914301d009daa9ac2a6"
+    },
+    {
+      "name": "phase7-retry-history.png",
+      "bytes": 72973,
+      "sha256": "fc627a9b0772d7f8cb612a3c0dd92c5567edd64ea265b6e1528d7b190bbd7232"
+    },
+    {
+      "name": "phase7-worker-paused.png",
+      "bytes": 55015,
+      "sha256": "86c8d2bb27360230a3345d588342d5372a95b9f1ae7d1321bf116660cec58aca"
+    },
+    {
+      "name": "phase7-db.json",
+      "bytes": 8735,
+      "sha256": "7fbdaae34b61ffdbb3c99195906f685216968e8b63449743bc3128159d95f1e5"
+    },
+    {
+      "name": "phase7-browser.json",
+      "bytes": 3380,
+      "sha256": "e027d86b8804448409213df7498c835baeda0d86565321cfb833e77bfecccc01"
+    }
+  ]
+}

@@ -71,6 +71,9 @@ class Part(Base):
     spray_status: Mapped[str] = mapped_column(String(50), default='pending', nullable=False)
     spray_stamped_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
+    # Canonical technical requirements; legacy spray_* remains execution metadata.
+    surface_treatment: Mapped[Optional[dict]] = mapped_column(JSON, nullable=True)
+
     # Part identity
     vehicle_model: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
 

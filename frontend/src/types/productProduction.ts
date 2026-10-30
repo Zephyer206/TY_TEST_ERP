@@ -1,4 +1,5 @@
 import type { ProductBox, QrCapability, QrId } from './productBox'
+import type {CoilException} from './coilException'
 
 export interface ProductionContext {
   id: QrId; machine_id: number; state_id: QrId | null; order_id: number | null
@@ -29,6 +30,7 @@ export interface ProductionState {
   production_status: 'pending' | 'in_progress' | 'completed'; version: number
   completed_at: string | null; completed_by: number | null; blocked: boolean
   allowed_actions: Array<'quantity' | 'complete' | 'bind' | 'correct'>; boxes: ProductionBox[]
+  can_check_material:boolean;exceptions:CoilException[]
 }
 export interface ProductionSelection { context: ProductionContext; state: ProductionState }
 export interface MachineScan {

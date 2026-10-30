@@ -1,0 +1,36 @@
+{
+  "pool_count": 0,
+  "confirmed_items": 0,
+  "total_print_count": 0,
+  "boxes": [],
+  "material_batches": [
+    {
+      "id": 9001,
+      "batch_no": "OLD-DATE-20010101",
+      "qr_code": "MAT:9001:20010101",
+      "current_weight": 50.0,
+      "parent_batch_id": null
+    },
+    {
+      "id": 2,
+      "batch_no": "MAT-20261024-19a2fe93353c4633-CH01",
+      "qr_code": "MAT:2:20261024",
+      "current_weight": 30.0,
+      "parent_batch_id": 1
+    },
+    {
+      "id": 1,
+      "batch_no": "MAT-20261024-19a2fe93353c4633",
+      "qr_code": "MAT:1:20261024",
+      "current_weight": 50.0,
+      "parent_batch_id": null
+    },
+    {
+      "id": 3,
+      "batch_no": "MAT-20261024-19a2fe93353c4633-CH02",
+      "qr_code": "MAT:3:20261024",
+      "current_weight": 20.0,
+      "parent_batch_id": 1
+    }
+  ]
+}

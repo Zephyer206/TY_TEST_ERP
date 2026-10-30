@@ -66,7 +66,8 @@ async def audit_event(
             if old_val != new_val:
                 changes.append(f"{key}: {old_val} -> {new_val}")
         if changes:
-            changes_summary = "; ".join(changes[:10])  # Limit to 10 changes
+            # AuditLog.changes_summary is VARCHAR(500); full values remain in JSON.
+            changes_summary = "; ".join(changes[:10])[:500]
 
     audit_log = AuditLog(
         action=action,

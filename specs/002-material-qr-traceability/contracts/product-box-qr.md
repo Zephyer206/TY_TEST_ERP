@@ -1,6 +1,6 @@
 # 产品框二维码 API 契约
 
-**实施基准**：2026-10-27。按已有三条业务确认及可评审默认方案整理；没有新增业务回答。池、打印、绑定、扫描、元数据、配置读写、机台生产、工艺推进/追溯、拆框和能力维护共22个端点已在代码中挂载，其余9项仍为设计清单；基线32个旧QR端点已完成登记和typed wrapper映射。业务库尚未迁移，尚未上线。
+**实施基准**：2026-10-28。按已有三条业务确认及可评审默认方案整理；没有新增业务回答。池、打印、绑定、扫描、元数据、配置读写、机台生产、工艺推进/追溯、拆框、规格异常、站内通知和能力维护共31个端点已在代码中挂载；基线32个旧QR端点已完成登记和typed wrapper映射。业务库尚未迁移，尚未上线。
 
 路径相对 /api/v1；API 清单和请求字段如下。所有端点要求认证，服务端逐次检查部门、等级、显式能力、订单范围、实体状态及需要时的扫码上下文；完整规则见 [permissions.md](./permissions.md)。低等级、其他订单业务及无上下文的管理账号不能绕过规则。
 
@@ -25,7 +25,7 @@
 | `productQrPool.printData` | POST | `/product-qr-pool/print-data` | {item_ids,template_code?,idempotency_key}；发放数据和快照，不确认物理成功 |
 | `productQrPool.confirmPrint` | POST | `/product-qr-pool/print-confirmations` | {print_job_id,confirmed_item_ids,idempotency_key}；仅申请人确认，每项每作业一次 |
 | `productBoxes.bind` | POST | `/product-boxes/bind` | {qr_payload,order_product_id,context_id?,idempotency_key}；一次绑定，数量初始0，配置推导订单/件号/产品/路线 |
-| `productBoxes.scan` | POST | `/product-boxes/scan` | {qr_payload,split_parent_id?}；验证完整存储身份；未绑定返回身份和允许绑定动作，已绑定只返回当前框及允许动作 |
+| `productBoxes.scan` | POST | `/product-boxes/scan` | {qr_payload,split_parent_id?,context_id?}；context_id仅在操作工目标选单中触发服务端预授权或读取匹配的人工待确认项，不能与split_parent_id同用；验证完整存储身份；未绑定返回身份和允许绑定动作，已绑定只返回当前框及允许动作 |
 | `productBoxes.trace` | GET | `/product-boxes/{box_id}/trace` | 当前框/订单/路线、工艺数量/原料祖先链、最近业务事件及父子/异常/转换；page/page_size分页关联事实，按账号范围 |
 | `productBoxes.events` | GET | `/product-boxes/{box_id}/events` | page_size/before_id；按occurred_at/id倒序游标查询事实，含操作者、前后量及来源 |
 | `productBoxes.saveQuantity` | POST | `/product-boxes/{box_id}/quantities` | {context_id,current_qty,material_batch_id?,expected_version,state_version,idempotency_key}；覆盖当前值；首次可记录真实材料来源 |
@@ -45,7 +45,7 @@
 | `productConversions.create` | POST | `/product-conversions` | {box_id,target_order_product_id,proposed_qty?,expected_version,idempotency_key}；人工发起仅manual，预授权由服务端内部触发 |
 | `productConversions.confirm` | POST | `/product-conversions/{conversion_id}/confirm` | {context_id,actual_qty,confirm:true,child_qr_payload?,expected_version,conversion_version,idempotency_key}；仅当前操作工实物确认 |
 | `productConversions.cancel` | POST | `/product-conversions/{conversion_id}/cancel` | {context_id?,conversion_version,reason?,idempotency_key}；仅待确认，确认/取消竞争只允许一个终态 |
-| `notifications.list` | GET | `/notifications` | delivery_status/unread_only；仅本人，异常状态与投递/已读状态分列 |
+| `notifications.list` | GET | `/notifications` | delivery_status/unread_only/page/page_size；仅本人及当前订单范围，返回can_manage_deliveries，异常状态与投递/已读状态分列 |
 | `qrAdmin.capabilities` | GET | `/qr-admin/capabilities` | LV4+qr.admin，授权维护所需字段 |
 | `qrAdmin.saveCapabilities` | PUT | `/qr-admin/capabilities/{user_id}` | {capabilities,expected_version,idempotency_key}；LV4+qr.admin，授权/撤销保留审计 |
 | `qrAdmin.deliveries` | GET | `/qr-admin/notification-deliveries` | LV4+qr.admin，失败投递及安全错误码 |
@@ -53,7 +53,7 @@
 
 ## 身份、绑定和打印
 
-已实现的22个key为 `productQrPool.list/generateBatch/reprint/printData/confirmPrint`、`productBoxes.bind/scan/metadata/saveQuantity/correctQuantity/advance/trace/events/split`、`production.qrContext/saveQrContext/allocateOutput`、`machines.scanProduction/selectProduction/productionComplete`、`qrAdmin.capabilities/saveCapabilities`。严格请求/响应定义见 `backend/app/schemas/product_box.py` 和 `frontend/src/types/productBox.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`：新领域bigint ID输出十进制字符串，引用既有订单/用户/件号的int4 ID仍输出整数；请求可用规范正整数或十进制字符串传新ID，拒绝bool、浮点和前导零。数量必须为整数，请求禁止额外字段，操作者只能取有效登录账号，幂等键为8～120位字母数字及 `._:-`。生成、打印数据、补打、绑定、选单和拆框返回201，其余已实现端点成功响应返回200。
+已实现的31个key为 `productQrPool.list/generateBatch/reprint/printData/confirmPrint`、`productBoxes.bind/scan/metadata/saveQuantity/correctQuantity/advance/trace/events/split`、`production.qrContext/saveQrContext/allocateOutput`、`machines.scanProduction/selectProduction/productionComplete`、`qrAdmin.capabilities/saveCapabilities/deliveries/retryDelivery`、`coilSpecExceptions.create/confirm/resume`、`notifications.list`、`productConversions.create/confirm/cancel`。严格请求/响应定义见 `backend/app/schemas/product_box.py` 和 `frontend/src/types/productBox.ts`、`productProduction.ts`、`productTrace.ts`、`productSplit.ts`、`coilException.ts`、`productConversion.ts`：新领域bigint ID输出十进制字符串，引用既有订单/用户/件号的int4 ID仍输出整数；请求可用规范正整数或十进制字符串传新ID，拒绝bool、浮点和前导零。数量必须为整数，请求禁止额外字段，操作者只能取有效登录账号，幂等键为8～120位字母数字及 `._:-`。生成、打印数据、补打、绑定、选单、拆框和转换创建返回201，其余已实现端点成功响应返回200。
 
 PFB:v1:<pool_item_id>:<public_code> 完整校验；编号PFB-YYYYMMDD-至少六位数据库ID，Asia/Hong_Kong创建日持久化。身份/编号唯一且不可修改，绑定最多一次；池外404、再次绑定409。人工检索只解析已有身份，不能绕过池、权限及绑定校验。直接绑定的实际产品必须是订单主件/配对件，产品仅B/C，禁止A。
 
@@ -89,7 +89,7 @@ order_id=production_plans.id，明确负责人和实际产品/路线/单机目�
 
 已实现advance的context_id指向目标机台、订单产品和下一步骤。当前框须active且已有正数工艺数量；来源和目标暂停时均拒绝。允许上一机台工艺已经完成，其关闭的上下文不会阻止新的目标上下文流转。事务锁产品需求→按ID排序状态→框，校验框/目标状态版本，新增目标BoxProcessQuantity的input_qty与上一工艺出量快照，继承material_batch_id/source_quantity_id。首次产出工艺仍只在保存数量时初始化订单用途；不能在同一道工艺的其他机台重复建立来源。
 
-数量首次保存可提供有效material_batch_id（既有int4整数）；旧调用可省略。已有工艺来源不可替换，后续工艺只继承。此关联不扣原材料重量，不代替US6规格比较。trace返回missing_material_source及material_lineage_incomplete，历史缺失、循环、断链不得伪造完整来源；历史无物料主数据/余重允许null。
+数量首次保存可提供有效material_batch_id（既有int4整数）；旧调用可省略。已有工艺来源不可替换，后续工艺只继承。此关联不扣原材料重量；已知材料保存/完成/推进同时校验US6规格决定。旧接口省略来源仍明确未知，现代生产页面新增正数登记须先核对实际卷料。trace返回missing_material_source及material_lineage_incomplete，历史缺失、循环、断链不得伪造完整来源；历史无物料主数据/余重允许null。
 
 scan额外返回latest_event（最近非scan业务事件）；events保留包括scan在内的全部事实，按(occurred_at,id)倒序、before_id定位同框游标，每页1～100默认50。trace初始含最近5条事件及next_cursor，其他历史通过events继续读取；quantities/relations/exceptions/conversions使用page/page_size，均返回总数。跨订单父子关系仅在两边订单均可见时返回；不通过快照泄漏隐藏订单。
 
@@ -127,3 +127,20 @@ scan额外返回latest_event（最近非scan业务事件）；events保留包括
 关键写入按操作者/动作/实体/请求键唯一持久化内容摘要和结果，同事务提交；同键同请求重放已提交结果，同键异内容409，未完成不能当成功。重放前仍重新检查当前权限；先按用户ID排序取得权限事务锁，再取得请求锁，多实体同类锁按ID排序，需求→状态→框→池项→分配的顺序全域一致。新时间为UTC毫秒及带偏移ISO8601，前端按Asia/Hong_Kong展示。日志只记安全错误码，不输出原始未知扫码、票据、认证头或连接设置。
 
 现有前端认证绕过配置仍是上线前置整改项；本轮没有修改真实账号授权或全局认证开关。浏览器和API验收使用独立数据库、合成账号及真实JWT；页面软件行为、A4 PDF、系统打印对话框和实物扫码分别记录，不以客户端接口测试或PDF代替物理打印验收。
+
+2026-10-28实施细节：continue_production=false仅预览比较，不创建异常、收件组、outbox或修改数量；匹配时无需异常，不匹配须显式true才记录并允许继续。预览与提交使用不同幂等键。订单要求来自ProductionPlan的material_name_snapshot/twp_thickness/twp_width，实际规格来自Material名称及MaterialBatch自身厚宽（含子卷）；名称trim/casefold，尺寸Decimal精确比较，无容差和舍入放行，0.8004不等于0.800。缺失、非正或非有限规格作为配置冲突拒绝；历史不完整快照明确spec_incomplete，不能空比较后解除暂停。
+
+确认使用异常版本，三种决定不预选；pause/reconfirm_coil阻断对应状态，其他订单/工艺不受牵连。恢复须理由及符合原异常expected_spec的复核卷料，不用后来变更的订单要求替代，保留原resolution、确认人和全部审计。新决定使状态版本及完成意向失效；并发确认只接受一个决定。
+
+通知读取同时限制本人和当前订单范围。工作器每次投递复核当前权限，收件权限撤销时记录安全失败码；持久化站内任务才标sent。五次自动尝试及1、5、15、30分钟退避由服务测试验证；LV4+qr.admin人工重试建立新retry_batch，旧尝试保留。业务确认不依赖通知成功，通知成功也不确认业务。仅记录安全错误码，不保存原始异常信息。
+
+工作器须在已完成迁移且启用正常认证的目标环境显式启动：`python -m app.workers.qr_notifications`，默认15秒轮询，可用`--once`或`--interval-seconds 1..30`；启动检查结构，AUTH_DISABLED时拒绝。普通API应用不自动启动发送器。本批仅在自有隔离验收库运行1秒轮询，未部署业务环境工作器；本地首投递2.381～2.981秒不代表生产SLA。
+
+
+2026-10-28 US7已实现：转换由独立product_conversion_service执行，人工创建仅supervise（生产主管或本单负责人），调用方不能提交trigger_type/授权人/操作者。目标须为同一订单显式conversion_source_id关联的另一B/C产品，两方向均支持；直接产品与零需求转换目标互相转换不新占需求。来源框须正数有效当前量、有产出用途，来源与目标暂停均拒绝。
+
+人工目标工艺取已完成来源步骤在目标路线中的共同有序前缀末端，不跳过目标前置步骤；操作工须选择目标产品、目标固定路线/步骤和有效机台上下文。转换目标可建立生产上下文，但没有直接绑定动作。差异工艺扫描由既有productBoxes.scan携带context_id触发，重新核对服务端授权人/时间、源/目标路线版本和精确差异步骤；只创建pending_operator_confirmation，重扫复用同一待确认记录。确认时再次核对预授权，撤销或版本变化拒绝。
+
+确认检查box expected_version和conversion_version，实际正整数不超过当前量；全量不接收子标签、保留原框身份。部分核对unused子标签后原子新建目标产品子框、分割当前余量及用途（先拆订单用途、再备货），origin_allocation_id保留来源；用途仍计入原订单的制造来源配置，转换目标target_qty=0不增加新需求。材料继承、固定路线、事件/关系/审计/一次绑定和完成意向失效同事务。
+
+全量转出将原工艺当前余量置0，转出前量、原产品/路线/来源在转换事件快照保留，避免旧/新产品合计重复。反向转换如回到曾有数量的工艺，更新该工艺当前余额并保留原入量快照及追加事件；当前量按框的产品/路线/步骤定位，不按最大数量记录ID误认旧工艺。参与转换的来源及入口余额禁止直接覆盖/历史更正，后续合法工艺仍可登记，不重复初始化产出。取消仅改待确认记录，负责人或匹配目标上下文操作工可取消，确认/取消竞争只有一个终态；管理等级不能代理实物确认。

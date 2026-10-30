@@ -146,3 +146,7 @@ qr_scan_logs现有PostgreSQL scantype/scanoperation先核对实际标签，再�
 首次来源未进入下游时拆框，同事务减少父ProductBox、首次BoxProcessQuantity.current_qty及ProductOutputAllocation余额；同单/跨单子份额均创建自身来源量和分配，origin_allocation_id指向父分配。原始制造数量由不可变qty_save和split快照追溯，不能将各份额再相加为新增制造产量。子入量保存拆出量，原料来源继承；重复拆分保留分配链，零父框保留绑定并置empty。锁需求/状态/父框/子池项/用途，expected_version、allocation_version及跨单target_state_version全部校验。
 
 首次来源拆后禁止覆盖或历史更正，防止重复恢复已拆数量；下一工艺新量仍可覆盖，最新后续工艺更正更新当前框，保留来源分配、兄弟框和入量。trace派生双方当前余量，relation.source_snapshot不变；跨单双方订单不可见时不显示关系和快照。
+
+2026-10-28 US6服务/UI已实现：异常保存精确规格快照和活动条件去重摘要；状态版本、完成意向、异常/收件组/outbox/事件在同事务更新。恢复保留原resolution并记录released_by/at、reason及复核材料；历史快照不完整不能视作匹配。投递使用当前权限锁及outbox锁，站内任务唯一来源，五次尝试和人工retry_batch历史追加；不把发送成功写成业务confirmed。本批没有新增业务库DDL。
+
+2026-10-28 US7已实现：ProductConversionRecord保留人工/预授权、建议/实际数量、取消/确认人和版本。全量框身份及原单不变，部分通过partial_conversion关系及唯一子池绑定建立另一产品。原工艺当前余额随全量转出归零，转换前数量/产品/路线/工艺/材料/用途存追加事件快照；重复反向转换复用目标工艺当前余额而不删除历史。部分用途保持原order_product_id制造来源并按origin链分割，目标零需求不造成第二份产出。转换入口与来源数量锁定，合法下一步继承来源；无新增业务库DDL。

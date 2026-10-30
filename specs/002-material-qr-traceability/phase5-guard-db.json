@@ -1,0 +1,79 @@
+{
+  "pool_count": 2,
+  "confirmed_items": 0,
+  "total_print_count": 0,
+  "boxes": [
+    {
+      "id": 1,
+      "order_id": 401,
+      "bound_by": 101,
+      "current_qty": 25,
+      "version": 5
+    },
+    {
+      "id": 2,
+      "order_id": 402,
+      "bound_by": 101,
+      "current_qty": 0,
+      "version": 1
+    }
+  ],
+  "production_states": [
+    {
+      "id": 1002,
+      "production_status": "pending",
+      "version": 1,
+      "completed_by": null
+    },
+    {
+      "id": 1001,
+      "production_status": "completed",
+      "version": 3,
+      "completed_by": 101
+    },
+    {
+      "id": 1003,
+      "production_status": "in_progress",
+      "version": 3,
+      "completed_by": null
+    },
+    {
+      "id": 1004,
+      "production_status": "in_progress",
+      "version": 2,
+      "completed_by": null
+    }
+  ],
+  "allocations": [
+    {
+      "source_quantity_id": 1,
+      "available_qty": 30,
+      "order_qty": 30,
+      "stock_qty": 0,
+      "assigned_by": 101
+    }
+  ],
+  "material_batches": [
+    {
+      "id": 9001,
+      "batch_no": "OLD-DATE-20010101",
+      "qr_code": "MAT:9001:20010101",
+      "current_weight": 50.0,
+      "parent_batch_id": null
+    },
+    {
+      "id": 9501,
+      "batch_no": "TRACE-MOTHER",
+      "qr_code": "MAT:9501:20261026",
+      "current_weight": 70.0,
+      "parent_batch_id": null
+    },
+    {
+      "id": 9502,
+      "batch_no": "TRACE-CHILD",
+      "qr_code": "MAT:9502:20261026",
+      "current_weight": 30.0,
+      "parent_batch_id": 9501
+    }
+  ]
+}

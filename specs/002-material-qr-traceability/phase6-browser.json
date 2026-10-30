@@ -1,0 +1,96 @@
+{
+  "status": "PASS",
+  "record_type": "Observed real Vue browser acceptance; this record does not control a browser",
+  "session": "in-app Chromium browser 2, tab 4",
+  "urls": [
+    "http://127.0.0.1:18125/product-box-trace",
+    "http://127.0.0.1:18125/product-box-production"
+  ],
+  "identities": [
+    101,
+    102,
+    103,
+    104,
+    105
+  ],
+  "synthetic_jwt_in_memory_only": true,
+  "checks": [
+    {
+      "key": "business_hierarchy",
+      "status": "PASS",
+      "observed": "订单、产品、工艺、数量为主，来源快照及标签编号折叠辅助"
+    },
+    {
+      "key": "cancel",
+      "status": "PASS",
+      "observed": "100件父框核对子标签后取消，DB仍1框/100件、子标签unused"
+    },
+    {
+      "key": "same_order",
+      "status": "PASS",
+      "observed": "100拆30后父70子30，同单用途及材料继承"
+    },
+    {
+      "key": "repeated_split",
+      "status": "PASS",
+      "observed": "父70再拆10后父60，已拆正余量可继续拆"
+    },
+    {
+      "key": "cross_order",
+      "status": "PASS",
+      "observed": "主管明确选403/CUT/TEST-M601，拆20后父40属401、子20属403"
+    },
+    {
+      "key": "zero_balance",
+      "status": "PASS",
+      "observed": "10件子框全拆后原框0/empty，标签与来源保留、无拆框入口"
+    },
+    {
+      "key": "overdraw",
+      "status": "PASS",
+      "observed": "10件框输入11件，确认按钮不可用"
+    },
+    {
+      "key": "invalid_child",
+      "status": "PASS",
+      "observed": "已绑定标签提示已使用，池外标签提示不在系统池中，均不可确认"
+    },
+    {
+      "key": "changed_child",
+      "status": "PASS",
+      "observed": "核对后修改子标签立即清空核对结果并禁用确认"
+    },
+    {
+      "key": "source_readonly",
+      "status": "PASS",
+      "observed": "工人选401/CUT后父框首次数量只读，没有保存入口"
+    },
+    {
+      "key": "continued_production",
+      "status": "PASS",
+      "observed": "工人明确选择401/FINISH，父40及子30分别进入，合计70且材料来源继承"
+    },
+    {
+      "key": "zero_handoff",
+      "status": "PASS",
+      "observed": "0件框提示无余量且进入所选工艺按钮禁用"
+    },
+    {
+      "key": "scope",
+      "status": "PASS",
+      "observed": "工人无拆框入口，其他订单负责人105查询401被拒绝"
+    },
+    {
+      "key": "owner_preview",
+      "status": "PASS",
+      "observed": "源单负责人104可在子框5拆框范围预览unused标签6，未选目标不能提交，取消不绑定"
+    },
+    {
+      "key": "relation_navigation",
+      "status": "PASS",
+      "observed": "父子与跨单导航显示正确订单、余量和来源快照，导航后旧扫码输入清空"
+    }
+  ],
+  "physical_print_and_scanner": "NOT_RUN",
+  "stock_mixed_and_concurrency": "Automated PostgreSQL evidence, not browser claims"
+}

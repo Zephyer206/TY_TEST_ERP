@@ -55,7 +55,8 @@
       <section class="quote-section pricing-cost-section">
         <div class="section-heading"><strong>报价费用</strong><span>根据本次报价调整各项费用，作为最终报价的成本与利润组成</span></div>
         <div class="pricing-cost-grid">
-          <label><span>表面处理 (元/件)</span><el-input-number v-model="draft.surfaceTreatmentFee" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
+          <label><span>共用表面收费规则</span><el-select v-model="sharedSurfaceRuleId" clearable placeholder="留空按本次报价手填" @change="changeSurfaceRule"><el-option v-for="rule in sharedSurfaceRules" :key="rule.id" :value="rule.id" :label="`${rule.name} · ${rule.rate} ${rule.unit}`" /></el-select></label>
+          <label><span>{{sharedSurfaceRuleId ? '本次报价手填费用（已由规则替代）' : '表面处理 (元/件)'}}</span><el-input-number :key="sharedSurfaceRuleId || 'manual-surface'" v-model="draft.surfaceTreatmentFee" :disabled="Boolean(sharedSurfaceRuleId)" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
           <label><span>全检包装 (元/件)</span><el-input-number v-model="draft.inspectionFee" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
           <label><span>运费 (元/件)</span><el-input-number v-model="draft.freightFee" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
           <label><span>管理费用 (元/件)</span><el-input-number v-model="draft.managementFee" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:100%" /></label>
@@ -68,6 +69,7 @@
         <el-table :data="draft.parts" size="small" border>
           <el-table-column label="零件号" min-width="150"><template #default="{ row }"><span class="mono">{{ row.customerPartNo }}</span></template></el-table-column>
           <el-table-column prop="name" label="零件名称" min-width="150" />
+          <el-table-column label="表面费用 (元/件)" width="140"><template #default="{row}">{{formatCurrency(surfaceFeeOf(row))}}</template></el-table-column>
           <el-table-column label="技术资料" min-width="170"><template #default="{ row }"><span>{{ row.material || '-' }}</span><small>{{ row.thickness || '-' }}mm · {{ row.cavityCount || '-' }}穴<span v-if="row.pairLabel"> · 左右件</span></small></template></el-table-column>
           <el-table-column label="产品报价 (元/件)" width="180"><template #default="{ row }"><el-input-number v-model="row.price" :aria-label="`${row.customerPartNo} 产品报价 (元/件)`" :min="0" :precision="4" :formatter="formatInputNumber" controls-position="right" style="width:150px" /></template></el-table-column>
           <el-table-column label="年用量" width="110"><template #default="{ row }"><el-input-number v-model="row.annualUsage" :min="0" :precision="0" controls-position="right" style="width:100px" /></template></el-table-column>
@@ -94,17 +96,22 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch, onBeforeUnmount } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete, Edit, Plus, Refresh } from '@element-plus/icons-vue'
 import { formatQuotePress, mapQuoteGroup, quotePressNote, type QuoteGroup } from './data'
 import { materialsApi } from '@/api/dictionary'
 import { quoteGroupsApi } from '@/api/quoteGroups'
+import { costingApi } from '@/api/costing'
+import type { ChargeRule } from '@/types/costing'
 
 const props = defineProps<{ modelValue: boolean; group: QuoteGroup | null }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean]; saved: [group: QuoteGroup] }>()
 const quotePaths: QuoteGroup['path'][] = ['待确定方案', '仅打样', '先打样后开量产模具', '直接开量产模具']
 const draft = ref<QuoteGroup | null>(null)
+const sharedSurfaceRuleId = ref<number>()
+const sharedSurfaceRules = ref<ChargeRule[]>([])
+const changeSurfaceRule = () => { if (draft.value) draft.value.surfaceRuleSnapshot = null }
 const saving = ref(false)
 const syncingPress = ref(false)
 const canSyncPress = computed(() => Boolean(props.group?.backendId) && !['已提交审批', '已审批', '已定点'].includes(props.group?.status || ''))
@@ -198,6 +205,7 @@ const formatUtilization = (value: string | number | undefined) => {
   return formatted ? `${formatted}%` : '-'
 }
 const parseNumber = (value: string | number | undefined) => {
+  if (value === undefined || value === null || value === '') return undefined
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : undefined
 }
@@ -209,18 +217,48 @@ const materialWeight = (part: QuoteGroup['parts'][number], mode: 'gross' | 'net'
   const utilization = parseNumber(part.utilization)
   if ([thickness, width, pitch, density].some(value => value == null) || !thickness || !width || !pitch || !density) return undefined
   const gross = thickness * width * pitch * density / 1000
-  if (mode === 'gross' || utilization == null) return gross
+  if (mode === 'gross') return gross
+  if (utilization == null) return undefined
   return gross * utilization / 100
 }
+const sharedMaterialResults = ref<Record<number, {material: {amount: string | null}; surface_amount: string | null}>>({})
 const materialCost = (part: QuoteGroup['parts'][number]) => {
-  const grossWeight = materialWeight(part, 'gross')
-  const netWeight = materialWeight(part, 'net')
-  const unitPrice = parseNumber(draft.value?.materialUnitPrice)
-  const scrapPrice = parseNumber(draft.value?.materialScrapPrice)
-  if (grossWeight == null || netWeight == null || unitPrice == null) return undefined
-  const scrapWeight = Math.max(grossWeight - netWeight, 0)
-  return (grossWeight * unitPrice - scrapWeight * (scrapPrice || 0)) / 1000
+  const value = sharedMaterialResults.value[part.id]?.material.amount
+  return value == null ? undefined : Number(value)
 }
+const surfaceFeeOf = (part: QuoteGroup['parts'][number]) => {
+  const value = sharedMaterialResults.value[part.id]?.surface_amount
+  return value == null ? undefined : Number(value)
+}
+let materialPreviewTimer: ReturnType<typeof setTimeout> | undefined
+let materialPreviewGeneration = 0
+watch(() => [props.modelValue, draft.value?.materialDensity, draft.value?.materialUnitPrice, sharedSurfaceRuleId.value,
+  draft.value?.surfaceRuleSnapshot, draft.value?.surfaceTreatmentFee,
+  draft.value?.materialScrapPrice, draft.value?.parts.map(p => [p.id,p.thickness,p.width,p.pitch,p.utilization])], () => {
+  clearTimeout(materialPreviewTimer)
+  const generation = ++materialPreviewGeneration
+  sharedMaterialResults.value = {}
+  if (!props.modelValue || !draft.value) return
+  materialPreviewTimer = setTimeout(async () => {
+    const quote = draft.value
+    if (!quote) return
+    try {
+      const rows = await Promise.all(quote.parts.map(async part => {
+        const result = await costingApi.quotationPreview({material:{thickness:parseNumber(part.thickness)??null,
+          width:parseNumber(part.width)??null,pitch:parseNumber(part.pitch)??null,
+          density:quote.materialDensity??null,material_price:quote.materialUnitPrice??null,
+          scrap_price:quote.materialScrapPrice??null,utilization_pct:parseNumber(part.utilization)??null},
+          surface_fee:quote.surfaceTreatmentFee??null,surface_rule_id:sharedSurfaceRuleId.value??null,
+          surface_rule_snapshot:quote.surfaceRuleSnapshot??null})
+        return [part.id,result] as const
+      }))
+      if (generation === materialPreviewGeneration) sharedMaterialResults.value = Object.fromEntries(rows)
+    } catch {
+      if (generation === materialPreviewGeneration) sharedMaterialResults.value = {}
+    }
+  }, 200)
+}, {deep:true})
+onBeforeUnmount(() => { clearTimeout(materialPreviewTimer); materialPreviewGeneration++ })
 const formatWeight = (value: number | undefined) => value == null ? '-' : formatTechnicalNumber(value)
 const formatCurrency = (value: number | undefined) => value == null ? '-' : `¥${formatTechnicalNumber(value)}`
 const materialLabel = (item: MaterialRecord) => {
@@ -344,6 +382,8 @@ const removeSelectedMaterial = async () => {
 watch(() => [props.group, props.modelValue], () => {
   if (props.modelValue && props.group) {
     draft.value = cloneGroup(props.group)
+    sharedSurfaceRuleId.value = draft.value.surfaceRuleSnapshot?.id
+    void costingApi.catalog().then(result => { sharedSurfaceRules.value = result.treatments.filter(r => (r.calc_mode==='manual'&&r.unit==='元/件')||(r.calc_mode==='net_weight'&&r.unit==='元/kg')) }).catch(() => { sharedSurfaceRules.value=[] })
     toolingDiscount.value = discountForToolingPrice(draft.value.toolingCost)
     draft.value.materialDensity = draft.value.materialDensity == null ? undefined : Number(draft.value.materialDensity)
     draft.value.materialUnitPrice = Number(draft.value.materialUnitPrice) || 0
@@ -363,11 +403,13 @@ const annualTotal = computed(() => draft.value?.parts.reduce((sum, part) => sum 
 const additionalCost = computed(() => {
   const quote = draft.value
   if (!quote) return 0
-  return Number(quote.surfaceTreatmentFee || 0) + Number(quote.inspectionFee || 0) + Number(quote.packagingFee || 0) + Number(quote.freightFee || 0) + Number(quote.managementFee || 0)
+  const surface = quote.parts[0] ? surfaceFeeOf(quote.parts[0]) : undefined
+  if (surface == null) return undefined
+  return surface + Number(quote.inspectionFee || 0) + Number(quote.packagingFee || 0) + Number(quote.freightFee || 0) + Number(quote.managementFee || 0)
 })
 const costSubtotal = computed(() => {
-  const material = draft.value?.parts.length ? materialCost(draft.value.parts[0]) || 0 : 0
-  return material + additionalCost.value
+  const material = draft.value?.parts.length ? materialCost(draft.value.parts[0]) : undefined
+  return material == null || additionalCost.value == null ? undefined : material + additionalCost.value
 })
 const save = async () => {
   if (syncingPress.value || saving.value) return
@@ -389,6 +431,8 @@ const save = async () => {
       material_unit_price: Number(draft.value.materialUnitPrice || 0),
       material_scrap_price: draft.value.materialScrapPrice ?? null,
       surface_treatment_fee: Number(draft.value.surfaceTreatmentFee || 0),
+      surface_rule_id: sharedSurfaceRuleId.value ?? null,
+      refresh_surface_rule: Boolean(sharedSurfaceRuleId.value && !draft.value.surfaceRuleSnapshot),
       inspection_fee: Number(draft.value.inspectionFee || 0),
       packaging_fee: Number(draft.value.packagingFee || 0),
       freight_fee: Number(draft.value.freightFee || 0),

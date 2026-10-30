@@ -32,6 +32,7 @@ from .product_box import (
     NotificationOutbox, QrNotification, QrNotificationAttempt,
 )
 from .customer import Customer
+from .costing import CostingTask, CostingItem, CostingRevision
 from .customer_inquiry import CustomerInquiry, CustomerInquiryAttachment
 from .quote_group import QuoteGroup, QuoteGroupItem
 from .die import Die

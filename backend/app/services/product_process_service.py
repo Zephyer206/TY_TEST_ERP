@@ -30,8 +30,9 @@ async def advance(db, actor, *, box_id, context_id, expected_version, state_vers
     async def operation():
         # Product demand lock serializes all quantities/handoffs before state/box locks.
         await lock_rows(db, order_products=[product.id])
-        previous = await db.scalar(select(m.BoxProcessQuantity).where(m.BoxProcessQuantity.box_id == box_id)
-            .order_by(m.BoxProcessQuantity.id.desc()).limit(1))
+        from app.services.product_conversion_service import current_quantity
+        candidate = await db.get(m.ProductBox, box_id, populate_existing=True)
+        previous = await current_quantity(db, candidate) if candidate else None
         state_ids = [target.id] + ([previous.state_id] if previous else [])
         locked = await lock_rows(db, states=state_ids, boxes=[box_id])
         box, state = locked["boxes"][box_id], locked["states"][target.id]
@@ -54,6 +55,8 @@ async def advance(db, actor, *, box_id, context_id, expected_version, state_vers
                 or previous.current_qty != box.current_qty or await production.paused(db, source_state.id)
                 or await production.paused(db, state.id)):
             production.conflict("当前工艺数量或暂停状态已变化，请重新核对")
+        from app.services.coil_exception_service import ensure_material_decision
+        await ensure_material_decision(db, state, product.order_id, previous.material_batch_id)
         machine = await db.get(Machine, assignment.machine_id)
         step = route.steps_json[index + 1]
         if (not machine or machine.is_deleted or (machine.id not in step.get("machine_ids", [])
@@ -157,6 +160,7 @@ async def material_lineage(db, ids):
 async def trace_box(db, actor, *, box_id, page=1, page_size=50):
     from app.services.product_split_service import split_options
     box = await scoped_box(db, actor, box_id)
+    from app.services.product_conversion_service import options as conversion_options
     if type(page) is not int or page < 1 or type(page_size) is not int or not 1 <= page_size <= 100:
         raise QrError(400, "INVALID_PAGE", "追溯分页参数无效")
     pool = await db.get(m.ProductQrPoolItem, box.qr_pool_item_id)
@@ -186,7 +190,8 @@ async def trace_box(db, actor, *, box_id, page=1, page_size=50):
         ("exceptions", m.CoilSpecException, (m.CoilSpecException.product_box_id == box_id) | m.CoilSpecException.state_id.in_(
             select(m.BoxProcessQuantity.state_id).where(m.BoxProcessQuantity.box_id == box_id)),
          ("status", "resolution", "material_batch_id", "created_by", "confirmed_by", "remark")),
-        ("conversions", m.ProductConversionRecord, m.ProductConversionRecord.product_box_id == box_id,
+        ("conversions", m.ProductConversionRecord, (m.ProductConversionRecord.product_box_id == box_id) | m.ProductConversionRecord.relation_id.in_(
+            select(m.ProductBoxRelation.id).where(m.ProductBoxRelation.child_box_id == box_id)),
          ("source_product_code", "target_product_code", "confirmation_status", "actual_qty", "created_by", "confirmed_by", "remark")),
     ):
         rows = (await db.scalars(select(model).where(predicate).order_by(model.id)
@@ -206,4 +211,5 @@ async def trace_box(db, actor, *, box_id, page=1, page_size=50):
         "quantities": quantities, "quantities_total": await db.scalar(select(func.count()).select_from(m.BoxProcessQuantity).where(m.BoxProcessQuantity.box_id == box_id)),
         "materials": materials, "missing_material_source": not material_ids, "material_lineage_incomplete": incomplete,
         "latest_event": await latest_event(db, box_id), "events": await events(db, actor, box_id=box_id, page_size=5),
-        "page": page, "page_size": page_size, "split": await split_options(db, actor, box, page=page, page_size=page_size), **collections}
+        "page": page, "page_size": page_size, "split": await split_options(db, actor, box, page=page, page_size=page_size),
+        "conversion": await conversion_options(db, actor, box), **collections}

@@ -1,0 +1,164 @@
+{
+  "boxes": [
+    {
+      "id": 1,
+      "box_no": "PFB-20261026-000001",
+      "order_id": 401,
+      "current_process_code": "PACK",
+      "next_process_code": null,
+      "current_qty": 25,
+      "version": 5,
+      "bound_by": 101
+    },
+    {
+      "id": 2,
+      "box_no": "PFB-20261026-000002",
+      "order_id": 402,
+      "current_process_code": "CUT",
+      "next_process_code": null,
+      "current_qty": 7,
+      "version": 2,
+      "bound_by": 101
+    }
+  ],
+  "quantities": [
+    {
+      "id": 1,
+      "state_id": 1001,
+      "box_id": 1,
+      "input_qty": 0,
+      "current_qty": 30,
+      "source_quantity_id": 1,
+      "material_batch_id": 9502,
+      "updated_by": 101
+    },
+    {
+      "id": 2,
+      "state_id": 1003,
+      "box_id": 1,
+      "input_qty": 30,
+      "current_qty": 25,
+      "source_quantity_id": 1,
+      "material_batch_id": 9502,
+      "updated_by": 101
+    },
+    {
+      "id": 3,
+      "state_id": 1004,
+      "box_id": 1,
+      "input_qty": 25,
+      "current_qty": 25,
+      "source_quantity_id": 1,
+      "material_batch_id": 9502,
+      "updated_by": 101
+    },
+    {
+      "id": 4,
+      "state_id": 1002,
+      "box_id": 2,
+      "input_qty": 0,
+      "current_qty": 7,
+      "source_quantity_id": 4,
+      "material_batch_id": 9501,
+      "updated_by": 101
+    }
+  ],
+  "allocations": [
+    {
+      "source_quantity_id": 1,
+      "box_id": 1,
+      "available_qty": 30,
+      "order_qty": 30,
+      "stock_qty": 0
+    },
+    {
+      "source_quantity_id": 4,
+      "box_id": 2,
+      "available_qty": 7,
+      "order_qty": 7,
+      "stock_qty": 0
+    }
+  ],
+  "states": [
+    {
+      "id": 1001,
+      "process_code": "CUT",
+      "production_status": "completed",
+      "completed_by": 101
+    },
+    {
+      "id": 1002,
+      "process_code": "CUT",
+      "production_status": "in_progress",
+      "completed_by": null
+    },
+    {
+      "id": 1003,
+      "process_code": "FINISH",
+      "production_status": "in_progress",
+      "completed_by": null
+    },
+    {
+      "id": 1004,
+      "process_code": "PACK",
+      "production_status": "in_progress",
+      "completed_by": null
+    }
+  ],
+  "handoffs": [
+    {
+      "event_type": "process_start",
+      "before_qty": 30,
+      "after_qty": 30,
+      "before_snapshot": {
+        "state_id": "1001",
+        "output_qty": 30,
+        "process_code": "CUT"
+      },
+      "after_snapshot": {
+        "state_id": "1003",
+        "input_qty": 30,
+        "process_code": "FINISH",
+        "source_quantity_id": "1"
+      },
+      "material_batch_id": 9502,
+      "operator_id": 101
+    },
+    {
+      "event_type": "process_start",
+      "before_qty": 25,
+      "after_qty": 25,
+      "before_snapshot": {
+        "state_id": "1003",
+        "output_qty": 25,
+        "process_code": "FINISH"
+      },
+      "after_snapshot": {
+        "state_id": "1004",
+        "input_qty": 25,
+        "process_code": "PACK",
+        "source_quantity_id": "1"
+      },
+      "material_batch_id": 9502,
+      "operator_id": 101
+    }
+  ],
+  "materials": [
+    {
+      "id": 9501,
+      "batch_no": "TRACE-MOTHER",
+      "parent_batch_id": null,
+      "current_weight": 70.0
+    },
+    {
+      "id": 9502,
+      "batch_no": "TRACE-CHILD",
+      "parent_batch_id": 9501,
+      "current_weight": 30.0
+    }
+  ],
+  "status": "PASS",
+  "transaction_read_only": "on",
+  "synthetic_data_only": true,
+  "owned_original_oid_matched": true
+}

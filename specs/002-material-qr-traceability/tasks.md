@@ -4,7 +4,7 @@
 
 旧版30项仅见 [tasks-material-legacy.md](./tasks-material-legacy.md)。新版任务单独验收，历史勾选不计入本清单。测试由计划要求，先写拒绝/并发用例再实现业务；前端任务必须有真实浏览器证据。任务中的路径相对仓库根目录。
 
-当前累计37/59项：完成事务/权限基础、材料回归、32旧端点登记、池/打印/绑定、机台生产，以及固定路线连续流转、材料来源、工艺追溯和同单/跨单拆框的实现及实际浏览器验收；系统/实物打印、异常/通知及后续流程保持待办。每项仅按独立证据勾选，不替代故事或上线验收。
+当前累计49/59项：完成事务/权限基础、材料回归、32旧端点登记、池/打印/绑定、机台生产、固定路线连续流转、材料追溯、同单/跨单拆框、规格异常/站内通知及B/C转换的实现和实际浏览器验收；系统/实物打印、US8完整权限审计及上线准备保持待办。每项仅按独立证据勾选，不替代故事或上线验收。
 
 ## Setup（计划Phase 0收尾）
 
@@ -83,23 +83,23 @@
 
 **独立验收**：不匹配留痕并通知两组；单人确认；暂停仅对应state；失败按时重试且不改变业务状态。
 
-- [ ] T039 [US6] 先写匹配/异常/缺收件组/确认竞争/暂停恢复及退避去重测试：`backend/tests/qr/test_exceptions_notifications.py`（FR-022 FR-023 FR-031；SC-008）。
-- [ ] T040 [US6] 实现服务端规格比较、异常确认/恢复、范围阻断和配置补齐回补：`backend/app/services/product_box_service.py`（FR-022 FR-023 FR-031）。
-- [ ] T041 [US6] 实现outbox工作器、站内待办、60秒目标、五次尝试和1/5/15/30退避及人工批次重试：`backend/app/services/notification_service.py`（FR-023 FR-031；SC-008）。
-- [ ] T042 [US6] 登记异常/恢复/通知/管理重试端点，同步schema、wrapper与类型：`backend/app/api/product_boxes.py`（FR-022 FR-023 FR-031）。
-- [ ] T043 [US6] 实现异常处理/恢复/通知与失败提示界面，确认和投递状态分列：`frontend/src/components/product-box-qr/ExceptionPanel.vue`（FR-022 FR-023 FR-031）。
-- [ ] T044 [US6] 真实浏览器核验不匹配继续生产、任一负责人确认、暂停/恢复和通知故障：`specs/002-material-qr-traceability/acceptance-exceptions.md`（FR-022 FR-023 FR-031；SC-008）。
+- [x] T039 [US6] 先写匹配/异常/缺收件组/确认竞争/暂停恢复及退避去重测试：`backend/tests/qr/test_exceptions_notifications.py`（FR-022 FR-023 FR-031；SC-008）。
+- [x] T040 [US6] 实现服务端规格比较、异常确认/恢复、范围阻断和配置补齐回补：`backend/app/services/coil_exception_service.py`（FR-022 FR-023 FR-031）。
+- [x] T041 [US6] 实现outbox工作器、站内待办、60秒目标、五次尝试和1/5/15/30退避及人工批次重试：`backend/app/services/notification_service.py`（FR-023 FR-031；SC-008）。
+- [x] T042 [US6] 登记异常/恢复/通知/管理重试端点，同步schema、wrapper与类型：`backend/app/api/product_boxes.py`（FR-022 FR-023 FR-031）。
+- [x] T043 [US6] 实现异常处理/恢复/通知与失败提示界面，确认和投递状态分列：`frontend/src/components/product-box-qr/ExceptionPanel.vue`（FR-022 FR-023 FR-031）。
+- [x] T044 [US6] 真实浏览器核验不匹配继续生产、任一负责人确认、暂停/恢复和通知故障：`specs/002-material-qr-traceability/acceptance-exceptions.md`（FR-022 FR-023 FR-031；SC-008）。
 
 ## US7 B/C转换（P1，计划Phase 5/6）
 
 **独立验收**：100全转保留码；部分30→父B70/子C30；未确认/取消不变，失败整体回滚。
 
-- [ ] T045 [US7] 先写B↔C全量/部分/实际数量/预授权/确认取消竞争测试：`backend/tests/qr/test_conversion.py`（FR-024 FR-025 FR-026 FR-027 FR-028 FR-033；SC-009）。
-- [ ] T046 [US7] 实现显式目标路线/授权、人工发起与差异步骤内部触发，禁止客户端自授预授权：`backend/app/services/product_box_service.py`（FR-024 FR-025 FR-028）。
-- [ ] T047 [US7] 实现操作工上下文确认、全量保码、部分拆框及用途/来源分割和取消事务：`backend/app/services/product_box_service.py`（FR-026 FR-027 FR-033）。
-- [ ] T048 [US7] 登记转换创建/确认/取消，同步schema、wrapper、类型和状态响应：`backend/app/api/product_boxes.py`（FR-025 FR-026 FR-027 FR-028 FR-033）。
-- [ ] T049 [US7] 实现实际完成数量确认/子码/取消交互，管理账号不能代理实物确认：`frontend/src/components/product-box-qr/ConversionDialog.vue`（FR-025 FR-026 FR-027 FR-028 FR-033）。
-- [ ] T050 [US7] 真实浏览器验证两向全量/部分及未确认/取消/无上下文/池外拒绝：`specs/002-material-qr-traceability/acceptance-conversion.md`（FR-024 FR-025 FR-026 FR-027 FR-028 FR-033；SC-009）。
+- [x] T045 [US7] 先写B↔C全量/部分/实际数量/预授权/确认取消竞争测试：`backend/tests/qr/test_conversion.py`（FR-024 FR-025 FR-026 FR-027 FR-028 FR-033；SC-009）。
+- [x] T046 [US7] 实现显式目标路线/授权、人工发起与差异步骤内部触发，禁止客户端自授预授权：`backend/app/services/product_conversion_service.py`（FR-024 FR-025 FR-028）。
+- [x] T047 [US7] 实现操作工上下文确认、全量保码、部分拆框及用途/来源分割和取消事务：`backend/app/services/product_conversion_service.py`（FR-026 FR-027 FR-033）。
+- [x] T048 [US7] 登记转换创建/确认/取消，同步schema、wrapper、类型和状态响应：`backend/app/api/product_boxes.py`（FR-025 FR-026 FR-027 FR-028 FR-033）。
+- [x] T049 [US7] 实现实际完成数量确认/子码/取消交互，管理账号不能代理实物确认：`frontend/src/components/product-box-qr/ConversionDialog.vue`（FR-025 FR-026 FR-027 FR-028 FR-033）。
+- [x] T050 [US7] 真实浏览器验证两向全量/部分及未确认/取消/无上下文/池外拒绝：`specs/002-material-qr-traceability/acceptance-conversion.md`（FR-024 FR-025 FR-026 FR-027 FR-028 FR-033；SC-009）。
 
 ## US8 权限与审计（P2，计划Phase 6/7）
 
@@ -141,3 +141,11 @@ Setup T001～T003 → Foundational T004～T008数据结构与迁移验收 → T0
 2026-10-27连续工艺批次：新增T029～T033，累计32/59，21/31端点active。固定下一步流转、数量/材料来源继承、事件游标和追溯查询已完成；完整229项及相关22/兼容3项复验去重231项通过，构建/API扫描/设计检查通过。真实浏览器同码三工艺、原料母子链、回流拒绝、历史翻页、材料核对恢复、订单范围及1.619～1.716秒查询观察见[phase5-trace-acceptance.md](./phase5-trace-acceptance.md)和[acceptance-trace.md](./acceptance-trace.md)。本批自有库/服务已清理，业务库及真实授权未改；T021实物打印、T034起拆框和历史无凭证测试库清理仍未完成。
 
 2026-10-27拆框批次：新增T034～T038，累计37/59，22/31端点active。首次来源余额原子拆分、兼容跨单目标/需求、用途及origin链、一次子绑定、父子余量/快照和来源只读已实现；完整272项及相关84项去重272项通过，构建/API扫描0违规/设计检查通过。实际浏览器15项、只读DB100件守恒及正余量继续FINISH见[阶段报告](./phase6-split-acceptance.md)和[浏览器验收](./acceptance-split.md)。自有UI库OID257276及18124/18125已清理，业务库/真实授权未改；历史无凭证残留清理仍INCOMPLETE。T021及T039起仍待办，下一阶段US6规格异常与通知。
+
+
+2026-10-28规格异常/通知批次：完成T039～T044，累计43/59，28/31新领域端点active。精确规格比较、明确继续、版本化决定、state范围暂停/按原快照恢复、两组回补及持久站内投递/退避/人工重试已实现。完整306项全部通过（新增服务24+HTTP10，0失败/0跳过），构建、API扫描0违规、设计及diff检查通过；实际应用内Chromium16项、24件合成产出和重试历史核对见[阶段报告](./phase7-exceptions-acceptance.md)、[浏览器验收](./acceptance-exceptions.md)与[机器证据](./phase7-evidence.json)。自有库OID308767及专用服务已清理，业务库/真实授权未改；当前2个缺原始归属凭证测试库残留清理INCOMPLETE，未按前缀删除。工作器仅在隔离环境运行，目标环境尚未部署。下一阶段US7 T045～T050；T021与上线准备保持待办。
+
+
+2026-10-28 B/C转换批次：完成T045～T050，累计49/59，31/31新领域端点active。同单显式目标与固定路线衔接、负责人发起、差异扫码服务端预授权、操作工实际数量确认、双向全量保码/部分拆子、用途/材料来源、取消竞争和当前余额保护已实现。修正全量转出旧工艺余额重复后，最终完整344项全部通过（新增服务25/HTTP13，0失败/0跳过）；最终构建、API扫描0违规、设计及diff检查通过。应用内Chromium20项、只读DB400件/6转换/3关系见[阶段报告](./phase8-conversion-acceptance.md)、[浏览器验收](./acceptance-conversion.md)及[机器证据](./phase8-evidence.json)。自有库OID374370、418387及18124/18125专用服务已清理，业务库/真实授权未改；原2个缺归属凭证测试库清理仍INCOMPLETE。下一范围US8 T051～T055，T021及上线准备保持待办，不因31端点active宣称整套系统或发布完成。
+
+2026-10-28收尾兼容复验：转换目标发布新路线后，既有框仍可显式选择原固定路线；保留来源配置引用，专项1项通过。与完整344项按用例键合并，最终仍344个独立通过结果，未叠加重复数量。

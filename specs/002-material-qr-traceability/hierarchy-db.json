@@ -1,0 +1,37 @@
+{
+  "pool_count": 1,
+  "confirmed_items": 0,
+  "total_print_count": 0,
+  "boxes": [
+    {
+      "id": 1,
+      "order_id": 401,
+      "bound_by": 103,
+      "current_qty": 0,
+      "version": 1
+    }
+  ],
+  "material_batches": [
+    {
+      "id": 1,
+      "batch_no": "OLD-DATE-20010101-CH01",
+      "qr_code": "MAT:1:20261024",
+      "current_weight": 10.0,
+      "parent_batch_id": 9001
+    },
+    {
+      "id": 2,
+      "batch_no": "OLD-DATE-20010101-CH02",
+      "qr_code": "MAT:2:20261024",
+      "current_weight": 5.0,
+      "parent_batch_id": 9001
+    },
+    {
+      "id": 9001,
+      "batch_no": "OLD-DATE-20010101",
+      "qr_code": "MAT:9001:20010101",
+      "current_weight": 35.0,
+      "parent_batch_id": null
+    }
+  ]
+}

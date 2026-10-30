@@ -26,6 +26,7 @@ export interface PartLine {
 }
 
 export interface QuoteGroup {
+  surfaceRuleSnapshot?: QuoteGroupRecord['surface_rule_snapshot']
   id: string
   backendId?: number
   inquiryId?: number
@@ -59,6 +60,7 @@ export interface QuoteGroup {
 
 export function mapQuoteGroup(record: QuoteGroupRecord): QuoteGroup {
   return {
+    surfaceRuleSnapshot: record.surface_rule_snapshot,
     id: record.group_no,
     backendId: record.id,
     inquiryId: record.inquiry_id,

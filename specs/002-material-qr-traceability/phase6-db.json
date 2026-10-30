@@ -1,0 +1,421 @@
+{
+  "boxes": [
+    {
+      "id": 1,
+      "qr_pool_item_id": 1,
+      "box_no": "PFB-20261027-000001",
+      "order_id": 401,
+      "order_product_id": 801,
+      "current_process_code": "FINISH",
+      "next_process_code": "PACK",
+      "current_qty": 40,
+      "lifecycle_status": "active",
+      "version": 6,
+      "bound_by": 103
+    },
+    {
+      "id": 2,
+      "qr_pool_item_id": 2,
+      "box_no": "PFB-20261027-000002",
+      "order_id": 401,
+      "order_product_id": 801,
+      "current_process_code": "FINISH",
+      "next_process_code": "PACK",
+      "current_qty": 30,
+      "lifecycle_status": "active",
+      "version": 2,
+      "bound_by": 103
+    },
+    {
+      "id": 3,
+      "qr_pool_item_id": 3,
+      "box_no": "PFB-20261027-000003",
+      "order_id": 401,
+      "order_product_id": 801,
+      "current_process_code": "CUT",
+      "next_process_code": "FINISH",
+      "current_qty": 0,
+      "lifecycle_status": "empty",
+      "version": 2,
+      "bound_by": 103
+    },
+    {
+      "id": 4,
+      "qr_pool_item_id": 4,
+      "box_no": "PFB-20261027-000004",
+      "order_id": 403,
+      "order_product_id": 804,
+      "current_process_code": "CUT",
+      "next_process_code": "FINISH",
+      "current_qty": 20,
+      "lifecycle_status": "active",
+      "version": 1,
+      "bound_by": 102
+    },
+    {
+      "id": 5,
+      "qr_pool_item_id": 5,
+      "box_no": "PFB-20261027-000005",
+      "order_id": 401,
+      "order_product_id": 801,
+      "current_process_code": "CUT",
+      "next_process_code": "FINISH",
+      "current_qty": 10,
+      "lifecycle_status": "active",
+      "version": 1,
+      "bound_by": 103
+    }
+  ],
+  "quantities": [
+    {
+      "id": 1,
+      "state_id": 1001,
+      "box_id": 1,
+      "input_qty": 0,
+      "current_qty": 40,
+      "source_quantity_id": 1,
+      "material_batch_id": 9502,
+      "updated_by": 102
+    },
+    {
+      "id": 2,
+      "state_id": 1001,
+      "box_id": 2,
+      "input_qty": 30,
+      "current_qty": 30,
+      "source_quantity_id": 2,
+      "material_batch_id": 9502,
+      "updated_by": 103
+    },
+    {
+      "id": 3,
+      "state_id": 1001,
+      "box_id": 3,
+      "input_qty": 10,
+      "current_qty": 0,
+      "source_quantity_id": 3,
+      "material_batch_id": 9502,
+      "updated_by": 103
+    },
+    {
+      "id": 4,
+      "state_id": 1005,
+      "box_id": 4,
+      "input_qty": 20,
+      "current_qty": 20,
+      "source_quantity_id": 4,
+      "material_batch_id": 9502,
+      "updated_by": 102
+    },
+    {
+      "id": 5,
+      "state_id": 1001,
+      "box_id": 5,
+      "input_qty": 10,
+      "current_qty": 10,
+      "source_quantity_id": 5,
+      "material_batch_id": 9502,
+      "updated_by": 103
+    },
+    {
+      "id": 6,
+      "state_id": 1003,
+      "box_id": 1,
+      "input_qty": 40,
+      "current_qty": 40,
+      "source_quantity_id": 1,
+      "material_batch_id": 9502,
+      "updated_by": 101
+    },
+    {
+      "id": 7,
+      "state_id": 1003,
+      "box_id": 2,
+      "input_qty": 30,
+      "current_qty": 30,
+      "source_quantity_id": 2,
+      "material_batch_id": 9502,
+      "updated_by": 101
+    }
+  ],
+  "allocations": [
+    {
+      "id": 1,
+      "source_quantity_id": 1,
+      "box_id": 1,
+      "available_qty": 40,
+      "order_qty": 40,
+      "stock_qty": 0,
+      "origin_allocation_id": null,
+      "version": 4
+    },
+    {
+      "id": 2,
+      "source_quantity_id": 2,
+      "box_id": 2,
+      "available_qty": 30,
+      "order_qty": 30,
+      "stock_qty": 0,
+      "origin_allocation_id": 1,
+      "version": 1
+    },
+    {
+      "id": 3,
+      "source_quantity_id": 3,
+      "box_id": 3,
+      "available_qty": 0,
+      "order_qty": 0,
+      "stock_qty": 0,
+      "origin_allocation_id": 1,
+      "version": 2
+    },
+    {
+      "id": 4,
+      "source_quantity_id": 4,
+      "box_id": 4,
+      "available_qty": 20,
+      "order_qty": 20,
+      "stock_qty": 0,
+      "origin_allocation_id": 1,
+      "version": 1
+    },
+    {
+      "id": 5,
+      "source_quantity_id": 5,
+      "box_id": 5,
+      "available_qty": 10,
+      "order_qty": 10,
+      "stock_qty": 0,
+      "origin_allocation_id": 3,
+      "version": 1
+    }
+  ],
+  "relations": [
+    {
+      "parent_box_id": 1,
+      "child_box_id": 2,
+      "relation_type": "split",
+      "source_order_id": 401,
+      "target_order_id": 401,
+      "quantity": 30,
+      "order_qty": 30,
+      "stock_qty": 0,
+      "source_snapshot": {
+        "box_no": "PFB-20261027-000001",
+        "order_id": 401,
+        "order_qty": 100,
+        "stock_qty": 0,
+        "current_qty": 100,
+        "process_code": "CUT",
+        "product_name": "Synthetic part 301",
+        "source_state_id": "1001",
+        "order_product_id": "801",
+        "material_batch_id": 9502,
+        "route_revision_id": "704",
+        "receiving_state_id": "1001",
+        "source_quantity_id": "1",
+        "source_allocation_id": "1"
+      },
+      "created_by": 103
+    },
+    {
+      "parent_box_id": 1,
+      "child_box_id": 3,
+      "relation_type": "split",
+      "source_order_id": 401,
+      "target_order_id": 401,
+      "quantity": 10,
+      "order_qty": 10,
+      "stock_qty": 0,
+      "source_snapshot": {
+        "box_no": "PFB-20261027-000001",
+        "order_id": 401,
+        "order_qty": 70,
+        "stock_qty": 0,
+        "current_qty": 70,
+        "process_code": "CUT",
+        "product_name": "Synthetic part 301",
+        "source_state_id": "1001",
+        "order_product_id": "801",
+        "material_batch_id": 9502,
+        "route_revision_id": "704",
+        "receiving_state_id": "1001",
+        "source_quantity_id": "1",
+        "source_allocation_id": "1"
+      },
+      "created_by": 103
+    },
+    {
+      "parent_box_id": 1,
+      "child_box_id": 4,
+      "relation_type": "cross_order_split",
+      "source_order_id": 401,
+      "target_order_id": 403,
+      "quantity": 20,
+      "order_qty": 20,
+      "stock_qty": 0,
+      "source_snapshot": {
+        "box_no": "PFB-20261027-000001",
+        "order_id": 401,
+        "order_qty": 60,
+        "stock_qty": 0,
+        "current_qty": 60,
+        "process_code": "CUT",
+        "product_name": "Synthetic part 301",
+        "source_state_id": "1001",
+        "order_product_id": "801",
+        "material_batch_id": 9502,
+        "route_revision_id": "704",
+        "receiving_state_id": "1005",
+        "source_quantity_id": "1",
+        "source_allocation_id": "1"
+      },
+      "created_by": 102
+    },
+    {
+      "parent_box_id": 3,
+      "child_box_id": 5,
+      "relation_type": "split",
+      "source_order_id": 401,
+      "target_order_id": 401,
+      "quantity": 10,
+      "order_qty": 10,
+      "stock_qty": 0,
+      "source_snapshot": {
+        "box_no": "PFB-20261027-000003",
+        "order_id": 401,
+        "order_qty": 10,
+        "stock_qty": 0,
+        "current_qty": 10,
+        "process_code": "CUT",
+        "product_name": "Synthetic part 301",
+        "source_state_id": "1001",
+        "order_product_id": "801",
+        "material_batch_id": 9502,
+        "route_revision_id": "704",
+        "receiving_state_id": "1001",
+        "source_quantity_id": "3",
+        "source_allocation_id": "3"
+      },
+      "created_by": 103
+    }
+  ],
+  "split_events": [
+    {
+      "product_box_id": 1,
+      "event_type": "split",
+      "before_qty": 100,
+      "after_qty": 70,
+      "operator_id": 103
+    },
+    {
+      "product_box_id": 2,
+      "event_type": "split",
+      "before_qty": 0,
+      "after_qty": 30,
+      "operator_id": 103
+    },
+    {
+      "product_box_id": 1,
+      "event_type": "split",
+      "before_qty": 70,
+      "after_qty": 60,
+      "operator_id": 103
+    },
+    {
+      "product_box_id": 3,
+      "event_type": "split",
+      "before_qty": 0,
+      "after_qty": 10,
+      "operator_id": 103
+    },
+    {
+      "product_box_id": 1,
+      "event_type": "cross_order_split",
+      "before_qty": 60,
+      "after_qty": 40,
+      "operator_id": 102
+    },
+    {
+      "product_box_id": 4,
+      "event_type": "cross_order_split",
+      "before_qty": 0,
+      "after_qty": 20,
+      "operator_id": 102
+    },
+    {
+      "product_box_id": 3,
+      "event_type": "split",
+      "before_qty": 10,
+      "after_qty": 0,
+      "operator_id": 103
+    },
+    {
+      "product_box_id": 5,
+      "event_type": "split",
+      "before_qty": 0,
+      "after_qty": 10,
+      "operator_id": 103
+    }
+  ],
+  "materials": [
+    {
+      "id": 9501,
+      "parent_batch_id": null,
+      "current_weight": 70.0
+    },
+    {
+      "id": 9502,
+      "parent_batch_id": 9501,
+      "current_weight": 30.0
+    }
+  ],
+  "pool": [
+    {
+      "id": 1,
+      "pool_status": "bound"
+    },
+    {
+      "id": 2,
+      "pool_status": "bound"
+    },
+    {
+      "id": 3,
+      "pool_status": "bound"
+    },
+    {
+      "id": 4,
+      "pool_status": "bound"
+    },
+    {
+      "id": 5,
+      "pool_status": "bound"
+    },
+    {
+      "id": 6,
+      "pool_status": "unused"
+    },
+    {
+      "id": 7,
+      "pool_status": "unused"
+    },
+    {
+      "id": 8,
+      "pool_status": "unused"
+    },
+    {
+      "id": 9,
+      "pool_status": "unused"
+    }
+  ],
+  "status": "PASS",
+  "transaction_read_only": "on",
+  "owned_original_oid": 257276,
+  "synthetic_data_only": true,
+  "physical_quantity": 100,
+  "effective_output": 100,
+  "source_order_use": 80,
+  "target_order_use": 20,
+  "cancel_no_mutation": "PASS",
+  "material_weight_unchanged": "PASS"
+}
